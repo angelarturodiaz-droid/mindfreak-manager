@@ -1,5 +1,23 @@
 # CHANGELOG — Mindfreak Manager
 
+## F2 — Supabase
+
+- Instaladas `@supabase/supabase-js` y `@supabase/ssr`.
+- Creados `lib/supabase/client.ts` (Client Components) y `lib/supabase/server.ts`
+  (Server Components/Actions), siguiendo el patrón oficial SSR de Supabase
+  (sesión vía cookies, nunca localStorage — sección I de la arquitectura).
+- Creado `lib/supabase/proxy.ts` + `proxy.ts` en la raíz (proxy/middleware de
+  Next.js 16) para refrescar la sesión en cada request.
+- Conectado al proyecto Supabase real `mindfreak-manager`
+  (`hcospysvvwdfndihmemb.supabase.co`), obteniendo URL y clave pública
+  (`publishable key`) directamente vía el conector de Supabase.
+- `.env.local` (no versionado) con las credenciales reales; `.env.example`
+  (sí versionado) como plantilla.
+- Verificada la conexión real contra Supabase (`supabase.auth.getSession()`
+  sin errores) y revisados los *advisors* de seguridad del proyecto (sin
+  alertas — normal, aún no hay tablas).
+- Build de producción verificado sin errores ni advertencias.
+
 ## F1 — Inicialización
 
 - Proyecto Next.js 16 (App Router) + TypeScript + Tailwind CSS v4 + ESLint inicializado.

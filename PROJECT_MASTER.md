@@ -24,7 +24,7 @@ Auth, Storage, RLS) · Vitest + Playwright · Git/GitHub.
 |---|---|
 | F0 — Arquitectura | ✅ Aprobada |
 | F1 — Inicialización | ✅ Completada |
-| F2 — Supabase | ⬜ Pendiente |
+| F2 — Supabase | ✅ Completada |
 | F3 — Base de datos | ⬜ Pendiente |
 | F4 — Seguridad | ⬜ Pendiente |
 | F5–F23 | ⬜ Pendiente |
