@@ -1,5 +1,20 @@
 # CHANGELOG — Mindfreak Manager
 
+## F7 — Servicios
+
+- **Módulo de Servicios**: categorías (creación simple) + catálogo de servicios
+  (nombre, categoría, unidad, precio/costo por defecto), edición y desactivar.
+  Sin "lead" ni contactos — es un catálogo de configuración, no una entidad de
+  relación con terceros.
+- Escritura gateada por `settings.manage` (no por permisos propios de
+  "services.*" — no existen en el catálogo, ver sección K del F0: es catálogo
+  de configuración de empresa). Lectura abierta a cualquier usuario de la
+  compañía, ya que cotizar/facturar necesita poder ver el catálogo.
+- Agregado "Servicios" a la navegación del dashboard.
+- Ajuste de tipos: el join embebido de PostgREST (`service_categories`) llega
+  como arreglo aunque la relación sea muchos-a-uno; corregido el cast en la UI.
+- Probado: build + lint limpios.
+
 ## F6 — Proveedores
 
 - **Módulo completo de Proveedores**: listado con búsqueda, detalle/edición,
