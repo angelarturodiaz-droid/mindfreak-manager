@@ -30,7 +30,8 @@ Auth, Storage, RLS) · Vitest + Playwright · Git/GitHub.
 | F5 — Clientes | ✅ Completada |
 | F6 — Proveedores | ✅ Completada |
 | F7 — Servicios | ✅ Completada |
-| F8–F23 | ⬜ Pendiente |
+| F8 — Cotizaciones | ✅ Completada |
+| F9–F23 | ⬜ Pendiente |
 
 ## Decisiones arquitectónicas clave (ver F0 para detalle completo)
 
@@ -98,3 +99,10 @@ Ver sección D del documento de arquitectura. Implementada tal cual en F1.
 
 - `adiaz@mindfreakevents.com` — rol ADMIN, Mindfreak Events. Cuenta creada en F4
   con contraseña temporal (entregada directamente, no por este documento).
+
+## Infraestructura adelantada de fases futuras
+
+- **Bucket de Supabase Storage `documents`** (privado) y sus políticas RLS se
+  crearon en F8, no en F17, porque el requisito de "PDF + link de descarga"
+  para cotizaciones (fijado en F0) los necesitaba ya. F17 construirá la UI
+  genérica de gestión de documentos sobre esta misma infraestructura.

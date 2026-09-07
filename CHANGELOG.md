@@ -1,5 +1,30 @@
 # CHANGELOG — Mindfreak Manager
 
+## F8 — Cotizaciones
+
+- **Módulo de Cotizaciones**: crear (cliente, fechas, moneda/tasa, condiciones),
+  líneas de servicio (con cálculo automático de subtotal/descuento/impuesto/
+  costo estimado por línea y agregado a nivel de cotización), listado con
+  filtro por estado, detalle con totales y margen estimado.
+- **Flujo de estados**: DRAFT → SENT (permiso `quotations.update`) →
+  APPROVED/REJECTED (permiso `quotations.approve`, distinto del de edición) →
+  CANCELLED. Botones de acción solo visibles si el usuario tiene el permiso
+  correspondiente (capa de aplicación, además de RLS).
+- **Generación de PDF + link de descarga** (decisión de F0, sección R): se
+  adelantó de F17 la infraestructura mínima de Supabase Storage — bucket
+  privado `documents` con políticas RLS basadas en `company_id` + permisos
+  `documents.view`/`documents.upload`. El PDF se genera con
+  `@react-pdf/renderer`, se sube a Storage, y se retorna una URL firmada
+  (7 días de vigencia) para compartir por WhatsApp/correo.
+- Se probó la generación de PDF en aislado (sin tocar Supabase) para validar
+  que la librería funciona en este entorno antes de integrarla — generó un
+  PDF válido correctamente.
+- Nota de alcance: **"Convertir a Proyecto"** desde una cotización aprobada
+  (sección O/13 del prompt maestro) se implementa en **F9 — Proyectos**, ya
+  que requiere que exista el módulo de Proyectos.
+- Agregado "Cotizaciones" a la navegación del dashboard.
+- Probado: build + lint limpios.
+
 ## F7 — Servicios
 
 - **Módulo de Servicios**: categorías (creación simple) + catálogo de servicios
