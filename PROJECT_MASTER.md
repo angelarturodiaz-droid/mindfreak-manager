@@ -72,10 +72,12 @@ Ver sección D del documento de arquitectura. Implementada tal cual en F1.
 
 ## Decisiones pendientes
 
-- Falta crear el primer usuario real (ADMIN) — Auth es interno, sin registro público
-  (sección I). Pendiente: email de la primera cuenta admin de Mindfreak Events.
-
 - Confirmar HEX exacto del teal de marca si aparece guía oficial (no bloqueante).
 - Disparador exacto de conversión LEAD→ACTIVE (automático al aprobar cotización
   vs. manual): se define en F5.
 - Trigger de auditoría (genérico vía trigger de Postgres vs. capa de aplicación): se define en F4.
+
+## Usuarios
+
+- `adiaz@mindfreakevents.com` — rol ADMIN, Mindfreak Events. Cuenta creada en F4
+  con contraseña temporal (entregada directamente, no por este documento).
