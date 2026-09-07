@@ -3,7 +3,8 @@ import Link from "next/link";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/clients", label: "Clientes" },
-  // El resto de los módulos se agregan a medida que se implementan (F6 en adelante)
+  { href: "/suppliers", label: "Proveedores" },
+  // El resto de los módulos se agregan a medida que se implementan (F7 en adelante)
 ];
 
 export default function DashboardLayout({

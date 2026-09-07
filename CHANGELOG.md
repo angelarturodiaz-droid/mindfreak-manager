@@ -1,5 +1,17 @@
 # CHANGELOG — Mindfreak Manager
 
+## F6 — Proveedores
+
+- **Módulo completo de Proveedores**: listado con búsqueda, detalle/edición,
+  contactos (crear/eliminar), desactivar (soft delete). Mismo patrón que
+  Clientes (F5), pero sin el concepto de "lead" — un proveedor no tiene etapa
+  potencial (sección 6 del prompt maestro).
+- Server Actions con las 3 capas de seguridad y auditoría real en cada
+  creación/edición/desactivación (`audit_logs`, reutilizando `lib/audit/log.ts`
+  de F5 sin cambios).
+- Agregado "Proveedores" a la navegación del dashboard.
+- Probado: build + lint limpios.
+
 ## F5 — Clientes
 
 - **Módulo completo de Clientes**: listado (con filtro por estado y búsqueda),

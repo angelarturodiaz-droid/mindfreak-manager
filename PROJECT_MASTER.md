@@ -28,7 +28,8 @@ Auth, Storage, RLS) · Vitest + Playwright · Git/GitHub.
 | F3 — Base de datos | ✅ Completada |
 | F4 — Seguridad | ✅ Completada |
 | F5 — Clientes | ✅ Completada |
-| F6–F23 | ⬜ Pendiente |
+| F6 — Proveedores | ✅ Completada |
+| F7–F23 | ⬜ Pendiente |
 
 ## Decisiones arquitectónicas clave (ver F0 para detalle completo)
 
