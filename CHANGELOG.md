@@ -1,5 +1,28 @@
 # CHANGELOG — Mindfreak Manager
 
+## F5 — Clientes
+
+- **Módulo completo de Clientes**: listado (con filtro por estado y búsqueda),
+  detalle/edición, contactos (crear/eliminar), conversión LEAD→ACTIVE, desactivar
+  (soft delete), e importación masiva vía CSV.
+- `lib/audit/log.ts`: helper de auditoría reutilizable por todos los módulos
+  futuros — cada creación/edición/conversión/desactivación de un cliente queda
+  en `audit_logs`.
+- Server Actions (`features/clients/actions.ts`) con las 3 capas de seguridad:
+  UI condicional, `requirePermission()` al inicio de cada acción, y RLS como
+  última línea (ya validada en F4).
+- Validación con `zod` (`features/clients/schema.ts`), parseo de CSV con
+  `papaparse`. Cada fila del CSV se valida individualmente; una fila inválida
+  no aborta el resto — queda registrada en `import_batches.error_details` con
+  su número de fila.
+- Layout mínimo del dashboard con navegación lateral (se amplía por módulo a
+  medida que se implementan F6 en adelante).
+- Probado: build + lint limpios; parseo de CSV verificado con un archivo de
+  ejemplo (fila sin nombre falla la validación como se esperaba, el resto se
+  importa). Lógica de negocio (conversión idempotente, soft delete) revisada
+  por código; prueba end-to-end en navegador pendiente de que el usuario corra
+  `npm run dev` localmente (misma limitación de red del sandbox que en F4).
+
 ## F4 — Seguridad
 
 - **Políticas RLS reales en las 32 tablas** (8 migraciones, `016` a `021`, más el
