@@ -5,8 +5,11 @@ export default function Home() {
         Mindfreak Manager
       </h1>
       <p className="text-brand-muted">
-        F1 — Inicialización completada. Próximo: F2 — Supabase.
+        Plataforma de gestión para Mindfreak Events.
       </p>
+      <a href="/login" className="mt-2 text-sm text-brand-accent hover:underline">
+        Ingresar →
+      </a>
     </main>
   );
 }

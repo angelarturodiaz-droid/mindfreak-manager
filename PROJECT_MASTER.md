@@ -63,13 +63,27 @@ Ver sección D del documento de arquitectura. Implementada tal cual en F1.
   índice de cobertura. Nivel INFO en los *advisors* de Supabase, base de datos aún sin
   tráfico real. Revisar con datos de uso real en **F22 — Optimización**.
 - El sandbox de desarrollo no tiene salida de red hacia `*.supabase.co`, así que el
-  login real (navegador/Node) no pudo probarse end-to-end aquí; RLS se validó
-  simulando el rol `authenticated` de Postgres directamente vía SQL (login real,
-  bloqueo/permiso por rol, todo confirmado). Validar una vez el usuario corra
-  `npm run dev` localmente.
+  login real (navegador/Node) no pudo probarse end-to-end desde aquí; se validó
+  RLS simulando el rol `authenticated` de Postgres vía SQL. **El usuario lo probó
+  en su Mac y funciona** (ver más abajo el detalle de un bug real que apareció y
+  se corrigió).
 - Permisos `.update`/`.delete` dedicados faltan para invoices/customer_payments/
   supplier_payments/quotations (RLS reutiliza el permiso `.create`/`.update` más
   cercano por ahora). Revisar si hace falta mayor granularidad al implementar F10-F13.
+
+## Incidentes resueltos
+
+- **Login fallaba con "Database error querying schema"** (F4, detectado al probar
+  en local): el usuario ADMIN se creó insertando directo en `auth.users` por SQL
+  (no había API de administración de usuarios disponible), y quedaron varias
+  columnas de texto (`email_change`, `phone_change`, `reauthentication_token`, etc.)
+  en `NULL` en vez de `''`. El driver de Go de Supabase Auth no soporta `NULL` en
+  esas columnas y fallaba al leer el usuario. Corregido con un `UPDATE` que las
+  puso en cadena vacía. También faltaba la fila correspondiente en
+  `auth.identities` (necesaria para el login por contraseña), que se agregó.
+  **Para usuarios futuros**: usar el flujo normal de invitación/registro de
+  Supabase Auth evita este problema — este fue un caso único de sembrar el primer
+  usuario manualmente sin tener acceso a la API de administración.
 
 ## Decisiones pendientes
 
