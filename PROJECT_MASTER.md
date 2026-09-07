@@ -25,7 +25,7 @@ Auth, Storage, RLS) · Vitest + Playwright · Git/GitHub.
 | F0 — Arquitectura | ✅ Aprobada |
 | F1 — Inicialización | ✅ Completada |
 | F2 — Supabase | ✅ Completada |
-| F3 — Base de datos | ⬜ Pendiente |
+| F3 — Base de datos | ✅ Completada |
 | F4 — Seguridad | ⬜ Pendiente |
 | F5–F23 | ⬜ Pendiente |
 
@@ -58,7 +58,9 @@ Ver sección D del documento de arquitectura. Implementada tal cual en F1.
 
 ## Deuda técnica
 
-Ninguna todavía (proyecto recién inicializado).
+- Varios FKs (mayormente `created_by`/`approved_by`/`updated_by`, poco consultados) sin
+  índice de cobertura. Nivel INFO en los *advisors* de Supabase, base de datos aún sin
+  tráfico real. Revisar con datos de uso real en **F22 — Optimización**.
 
 ## Decisiones pendientes
 

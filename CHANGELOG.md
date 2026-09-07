@@ -1,5 +1,31 @@
 # CHANGELOG — Mindfreak Manager
 
+## F3 — Base de Datos
+
+- **32 tablas** creadas en el proyecto Supabase real, en 13 migraciones versionadas
+  (`supabase/migrations/001_*.sql` a `013_*.sql`), aplicadas y verificadas una por una:
+  companies, profiles (+ trigger auto-creación desde `auth.users`), roles, permissions,
+  role_permissions, user_roles (+ función `has_permission()`), clients (+ `status`
+  LEAD/ACTIVE), client_contacts, suppliers, supplier_contacts, service_categories,
+  services, bank_accounts (+ `opening_balance`), exchange_rates, quotations (+
+  `currency`/`exchange_rate`), quotation_items, projects (+ `budget`), project_items,
+  invoices, invoice_items, customer_payments, expense_categories, expenses,
+  supplier_payments, bank_transactions, documents, tasks, activities, approvals,
+  audit_logs, notifications, settings, import_batches.
+- Resuelta la referencia circular `quotations` ↔ `projects` (FK diferida vía `ALTER TABLE`).
+- Trigger genérico `set_updated_at()` aplicado a las 28 tablas con `updated_at`.
+- **RLS habilitado en las 32 tablas** (denegar-todo por defecto); las políticas
+  específicas se escriben en F4 — así no hubo ventana de tablas desprotegidas.
+- **Seed aplicado**: compañía Mindfreak Events, 5 roles base (ADMIN, MANAGER, SALES,
+  FINANCE, OPERATIONS), 30 permisos granulares, 92 asignaciones rol↔permiso.
+  Guardado también en `supabase/seed/seed.sql` para resets locales.
+- Revisados los *advisors* de seguridad y performance de Supabase: corregidos 2 WARN
+  reales (search_path mutable en `set_updated_at`, RPC pública indebida de
+  `handle_new_user`); el resto son INFO esperados (RLS sin políticas aún, índices sin
+  uso en una BD nueva).
+- Prueba de integridad real: FK bloquea `company_id` inexistente; insert válido
+  confirma defaults correctos (`status = LEAD`, `currency = DOP`, `exchange_rate = 1`).
+
 ## F2 — Supabase
 
 - Instaladas `@supabase/supabase-js` y `@supabase/ssr`.
