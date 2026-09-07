@@ -1,5 +1,30 @@
 # CHANGELOG — Mindfreak Manager
 
+## F4 — Seguridad
+
+- **Políticas RLS reales en las 32 tablas** (8 migraciones, `016` a `021`, más el
+  helper `014`/`015`), reemplazando el denegar-todo de F3: cada tabla ahora valida
+  `company_id` del usuario + el permiso correspondiente (`has_permission()`).
+- Función auxiliar `user_company_ids()` para no repetir la subconsulta a
+  `user_roles` en cada política.
+- 2 permisos agregados (`documents.view`, `documents.upload`) que faltaban en el
+  catálogo, asignados a los 5 roles.
+- `lib/auth/permissions.ts`: capa de aplicación (2da de las 3 capas de seguridad) —
+  `getCurrentUser()`, `hasPermission()`, `requirePermission()`, `getCurrentUserCompanyIds()`.
+- Páginas de Auth: `/login` y `/recover-password` (Server Actions
+  `signIn`/`signOut`/`requestPasswordReset`), sin registro público (Auth es interno).
+- `proxy.ts` ahora protege rutas: sin sesión → `/login`; con sesión intentando
+  entrar a `/login` o `/recover-password` → `/dashboard`.
+- Stub protegido en `/dashboard` (contenido real en F16) para poder probar el flujo.
+- **RLS probado con casos reales** (usuario de prueba temporal, creado y eliminado
+  vía SQL): sin rol asignado no ve nada; con rol ADMIN puede crear/ver clientes;
+  con rol FINANCE es bloqueado al crear un cliente pero sí ve facturas. Todos los
+  casos se comportaron como se esperaba.
+- Nota de transparencia: el sandbox de desarrollo no tiene salida de red hacia
+  `*.supabase.co`, así que la prueba de RLS se hizo simulando el rol `authenticated`
+  de Postgres vía SQL en lugar de un login real por navegador/Node — ver
+  PROJECT_MASTER.md → Deuda técnica.
+
 ## F3 — Base de Datos
 
 - **32 tablas** creadas en el proyecto Supabase real, en 13 migraciones versionadas

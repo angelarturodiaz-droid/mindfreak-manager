@@ -32,7 +32,27 @@ export async function updateSession(request: NextRequest) {
   );
 
   // IMPORTANTE: no eliminar esta llamada. Refresca el token si expiró.
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const path = request.nextUrl.pathname;
+  const isAuthRoute = path === "/login" || path === "/recover-password";
+  const isPublicRoute = path === "/" || isAuthRoute;
+
+  // Sin sesión intentando entrar a una ruta protegida -> /login
+  if (!user && !isPublicRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  // Con sesión intentando entrar a login/recover-password -> /dashboard
+  if (user && isAuthRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
+  }
 
   return supabaseResponse;
 }

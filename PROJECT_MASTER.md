@@ -26,7 +26,7 @@ Auth, Storage, RLS) · Vitest + Playwright · Git/GitHub.
 | F1 — Inicialización | ✅ Completada |
 | F2 — Supabase | ✅ Completada |
 | F3 — Base de datos | ✅ Completada |
-| F4 — Seguridad | ⬜ Pendiente |
+| F4 — Seguridad | ✅ Completada |
 | F5–F23 | ⬜ Pendiente |
 
 ## Decisiones arquitectónicas clave (ver F0 para detalle completo)
@@ -61,8 +61,19 @@ Ver sección D del documento de arquitectura. Implementada tal cual en F1.
 - Varios FKs (mayormente `created_by`/`approved_by`/`updated_by`, poco consultados) sin
   índice de cobertura. Nivel INFO en los *advisors* de Supabase, base de datos aún sin
   tráfico real. Revisar con datos de uso real en **F22 — Optimización**.
+- El sandbox de desarrollo no tiene salida de red hacia `*.supabase.co`, así que el
+  login real (navegador/Node) no pudo probarse end-to-end aquí; RLS se validó
+  simulando el rol `authenticated` de Postgres directamente vía SQL (login real,
+  bloqueo/permiso por rol, todo confirmado). Validar una vez el usuario corra
+  `npm run dev` localmente.
+- Permisos `.update`/`.delete` dedicados faltan para invoices/customer_payments/
+  supplier_payments/quotations (RLS reutiliza el permiso `.create`/`.update` más
+  cercano por ahora). Revisar si hace falta mayor granularidad al implementar F10-F13.
 
 ## Decisiones pendientes
+
+- Falta crear el primer usuario real (ADMIN) — Auth es interno, sin registro público
+  (sección I). Pendiente: email de la primera cuenta admin de Mindfreak Events.
 
 - Confirmar HEX exacto del teal de marca si aparece guía oficial (no bloqueante).
 - Disparador exacto de conversión LEAD→ACTIVE (automático al aprobar cotización
