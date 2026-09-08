@@ -170,6 +170,7 @@ export async function addQuotationItemAction(
     quantity: String(formData.get("quantity") ?? "1"),
     unit_price: String(formData.get("unit_price") ?? "0"),
     discount: String(formData.get("discount") ?? "0"),
+    tax_rate_id: String(formData.get("tax_rate_id") ?? ""),
     tax: String(formData.get("tax") ?? "0"),
     estimated_unit_cost: String(formData.get("estimated_unit_cost") ?? "0"),
   });
@@ -177,8 +178,21 @@ export async function addQuotationItemAction(
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
   }
 
-  const subtotal = calculateItemSubtotal(parsed.data);
   const supabase = await createSupabaseClient();
+
+  let tax = parsed.data.tax;
+  if (parsed.data.tax_rate_id) {
+    const { data: taxRate, error: rateError } = await supabase
+      .from("tax_rates")
+      .select("rate")
+      .eq("id", parsed.data.tax_rate_id)
+      .single();
+    if (rateError || !taxRate) return { error: "Tasa de impuesto no encontrada." };
+    const base = parsed.data.quantity * parsed.data.unit_price - parsed.data.discount;
+    tax = Math.round(Math.max(0, base) * (taxRate.rate / 100) * 100) / 100;
+  }
+
+  const subtotal = calculateItemSubtotal({ ...parsed.data, tax });
   const { error } = await supabase.from("quotation_items").insert({
     quotation_id: quotationId,
     service_id: parsed.data.service_id || null,
@@ -186,7 +200,8 @@ export async function addQuotationItemAction(
     quantity: parsed.data.quantity,
     unit_price: parsed.data.unit_price,
     discount: parsed.data.discount,
-    tax: parsed.data.tax,
+    tax_rate_id: parsed.data.tax_rate_id || null,
+    tax,
     estimated_unit_cost: parsed.data.estimated_unit_cost,
     subtotal,
   });
@@ -356,4 +371,85 @@ export async function generateQuotationShareLinkAction(
   }
 
   return { url: signed.signedUrl, error: null };
+}
+
+/**
+ * Duplica una cotización existente: crea una nueva en BORRADOR con el mismo
+ * cliente/contacto y copia todas las líneas. La original nunca se toca.
+ * Mismo patrón que `duplicateInvoiceAction` — ver conversación con el usuario.
+ */
+export async function duplicateQuotationAction(quotationId: string): Promise<void> {
+  await requirePermission("quotations.create");
+  const supabase = await createSupabaseClient();
+  const companyId = await getPrimaryCompanyId();
+
+  const { data: original, error: origError } = await supabase
+    .from("quotations")
+    .select("client_id, contact_id, currency, exchange_rate, terms")
+    .eq("id", quotationId)
+    .single();
+  if (origError || !original) throw new Error(origError?.message ?? "Cotización no encontrada.");
+
+  const { data: items, error: itemsError } = await supabase
+    .from("quotation_items")
+    .select(
+      "service_id, description, quantity, unit_price, discount, tax, tax_rate_id, estimated_unit_cost, subtotal",
+    )
+    .eq("quotation_id", quotationId)
+    .order("sort_order");
+  if (itemsError) throw new Error(itemsError.message);
+
+  const number = await generateQuotationNumber(companyId);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: newQuotation, error: createError } = await supabase
+    .from("quotations")
+    .insert({
+      company_id: companyId,
+      client_id: original.client_id,
+      contact_id: original.contact_id,
+      number,
+      issue_date: new Date().toISOString().slice(0, 10),
+      currency: original.currency,
+      exchange_rate: original.exchange_rate,
+      terms: original.terms,
+      status: "DRAFT",
+      created_by: user?.id,
+    })
+    .select("id")
+    .single();
+  if (createError || !newQuotation)
+    throw new Error(createError?.message ?? "No se pudo duplicar.");
+
+  if (items && items.length > 0) {
+    const { error: insertItemsError } = await supabase.from("quotation_items").insert(
+      items.map((item) => ({
+        quotation_id: newQuotation.id,
+        service_id: item.service_id,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        discount: item.discount,
+        tax: item.tax,
+        tax_rate_id: item.tax_rate_id,
+        estimated_unit_cost: item.estimated_unit_cost,
+        subtotal: item.subtotal,
+      })),
+    );
+    if (insertItemsError) throw new Error(insertItemsError.message);
+    await recalculateQuotationTotals(newQuotation.id);
+  }
+
+  await logAudit({
+    companyId,
+    action: "CREATE",
+    entityType: "quotation",
+    entityId: newQuotation.id,
+    newValues: { duplicated_from: quotationId },
+  });
+
+  revalidatePath("/quotations");
+  redirect(`/quotations/${newQuotation.id}`);
 }

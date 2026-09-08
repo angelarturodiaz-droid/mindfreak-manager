@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { renderToBuffer } from "@react-pdf/renderer";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
@@ -11,6 +12,7 @@ import {
   calculateInvoiceItemSubtotal,
   calculateInvoiceTotals,
 } from "./schema";
+import { InvoicePdfDocument } from "@/lib/pdf/invoice-document";
 
 export type ActionState = { error: string | null };
 
@@ -173,14 +175,28 @@ export async function addInvoiceItemAction(
     quantity: String(formData.get("quantity") ?? "1"),
     unit_price: String(formData.get("unit_price") ?? "0"),
     discount: String(formData.get("discount") ?? "0"),
+    tax_rate_id: String(formData.get("tax_rate_id") ?? ""),
     tax: String(formData.get("tax") ?? "0"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
   }
 
-  const subtotal = calculateInvoiceItemSubtotal(parsed.data);
   const supabase = await createSupabaseClient();
+
+  let tax = parsed.data.tax;
+  if (parsed.data.tax_rate_id) {
+    const { data: taxRate, error: rateError } = await supabase
+      .from("tax_rates")
+      .select("rate")
+      .eq("id", parsed.data.tax_rate_id)
+      .single();
+    if (rateError || !taxRate) return { error: "Tasa de impuesto no encontrada." };
+    const base = parsed.data.quantity * parsed.data.unit_price - parsed.data.discount;
+    tax = Math.round(Math.max(0, base) * (taxRate.rate / 100) * 100) / 100;
+  }
+
+  const subtotal = calculateInvoiceItemSubtotal({ ...parsed.data, tax });
   const { error } = await supabase.from("invoice_items").insert({
     invoice_id: invoiceId,
     service_id: parsed.data.service_id || null,
@@ -188,7 +204,8 @@ export async function addInvoiceItemAction(
     quantity: parsed.data.quantity,
     unit_price: parsed.data.unit_price,
     discount: parsed.data.discount,
-    tax: parsed.data.tax,
+    tax_rate_id: parsed.data.tax_rate_id || null,
+    tax,
     subtotal,
   });
 
@@ -264,4 +281,175 @@ export async function cancelInvoiceAction(invoiceId: string): Promise<void> {
 
   revalidatePath(`/invoices/${invoiceId}`);
   revalidatePath("/invoices");
+}
+
+/**
+ * Genera el PDF de la factura, lo sube a Storage y devuelve una URL firmada
+ * (7 días) para compartir. Mismo patrón que `generateQuotationShareLinkAction`
+ * (F8) — ver F0-Arquitectura, sección R.
+ */
+export async function generateInvoiceShareLinkAction(
+  invoiceId: string,
+): Promise<{ url: string | null; error: string | null }> {
+  await requirePermission("invoices.view");
+
+  const supabase = await createSupabaseClient();
+  const companyId = await getPrimaryCompanyId();
+
+  const [{ data: invoice, error: iError }, { data: items, error: itError }, { data: company }] =
+    await Promise.all([
+      supabase.from("invoices").select("*, clients(name)").eq("id", invoiceId).single(),
+      supabase
+        .from("invoice_items")
+        .select("description, quantity, unit_price, discount, subtotal")
+        .eq("invoice_id", invoiceId)
+        .order("sort_order"),
+      supabase
+        .from("companies")
+        .select("name, legal_name, tax_id")
+        .eq("id", companyId)
+        .single(),
+    ]);
+
+  if (iError || !invoice) return { url: null, error: iError?.message ?? "Factura no encontrada." };
+  if (itError) return { url: null, error: itError.message };
+
+  const clientData = invoice.clients as { name: string } | { name: string }[] | null;
+  const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
+
+  const buffer = await renderToBuffer(
+    InvoicePdfDocument({
+      company: company ?? { name: "Mindfreak Manager", legal_name: null, tax_id: null },
+      invoice,
+      client: { name: clientName ?? "Cliente" },
+      items: items ?? [],
+    }),
+  );
+
+  const path = `${companyId}/invoices/${invoiceId}.pdf`;
+  const { error: uploadError } = await supabase.storage
+    .from("documents")
+    .upload(path, buffer, { contentType: "application/pdf", upsert: true });
+
+  if (uploadError) return { url: null, error: uploadError.message };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: existingDoc } = await supabase
+    .from("documents")
+    .select("id")
+    .eq("entity_type", "invoice")
+    .eq("entity_id", invoiceId)
+    .maybeSingle();
+
+  const docRow = {
+    company_id: companyId,
+    entity_type: "invoice",
+    entity_id: invoiceId,
+    file_name: `${invoice.number}.pdf`,
+    storage_path: path,
+    mime_type: "application/pdf",
+    size_bytes: buffer.length,
+    uploaded_by: user?.id,
+  };
+
+  if (existingDoc) {
+    await supabase.from("documents").update(docRow).eq("id", existingDoc.id);
+  } else {
+    await supabase.from("documents").insert(docRow);
+  }
+
+  const { data: signed, error: signError } = await supabase.storage
+    .from("documents")
+    .createSignedUrl(path, 60 * 60 * 24 * 7);
+
+  if (signError || !signed) {
+    return { url: null, error: signError?.message ?? "No se pudo generar el link." };
+  }
+
+  return { url: signed.signedUrl, error: null };
+}
+
+/**
+ * Duplica una factura existente: crea una nueva factura en BORRADOR con el
+ * mismo cliente/proyecto y copia todas las líneas (servicio, cantidad,
+ * precio, descuento, impuesto) de la original. La factura original nunca se
+ * toca — permite corregir cantidades sin reescribir todo ni editar un
+ * documento ya emitido. Confirmado con el usuario (ver conversación).
+ */
+export async function duplicateInvoiceAction(invoiceId: string): Promise<void> {
+  await requirePermission("invoices.create");
+  const supabase = await createSupabaseClient();
+  const companyId = await getPrimaryCompanyId();
+
+  const { data: original, error: origError } = await supabase
+    .from("invoices")
+    .select(
+      "client_id, project_id, quotation_id, currency, exchange_rate, ncf_type",
+    )
+    .eq("id", invoiceId)
+    .single();
+  if (origError || !original) throw new Error(origError?.message ?? "Factura no encontrada.");
+
+  const { data: items, error: itemsError } = await supabase
+    .from("invoice_items")
+    .select("service_id, description, quantity, unit_price, discount, tax, tax_rate_id, subtotal")
+    .eq("invoice_id", invoiceId)
+    .order("sort_order");
+  if (itemsError) throw new Error(itemsError.message);
+
+  const number = await generateInvoiceNumber(companyId);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: newInvoice, error: createError } = await supabase
+    .from("invoices")
+    .insert({
+      company_id: companyId,
+      client_id: original.client_id,
+      project_id: original.project_id,
+      quotation_id: original.quotation_id,
+      number,
+      issue_date: new Date().toISOString().slice(0, 10),
+      currency: original.currency,
+      exchange_rate: original.exchange_rate,
+      ncf_type: original.ncf_type,
+      status: "DRAFT",
+      created_by: user?.id,
+    })
+    .select("id")
+    .single();
+  if (createError || !newInvoice) throw new Error(createError?.message ?? "No se pudo duplicar.");
+
+  if (items && items.length > 0) {
+    const { error: insertItemsError } = await supabase.from("invoice_items").insert(
+      items.map((item) => ({
+        invoice_id: newInvoice.id,
+        service_id: item.service_id,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        discount: item.discount,
+        tax: item.tax,
+        tax_rate_id: item.tax_rate_id,
+        subtotal: item.subtotal,
+      })),
+    );
+    if (insertItemsError) throw new Error(insertItemsError.message);
+    await recalculateInvoiceTotals(newInvoice.id);
+  }
+
+  await logAudit({
+    companyId,
+    action: "CREATE",
+    entityType: "invoice",
+    entityId: newInvoice.id,
+    newValues: { duplicated_from: invoiceId },
+  });
+
+  revalidatePath("/invoices");
+  redirect(`/invoices/${newInvoice.id}`);
 }

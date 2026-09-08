@@ -5,6 +5,7 @@ import {
   listQuotationItems,
   listActiveServices,
 } from "@/features/quotations/queries";
+import { listTaxRates } from "@/features/tax-rates/queries";
 import {
   deleteQuotationItemAction,
   sendQuotationAction,
@@ -15,6 +16,7 @@ import {
 import { hasPermission } from "@/lib/auth/permissions";
 import { NewItemForm } from "./new-item-form";
 import { ShareLinkButton } from "./share-link-button";
+import { DuplicateQuotationButton } from "./duplicate-quotation-button";
 
 function formatMoney(amount: number, currency: string) {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency }).format(
@@ -48,9 +50,10 @@ export default async function QuotationDetailPage({
   }
   if (!quotation) notFound();
 
-  const [items, services, canUpdate, canApprove] = await Promise.all([
+  const [items, services, taxRates, canUpdate, canApprove] = await Promise.all([
     listQuotationItems(id),
     listActiveServices(),
+    listTaxRates(),
     hasPermission("quotations.update"),
     hasPermission("quotations.approve"),
   ]);
@@ -126,6 +129,7 @@ export default async function QuotationDetailPage({
             </form>
           )}
         <ShareLinkButton quotationId={quotation.id} />
+        {canUpdate && <DuplicateQuotationButton quotationId={quotation.id} />}
         {quotation.status === "APPROVED" && !quotation.project_id && (
           <Link
             href={`/projects/from-quotation/${quotation.id}`}
@@ -205,7 +209,11 @@ export default async function QuotationDetailPage({
 
         {isEditable && canUpdate && (
           <div className="mt-4">
-            <NewItemForm quotationId={quotation.id} services={services} />
+            <NewItemForm
+              quotationId={quotation.id}
+              services={services}
+              taxRates={taxRates}
+            />
           </div>
         )}
 

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { generateQuotationShareLinkAction } from "@/features/quotations/actions";
+import { generateInvoiceShareLinkAction } from "@/features/invoices/actions";
 
-export function ShareLinkButton({ quotationId }: { quotationId: string }) {
+export function InvoiceShareLinkButton({ invoiceId }: { invoiceId: string }) {
   const [isPending, startTransition] = useTransition();
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -13,7 +13,7 @@ export function ShareLinkButton({ quotationId }: { quotationId: string }) {
     setError(null);
     setCopied(false);
     startTransition(async () => {
-      const result = await generateQuotationShareLinkAction(quotationId);
+      const result = await generateInvoiceShareLinkAction(invoiceId);
       if (result.error) setError(result.error);
       else setUrl(result.url);
     });

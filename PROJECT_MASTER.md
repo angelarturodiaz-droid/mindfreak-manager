@@ -63,7 +63,7 @@ Ver sección D del documento de arquitectura. Implementada tal cual en F1.
 |---|---|---|---|
 | Alerta de presupuesto (gasto real vs. `projects.budget`) | Proyectos / Rentabilidad / Notificaciones | Media | Se revisa en F9/F15 |
 | Marcar cotizaciones como `EXPIRED` automáticamente cuando pasa `valid_until` sin respuesta (hoy no hay botón ni proceso automático — se usa Rechazar/Cancelar manualmente mientras tanto) | Cotizaciones | Baja | F8 (revisar) o job automático futuro |
-| Módulo de Configuración completo: subir logo de la empresa (`companies.logo_url` ya existe en la BD desde F3, falta la pantalla), nombre de plataforma editable, colores de marca editables. Al agregarlo, mostrar el logo en el menú lateral y en el encabezado del PDF de cotizaciones/facturas (hoy solo texto) | Configuración | Media | Sin número de fase propio en el plan F1-F23 (módulo 22 de la sección 10) — se agenda cuando se aborde |
+| Módulo de Configuración completo con pestañas: **Empresa** (nombre legal, RNC, dirección, teléfono, correo, logo, moneda — faltan columnas `address`/`phone`/`email` en `companies`), **Impuestos** (✅ ya construido como `/settings/tax-rates`, solo falta integrarlo como pestaña), **Facturación** (numeración/prefijos, días de vencimiento por defecto, nota de pie de factura), **Notificaciones** (preferencias, el envío real de correo sigue V2), **Sistema** (nombre de plataforma, colores de marca — ya existen en `companies`, falta pantalla), **Integraciones** (placeholder informativo). Pendiente definir dónde va "Usuarios y Seguridad" (invitar/gestionar usuarios y roles, hoy solo por SQL manual) — el usuario no lo incluyó en la lista de pestañas, queda por confirmar si es una pestaña más, un módulo aparte, o se deja para después | Configuración | Media | Sin número de fase propio en el plan F1-F23 (módulo 22 de la sección 10) — se agenda cuando se aborde |
 | Campana de notificaciones en la barra superior (contador de no leídas + panel desplegable + marcar como leída). La tabla `notifications` ya existe desde F3/F4 con RLS (cada quien ve solo las suyas) — falta la UI y quién dispara cada notificación (ej. factura por vencer, tarea asignada, alerta de presupuesto ya listada arriba, cotización por expirar) | Notificaciones | Media | Sin número de fase propio en el plan F1-F23 (módulo 21 de la sección 10) — se agenda cuando se aborde, probablemente junto a F16 (Dashboard) |
 
 ## Deuda técnica
@@ -102,6 +102,15 @@ Ver sección D del documento de arquitectura. Implementada tal cual en F1.
   interpretaba como "no encontrado". Corregido especificando la FK exacta:
   `quotations!quotation_id(number)`. **Lección para futuros embeds**: cualquier
   par de tablas con más de una relación entre sí necesita este hint explícito.
+
+## Ronda post-F10/F11 (impuestos, PDF y duplicar)
+
+Ver detalle completo en `CHANGELOG.md`. Resumen: tabla `tax_rates` (ITBIS 18%
+predeterminada + Exento 0%, parametrizable desde `/settings/tax-rates`), PDF +
+link para compartir en facturas (antes solo existía en cotizaciones — era un
+gap real de F10), botón "Descargar PDF" en ambos, y "Duplicar
+cotización"/"Duplicar factura" (nuevo documento en BORRADOR con las líneas
+copiadas, el original nunca se toca).
 
 ## Decisiones pendientes
 

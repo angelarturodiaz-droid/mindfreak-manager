@@ -1,5 +1,41 @@
 # CHANGELOG — Mindfreak Manager
 
+## Ronda de correcciones post-F10/F11 (impuestos, PDF y duplicar)
+
+Detectado durante pruebas reales del usuario en local, tras completar F10-F11.
+
+- **Tabla `tax_rates`** (migración `024_tax_rates.sql`): tasas de impuesto
+  nombradas por compañía (%), con una marcada como predeterminada. Sembrada
+  con **ITBIS 18%** (predeterminada) y **Exento 0%** para Mindfreak Events.
+  RLS: lectura amplia dentro de la compañía, escritura bajo `settings.manage`
+  (mismo patrón que `services`/`service_categories`). Se agregó `tax_rate_id`
+  (nullable) a `quotation_items` e `invoice_items` como referencia de
+  auditoría — el monto de impuesto sigue congelándose en la línea, igual que
+  el resto de campos financieros del sistema.
+  - Explícitamente NO es la activación fiscal completa de NCF/ITBIS (DGII,
+    reportes) — eso sigue siendo V2 según F0-Arquitectura, sección R. Es solo
+    una parametrización ligera para que el impuesto se calcule como % en vez
+    de escribirse a mano.
+  - Página `/settings/tax-rates`: listar, crear, marcar predeterminada,
+    activar/desactivar. Enlazada en el nav como "Impuestos" (mientras no
+    exista el módulo de Configuración completo, que sigue en backlog).
+  - Los formularios de línea de cotización/factura ahora tienen un selector
+    de tasa (con la predeterminada preseleccionada) en vez de un campo
+    numérico manual; opción "Manual" conserva el comportamiento anterior.
+- **PDF + link de factura** (gap real: se construyó para cotizaciones en F8
+  pero nunca se extendió a facturas en F10): `lib/pdf/invoice-document.tsx` +
+  `generateInvoiceShareLinkAction`, mismo patrón que cotizaciones (URL
+  firmada de Storage, 7 días de vigencia, registro en `documents`).
+- **Botón "Descargar PDF"** agregado junto al link para compartir, tanto en
+  cotizaciones como en facturas — antes solo se podía copiar el link.
+- **Duplicar cotización / Duplicar factura**: crea un nuevo documento en
+  BORRADOR con el mismo cliente/contacto (o cliente/proyecto en facturas) y
+  todas las líneas copiadas (incluyendo la tasa de impuesto usada). El
+  documento original nunca se modifica — decisión explícita para no romper
+  la integridad de un documento ya emitido/aprobado (F0, sección M), evitando
+  además tener que reescribir todo a mano cuando el cliente pide ajustar
+  cantidades sobre algo ya facturado/cotizado.
+
 ## F11 — Cobros
 
 - **Función Postgres transaccional `register_customer_payment`**
