@@ -109,6 +109,7 @@ export async function convertQuotationToProjectAction(
 
   const parsed = projectHeaderSchema
     .pick({
+      name: true,
       manager_id: true,
       event_date: true,
       event_time: true,
@@ -118,6 +119,7 @@ export async function convertQuotationToProjectAction(
       notes: true,
     })
     .safeParse({
+      name: String(formData.get("name") ?? ""),
       manager_id: String(formData.get("manager_id") ?? ""),
       event_date: String(formData.get("event_date") ?? ""),
       event_time: String(formData.get("event_time") ?? ""),
@@ -168,7 +170,7 @@ export async function convertQuotationToProjectAction(
       quotation_id: quotation.id,
       manager_id: parsed.data.manager_id || null,
       number,
-      name: `Evento — ${quotation.number}`,
+      name: parsed.data.name,
       event_date: parsed.data.event_date || null,
       event_time: parsed.data.event_time || null,
       location_name: parsed.data.location_name || null,

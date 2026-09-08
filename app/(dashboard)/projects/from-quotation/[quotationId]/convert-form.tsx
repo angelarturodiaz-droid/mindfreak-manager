@@ -14,15 +14,29 @@ type Member = { id: string; full_name: string | null; email: string | null };
 export function ConvertQuotationForm({
   quotationId,
   members,
+  suggestedName,
 }: {
   quotationId: string;
   members: Member[];
+  suggestedName: string;
 }) {
   const convertWithId = convertQuotationToProjectAction.bind(null, quotationId);
   const [state, formAction, pending] = useActionState(convertWithId, initialState);
 
   return (
     <form action={formAction} className="max-w-md space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-brand-text">
+          Nombre del proyecto/evento *
+        </label>
+        <input
+          name="name"
+          required
+          defaultValue={suggestedName}
+          className="mt-1 w-full border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
+        />
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-brand-text">
           Responsable (manager)

@@ -67,7 +67,11 @@ export default async function ConvertQuotationPage({
         </p>
       </div>
 
-      <ConvertQuotationForm quotationId={quotationId} members={members} />
+      <ConvertQuotationForm
+        quotationId={quotationId}
+        members={members}
+        suggestedName={`Evento — ${quotation.number}`}
+      />
     </main>
   );
 }
