@@ -1,5 +1,32 @@
 # CHANGELOG — Mindfreak Manager
 
+## F9 — Proyectos/Eventos
+
+- **Módulo de Proyectos/Eventos**, con dos caminos de creación:
+  1. **Conversión de cotización aprobada** (`convertQuotationToProjectAction`):
+     copia cliente/contacto y todas las `quotation_items` → `project_items`
+     sin reintroducir datos, vincula `quotation.project_id` ↔
+     `project.quotation_id`, bloquea convertir una cotización no aprobada o
+     ya convertida.
+  2. **Proyecto directo**, sin cotización previa (la arquitectura ya lo
+     permitía — `quotation_id` nullable).
+- Detalle del proyecto con **pestañas** (sección 12 del prompt maestro):
+  "Resumen" tiene contenido real (datos generales, líneas, presupuesto vs.
+  costo estimado consumido); el resto (Finanzas, Ingresos, Gastos,
+  Proveedores, Facturas, Cobros, Pagos, Bancos, Tareas, Documentos,
+  Actividades, Rentabilidad) son placeholders que indican en qué fase futura
+  se construyen — así no se finge funcionalidad que no existe.
+- Flujo de estados de proyecto (PLANNING/CONFIRMED/IN_PROGRESS/COMPLETED/
+  CANCELLED) con un solo permiso `projects.update` (sin aprobación especial,
+  a diferencia de cotizaciones).
+- Agregado el link "Convertir a Proyecto →" en el detalle de una cotización
+  APPROVED (pieza pendiente de F8).
+- Agregado "Proyectos" a la navegación del dashboard.
+- Probado: build + lint limpios. La conversión cotización→proyecto (lógica
+  multi-tabla más compleja hasta ahora) no se probó end-to-end en este
+  entorno — recomendado que el usuario la pruebe en real antes de avanzar a
+  F10 (Facturación depende de que existan proyectos y sus items).
+
 ## F8 — Cotizaciones
 
 - **Módulo de Cotizaciones**: crear (cliente, fechas, moneda/tasa, condiciones),

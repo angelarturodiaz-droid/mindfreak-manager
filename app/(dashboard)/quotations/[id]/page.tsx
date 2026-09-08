@@ -126,6 +126,22 @@ export default async function QuotationDetailPage({
             </form>
           )}
         <ShareLinkButton quotationId={quotation.id} />
+        {quotation.status === "APPROVED" && !quotation.project_id && (
+          <Link
+            href={`/projects/from-quotation/${quotation.id}`}
+            className="border border-brand-success px-4 py-2 text-sm text-brand-success hover:bg-brand-success hover:text-white"
+          >
+            Convertir a Proyecto →
+          </Link>
+        )}
+        {quotation.project_id && (
+          <Link
+            href={`/projects/${quotation.project_id}`}
+            className="border border-brand-muted/30 px-4 py-2 text-sm text-brand-muted hover:border-brand-accent hover:text-brand-accent"
+          >
+            Ver proyecto →
+          </Link>
+        )}
       </div>
 
       <section>
