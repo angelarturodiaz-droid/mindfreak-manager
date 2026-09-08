@@ -11,9 +11,12 @@ import {
   issueInvoiceAction,
   cancelInvoiceAction,
 } from "@/features/invoices/actions";
+import { listPaymentsForInvoice, listBankAccounts } from "@/features/payments/queries";
+import { PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
 import { hasPermission } from "@/lib/auth/permissions";
 import { NewInvoiceItemForm } from "./new-item-form";
 import { InvoiceHeaderForm } from "./invoice-header-form";
+import { RegisterPaymentForm } from "./register-payment-form";
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Borrador",
@@ -45,12 +48,16 @@ export default async function InvoiceDetailPage({
   }
   if (!invoice) notFound();
 
-  const [items, services, canEdit, projectItems] = await Promise.all([
-    listInvoiceItems(id),
-    listActiveServices(),
-    hasPermission("invoices.create"),
-    invoice.project_id ? listProjectItemsFor(invoice.project_id) : Promise.resolve([]),
-  ]);
+  const [items, services, canEdit, canPay, projectItems, payments, bankAccounts] =
+    await Promise.all([
+      listInvoiceItems(id),
+      listActiveServices(),
+      hasPermission("invoices.create"),
+      hasPermission("payments.create"),
+      invoice.project_id ? listProjectItemsFor(invoice.project_id) : Promise.resolve([]),
+      listPaymentsForInvoice(id),
+      listBankAccounts(),
+    ]);
 
   const clientData = invoice.clients as { name: string } | { name: string }[] | null;
   const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
@@ -215,6 +222,56 @@ export default async function InvoiceDetailPage({
             </span>
           </p>
         </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-sm font-medium text-brand-text">Cobros</h2>
+        <table className="w-full max-w-2xl border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
+              <th className="py-2 font-medium">Fecha</th>
+              <th className="py-2 font-medium">Monto</th>
+              <th className="py-2 font-medium">Método</th>
+              <th className="py-2 font-medium">Referencia</th>
+            </tr>
+          </thead>
+          <tbody>
+            {payments.map((p) => (
+              <tr key={p.id} className="border-b border-brand-muted/10">
+                <td className="py-2">{p.payment_date}</td>
+                <td className="py-2 font-medium">
+                  {formatMoney(p.amount, invoice.currency)}
+                </td>
+                <td className="py-2 text-brand-muted">
+                  {PAYMENT_METHOD_LABELS[p.method] ?? p.method}
+                </td>
+                <td className="py-2 text-brand-muted">{p.reference || "—"}</td>
+              </tr>
+            ))}
+            {payments.length === 0 && (
+              <tr>
+                <td colSpan={4} className="py-4 text-center text-brand-muted">
+                  Sin cobros registrados todavía.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+
+        {["ISSUED", "PARTIALLY_PAID", "OVERDUE"].includes(invoice.status) &&
+          invoice.balance > 0 &&
+          canPay && (
+            <div className="mt-4">
+              <RegisterPaymentForm
+                invoiceId={invoice.id}
+                clientId={invoice.client_id}
+                projectId={invoice.project_id}
+                balance={invoice.balance}
+                currency={invoice.currency}
+                bankAccounts={bankAccounts}
+              />
+            </div>
+          )}
       </section>
     </main>
   );

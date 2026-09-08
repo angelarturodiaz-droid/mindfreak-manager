@@ -1,5 +1,35 @@
 # CHANGELOG — Mindfreak Manager
 
+## F11 — Cobros
+
+- **Función Postgres transaccional `register_customer_payment`**
+  (`SECURITY DEFINER`), tal como exige F0 sección H para operaciones
+  financieras multi-tabla: en una sola transacción (1) crea el cobro, (2)
+  actualiza `paid_amount`/`balance`/`status` de la factura (→
+  `PARTIALLY_PAID` o `PAID`), (3) genera el movimiento bancario si se asoció
+  una cuenta, (4) registra auditoría. Si cualquier paso falla, todo se
+  revierte automáticamente (rollback de Postgres, no lógica manual en JS).
+- Validaciones dentro de la función: rechaza cobrar una factura en estado no
+  facturable, rechaza montos ≤ 0, y **rechaza sobre-pagos** (monto mayor al
+  balance pendiente).
+- **Probado exhaustivamente con datos reales antes de tocar el frontend**:
+  pago parcial (verifiqué `PARTIALLY_PAID`), intento de sobre-pago (rechazado
+  correctamente), pago final con cuenta bancaria (verifiqué `PAID`, el
+  movimiento bancario y los 2 registros de auditoría) — luego limpié todos los
+  datos de prueba.
+- Server Action (`registerPaymentAction`) es solo un wrapper delgado sobre la
+  función RPC — no reimplementa los pasos en JS, para no arriesgar la
+  atomicidad.
+- UI: formulario de cobro embebido en el detalle de la factura (solo visible
+  si el estado y el balance lo permiten, y el usuario tiene `payments.create`),
+  historial de cobros por factura, y página global `/payments` de solo
+  lectura.
+- Nota: no hay cuentas bancarias reales todavía (Bancos es F14) — el selector
+  de cuenta muestra "Sin cuenta" como única opción hasta entonces; el cobro
+  funciona igual, solo no genera movimiento bancario.
+- Detectada (no bloqueante) una recomendación de seguridad de Supabase Auth
+  ajena a este módulo — ver PROJECT_MASTER.md.
+
 ## F10 — Facturación
 
 - **Módulo de Facturación**: crear factura ligada a un cliente directo o a un

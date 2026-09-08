@@ -33,7 +33,8 @@ Auth, Storage, RLS) · Vitest + Playwright · Git/GitHub.
 | F8 — Cotizaciones | ✅ Completada |
 | F9 — Proyectos/Eventos | ✅ Completada |
 | F10 — Facturación | ✅ Completada |
-| F11–F23 | ⬜ Pendiente |
+| F11 — Cobros | ✅ Completada |
+| F12–F23 | ⬜ Pendiente |
 
 ## Decisiones arquitectónicas clave (ver F0 para detalle completo)
 
@@ -108,6 +109,10 @@ Ver sección D del documento de arquitectura. Implementada tal cual en F1.
 - Disparador exacto de conversión LEAD→ACTIVE (automático al aprobar cotización
   vs. manual): se define en F5.
 - Trigger de auditoría (genérico vía trigger de Postgres vs. capa de aplicación): se define en F4.
+- **Recomendación pendiente (no bloqueante)**: activar "Leaked Password
+  Protection" en Supabase Auth (Dashboard → Authentication → Policies) — se
+  detectó en los *advisors* de seguridad en F11, es una configuración del
+  proyecto, no algo que se resuelva por migración.
 
 ## Usuarios
 
