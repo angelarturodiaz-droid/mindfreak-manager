@@ -13,7 +13,6 @@ import {
 } from "@/features/invoices/actions";
 import { listPaymentsForInvoice, listBankAccounts } from "@/features/payments/queries";
 import { PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
-import { listTaxRates } from "@/features/tax-rates/queries";
 import { hasPermission } from "@/lib/auth/permissions";
 import { NewInvoiceItemForm } from "./new-item-form";
 import { InvoiceHeaderForm } from "./invoice-header-form";
@@ -51,11 +50,10 @@ export default async function InvoiceDetailPage({
   }
   if (!invoice) notFound();
 
-  const [items, services, taxRates, canEdit, canPay, projectItems, payments, bankAccounts] =
+  const [items, services, canEdit, canPay, projectItems, payments, bankAccounts] =
     await Promise.all([
       listInvoiceItems(id),
       listActiveServices(),
-      listTaxRates(),
       hasPermission("invoices.create"),
       hasPermission("payments.create"),
       invoice.project_id ? listProjectItemsFor(invoice.project_id) : Promise.resolve([]),
@@ -192,7 +190,6 @@ export default async function InvoiceDetailPage({
               invoiceId={invoice.id}
               services={services}
               projectItems={projectItems}
-              taxRates={taxRates}
             />
           </div>
         )}

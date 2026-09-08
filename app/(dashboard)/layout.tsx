@@ -9,7 +9,6 @@ const NAV_ITEMS = [
   { href: "/projects", label: "Proyectos" },
   { href: "/invoices", label: "Facturas" },
   { href: "/payments", label: "Cobros" },
-  { href: "/settings/tax-rates", label: "Impuestos" },
   // El resto de los módulos se agregan a medida que se implementan (F12 en adelante)
 ];
 

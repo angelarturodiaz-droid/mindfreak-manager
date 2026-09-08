@@ -13,22 +13,16 @@ type Service = {
   default_cost: number;
 };
 
-type TaxRate = { id: string; name: string; rate: number; is_default: boolean };
-
 export function NewItemForm({
   quotationId,
   services,
-  taxRates,
 }: {
   quotationId: string;
   services: Service[];
-  taxRates: TaxRate[];
 }) {
   const addWithId = addQuotationItemAction.bind(null, quotationId);
   const [state, formAction, pending] = useActionState(addWithId, initialState);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const defaultTaxRate = taxRates.find((t) => t.is_default) ?? null;
-  const [taxRateId, setTaxRateId] = useState(defaultTaxRate?.id ?? "");
 
   return (
     <form action={formAction} className="flex flex-wrap items-end gap-2">
@@ -97,29 +91,14 @@ export function NewItemForm({
       </div>
       <div>
         <label className="block text-xs text-brand-muted">Impuesto</label>
-        <select
-          name="tax_rate_id"
-          value={taxRateId}
-          onChange={(e) => setTaxRateId(e.target.value)}
-          className="border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-        >
-          <option value="">Manual (monto fijo)</option>
-          {taxRates.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-        {taxRateId === "" && (
-          <input
-            name="tax"
-            type="number"
-            step="0.01"
-            min="0"
-            defaultValue="0"
-            className="mt-1 w-24 border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-          />
-        )}
+        <input
+          name="tax"
+          type="number"
+          step="0.01"
+          min="0"
+          defaultValue="0"
+          className="w-24 border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
+        />
       </div>
       <div>
         <label className="block text-xs text-brand-muted">Costo unit. est.</label>

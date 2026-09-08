@@ -5,7 +5,6 @@ import {
   listQuotationItems,
   listActiveServices,
 } from "@/features/quotations/queries";
-import { listTaxRates } from "@/features/tax-rates/queries";
 import {
   deleteQuotationItemAction,
   sendQuotationAction,
@@ -50,10 +49,9 @@ export default async function QuotationDetailPage({
   }
   if (!quotation) notFound();
 
-  const [items, services, taxRates, canUpdate, canApprove] = await Promise.all([
+  const [items, services, canUpdate, canApprove] = await Promise.all([
     listQuotationItems(id),
     listActiveServices(),
-    listTaxRates(),
     hasPermission("quotations.update"),
     hasPermission("quotations.approve"),
   ]);
@@ -209,11 +207,7 @@ export default async function QuotationDetailPage({
 
         {isEditable && canUpdate && (
           <div className="mt-4">
-            <NewItemForm
-              quotationId={quotation.id}
-              services={services}
-              taxRates={taxRates}
-            />
+            <NewItemForm quotationId={quotation.id} services={services} />
           </div>
         )}
 
