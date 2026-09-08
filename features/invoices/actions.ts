@@ -175,8 +175,7 @@ export async function addInvoiceItemAction(
     quantity: String(formData.get("quantity") ?? "1"),
     unit_price: String(formData.get("unit_price") ?? "0"),
     discount: String(formData.get("discount") ?? "0"),
-    tax_rate_id: String(formData.get("tax_rate_id") ?? ""),
-    tax: String(formData.get("tax") ?? "0"),
+    tax_percent: String(formData.get("tax_percent") ?? "0"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -184,17 +183,8 @@ export async function addInvoiceItemAction(
 
   const supabase = await createSupabaseClient();
 
-  let tax = parsed.data.tax;
-  if (parsed.data.tax_rate_id) {
-    const { data: taxRate, error: rateError } = await supabase
-      .from("tax_rates")
-      .select("rate")
-      .eq("id", parsed.data.tax_rate_id)
-      .single();
-    if (rateError || !taxRate) return { error: "Tasa de impuesto no encontrada." };
-    const base = parsed.data.quantity * parsed.data.unit_price - parsed.data.discount;
-    tax = Math.round(Math.max(0, base) * (taxRate.rate / 100) * 100) / 100;
-  }
+  const base = parsed.data.quantity * parsed.data.unit_price - parsed.data.discount;
+  const tax = Math.round(Math.max(0, base) * (parsed.data.tax_percent / 100) * 100) / 100;
 
   const subtotal = calculateInvoiceItemSubtotal({ ...parsed.data, tax });
   const { error } = await supabase.from("invoice_items").insert({
@@ -204,7 +194,6 @@ export async function addInvoiceItemAction(
     quantity: parsed.data.quantity,
     unit_price: parsed.data.unit_price,
     discount: parsed.data.discount,
-    tax_rate_id: parsed.data.tax_rate_id || null,
     tax,
     subtotal,
   });
@@ -452,4 +441,44 @@ export async function duplicateInvoiceAction(invoiceId: string): Promise<void> {
 
   revalidatePath("/invoices");
   redirect(`/invoices/${newInvoice.id}`);
+}
+
+/**
+ * Descarta por completo una factura en BORRADOR (elimina el registro). Solo
+ * permitido mientras status='DRAFT' — igual que `discardQuotationAction`.
+ * Una factura DRAFT nunca tiene cobros (customer_payments solo se registran
+ * sobre facturas emitidas), así que no hay riesgo de romper esa relación.
+ */
+export async function discardInvoiceAction(invoiceId: string): Promise<void> {
+  await requirePermission("invoices.create");
+  const supabase = await createSupabaseClient();
+
+  const { data: invoice, error: fetchError } = await supabase
+    .from("invoices")
+    .select("status")
+    .eq("id", invoiceId)
+    .single();
+  if (fetchError || !invoice) throw new Error("Factura no encontrada.");
+  if (invoice.status !== "DRAFT") {
+    throw new Error("Solo se puede descartar una factura en borrador.");
+  }
+
+  const { error } = await supabase
+    .from("invoices")
+    .delete()
+    .eq("id", invoiceId)
+    .eq("status", "DRAFT");
+  if (error) throw new Error(error.message);
+
+  const companyId = await getPrimaryCompanyId();
+  await logAudit({
+    companyId,
+    action: "DELETE",
+    entityType: "invoice",
+    entityId: invoiceId,
+    oldValues: { status: "DRAFT" },
+  });
+
+  revalidatePath("/invoices");
+  redirect("/invoices");
 }

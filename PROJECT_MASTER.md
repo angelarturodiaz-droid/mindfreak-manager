@@ -121,6 +121,19 @@ gap real de F10), botón "Descargar PDF" en ambos, y "Duplicar
 cotización"/"Duplicar factura" (nuevo documento en BORRADOR con las líneas
 copiadas, el original nunca se toca).
 
+Ajuste posterior: el selector de tasas (`tax_rates`) se revirtió a un campo
+manual — pero como **porcentaje** (ej. escribir `18` = ITBIS 18%), calculado
+automáticamente por el servidor sobre (cantidad×precio − descuento). La tabla
+`tax_rates` y `/settings/tax-rates` quedan construidas pero sin usarse en las
+líneas por ahora, listas para cuando se aborde el módulo de Configuración.
+
+También se agregó "Descartar borrador" en cotizaciones y facturas: mientras
+el documento esté en estado BORRADOR (antes de enviarlo/emitirlo), se puede
+eliminar por completo en vez de solo "Cancelar" (que lo deja registrado para
+siempre). Diferencia clave: Cancelar = soft-state, conserva el número y el
+registro para auditoría (documento con algo de actividad real); Descartar =
+borrado físico, solo disponible en BORRADOR (sin actividad real todavía).
+
 ## Decisiones pendientes
 
 - Confirmar HEX exacto del teal de marca si aparece guía oficial (no bloqueante).

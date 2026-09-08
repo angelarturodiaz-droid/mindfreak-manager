@@ -170,8 +170,7 @@ export async function addQuotationItemAction(
     quantity: String(formData.get("quantity") ?? "1"),
     unit_price: String(formData.get("unit_price") ?? "0"),
     discount: String(formData.get("discount") ?? "0"),
-    tax_rate_id: String(formData.get("tax_rate_id") ?? ""),
-    tax: String(formData.get("tax") ?? "0"),
+    tax_percent: String(formData.get("tax_percent") ?? "0"),
     estimated_unit_cost: String(formData.get("estimated_unit_cost") ?? "0"),
   });
   if (!parsed.success) {
@@ -180,17 +179,10 @@ export async function addQuotationItemAction(
 
   const supabase = await createSupabaseClient();
 
-  let tax = parsed.data.tax;
-  if (parsed.data.tax_rate_id) {
-    const { data: taxRate, error: rateError } = await supabase
-      .from("tax_rates")
-      .select("rate")
-      .eq("id", parsed.data.tax_rate_id)
-      .single();
-    if (rateError || !taxRate) return { error: "Tasa de impuesto no encontrada." };
-    const base = parsed.data.quantity * parsed.data.unit_price - parsed.data.discount;
-    tax = Math.round(Math.max(0, base) * (taxRate.rate / 100) * 100) / 100;
-  }
+  // El impuesto se calcula DESPUÉS del subtotal y el descuento, tal como se
+  // pidió: base = (cantidad × precio) − descuento; impuesto = base × %.
+  const base = parsed.data.quantity * parsed.data.unit_price - parsed.data.discount;
+  const tax = Math.round(Math.max(0, base) * (parsed.data.tax_percent / 100) * 100) / 100;
 
   const subtotal = calculateItemSubtotal({ ...parsed.data, tax });
   const { error } = await supabase.from("quotation_items").insert({
@@ -200,7 +192,6 @@ export async function addQuotationItemAction(
     quantity: parsed.data.quantity,
     unit_price: parsed.data.unit_price,
     discount: parsed.data.discount,
-    tax_rate_id: parsed.data.tax_rate_id || null,
     tax,
     estimated_unit_cost: parsed.data.estimated_unit_cost,
     subtotal,
@@ -452,4 +443,46 @@ export async function duplicateQuotationAction(quotationId: string): Promise<voi
 
   revalidatePath("/quotations");
   redirect(`/quotations/${newQuotation.id}`);
+}
+
+/**
+ * Descarta por completo una cotización en BORRADOR (elimina el registro,
+ * no solo cambia su estado). Solo permitido mientras status='DRAFT' — una
+ * vez enviada/aprobada/rechazada, se usa `cancelQuotationAction` en su lugar
+ * (que preserva el registro para auditoría, F0 sección M). Pensado para el
+ * caso de "me equivoqué / cambié de opinión" justo después de crearla, antes
+ * de que tenga actividad real.
+ */
+export async function discardQuotationAction(quotationId: string): Promise<void> {
+  await requirePermission("quotations.update");
+  const supabase = await createSupabaseClient();
+
+  const { data: quotation, error: fetchError } = await supabase
+    .from("quotations")
+    .select("status")
+    .eq("id", quotationId)
+    .single();
+  if (fetchError || !quotation) throw new Error("Cotización no encontrada.");
+  if (quotation.status !== "DRAFT") {
+    throw new Error("Solo se puede descartar una cotización en borrador.");
+  }
+
+  const { error } = await supabase
+    .from("quotations")
+    .delete()
+    .eq("id", quotationId)
+    .eq("status", "DRAFT");
+  if (error) throw new Error(error.message);
+
+  const companyId = await getPrimaryCompanyId();
+  await logAudit({
+    companyId,
+    action: "DELETE",
+    entityType: "quotation",
+    entityId: quotationId,
+    oldValues: { status: "DRAFT" },
+  });
+
+  revalidatePath("/quotations");
+  redirect("/quotations");
 }

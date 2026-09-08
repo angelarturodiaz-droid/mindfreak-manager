@@ -1,5 +1,23 @@
 # CHANGELOG — Mindfreak Manager
 
+## Ajustes rápidos: impuesto como % y descartar borradores
+
+- **Impuesto vuelve a ser manual, pero ahora como porcentaje**: en vez de
+  escribir el monto de impuesto en dólares/pesos, se escribe el % (por
+  defecto 18, ej. ITBIS). El servidor calcula
+  `impuesto = (cantidad×precio − descuento) × %` antes de sumar el total —
+  ya no hay que calcularlo a mano. Esto reemplaza el selector de tasas
+  parametrizadas (`tax_rates`) que se había agregado y luego revertido; la
+  tabla y `/settings/tax-rates` quedan listas para cuando se construya el
+  módulo de Configuración completo.
+- **"Descartar borrador"** en cotizaciones y facturas: nuevo botón, visible
+  solo mientras el documento está en `DRAFT`, que **elimina el registro por
+  completo** (no solo cambia su estado como "Cancelar"). Pensado para
+  cuando se crea una cotización/factura por error o se cambia de opinión
+  justo después, antes de que tenga actividad real (envío, emisión, cobros).
+  Una factura/cotización con actividad real sigue usando "Cancelar" (estado,
+  preserva el registro para auditoría — F0 sección M).
+
 ## Ronda de correcciones post-F10/F11 (impuestos, PDF y duplicar)
 
 Detectado durante pruebas reales del usuario en local, tras completar F10-F11.

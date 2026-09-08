@@ -28,10 +28,9 @@ export const invoiceItemSchema = z.object({
   quantity: z.coerce.number().positive("Debe ser mayor a 0"),
   unit_price: z.coerce.number().min(0),
   discount: z.coerce.number().min(0).default(0),
-  // Igual que en cotizaciones: si hay tax_rate_id, el impuesto se calcula en
-  // el servidor y este campo manual se ignora.
-  tax_rate_id: z.string().uuid().optional().or(z.literal("")),
-  tax: z.coerce.number().min(0).default(0),
+  // Igual que en cotizaciones: el usuario escribe el % (ej. 18 = ITBIS 18%)
+  // y el monto se calcula en el servidor sobre (cantidad×precio − descuento).
+  tax_percent: z.coerce.number().min(0).default(0),
 });
 
 export type InvoiceItemInput = z.infer<typeof invoiceItemSchema>;

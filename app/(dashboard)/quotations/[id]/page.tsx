@@ -16,6 +16,7 @@ import { hasPermission } from "@/lib/auth/permissions";
 import { NewItemForm } from "./new-item-form";
 import { ShareLinkButton } from "./share-link-button";
 import { DuplicateQuotationButton } from "./duplicate-quotation-button";
+import { DiscardQuotationButton } from "./discard-quotation-button";
 
 function formatMoney(amount: number, currency: string) {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency }).format(
@@ -126,6 +127,9 @@ export default async function QuotationDetailPage({
               </button>
             </form>
           )}
+        {quotation.status === "DRAFT" && canUpdate && (
+          <DiscardQuotationButton quotationId={quotation.id} />
+        )}
         <ShareLinkButton quotationId={quotation.id} />
         {canUpdate && <DuplicateQuotationButton quotationId={quotation.id} />}
         {quotation.status === "APPROVED" && !quotation.project_id && (

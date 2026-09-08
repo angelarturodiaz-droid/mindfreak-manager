@@ -29,11 +29,10 @@ export const quotationItemSchema = z.object({
   quantity: z.coerce.number().positive("Debe ser mayor a 0"),
   unit_price: z.coerce.number().min(0, "Debe ser un número positivo"),
   discount: z.coerce.number().min(0).default(0),
-  // Si se selecciona una tasa (tax_rate_id), el impuesto se calcula en el
-  // servidor a partir de esa tasa y este campo se ignora. Si no, se usa el
-  // monto manual aquí (compatibilidad con líneas antiguas / casos "Exento").
-  tax_rate_id: z.string().uuid().optional().or(z.literal("")),
-  tax: z.coerce.number().min(0).default(0),
+  // El usuario escribe el impuesto como PORCENTAJE (ej. 18 = ITBIS 18%). El
+  // monto en dólares/pesos se calcula en el servidor sobre (cantidad×precio
+  // − descuento), y ESE monto calculado es lo que se guarda en `tax`.
+  tax_percent: z.coerce.number().min(0).default(0),
   estimated_unit_cost: z.coerce.number().min(0).default(0),
 });
 

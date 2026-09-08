@@ -90,14 +90,14 @@ export function NewItemForm({
         />
       </div>
       <div>
-        <label className="block text-xs text-brand-muted">Impuesto</label>
+        <label className="block text-xs text-brand-muted">Impuesto (%)</label>
         <input
-          name="tax"
+          name="tax_percent"
           type="number"
           step="0.01"
           min="0"
-          defaultValue="0"
-          className="w-24 border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
+          defaultValue="18"
+          className="w-20 border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
         />
       </div>
       <div>

@@ -19,6 +19,7 @@ import { InvoiceHeaderForm } from "./invoice-header-form";
 import { RegisterPaymentForm } from "./register-payment-form";
 import { InvoiceShareLinkButton } from "./share-link-button";
 import { DuplicateInvoiceButton } from "./duplicate-invoice-button";
+import { DiscardInvoiceButton } from "./discard-invoice-button";
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Borrador",
@@ -116,6 +117,9 @@ export default async function InvoiceDetailPage({
               </button>
             </form>
           )}
+        {invoice.status === "DRAFT" && canEdit && (
+          <DiscardInvoiceButton invoiceId={invoice.id} />
+        )}
         <InvoiceShareLinkButton invoiceId={invoice.id} />
         {canEdit && <DuplicateInvoiceButton invoiceId={invoice.id} />}
       </div>
