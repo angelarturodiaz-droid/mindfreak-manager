@@ -63,6 +63,7 @@ Ver sección D del documento de arquitectura. Implementada tal cual en F1.
 | Alerta de presupuesto (gasto real vs. `projects.budget`) | Proyectos / Rentabilidad / Notificaciones | Media | Se revisa en F9/F15 |
 | Marcar cotizaciones como `EXPIRED` automáticamente cuando pasa `valid_until` sin respuesta (hoy no hay botón ni proceso automático — se usa Rechazar/Cancelar manualmente mientras tanto) | Cotizaciones | Baja | F8 (revisar) o job automático futuro |
 | Módulo de Configuración completo: subir logo de la empresa (`companies.logo_url` ya existe en la BD desde F3, falta la pantalla), nombre de plataforma editable, colores de marca editables. Al agregarlo, mostrar el logo en el menú lateral y en el encabezado del PDF de cotizaciones/facturas (hoy solo texto) | Configuración | Media | Sin número de fase propio en el plan F1-F23 (módulo 22 de la sección 10) — se agenda cuando se aborde |
+| Campana de notificaciones en la barra superior (contador de no leídas + panel desplegable + marcar como leída). La tabla `notifications` ya existe desde F3/F4 con RLS (cada quien ve solo las suyas) — falta la UI y quién dispara cada notificación (ej. factura por vencer, tarea asignada, alerta de presupuesto ya listada arriba, cotización por expirar) | Notificaciones | Media | Sin número de fase propio en el plan F1-F23 (módulo 21 de la sección 10) — se agenda cuando se aborde, probablemente junto a F16 (Dashboard) |
 
 ## Deuda técnica
 
