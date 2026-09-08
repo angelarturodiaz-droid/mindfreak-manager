@@ -1,5 +1,25 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: "Descartar borrador" no borraba nada (RLS)
+
+- **Bug real detectado por el usuario**: al descartar una cotización/factura
+  en borrador, el mensaje de confirmación aparecía y no daba error, pero el
+  registro seguía apareciendo en la lista — no se borraba.
+- **Causa**: `quotations` e `invoices` tienen RLS habilitado con políticas de
+  `select`/`insert`/`update`, pero **nunca se agregó una política de
+  `delete`** — Postgres deniega por defecto sin policy, así que el
+  `.delete()` se ejecutaba "exitosamente" pero afectaba 0 filas (no genera
+  error, solo no borra nada).
+- **Corrección** (migración `025_delete_draft_documents.sql`): se agregan
+  políticas de `delete` para ambas tablas, restringidas a `status='DRAFT'`
+  (RLS como segunda línea de defensa real, igual que ya valida la Server
+  Action — F0-Arquitectura, sección L). Verificado con una simulación real
+  del rol `authenticated` vía SQL: el delete ahora sí afecta la fila.
+- Además, `discardQuotationAction`/`discardInvoiceAction` ahora verifican
+  que el delete haya afectado al menos una fila (`.select('id')` sobre el
+  delete) y lanzan un error explícito si no — para que un problema similar
+  en el futuro se note de inmediato en vez de fallar en silencio.
+
 ## Ajustes rápidos: impuesto como % y descartar borradores
 
 - **Impuesto vuelve a ser manual, pero ahora como porcentaje**: en vez de

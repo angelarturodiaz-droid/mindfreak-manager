@@ -467,12 +467,18 @@ export async function discardQuotationAction(quotationId: string): Promise<void>
     throw new Error("Solo se puede descartar una cotización en borrador.");
   }
 
-  const { error } = await supabase
+  const { data: deleted, error } = await supabase
     .from("quotations")
     .delete()
     .eq("id", quotationId)
-    .eq("status", "DRAFT");
+    .eq("status", "DRAFT")
+    .select("id");
   if (error) throw new Error(error.message);
+  if (!deleted || deleted.length === 0) {
+    throw new Error(
+      "No se pudo descartar la cotización (no se encontró o ya no está en borrador).",
+    );
+  }
 
   const companyId = await getPrimaryCompanyId();
   await logAudit({

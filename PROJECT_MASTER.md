@@ -82,6 +82,15 @@ Ver sección D del documento de arquitectura. Implementada tal cual en F1.
 
 ## Incidentes resueltos
 
+- **"Descartar borrador" no borraba nada** (detectado por el usuario al
+  probar): faltaba la política RLS de `delete` en `quotations`/`invoices` —
+  sin ella, Postgres deniega el borrado por defecto sin lanzar error, así
+  que el `.delete()` "funcionaba" pero afectaba 0 filas. Corregido con la
+  migración `025_delete_draft_documents.sql` (política de delete restringida
+  a `status='DRAFT'`), verificado con simulación real de RLS vía SQL. Las
+  Server Actions ahora también verifican que el delete afectó una fila y
+  lanzan error explícito si no, para detectar problemas similares de inmediato.
+
 - **Botones nuevos (PDF/Duplicar) no aparecían tras `git pull` + reinicio del
   servidor** (detectado al probar la ronda de correcciones post-F10/F11): no
   era un bug de código — el build compilaba limpio y el componente no tenía

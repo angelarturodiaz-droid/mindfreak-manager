@@ -463,12 +463,18 @@ export async function discardInvoiceAction(invoiceId: string): Promise<void> {
     throw new Error("Solo se puede descartar una factura en borrador.");
   }
 
-  const { error } = await supabase
+  const { data: deleted, error } = await supabase
     .from("invoices")
     .delete()
     .eq("id", invoiceId)
-    .eq("status", "DRAFT");
+    .eq("status", "DRAFT")
+    .select("id");
   if (error) throw new Error(error.message);
+  if (!deleted || deleted.length === 0) {
+    throw new Error(
+      "No se pudo descartar la factura (no se encontró o ya no está en borrador).",
+    );
+  }
 
   const companyId = await getPrimaryCompanyId();
   await logAudit({
