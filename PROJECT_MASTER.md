@@ -60,6 +60,7 @@ Ver sección D del documento de arquitectura. Implementada tal cual en F1.
 | Idea | Módulo | Prioridad | Alcance |
 |---|---|---|---|
 | Alerta de presupuesto (gasto real vs. `projects.budget`) | Proyectos / Rentabilidad / Notificaciones | Media | Se revisa en F9/F15 |
+| Marcar cotizaciones como `EXPIRED` automáticamente cuando pasa `valid_until` sin respuesta (hoy no hay botón ni proceso automático — se usa Rechazar/Cancelar manualmente mientras tanto) | Cotizaciones | Baja | F8 (revisar) o job automático futuro |
 
 ## Deuda técnica
 
@@ -88,6 +89,15 @@ Ver sección D del documento de arquitectura. Implementada tal cual en F1.
   **Para usuarios futuros**: usar el flujo normal de invitación/registro de
   Supabase Auth evita este problema — este fue un caso único de sembrar el primer
   usuario manualmente sin tener acceso a la API de administración.
+- **404 al entrar al detalle de un proyecto** (F9, detectado al probar en local):
+  `projects` y `quotations` tienen dos FKs cruzadas entre sí
+  (`projects.quotation_id → quotations.id` y `quotations.project_id →
+  projects.id`, por el diseño de F3 para permitir la conversión sin dato
+  circular). PostgREST no podía resolver la ambigüedad al pedir el embed
+  `quotations(number)` desde `projects` y fallaba con error, que el código
+  interpretaba como "no encontrado". Corregido especificando la FK exacta:
+  `quotations!quotation_id(number)`. **Lección para futuros embeds**: cualquier
+  par de tablas con más de una relación entre sí necesita este hint explícito.
 
 ## Decisiones pendientes
 
