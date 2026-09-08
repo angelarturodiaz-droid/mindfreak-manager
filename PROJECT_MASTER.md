@@ -82,6 +82,15 @@ Ver sección D del documento de arquitectura. Implementada tal cual en F1.
 
 ## Incidentes resueltos
 
+- **Botones nuevos (PDF/Duplicar) no aparecían tras `git pull` + reinicio del
+  servidor** (detectado al probar la ronda de correcciones post-F10/F11): no
+  era un bug de código — el build compilaba limpio y el componente no tenía
+  ninguna condición que lo ocultara. Se resolvió con `rm -rf .next` +
+  reiniciar `npm run dev` y refresco forzado del navegador (caché de
+  Turbopack/navegador). **Para futuros casos similares**: si un cambio ya
+  pusheado y compilado no aparece en local tras `git pull`, probar primero
+  `rm -rf .next` antes de asumir un bug real.
+
 - **Login fallaba con "Database error querying schema"** (F4, detectado al probar
   en local): el usuario ADMIN se creó insertando directo en `auth.users` por SQL
   (no había API de administración de usuarios disponible), y quedaron varias
