@@ -1,5 +1,29 @@
 # CHANGELOG — Mindfreak Manager
 
+## F10 — Facturación
+
+- **Módulo de Facturación**: crear factura ligada a un cliente directo o a un
+  proyecto (si se elige proyecto, cliente y cotización de origen se derivan
+  automáticamente — no hace falta elegirlos de nuevo). Líneas agregadas una
+  por una (a diferencia de la conversión cotización→proyecto), permitiendo
+  **facturación parcial/por cuotas** — común en eventos (depósito + factura
+  final) — con opción de copiar valores desde una línea del proyecto como
+  punto de partida editable.
+- Campos NCF/`ncf_type` presentes y editables (sección R de F0: preparados,
+  no activos/validados en producción todavía).
+- **Flujo de estados en F10**: DRAFT → ISSUED (exige al menos una línea con
+  total > 0) → CANCELLED. `PARTIALLY_PAID`/`PAID`/`OVERDUE` quedan para
+  **F11 (Cobros)**, que los actualizará automáticamente al registrar pagos —
+  no son botones manuales, para no romper la consistencia `paid_amount`/`balance`.
+- `balance` se recalcula junto con los totales cada vez que cambian las líneas
+  (`total - paid_amount`), dejando la estructura lista para que F11 solo tenga
+  que sumar `paid_amount` sin duplicar lógica de cálculo.
+- Verifiqué que no hay ambigüedad de relaciones PostgREST entre `invoices` y
+  `projects` (a diferencia del caso resuelto en F9) — solo hay una FK en un
+  sentido, el embed `projects(number, name)` no necesita desambiguarse.
+- Agregado "Facturas" a la navegación del dashboard.
+- Probado: build + lint limpios.
+
 ## F9 — Proyectos/Eventos
 
 - **Módulo de Proyectos/Eventos**, con dos caminos de creación:

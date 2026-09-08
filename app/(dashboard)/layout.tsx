@@ -7,7 +7,8 @@ const NAV_ITEMS = [
   { href: "/services", label: "Servicios" },
   { href: "/quotations", label: "Cotizaciones" },
   { href: "/projects", label: "Proyectos" },
-  // El resto de los módulos se agregan a medida que se implementan (F10 en adelante)
+  { href: "/invoices", label: "Facturas" },
+  // El resto de los módulos se agregan a medida que se implementan (F11 en adelante)
 ];
 
 export default function DashboardLayout({

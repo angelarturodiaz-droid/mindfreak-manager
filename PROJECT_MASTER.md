@@ -32,7 +32,8 @@ Auth, Storage, RLS) · Vitest + Playwright · Git/GitHub.
 | F7 — Servicios | ✅ Completada |
 | F8 — Cotizaciones | ✅ Completada |
 | F9 — Proyectos/Eventos | ✅ Completada |
-| F10–F23 | ⬜ Pendiente |
+| F10 — Facturación | ✅ Completada |
+| F11–F23 | ⬜ Pendiente |
 
 ## Decisiones arquitectónicas clave (ver F0 para detalle completo)
 
