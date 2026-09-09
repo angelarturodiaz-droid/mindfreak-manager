@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   { href: "/quotations", label: "Cotizaciones" },
   { href: "/projects", label: "Proyectos" },
   { href: "/invoices", label: "Facturas" },
-  { href: "/payments", label: "Cobros" },
+  { href: "/payments", label: "Cobros y pagos" },
   { href: "/expenses", label: "Gastos" },
   // El resto de los módulos se agregan a medida que se implementan (F13 en adelante)
 ];
