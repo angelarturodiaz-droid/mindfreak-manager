@@ -1,5 +1,23 @@
 # CHANGELOG — Mindfreak Manager
 
+## F13 — Pagos a proveedores
+
+- Función Postgres transaccional `register_supplier_payment` (mismo patrón
+  que `register_customer_payment` de F11): crea el pago, actualiza
+  `paid_amount`/`balance`/`status` del gasto (PENDING → PARTIALLY_PAID/PAID),
+  genera movimiento bancario si se asoció una cuenta, y registra auditoría —
+  todo en una sola transacción (rollback automático si algo falla).
+- UI en el detalle del gasto: formulario "Registrar pago" (visible mientras
+  el gasto esté PENDING/PARTIALLY_PAID) + historial de pagos. Si el gasto no
+  tiene proveedor asignado, se muestra un aviso en vez del formulario (la
+  tabla `supplier_payments` exige `supplier_id`, a diferencia de `expenses`
+  donde es opcional).
+- `/payments` ahora muestra dos secciones: Cobros (ya existía) y Pagos a
+  proveedores (nuevo).
+- Verificado extremo a extremo con datos de prueba reales: pago parcial
+  correcto (PARTIALLY_PAID, balance recalculado), pago que excede el balance
+  correctamente rechazado por la función. Datos de prueba limpiados después.
+
 ## F12 — Gastos
 
 - Módulo completo sobre las tablas `expenses`/`expense_categories` (ya

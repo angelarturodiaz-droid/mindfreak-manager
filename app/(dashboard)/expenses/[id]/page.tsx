@@ -7,8 +7,11 @@ import {
   listProjectsForSelect,
 } from "@/features/expenses/queries";
 import { cancelExpenseAction } from "@/features/expenses/actions";
+import { listPaymentsForExpense, listBankAccounts } from "@/features/payments/queries";
+import { PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
 import { hasPermission } from "@/lib/auth/permissions";
 import { ExpenseEditForm } from "./expense-edit-form";
+import { RegisterSupplierPaymentForm } from "./register-supplier-payment-form";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente",
@@ -38,12 +41,16 @@ export default async function ExpenseDetailPage({
   }
   if (!expense) notFound();
 
-  const [categories, suppliers, projects, canEdit] = await Promise.all([
-    listExpenseCategories(),
-    listActiveSuppliers(),
-    listProjectsForSelect(),
-    hasPermission("expenses.create"),
-  ]);
+  const [categories, suppliers, projects, canEdit, canPay, payments, bankAccounts] =
+    await Promise.all([
+      listExpenseCategories(),
+      listActiveSuppliers(),
+      listProjectsForSelect(),
+      hasPermission("expenses.create"),
+      hasPermission("payments.create"),
+      listPaymentsForExpense(id),
+      listBankAccounts(),
+    ]);
 
   const category = expense.expense_categories as { name: string } | null;
   const supplier = expense.suppliers as { name: string } | null;
@@ -118,6 +125,57 @@ export default async function ExpenseDetailPage({
             Cancelar gasto
           </button>
         </form>
+      )}
+
+      {["PENDING", "PARTIALLY_PAID"].includes(expense.status) && canPay && (
+        <div>
+          <h2 className="mb-3 text-sm font-medium text-brand-text">Registrar pago</h2>
+          {expense.supplier_id ? (
+            <RegisterSupplierPaymentForm
+              expenseId={expense.id}
+              supplierId={expense.supplier_id}
+              projectId={expense.project_id}
+              balance={expense.balance}
+              currency={expense.currency}
+              bankAccounts={bankAccounts}
+            />
+          ) : (
+            <p className="text-sm text-brand-muted">
+              Este gasto no tiene proveedor asignado — agrégalo editando el
+              gasto para poder registrarle un pago.
+            </p>
+          )}
+        </div>
+      )}
+
+      {payments.length > 0 && (
+        <div>
+          <h2 className="mb-2 text-sm font-medium text-brand-text">
+            Historial de pagos
+          </h2>
+          <table className="w-full max-w-2xl border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
+                <th className="py-2 font-medium">Fecha</th>
+                <th className="py-2 font-medium">Monto</th>
+                <th className="py-2 font-medium">Método</th>
+                <th className="py-2 font-medium">Referencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              {payments.map((p) => (
+                <tr key={p.id} className="border-b border-brand-muted/10">
+                  <td className="py-2">{p.payment_date}</td>
+                  <td className="py-2">{formatMoney(p.amount, expense.currency)}</td>
+                  <td className="py-2 text-brand-muted">
+                    {PAYMENT_METHOD_LABELS[p.method] ?? p.method}
+                  </td>
+                  <td className="py-2 text-brand-muted">{p.reference ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {isEditable ? (

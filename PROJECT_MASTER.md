@@ -35,7 +35,8 @@ Auth, Storage, RLS) · Vitest + Playwright · Git/GitHub.
 | F10 — Facturación | ✅ Completada |
 | F11 — Cobros | ✅ Completada |
 | F12 — Gastos | ✅ Completada |
-| F13–F23 | ⬜ Pendiente |
+| F13 — Pagos a proveedores | ✅ Completada |
+| F14–F23 | ⬜ Pendiente |
 
 ## Decisiones arquitectónicas clave (ver F0 para detalle completo)
 

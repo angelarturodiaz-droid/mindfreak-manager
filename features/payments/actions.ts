@@ -6,7 +6,6 @@ import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissi
 import { registerPaymentSchema } from "./schema";
 
 export type ActionState = { error: string | null };
-
 /**
  * Registrar un cobro. Toda la lógica multi-tabla (factura, banco, auditoría)
  * vive en la función Postgres `register_customer_payment` (transaccional,
@@ -75,6 +74,76 @@ export async function registerPaymentAction(
 
   revalidatePath(`/invoices/${invoiceId}`);
   revalidatePath("/invoices");
+  revalidatePath("/payments");
+  return { error: null };
+}
+
+/**
+ * Registrar un pago a proveedor. Igual que `registerPaymentAction` (cobros):
+ * toda la lógica multi-tabla vive en la función Postgres
+ * `register_supplier_payment` (transaccional, F0-Arquitectura sección H).
+ */
+export async function registerSupplierPaymentAction(
+  expenseId: string,
+  supplierId: string | null,
+  projectId: string | null,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requirePermission("payments.create");
+
+  const parsed = registerPaymentSchema.safeParse({
+    bank_account_id: String(formData.get("bank_account_id") ?? ""),
+    payment_date: String(formData.get("payment_date") ?? ""),
+    amount: String(formData.get("amount") ?? "0"),
+    method: String(formData.get("method") ?? "TRANSFER"),
+    reference: String(formData.get("reference") ?? ""),
+    notes: String(formData.get("notes") ?? ""),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+  }
+
+  const companyIds = await getCurrentUserCompanyIds();
+  if (companyIds.length === 0) {
+    return { error: "Tu usuario no está asignado a ninguna compañía." };
+  }
+
+  const supabase = await createSupabaseClient();
+  const { data: expense, error: expError } = await supabase
+    .from("expenses")
+    .select("currency, exchange_rate")
+    .eq("id", expenseId)
+    .single();
+  if (expError || !expense) return { error: "Gasto no encontrado." };
+
+  const { error } = await supabase.rpc("register_supplier_payment", {
+    p_company_id: companyIds[0],
+    p_supplier_id: supplierId,
+    p_expense_id: expenseId,
+    p_project_id: projectId,
+    p_bank_account_id: parsed.data.bank_account_id || null,
+    p_payment_date: parsed.data.payment_date,
+    p_amount: parsed.data.amount,
+    p_method: parsed.data.method,
+    p_reference: parsed.data.reference || null,
+    p_currency: expense.currency,
+    p_exchange_rate: expense.exchange_rate,
+    p_notes: parsed.data.notes || null,
+  });
+
+  if (error) {
+    if (error.message.includes("amount_exceeds_balance")) {
+      return { error: "El monto supera el balance pendiente del gasto." };
+    }
+    if (error.message.includes("invalid_status")) {
+      return { error: "Este gasto no admite pagos en su estado actual." };
+    }
+    return { error: error.message };
+  }
+
+  revalidatePath(`/expenses/${expenseId}`);
+  revalidatePath("/expenses");
   revalidatePath("/payments");
   return { error: null };
 }
