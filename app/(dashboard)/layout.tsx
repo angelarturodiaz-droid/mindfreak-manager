@@ -4,7 +4,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/clients", label: "Clientes" },
   { href: "/suppliers", label: "Proveedores" },
-  { href: "/services", label: "Servicios" },
+  { href: "/services", label: "Productos y Servicios" },
   { href: "/quotations", label: "Cotizaciones" },
   { href: "/projects", label: "Proyectos" },
   { href: "/invoices", label: "Facturas" },

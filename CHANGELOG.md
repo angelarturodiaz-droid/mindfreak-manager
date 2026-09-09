@@ -1,5 +1,25 @@
 # CHANGELOG — Mindfreak Manager
 
+## Ampliación: Servicios → Productos y Servicios
+
+- El catálogo (tabla `services`, sin renombrar — sigue siendo la misma
+  referenciada por `quotation_items`/`project_items`/`invoice_items`) ahora
+  soporta bienes físicos además de servicios, ya que Mindfreak Events
+  también vende productos (extintores, libretas, etc.), no solo servicios.
+- Columnas nuevas (aditivas, migración `028_products_and_services.sql`):
+  `type` (`PRODUCTO`/`SERVICIO`, default `SERVICIO` — no rompe datos
+  existentes), `description`, `default_tax_percent`.
+- UI renombrada a "Productos y Servicios" (menú lateral, título de página,
+  breadcrumbs) — solo etiqueta visible, la ruta interna sigue siendo
+  `/services`.
+- Al elegir un producto/servicio del catálogo en una línea de cotización o
+  factura, el % de impuesto ahora se autocompleta desde
+  `default_tax_percent` (igual que ya pasaba con precio/costo). En facturas
+  además se agregó el mismo auto-relleno de precio que ya tenía cotizaciones
+  (antes solo se autocompletaba al copiar de un proyecto).
+- Explícitamente NO incluye control de inventario/existencias — eso sigue
+  clasificado como V3 en la arquitectura original.
+
 ## F14 — Bancos
 
 - CRUD de cuentas bancarias (`bank_accounts`, ya existía desde F3/F4).

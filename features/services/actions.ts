@@ -55,9 +55,12 @@ export async function createServiceAction(
   const parsed = serviceSchema.safeParse({
     name: String(formData.get("name") ?? ""),
     category_id: rawCategoryId,
+    type: String(formData.get("type") ?? "SERVICIO"),
+    description: String(formData.get("description") ?? ""),
     unit: String(formData.get("unit") ?? ""),
     default_price: String(formData.get("default_price") ?? "0"),
     default_cost: String(formData.get("default_cost") ?? "0"),
+    default_tax_percent: String(formData.get("default_tax_percent") ?? "0"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -71,9 +74,12 @@ export async function createServiceAction(
       company_id: companyId,
       category_id: parsed.data.category_id || null,
       name: parsed.data.name,
+      type: parsed.data.type,
+      description: parsed.data.description || null,
       unit: parsed.data.unit || null,
       default_price: parsed.data.default_price,
       default_cost: parsed.data.default_cost,
+      default_tax_percent: parsed.data.default_tax_percent,
     })
     .select("id")
     .single();
@@ -103,9 +109,12 @@ export async function updateServiceAction(
   const parsed = serviceSchema.safeParse({
     name: String(formData.get("name") ?? ""),
     category_id: rawCategoryId,
+    type: String(formData.get("type") ?? "SERVICIO"),
+    description: String(formData.get("description") ?? ""),
     unit: String(formData.get("unit") ?? ""),
     default_price: String(formData.get("default_price") ?? "0"),
     default_cost: String(formData.get("default_cost") ?? "0"),
+    default_tax_percent: String(formData.get("default_tax_percent") ?? "0"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -114,7 +123,7 @@ export async function updateServiceAction(
   const supabase = await createSupabaseClient();
   const { data: before } = await supabase
     .from("services")
-    .select("name, category_id, unit, default_price, default_cost")
+    .select("name, category_id, type, description, unit, default_price, default_cost, default_tax_percent")
     .eq("id", serviceId)
     .single();
 
@@ -123,9 +132,12 @@ export async function updateServiceAction(
     .update({
       name: parsed.data.name,
       category_id: parsed.data.category_id || null,
+      type: parsed.data.type,
+      description: parsed.data.description || null,
       unit: parsed.data.unit || null,
       default_price: parsed.data.default_price,
       default_cost: parsed.data.default_cost,
+      default_tax_percent: parsed.data.default_tax_percent,
     })
     .eq("id", serviceId);
 

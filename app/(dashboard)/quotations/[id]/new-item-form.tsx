@@ -11,6 +11,7 @@ type Service = {
   unit: string | null;
   default_price: number;
   default_cost: number;
+  default_tax_percent: number;
 };
 
 export function NewItemForm({
@@ -96,7 +97,8 @@ export function NewItemForm({
           type="number"
           step="0.01"
           min="0"
-          defaultValue="18"
+          defaultValue={selectedService?.default_tax_percent ?? 18}
+          key={`tax-${selectedService?.id ?? "custom"}`}
           className="w-20 border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
         />
       </div>

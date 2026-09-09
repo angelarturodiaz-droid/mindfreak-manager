@@ -25,7 +25,7 @@ export default async function ServiceDetailPage({
     <main className="flex flex-1 flex-col gap-8 p-8">
       <div>
         <Link href="/services" className="text-sm text-brand-muted hover:text-brand-text">
-          ← Servicios
+          ← Productos y Servicios
         </Link>
         <div className="mt-2 flex items-center gap-3">
           <h1 className="text-xl font-semibold text-brand-primary">
@@ -43,7 +43,7 @@ export default async function ServiceDetailPage({
             type="submit"
             className="w-fit border border-brand-muted/30 px-4 py-2 text-sm text-brand-muted hover:border-brand-danger hover:text-brand-danger"
           >
-            Desactivar servicio
+            Desactivar
           </button>
         </form>
       )}

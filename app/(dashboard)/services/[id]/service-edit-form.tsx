@@ -2,8 +2,14 @@
 
 import { useActionState } from "react";
 import { updateServiceAction, type ActionState } from "@/features/services/actions";
+import { SERVICE_TYPES } from "@/features/services/schema";
 
 const initialState: ActionState = { error: null };
+
+const TYPE_LABELS: Record<string, string> = {
+  PRODUCTO: "Producto",
+  SERVICIO: "Servicio",
+};
 
 export function ServiceEditForm({
   service,
@@ -13,9 +19,12 @@ export function ServiceEditForm({
     id: string;
     name: string;
     category_id: string | null;
+    type: string;
+    description: string | null;
     unit: string | null;
     default_price: number;
     default_cost: number;
+    default_tax_percent: number;
   };
   categories: { id: string; name: string }[];
 }) {
@@ -51,6 +60,31 @@ export function ServiceEditForm({
         </select>
       </div>
       <div>
+        <label className="block text-sm font-medium text-brand-text">Tipo</label>
+        <select
+          name="type"
+          defaultValue={service.type}
+          className="mt-1 w-full border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
+        >
+          {SERVICE_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {TYPE_LABELS[t]}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-brand-text">
+          Descripción
+        </label>
+        <textarea
+          name="description"
+          defaultValue={service.description ?? ""}
+          rows={3}
+          className="mt-1 w-full border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
+        />
+      </div>
+      <div>
         <label className="block text-sm font-medium text-brand-text">
           Unidad
         </label>
@@ -60,30 +94,45 @@ export function ServiceEditForm({
           className="mt-1 w-full border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
         />
       </div>
-      <div>
-        <label className="block text-sm font-medium text-brand-text">
-          Precio por defecto
-        </label>
-        <input
-          name="default_price"
-          type="number"
-          step="0.01"
-          min="0"
-          defaultValue={service.default_price}
-          className="mt-1 w-full border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-        />
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-brand-text">
+            Costo
+          </label>
+          <input
+            name="default_cost"
+            type="number"
+            step="0.01"
+            min="0"
+            defaultValue={service.default_cost}
+            className="mt-1 w-full border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-brand-text">
+            Precio de venta
+          </label>
+          <input
+            name="default_price"
+            type="number"
+            step="0.01"
+            min="0"
+            defaultValue={service.default_price}
+            className="mt-1 w-full border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
+          />
+        </div>
       </div>
       <div>
         <label className="block text-sm font-medium text-brand-text">
-          Costo por defecto
+          Impuesto por defecto (%)
         </label>
         <input
-          name="default_cost"
+          name="default_tax_percent"
           type="number"
           step="0.01"
           min="0"
-          defaultValue={service.default_cost}
-          className="mt-1 w-full border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
+          defaultValue={service.default_tax_percent}
+          className="mt-1 w-32 border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
         />
       </div>
 

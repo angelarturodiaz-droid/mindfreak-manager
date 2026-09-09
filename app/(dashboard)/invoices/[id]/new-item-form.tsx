@@ -5,7 +5,13 @@ import { addInvoiceItemAction, type ActionState } from "@/features/invoices/acti
 
 const initialState: ActionState = { error: null };
 
-type Service = { id: string; name: string; unit: string | null; default_price: number };
+type Service = {
+  id: string;
+  name: string;
+  unit: string | null;
+  default_price: number;
+  default_tax_percent: number;
+};
 type ProjectItem = { id: string; description: string; quantity: number; unit_price: number };
 
 export function NewInvoiceItemForm({
@@ -24,6 +30,7 @@ export function NewInvoiceItemForm({
     unit_price: number;
     quantity: number;
   } | null>(null);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
 
   return (
     <form action={formAction} className="flex flex-wrap items-end gap-2">
@@ -60,6 +67,11 @@ export function NewInvoiceItemForm({
         <select
           name="service_id"
           defaultValue=""
+          onChange={(e) => {
+            const svc = services.find((s) => s.id === e.target.value) ?? null;
+            setSelectedService(svc);
+            if (svc) setPrefill({ description: svc.name, unit_price: svc.default_price, quantity: 1 });
+          }}
           className="border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
         >
           <option value="">Servicio personalizado</option>
@@ -122,7 +134,8 @@ export function NewInvoiceItemForm({
           type="number"
           step="0.01"
           min="0"
-          defaultValue="18"
+          defaultValue={selectedService?.default_tax_percent ?? 18}
+          key={`tax-${selectedService?.id ?? "custom"}`}
           className="w-20 border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
         />
       </div>

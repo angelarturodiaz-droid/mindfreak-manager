@@ -15,7 +15,7 @@ export async function listServices() {
   const { data, error } = await supabase
     .from("services")
     .select(
-      "id, name, unit, default_price, default_cost, is_active, category_id, service_categories(name)",
+      "id, name, type, description, unit, default_price, default_cost, default_tax_percent, is_active, category_id, service_categories(name)",
     )
     .order("name");
   if (error) throw new Error(error.message);
