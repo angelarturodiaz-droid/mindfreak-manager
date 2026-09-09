@@ -1,5 +1,29 @@
 # CHANGELOG — Mindfreak Manager
 
+## F14 — Bancos
+
+- CRUD de cuentas bancarias (`bank_accounts`, ya existía desde F3/F4).
+  Balance calculado (no almacenado) vía vista `bank_account_balances`
+  (`security_invoker` — respeta el RLS del usuario que consulta, no del
+  dueño de la vista): `opening_balance` + movimientos, sumando INCOME,
+  restando EXPENSE y sumando TRANSFER con signo.
+- Los movimientos por cobros/pagos a proveedores ya se generaban
+  automáticamente desde F11/F13 (`register_customer_payment`/
+  `register_supplier_payment`) — sin cambios ahí.
+- Nuevo: **movimiento manual** (ingreso/gasto no ligado a una factura/gasto,
+  ej. intereses, comisiones bancarias) y **transferencia entre dos cuentas
+  propias**, esta última vía función transaccional `create_bank_transfer`
+  (inserta dos filas — origen negativo, destino positivo — atómicamente,
+  mismo patrón que F11/F13).
+- Marcar movimientos como conciliados (`reconciled`, gated por
+  `banks.reconcile`) — conciliación bancaria completa (import CSV/XLSX/OFX)
+  sigue siendo V2 según F0-Arquitectura sección R.
+- Verificado extremo a extremo con cuentas de prueba reales: transferencia
+  de 200 entre dos cuentas, balances resultantes correctos (800/700).
+  Advisors de seguridad revisados (mismo patrón ya aceptado de F11/F13 para
+  funciones `SECURITY DEFINER` callables por `authenticated`). Datos de
+  prueba limpiados después.
+
 ## F13 — Pagos a proveedores
 
 - Función Postgres transaccional `register_supplier_payment` (mismo patrón

@@ -10,7 +10,8 @@ const NAV_ITEMS = [
   { href: "/invoices", label: "Facturas" },
   { href: "/payments", label: "Cobros y pagos" },
   { href: "/expenses", label: "Gastos" },
-  // El resto de los módulos se agregan a medida que se implementan (F13 en adelante)
+  { href: "/banks", label: "Bancos" },
+  // El resto de los módulos se agregan a medida que se implementan (F15 en adelante)
 ];
 
 export default function DashboardLayout({
