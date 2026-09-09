@@ -1,5 +1,26 @@
 # CHANGELOG — Mindfreak Manager
 
+## F12 — Gastos
+
+- Módulo completo sobre las tablas `expenses`/`expense_categories` (ya
+  existían desde F3, con RLS desde F4 — sin cambios de esquema en esta fase).
+  `features/expenses/*` + páginas `/expenses`, `/expenses/new`, `/expenses/[id]`.
+- Un gasto puede ser de un proyecto/evento específico o general de la
+  empresa (`project_id` opcional), con categoría y proveedor opcionales.
+- Sin descuento (a diferencia de cotizaciones/facturas) — no aplica al
+  registrar gastos. Impuesto igual que en cotizaciones/facturas: se escribe
+  el % (default 18) y el servidor calcula el monto sobre el subtotal.
+- Editable mientras `status='PENDING'` y `paid_amount=0` (sin pagos
+  registrados); una vez tiene actividad real, solo se puede "Cancelar"
+  (soft-state) — **nunca se borra físicamente un gasto**, a diferencia de
+  cotizaciones/facturas en borrador: es una regla explícita de
+  F0-Arquitectura, sección M ("nunca en... expenses"), así que no se agregó
+  un "Descartar borrador" aquí como sí existe en cotizaciones/facturas.
+- El registro de pagos a proveedores contra un gasto (que lo movería a
+  `PARTIALLY_PAID`/`PAID`) queda para **F13 — Pagos a proveedores**.
+- Verificado RLS con inserción real simulando el usuario admin vía SQL
+  (`set role authenticated` + `request.jwt.claims`).
+
 ## Fix: "Descartar borrador" no borraba nada (RLS)
 
 - **Bug real detectado por el usuario**: al descartar una cotización/factura
