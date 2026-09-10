@@ -38,7 +38,8 @@ Auth, Storage, RLS) · Vitest + Playwright · Git/GitHub.
 | F13 — Pagos a proveedores | ✅ Completada |
 | F14 — Bancos | ✅ Completada |
 | F15 — Rentabilidad | ✅ Completada |
-| F16–F23 | ⬜ Pendiente |
+| F16 — Dashboard | ✅ Completada |
+| F17–F23 | ⬜ Pendiente |
 
 ## Decisiones arquitectónicas clave (ver F0 para detalle completo)
 

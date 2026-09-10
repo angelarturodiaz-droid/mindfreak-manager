@@ -1,5 +1,24 @@
 # CHANGELOG — Mindfreak Manager
 
+## F16 — Dashboard
+
+- Se instaló **recharts** (dependencia npm), la librería de gráficos que
+  F0-Arquitectura dejó pendiente de elegir para esta fase.
+- `features/dashboard/queries.ts`: `getDashboardKPIs()` (Ventas, Cobros,
+  Gastos, Pagos del mes en curso; Cuentas por cobrar/pagar vivas; Proyectos
+  activos; Cotizaciones pendientes/aprobadas; Utilidad y Margen del mes) y
+  `getFinancialFlowSeries(meses)` (Cobros vs Pagos de los últimos 6 meses,
+  para el gráfico). Todo consolidado en la moneda base de la empresa con el
+  `exchange_rate` congelado de cada registro — mismo enfoque que F15.
+- `/dashboard` ahora muestra las tarjetas de KPI + un gráfico de línea
+  (Cobros vs Pagos, últimos 6 meses) vía `FinancialFlowChart` (componente
+  cliente con recharts).
+- Verificado con datos reales (factura + gasto de prueba este mes): Ventas,
+  Gastos, Cuentas por cobrar y Cuentas por pagar coincidieron exactamente
+  con el cálculo manual — incluyendo un gasto real del usuario ya pagado,
+  correctamente excluido de "cuentas por pagar" pero incluido en "gastos del
+  mes". Datos de prueba limpiados después.
+
 ## Fix: pestañas del detalle de Proyecto (Ingresos, Facturas, Cobros, Gastos, Proveedores, Pagos, Bancos)
 
 - Las 7 pestañas que quedaron como placeholder tras F10-F14 ahora muestran
