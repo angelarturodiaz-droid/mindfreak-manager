@@ -1,5 +1,31 @@
 # CHANGELOG — Mindfreak Manager
 
+## F15 — Rentabilidad
+
+- `getProjectProfitability(projectId)` en `features/projects/queries.ts`:
+  calcula por proyecto Cotizado/Facturado/Cobrado (ingresos), Costo
+  estimado/real, Utilidad estimada/real y Margen estimado/real, consolidando
+  todo en la moneda base de la empresa usando el `exchange_rate` ya
+  congelado de cada cotización/factura/cobro/gasto (nunca la tasa actual) —
+  tal como quedó definido en F0-Arquitectura, sección P.
+  - Utilidad estimada = Cotizado − Costo estimado
+  - Utilidad real = Facturado − Costo real (no se usa Cobrado para esto: es
+    un indicador de flujo de caja, no de rentabilidad devengada)
+- Es un cálculo en vivo (consultas agregadas), no una tabla cacheada — el
+  cacheo para performance queda como optimización futura si hace falta
+  (ya estaba contemplado como posible en F0).
+- Pestañas **"Finanzas"** y **"Rentabilidad"** del detalle de Proyecto
+  (antes placeholder) ahora muestran esta información real.
+- Verificado extremo a extremo con datos de prueba reales (proyecto con
+  cotización en DOP, factura y cobro en USD a tasa 60, gasto en DOP): los
+  montos consolidados coincidieron exactamente con lo calculado a mano.
+  Datos de prueba limpiados después.
+- **Nota de deuda técnica detectada** (no corregida en esta fase, documentada
+  en PROJECT_MASTER.md): las demás pestañas del proyecto (Ingresos, Gastos,
+  Proveedores, Facturas, Cobros, Pagos, Bancos) siguen siendo placeholder
+  aunque sus módulos ya existen como pantallas independientes — nunca se
+  conectó una vista filtrada por proyecto dentro de esas pestañas.
+
 ## Ampliación: Servicios → Productos y Servicios
 
 - El catálogo (tabla `services`, sin renombrar — sigue siendo la misma

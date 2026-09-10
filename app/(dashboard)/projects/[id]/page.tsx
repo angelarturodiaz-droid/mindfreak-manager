@@ -5,6 +5,7 @@ import {
   listProjectItems,
   listCompanyMembers,
   listActiveServices,
+  getProjectProfitability,
 } from "@/features/projects/queries";
 import { updateProjectStatusAction, deleteProjectItemAction } from "@/features/projects/actions";
 import { hasPermission } from "@/lib/auth/permissions";
@@ -41,6 +42,11 @@ function formatMoney(amount: number) {
   );
 }
 
+function formatPercent(value: number | null) {
+  if (value === null) return "—";
+  return `${value.toFixed(1)}%`;
+}
+
 export default async function ProjectDetailPage({
   params,
   searchParams,
@@ -66,6 +72,11 @@ export default async function ProjectDetailPage({
     listActiveServices(),
     hasPermission("projects.update"),
   ]);
+
+  const profitability =
+    activeTab === "finanzas" || activeTab === "rentabilidad"
+      ? await getProjectProfitability(id)
+      : null;
 
   const clientData = project.clients as { name: string } | { name: string }[] | null;
   const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
@@ -216,6 +227,90 @@ export default async function ProjectDetailPage({
               </p>
             </div>
           </section>
+        </div>
+      ) : activeTab === "finanzas" && profitability ? (
+        <div className="max-w-2xl">
+          <h2 className="mb-3 text-sm font-medium text-brand-text">
+            Resumen financiero
+          </h2>
+          <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+            <div className="border border-brand-muted/20 px-4 py-3">
+              <p className="text-xs text-brand-muted">Cotizado</p>
+              <p className="font-medium">{formatMoney(profitability.cotizado)}</p>
+            </div>
+            <div className="border border-brand-muted/20 px-4 py-3">
+              <p className="text-xs text-brand-muted">Facturado</p>
+              <p className="font-medium">{formatMoney(profitability.facturado)}</p>
+            </div>
+            <div className="border border-brand-muted/20 px-4 py-3">
+              <p className="text-xs text-brand-muted">Cobrado</p>
+              <p className="font-medium">{formatMoney(profitability.cobrado)}</p>
+            </div>
+            <div className="border border-brand-muted/20 px-4 py-3">
+              <p className="text-xs text-brand-muted">Costo estimado</p>
+              <p className="font-medium">{formatMoney(profitability.costoEstimado)}</p>
+            </div>
+            <div className="border border-brand-muted/20 px-4 py-3">
+              <p className="text-xs text-brand-muted">Costo real</p>
+              <p className="font-medium">{formatMoney(profitability.costoReal)}</p>
+            </div>
+            <div className="border border-brand-muted/20 px-4 py-3">
+              <p className="text-xs text-brand-muted">Presupuesto</p>
+              <p className="font-medium">{formatMoney(profitability.presupuesto)}</p>
+              {profitability.presupuestoConsumidoPct !== null && (
+                <p className="text-xs text-brand-muted">
+                  {formatPercent(profitability.presupuestoConsumidoPct)} consumido
+                </p>
+              )}
+            </div>
+          </div>
+          <p className="mt-4 text-xs text-brand-muted">
+            Todos los montos se consolidan en la moneda base de la empresa,
+            usando la tasa de cambio ya congelada de cada factura/gasto/cobro
+            (nunca la tasa actual).
+          </p>
+        </div>
+      ) : activeTab === "rentabilidad" && profitability ? (
+        <div className="max-w-2xl">
+          <h2 className="mb-3 text-sm font-medium text-brand-text">
+            Rentabilidad
+          </h2>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="border border-brand-muted/20 px-4 py-3">
+              <p className="text-xs text-brand-muted">Utilidad estimada</p>
+              <p
+                className={
+                  profitability.utilidadEstimada < 0
+                    ? "font-medium text-brand-danger"
+                    : "font-medium"
+                }
+              >
+                {formatMoney(profitability.utilidadEstimada)}
+              </p>
+              <p className="text-xs text-brand-muted">
+                Margen: {formatPercent(profitability.margenEstimado)}
+              </p>
+            </div>
+            <div className="border border-brand-muted/20 px-4 py-3">
+              <p className="text-xs text-brand-muted">Utilidad real</p>
+              <p
+                className={
+                  profitability.utilidadReal < 0
+                    ? "font-medium text-brand-danger"
+                    : "font-medium"
+                }
+              >
+                {formatMoney(profitability.utilidadReal)}
+              </p>
+              <p className="text-xs text-brand-muted">
+                Margen: {formatPercent(profitability.margenReal)}
+              </p>
+            </div>
+          </div>
+          <p className="mt-4 text-xs text-brand-muted">
+            Utilidad estimada = Cotizado − Costo estimado · Utilidad real =
+            Facturado − Costo real.
+          </p>
         </div>
       ) : (
         <div className="border border-dashed border-brand-muted/30 p-8 text-center">

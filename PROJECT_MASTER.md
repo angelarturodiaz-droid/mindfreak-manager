@@ -37,7 +37,8 @@ Auth, Storage, RLS) · Vitest + Playwright · Git/GitHub.
 | F12 — Gastos | ✅ Completada |
 | F13 — Pagos a proveedores | ✅ Completada |
 | F14 — Bancos | ✅ Completada |
-| F15–F23 | ⬜ Pendiente |
+| F15 — Rentabilidad | ✅ Completada |
+| F16–F23 | ⬜ Pendiente |
 
 ## Decisiones arquitectónicas clave (ver F0 para detalle completo)
 
@@ -83,6 +84,14 @@ Ver sección D del documento de arquitectura. Implementada tal cual en F1.
 - Permisos `.update`/`.delete` dedicados faltan para invoices/customer_payments/
   supplier_payments/quotations (RLS reutiliza el permiso `.create`/`.update` más
   cercano por ahora). Revisar si hace falta mayor granularidad al implementar F10-F13.
+- **Pestañas del detalle de Proyecto todavía placeholder** aunque sus módulos ya
+  existen como pantallas independientes: Ingresos (F10/F11), Gastos (F12),
+  Proveedores (F13), Facturas (F10), Cobros (F11), Pagos (F13), Bancos (F14).
+  Se construyeron como `/invoices`, `/expenses`, `/payments`, `/banks` (con filtro
+  general), pero nunca se wireó una vista *filtrada por proyecto* dentro de las
+  pestañas del proyecto mismo. Solo "Resumen", "Finanzas" y "Rentabilidad" (F15)
+  tienen contenido real hoy. Pendiente decidir si se completa esto como parte de
+  F16 (Dashboard) o como una ronda dedicada.
 
 ## Incidentes resueltos
 

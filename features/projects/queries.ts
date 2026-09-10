@@ -130,3 +130,76 @@ export async function listQuotationItemsFor(quotationId: string) {
   if (error) throw new Error(error.message);
   return data;
 }
+
+/**
+ * Rentabilidad del proyecto (F15), consolidado en la moneda base de la
+ * empresa usando el `exchange_rate` ya congelado de cada registro (nunca la
+ * tasa actual) — ver F0-Arquitectura, sección P.
+ */
+export async function getProjectProfitability(projectId: string) {
+  const supabase = await createClient();
+
+  const [quotations, invoices, customerPayments, projectItems, expenses, project] =
+    await Promise.all([
+      supabase
+        .from("quotations")
+        .select("total, exchange_rate")
+        .eq("project_id", projectId),
+      supabase
+        .from("invoices")
+        .select("total, exchange_rate")
+        .eq("project_id", projectId)
+        .neq("status", "CANCELLED"),
+      supabase
+        .from("customer_payments")
+        .select("amount, exchange_rate")
+        .eq("project_id", projectId),
+      supabase
+        .from("project_items")
+        .select("estimated_cost")
+        .eq("project_id", projectId),
+      supabase
+        .from("expenses")
+        .select("total, exchange_rate")
+        .eq("project_id", projectId)
+        .neq("status", "CANCELLED"),
+      supabase.from("projects").select("budget").eq("id", projectId).single(),
+    ]);
+
+  for (const r of [quotations, invoices, customerPayments, projectItems, expenses, project]) {
+    if (r.error) throw new Error(r.error.message);
+  }
+
+  const sum = (rows: { amount?: number; total?: number; exchange_rate?: number }[] | null) =>
+    (rows ?? []).reduce(
+      (acc, r) => acc + (r.total ?? r.amount ?? 0) * (r.exchange_rate ?? 1),
+      0,
+    );
+
+  const cotizado = sum(quotations.data);
+  const facturado = sum(invoices.data);
+  const cobrado = sum(customerPayments.data);
+  const costoEstimado = (projectItems.data ?? []).reduce(
+    (acc, r) => acc + r.estimated_cost,
+    0,
+  );
+  const costoReal = sum(expenses.data);
+  const presupuesto = project.data?.budget ?? 0;
+
+  const utilidadEstimada = cotizado - costoEstimado;
+  const utilidadReal = facturado - costoReal;
+
+  return {
+    cotizado,
+    facturado,
+    cobrado,
+    costoEstimado,
+    costoReal,
+    utilidadEstimada,
+    utilidadReal,
+    margenEstimado: cotizado > 0 ? (utilidadEstimada / cotizado) * 100 : null,
+    margenReal: facturado > 0 ? (utilidadReal / facturado) * 100 : null,
+    presupuesto,
+    presupuestoConsumidoPct: presupuesto > 0 ? (costoReal / presupuesto) * 100 : null,
+  };
+}
