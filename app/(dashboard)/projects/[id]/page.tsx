@@ -6,6 +6,13 @@ import {
   listCompanyMembers,
   listActiveServices,
   getProjectProfitability,
+  listProjectQuotations,
+  listProjectInvoices,
+  listProjectCustomerPayments,
+  listProjectExpenses,
+  listProjectSuppliers,
+  listProjectSupplierPayments,
+  listProjectBankTransactions,
 } from "@/features/projects/queries";
 import { updateProjectStatusAction, deleteProjectItemAction } from "@/features/projects/actions";
 import { hasPermission } from "@/lib/auth/permissions";
@@ -20,20 +27,35 @@ const STATUS_LABELS: Record<string, string> = {
   CANCELLED: "Cancelado",
 };
 
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  TRANSFER: "Transferencia",
+  DEPOSIT: "Depósito",
+  CHECK: "Cheque",
+  CARD: "Tarjeta",
+  CASH: "Efectivo",
+  OTHER: "Otro",
+};
+
+const BANK_TX_TYPE_LABELS: Record<string, string> = {
+  INCOME: "Ingreso",
+  EXPENSE: "Gasto",
+  TRANSFER: "Transferencia",
+};
+
 const TABS = [
   { key: "resumen", label: "Resumen" },
-  { key: "finanzas", label: "Finanzas", phase: "F15" },
-  { key: "ingresos", label: "Ingresos", phase: "F10/F11" },
-  { key: "gastos", label: "Gastos", phase: "F12" },
-  { key: "proveedores", label: "Proveedores", phase: "F13" },
-  { key: "facturas", label: "Facturas", phase: "F10" },
-  { key: "cobros", label: "Cobros", phase: "F11" },
-  { key: "pagos", label: "Pagos", phase: "F13" },
-  { key: "bancos", label: "Bancos", phase: "F14" },
+  { key: "finanzas", label: "Finanzas" },
+  { key: "ingresos", label: "Ingresos" },
+  { key: "gastos", label: "Gastos" },
+  { key: "proveedores", label: "Proveedores" },
+  { key: "facturas", label: "Facturas" },
+  { key: "cobros", label: "Cobros" },
+  { key: "pagos", label: "Pagos" },
+  { key: "bancos", label: "Bancos" },
   { key: "tareas", label: "Tareas", phase: "F18" },
   { key: "documentos", label: "Documentos", phase: "F17" },
   { key: "actividades", label: "Actividades", phase: "F18" },
-  { key: "rentabilidad", label: "Rentabilidad", phase: "F15" },
+  { key: "rentabilidad", label: "Rentabilidad" },
 ];
 
 function formatMoney(amount: number) {
@@ -77,6 +99,17 @@ export default async function ProjectDetailPage({
     activeTab === "finanzas" || activeTab === "rentabilidad"
       ? await getProjectProfitability(id)
       : null;
+  const quotations = activeTab === "ingresos" ? await listProjectQuotations(id) : null;
+  const invoices = activeTab === "facturas" ? await listProjectInvoices(id) : null;
+  const customerPayments =
+    activeTab === "cobros" ? await listProjectCustomerPayments(id) : null;
+  const expenses = activeTab === "gastos" ? await listProjectExpenses(id) : null;
+  const projectSuppliers =
+    activeTab === "proveedores" ? await listProjectSuppliers(id) : null;
+  const supplierPayments =
+    activeTab === "pagos" ? await listProjectSupplierPayments(id) : null;
+  const bankTransactions =
+    activeTab === "bancos" ? await listProjectBankTransactions(id) : null;
 
   const clientData = project.clients as { name: string } | { name: string }[] | null;
   const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
@@ -311,6 +344,345 @@ export default async function ProjectDetailPage({
             Utilidad estimada = Cotizado − Costo estimado · Utilidad real =
             Facturado − Costo real.
           </p>
+        </div>
+      ) : activeTab === "ingresos" && quotations ? (
+        <div className="max-w-3xl">
+          <h2 className="mb-3 text-sm font-medium text-brand-text">
+            Cotizaciones del proyecto
+          </h2>
+          {quotations.length === 0 ? (
+            <p className="text-sm text-brand-muted">Sin cotizaciones ligadas.</p>
+          ) : (
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
+                  <th className="py-2 font-medium">Número</th>
+                  <th className="py-2 font-medium">Fecha</th>
+                  <th className="py-2 font-medium">Estado</th>
+                  <th className="py-2 font-medium">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {quotations.map((q) => (
+                  <tr key={q.id} className="border-b border-brand-muted/10">
+                    <td className="py-2">
+                      <Link
+                        href={`/quotations/${q.id}`}
+                        className="text-brand-accent hover:underline"
+                      >
+                        {q.number}
+                      </Link>
+                    </td>
+                    <td className="py-2 text-brand-muted">{q.issue_date}</td>
+                    <td className="py-2 text-brand-muted">{q.status}</td>
+                    <td className="py-2 font-medium">
+                      {new Intl.NumberFormat("es-DO", {
+                        style: "currency",
+                        currency: q.currency,
+                      }).format(q.total)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      ) : activeTab === "facturas" && invoices ? (
+        <div className="max-w-3xl">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-medium text-brand-text">
+              Facturas del proyecto
+            </h2>
+            <Link href="/invoices/new" className="text-sm text-brand-accent hover:underline">
+              Nueva factura
+            </Link>
+          </div>
+          {invoices.length === 0 ? (
+            <p className="text-sm text-brand-muted">Sin facturas todavía.</p>
+          ) : (
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
+                  <th className="py-2 font-medium">Número</th>
+                  <th className="py-2 font-medium">Fecha</th>
+                  <th className="py-2 font-medium">Estado</th>
+                  <th className="py-2 font-medium">Total</th>
+                  <th className="py-2 font-medium">Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invoices.map((inv) => (
+                  <tr key={inv.id} className="border-b border-brand-muted/10">
+                    <td className="py-2">
+                      <Link
+                        href={`/invoices/${inv.id}`}
+                        className="text-brand-accent hover:underline"
+                      >
+                        {inv.number}
+                      </Link>
+                    </td>
+                    <td className="py-2 text-brand-muted">{inv.issue_date}</td>
+                    <td className="py-2 text-brand-muted">{inv.status}</td>
+                    <td className="py-2 font-medium">
+                      {new Intl.NumberFormat("es-DO", {
+                        style: "currency",
+                        currency: inv.currency,
+                      }).format(inv.total)}
+                    </td>
+                    <td className="py-2 text-brand-muted">
+                      {new Intl.NumberFormat("es-DO", {
+                        style: "currency",
+                        currency: inv.currency,
+                      }).format(inv.balance)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      ) : activeTab === "cobros" && customerPayments ? (
+        <div className="max-w-3xl">
+          <h2 className="mb-3 text-sm font-medium text-brand-text">
+            Cobros del proyecto
+          </h2>
+          {customerPayments.length === 0 ? (
+            <p className="text-sm text-brand-muted">Sin cobros todavía.</p>
+          ) : (
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
+                  <th className="py-2 font-medium">Fecha</th>
+                  <th className="py-2 font-medium">Factura</th>
+                  <th className="py-2 font-medium">Monto</th>
+                  <th className="py-2 font-medium">Método</th>
+                </tr>
+              </thead>
+              <tbody>
+                {customerPayments.map((p) => {
+                  const invoiceData = p.invoices as { number: string }[] | { number: string } | null;
+                  const invoiceNumber = Array.isArray(invoiceData)
+                    ? invoiceData[0]?.number
+                    : invoiceData?.number;
+                  return (
+                    <tr key={p.id} className="border-b border-brand-muted/10">
+                      <td className="py-2">{p.payment_date}</td>
+                      <td className="py-2">
+                        <Link
+                          href={`/invoices/${p.invoice_id}`}
+                          className="text-brand-accent hover:underline"
+                        >
+                          {invoiceNumber ?? "—"}
+                        </Link>
+                      </td>
+                      <td className="py-2 font-medium">
+                        {new Intl.NumberFormat("es-DO", {
+                          style: "currency",
+                          currency: p.currency,
+                        }).format(p.amount)}
+                      </td>
+                      <td className="py-2 text-brand-muted">
+                        {PAYMENT_METHOD_LABELS[p.method] ?? p.method}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      ) : activeTab === "gastos" && expenses ? (
+        <div className="max-w-3xl">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-medium text-brand-text">
+              Gastos del proyecto
+            </h2>
+            <Link href="/expenses/new" className="text-sm text-brand-accent hover:underline">
+              Nuevo gasto
+            </Link>
+          </div>
+          {expenses.length === 0 ? (
+            <p className="text-sm text-brand-muted">Sin gastos todavía.</p>
+          ) : (
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
+                  <th className="py-2 font-medium">Fecha</th>
+                  <th className="py-2 font-medium">Descripción</th>
+                  <th className="py-2 font-medium">Proveedor</th>
+                  <th className="py-2 font-medium">Estado</th>
+                  <th className="py-2 font-medium">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expenses.map((e) => {
+                  const supplierData = e.suppliers as { name: string }[] | { name: string } | null;
+                  const supplierName = Array.isArray(supplierData)
+                    ? supplierData[0]?.name
+                    : supplierData?.name;
+                  return (
+                    <tr key={e.id} className="border-b border-brand-muted/10">
+                      <td className="py-2 text-brand-muted">{e.expense_date}</td>
+                      <td className="py-2">
+                        <Link
+                          href={`/expenses/${e.id}`}
+                          className="text-brand-accent hover:underline"
+                        >
+                          {e.description}
+                        </Link>
+                      </td>
+                      <td className="py-2 text-brand-muted">{supplierName ?? "—"}</td>
+                      <td className="py-2 text-brand-muted">{e.status}</td>
+                      <td className="py-2 font-medium">
+                        {new Intl.NumberFormat("es-DO", {
+                          style: "currency",
+                          currency: e.currency,
+                        }).format(e.total)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      ) : activeTab === "proveedores" && projectSuppliers ? (
+        <div className="max-w-2xl">
+          <h2 className="mb-3 text-sm font-medium text-brand-text">
+            Proveedores del proyecto
+          </h2>
+          {projectSuppliers.length === 0 ? (
+            <p className="text-sm text-brand-muted">
+              Sin proveedores asociados a gastos de este proyecto.
+            </p>
+          ) : (
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
+                  <th className="py-2 font-medium">Proveedor</th>
+                  <th className="py-2 font-medium">Total gastado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {projectSuppliers.map((s) => (
+                  <tr key={s.supplierId} className="border-b border-brand-muted/10">
+                    <td className="py-2">
+                      <Link
+                        href={`/suppliers/${s.supplierId}`}
+                        className="text-brand-accent hover:underline"
+                      >
+                        {s.name}
+                      </Link>
+                    </td>
+                    <td className="py-2 font-medium">{formatMoney(s.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      ) : activeTab === "pagos" && supplierPayments ? (
+        <div className="max-w-3xl">
+          <h2 className="mb-3 text-sm font-medium text-brand-text">
+            Pagos a proveedores del proyecto
+          </h2>
+          {supplierPayments.length === 0 ? (
+            <p className="text-sm text-brand-muted">Sin pagos todavía.</p>
+          ) : (
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
+                  <th className="py-2 font-medium">Fecha</th>
+                  <th className="py-2 font-medium">Proveedor</th>
+                  <th className="py-2 font-medium">Gasto</th>
+                  <th className="py-2 font-medium">Monto</th>
+                  <th className="py-2 font-medium">Método</th>
+                </tr>
+              </thead>
+              <tbody>
+                {supplierPayments.map((p) => {
+                  const supplierData = p.suppliers as { name: string }[] | { name: string } | null;
+                  const supplierName = Array.isArray(supplierData)
+                    ? supplierData[0]?.name
+                    : supplierData?.name;
+                  return (
+                    <tr key={p.id} className="border-b border-brand-muted/10">
+                      <td className="py-2 text-brand-muted">{p.payment_date}</td>
+                      <td className="py-2">{supplierName ?? "—"}</td>
+                      <td className="py-2">
+                        <Link
+                          href={`/expenses/${p.expense_id}`}
+                          className="text-brand-accent hover:underline"
+                        >
+                          Ver gasto
+                        </Link>
+                      </td>
+                      <td className="py-2 font-medium">
+                        {new Intl.NumberFormat("es-DO", {
+                          style: "currency",
+                          currency: p.currency,
+                        }).format(p.amount)}
+                      </td>
+                      <td className="py-2 text-brand-muted">
+                        {PAYMENT_METHOD_LABELS[p.method] ?? p.method}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      ) : activeTab === "bancos" && bankTransactions ? (
+        <div className="max-w-3xl">
+          <h2 className="mb-3 text-sm font-medium text-brand-text">
+            Movimientos bancarios del proyecto
+          </h2>
+          {bankTransactions.length === 0 ? (
+            <p className="text-sm text-brand-muted">Sin movimientos todavía.</p>
+          ) : (
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
+                  <th className="py-2 font-medium">Fecha</th>
+                  <th className="py-2 font-medium">Cuenta</th>
+                  <th className="py-2 font-medium">Tipo</th>
+                  <th className="py-2 font-medium">Descripción</th>
+                  <th className="py-2 font-medium">Monto</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bankTransactions.map((t) => {
+                  const accountData = t.bank_accounts as { name: string }[] | { name: string } | null;
+                  const accountName = Array.isArray(accountData)
+                    ? accountData[0]?.name
+                    : accountData?.name;
+                  return (
+                    <tr key={t.id} className="border-b border-brand-muted/10">
+                      <td className="py-2 text-brand-muted">{t.transaction_date}</td>
+                      <td className="py-2">{accountName ?? "—"}</td>
+                      <td className="py-2 text-brand-muted">
+                        {BANK_TX_TYPE_LABELS[t.type] ?? t.type}
+                      </td>
+                      <td className="py-2">{t.description ?? "—"}</td>
+                      <td
+                        className={
+                          t.amount < 0
+                            ? "py-2 font-medium text-brand-danger"
+                            : "py-2 font-medium"
+                        }
+                      >
+                        {new Intl.NumberFormat("es-DO", {
+                          style: "currency",
+                          currency: t.currency,
+                        }).format(t.amount)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       ) : (
         <div className="border border-dashed border-brand-muted/30 p-8 text-center">

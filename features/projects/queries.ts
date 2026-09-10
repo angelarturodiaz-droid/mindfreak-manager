@@ -203,3 +203,100 @@ export async function getProjectProfitability(projectId: string) {
     presupuestoConsumidoPct: presupuesto > 0 ? (costoReal / presupuesto) * 100 : null,
   };
 }
+
+// ---- Vistas filtradas por proyecto para las pestañas del detalle (F15 fix) ----
+
+export async function listProjectQuotations(projectId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("quotations")
+    .select("id, number, status, currency, total, issue_date")
+    .eq("project_id", projectId)
+    .order("issue_date", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function listProjectInvoices(projectId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("invoices")
+    .select("id, number, status, currency, total, balance, issue_date")
+    .eq("project_id", projectId)
+    .order("issue_date", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function listProjectCustomerPayments(projectId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("customer_payments")
+    .select("id, payment_date, amount, currency, method, invoice_id, invoices(number)")
+    .eq("project_id", projectId)
+    .order("payment_date", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function listProjectExpenses(projectId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("expenses")
+    .select(
+      "id, description, status, currency, total, expense_date, suppliers(name)",
+    )
+    .eq("project_id", projectId)
+    .order("expense_date", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function listProjectSuppliers(projectId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("expenses")
+    .select("supplier_id, total, exchange_rate, suppliers(name)")
+    .eq("project_id", projectId)
+    .not("supplier_id", "is", null)
+    .neq("status", "CANCELLED");
+  if (error) throw new Error(error.message);
+
+  const bySupplier = new Map<string, { name: string; total: number }>();
+  for (const row of data ?? []) {
+    const supplierData = row.suppliers as { name: string }[] | { name: string } | null;
+    const name = Array.isArray(supplierData) ? supplierData[0]?.name : supplierData?.name;
+    const key = row.supplier_id as string;
+    const current = bySupplier.get(key) ?? { name: name ?? "—", total: 0 };
+    current.total += row.total * row.exchange_rate;
+    bySupplier.set(key, current);
+  }
+  return Array.from(bySupplier.entries()).map(([supplierId, v]) => ({
+    supplierId,
+    ...v,
+  }));
+}
+
+export async function listProjectSupplierPayments(projectId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("supplier_payments")
+    .select("id, payment_date, amount, currency, method, expense_id, suppliers(name)")
+    .eq("project_id", projectId)
+    .order("payment_date", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function listProjectBankTransactions(projectId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("bank_transactions")
+    .select(
+      "id, type, amount, currency, transaction_date, description, bank_accounts(name)",
+    )
+    .eq("project_id", projectId)
+    .order("transaction_date", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data;
+}

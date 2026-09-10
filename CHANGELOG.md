@@ -1,5 +1,27 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: pestañas del detalle de Proyecto (Ingresos, Facturas, Cobros, Gastos, Proveedores, Pagos, Bancos)
+
+- Las 7 pestañas que quedaron como placeholder tras F10-F14 ahora muestran
+  datos reales filtrados por proyecto, cada una con un propósito distinto
+  (sin duplicar lo que ya muestra Finanzas):
+  - **Ingresos**: cotizaciones ligadas al proyecto
+  - **Facturas**: facturas del proyecto (+ link para crear una nueva)
+  - **Cobros**: cobros del proyecto, con link a la factura correspondiente
+  - **Gastos**: gastos del proyecto (+ link para crear uno nuevo)
+  - **Proveedores**: proveedores usados en el proyecto, con total gastado
+    por proveedor (agregado desde `expenses`, excluyendo cancelados)
+  - **Pagos**: pagos a proveedores del proyecto
+  - **Bancos**: movimientos bancarios del proyecto
+- Cada consulta se hace bajo demanda (solo cuando esa pestaña está activa),
+  igual que ya se hacía con Finanzas/Rentabilidad en F15.
+- Verificado con datos reales el caso más propenso a error (agregación de
+  gastos por proveedor: 2 gastos del mismo proveedor sumaron correctamente).
+  Datos de prueba limpiados después.
+- Quedan como placeholder solo Tareas y Actividades (F18) y Documentos (F17)
+  — esos módulos todavía no existen en absoluto, a diferencia de los 7 de
+  arriba que sí existían como pantallas independientes.
+
 ## F15 — Rentabilidad
 
 - `getProjectProfitability(projectId)` en `features/projects/queries.ts`:
