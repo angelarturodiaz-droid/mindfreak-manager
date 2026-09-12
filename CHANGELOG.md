@@ -1,5 +1,29 @@
 # CHANGELOG — Mindfreak Manager
 
+## Reportes: filtros por reporte
+
+- Cada uno de los 5 reportes ahora tiene sus propios filtros (todos los
+  pedidos eran factibles con el esquema actual, ninguno quedó fuera):
+  - **Rentabilidad por proyecto**: Período (`event_date`), Proyecto,
+    Cliente, Estado del proyecto, Responsable.
+  - **Cuentas por cobrar**: Período (`issue_date`), Cliente, Estado,
+    Proyecto, Moneda.
+  - **Cuentas por pagar**: Período (`expense_date`), Proveedor, Estado,
+    Proyecto, Moneda.
+  - **Ventas por cliente**: Período (`issue_date`), Cliente, Proyecto,
+    Estado de factura, Moneda.
+  - **Gastos por categoría**: Período (`expense_date`), Categoría,
+    Proyecto, Proveedor, Estado.
+- Filtros vía `<form method="get">` (sin JS necesario), preservando el
+  reporte activo. Botón "Limpiar" para quitar todos los filtros.
+- Nota de diseño: cuando se elige explícitamente un Estado en Cuentas por
+  cobrar/pagar (ej. "Pagada"), se reemplaza el filtro por defecto de
+  "solo pendientes" — permite usar el mismo reporte también para ver
+  facturas/gastos ya saldados si se necesita.
+- Nuevas queries de catálogo (`listClientsForFilter`, `listSuppliersForFilter`,
+  `listProjectsForFilter`, `listExpenseCategoriesForFilter`,
+  `listManagersForFilter`) en `features/reports/queries.ts`.
+
 ## Ajustes de feedback (documentos, actividades, reportes, auditoría)
 
 - **Documentos**: se quitó la miniatura de imágenes (pedido explícito) y se
