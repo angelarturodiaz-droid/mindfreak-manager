@@ -22,6 +22,7 @@ import { NewTaskForm } from "@/components/tasks/new-task-form";
 import { TaskList } from "@/components/tasks/task-list";
 import { listProjectActivities } from "@/features/activities/queries";
 import { NewActivityForm } from "./new-activity-form";
+import { ActivityItem } from "./activity-item";
 import { updateProjectStatusAction, deleteProjectItemAction } from "@/features/projects/actions";
 import { hasPermission } from "@/lib/auth/permissions";
 import { ProjectEditForm } from "./project-edit-form";
@@ -749,18 +750,13 @@ export default async function ProjectDetailPage({
             <p className="text-sm text-brand-muted">Sin actividades todavía.</p>
           ) : (
             <ul className="flex flex-col gap-2">
-              {projectActivities.map((a) => {
-                const author = Array.isArray(a.profiles) ? a.profiles[0] : a.profiles;
-                return (
-                  <li key={a.id} className="border border-brand-muted/20 px-3 py-2 text-sm">
-                    <p>{a.description}</p>
-                    <p className="text-xs text-brand-muted">
-                      {a.type} · {new Date(a.activity_date).toLocaleString("es-DO")}
-                      {author?.full_name && ` · ${author.full_name}`}
-                    </p>
-                  </li>
-                );
-              })}
+              {projectActivities.map((a) => (
+                <ActivityItem
+                  key={a.id}
+                  activity={a}
+                  revalidatePathValue={`/projects/${id}?tab=actividades`}
+                />
+              ))}
             </ul>
           )}
         </div>

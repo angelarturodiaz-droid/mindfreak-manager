@@ -91,50 +91,52 @@ export default async function AuditPage({
       {logs.length === 0 ? (
         <p className="text-sm text-brand-muted">Sin registros que coincidan.</p>
       ) : (
-        <table className="w-full max-w-4xl border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-              <th className="py-2 font-medium">Fecha</th>
-              <th className="py-2 font-medium">Usuario</th>
-              <th className="py-2 font-medium">Acción</th>
-              <th className="py-2 font-medium">Entidad</th>
-              <th className="py-2 font-medium">Detalle</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map((log) => {
-              const profileData = log.profiles as
-                | { full_name: string | null; email: string }[]
-                | { full_name: string | null; email: string }
-                | null;
-              const profile = Array.isArray(profileData) ? profileData[0] : profileData;
-              const detail = log.new_values ?? log.old_values;
-              return (
-                <tr key={log.id} className="border-b border-brand-muted/10 align-top">
-                  <td className="py-2 whitespace-nowrap text-brand-muted">
-                    {new Date(log.created_at).toLocaleString("es-DO")}
-                  </td>
-                  <td className="py-2 text-brand-muted">
-                    {profile?.full_name ?? profile?.email ?? "—"}
-                  </td>
-                  <td className="py-2">{ACTION_LABELS[log.action] ?? log.action}</td>
-                  <td className="py-2 text-brand-muted">
-                    {ENTITY_LABELS[log.entity_type] ?? log.entity_type}
-                  </td>
-                  <td className="max-w-md py-2 text-xs text-brand-muted">
-                    {detail ? (
-                      <pre className="whitespace-pre-wrap break-words">
-                        {JSON.stringify(detail)}
-                      </pre>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[900px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
+                <th className="w-40 py-2 pr-4 font-medium">Fecha</th>
+                <th className="w-44 py-2 pr-4 font-medium">Usuario</th>
+                <th className="w-24 py-2 pr-4 font-medium">Acción</th>
+                <th className="w-36 py-2 pr-4 font-medium">Entidad</th>
+                <th className="py-2 font-medium">Detalle</th>
+              </tr>
+            </thead>
+            <tbody>
+              {logs.map((log) => {
+                const profileData = log.profiles as
+                  | { full_name: string | null; email: string }[]
+                  | { full_name: string | null; email: string }
+                  | null;
+                const profile = Array.isArray(profileData) ? profileData[0] : profileData;
+                const detail = log.new_values ?? log.old_values;
+                return (
+                  <tr key={log.id} className="border-b border-brand-muted/10 align-top">
+                    <td className="py-3 pr-4 whitespace-nowrap text-brand-muted">
+                      {new Date(log.created_at).toLocaleString("es-DO")}
+                    </td>
+                    <td className="py-3 pr-4 text-brand-muted">
+                      {profile?.full_name ?? profile?.email ?? "—"}
+                    </td>
+                    <td className="py-3 pr-4">{ACTION_LABELS[log.action] ?? log.action}</td>
+                    <td className="py-3 pr-4 text-brand-muted">
+                      {ENTITY_LABELS[log.entity_type] ?? log.entity_type}
+                    </td>
+                    <td className="py-3 text-xs text-brand-muted">
+                      {detail ? (
+                        <pre className="max-h-32 max-w-lg overflow-auto whitespace-pre-wrap break-words rounded bg-brand-surface p-2">
+                          {JSON.stringify(detail, null, 2)}
+                        </pre>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </main>
   );

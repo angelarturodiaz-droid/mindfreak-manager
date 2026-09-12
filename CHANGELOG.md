@@ -1,5 +1,31 @@
 # CHANGELOG — Mindfreak Manager
 
+## Ajustes de feedback (documentos, actividades, reportes, auditoría)
+
+- **Documentos**: se quitó la miniatura de imágenes (pedido explícito) y se
+  alinearon mejor las columnas Tamaño/Subido/Ver/Descargar/Eliminar con
+  anchos fijos.
+- **Actividades**: formulario de registro ahora usa un textarea de varias
+  líneas en vez de un input de una sola línea — más espacio para escribir.
+  Se agregó **editar** (inline) y **eliminar** por actividad — revierte la
+  decisión original de F18 de dejarla inmutable como `audit_logs`; una
+  actividad no es un registro financiero, así que permitir editarla/borrarla
+  no compromete nada (migración `032_activities_edit_delete.sql`,
+  verificado con update/delete real bajo RLS).
+- **Reportes**: rediseñado como un **hub** con selector lateral (categorías
+  → reportes), en vez de las 5 tablas apiladas en una sola página — cada
+  reporte se carga solo cuando se selecciona. Confirmado: F19 es la única
+  fase de "Reportes" en el plan (F0, sección 33); cualquier reporte nuevo
+  se agrega al mismo catálogo (`REPORT_CATALOG` en la página), no requiere
+  una fase nueva.
+- **Auditoría**: tabla con anchos de columna fijos y el JSON de detalle en
+  un bloque con scroll propio (máx. altura), para que no se vea "pegado"
+  cuando el detalle es largo.
+- **Nota sobre el "Gateway Timeout"** reportado en `listActiveServices`: se
+  revisó la query (simple, sin joins) y el RLS (patrón estándar ya probado
+  en todo el proyecto) — no se encontró ningún problema de código; fue
+  tráfico/latencia transitoria hacia Supabase.
+
 ## F20 — Auditoría
 
 - `audit_logs` ya existía desde F3, con RLS desde F4 (lectura gateada por

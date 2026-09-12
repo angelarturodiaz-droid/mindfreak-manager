@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import {
   deleteDocumentAction,
   getDocumentDownloadUrlAction,
@@ -19,44 +19,6 @@ function formatSize(bytes: number | null) {
   if (!bytes) return "—";
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function Thumbnail({ doc }: { doc: Doc }) {
-  const [url, setUrl] = useState<string | null>(null);
-  const isImage = doc.mime_type?.startsWith("image/");
-
-  useEffect(() => {
-    if (!isImage) return;
-    let cancelled = false;
-    getDocumentDownloadUrlAction(doc.storage_path).then((result) => {
-      if (!cancelled && result.url) setUrl(result.url);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [doc.storage_path, isImage]);
-
-  if (!isImage) {
-    return (
-      <div className="flex h-10 w-10 items-center justify-center border border-brand-muted/20 bg-brand-surface text-xs text-brand-muted">
-        {doc.mime_type?.includes("pdf") ? "PDF" : "Archivo"}
-      </div>
-    );
-  }
-
-  if (!url) {
-    return <div className="h-10 w-10 animate-pulse bg-brand-muted/10" />;
-  }
-
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={url}
-      alt={doc.file_name}
-      className="h-10 w-10 cursor-pointer border border-brand-muted/20 object-cover"
-      onClick={() => window.open(url, "_blank")}
-    />
-  );
 }
 
 function DocumentRow({
@@ -106,41 +68,40 @@ function DocumentRow({
 
   return (
     <tr className="border-b border-brand-muted/10">
-      <td className="py-2">
-        <Thumbnail doc={doc} />
-      </td>
-      <td className="py-2">{doc.file_name}</td>
-      <td className="py-2 text-brand-muted">{formatSize(doc.size_bytes)}</td>
-      <td className="py-2 text-brand-muted">
+      <td className="py-2 pr-4">{doc.file_name}</td>
+      <td className="w-24 py-2 pr-4 text-brand-muted">{formatSize(doc.size_bytes)}</td>
+      <td className="w-32 py-2 pr-4 text-brand-muted">
         {new Date(doc.created_at).toLocaleDateString("es-DO")}
       </td>
-      <td className="py-2 text-right">
-        <button
-          type="button"
-          onClick={handleView}
-          disabled={isPending}
-          className="mr-3 text-brand-accent hover:underline disabled:opacity-50"
-        >
-          Ver
-        </button>
-        <button
-          type="button"
-          onClick={handleDownload}
-          disabled={isPending}
-          className="mr-3 text-brand-muted hover:text-brand-text disabled:opacity-50"
-        >
-          Descargar
-        </button>
-        {canDelete && (
+      <td className="w-56 py-2 text-right">
+        <div className="flex items-center justify-end gap-3">
           <button
             type="button"
-            onClick={handleDelete}
+            onClick={handleView}
             disabled={isPending}
-            className="text-brand-muted hover:text-brand-danger disabled:opacity-50"
+            className="text-brand-accent hover:underline disabled:opacity-50"
           >
-            Eliminar
+            Ver
           </button>
-        )}
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={isPending}
+            className="text-brand-muted hover:text-brand-text disabled:opacity-50"
+          >
+            Descargar
+          </button>
+          {canDelete && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isPending}
+              className="text-brand-muted hover:text-brand-danger disabled:opacity-50"
+            >
+              Eliminar
+            </button>
+          )}
+        </div>
         {error && <p className="text-xs text-brand-danger">{error}</p>}
       </td>
     </tr>
@@ -164,11 +125,10 @@ export function DocumentList({
     <table className="w-full max-w-2xl border-collapse text-sm">
       <thead>
         <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-          <th className="py-2 font-medium"></th>
-          <th className="py-2 font-medium">Archivo</th>
-          <th className="py-2 font-medium">Tamaño</th>
-          <th className="py-2 font-medium">Subido</th>
-          <th className="py-2 font-medium"></th>
+          <th className="py-2 pr-4 font-medium">Archivo</th>
+          <th className="w-24 py-2 pr-4 font-medium">Tamaño</th>
+          <th className="w-32 py-2 pr-4 font-medium">Subido</th>
+          <th className="w-56 py-2 font-medium"></th>
         </tr>
       </thead>
       <tbody>

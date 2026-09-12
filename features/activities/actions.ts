@@ -6,12 +6,6 @@ import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissi
 import { activitySchema } from "./schema";
 
 export type ActionState = { error: string | null };
-
-/**
- * Registra una actividad (llamada, reunión, correo, nota) sobre un proyecto.
- * No existe update/delete a propósito — es una bitácora, no un registro
- * editable (mismo espíritu que audit_logs).
- */
 export async function createProjectActivityAction(
   projectId: string,
   revalidatePathValue: string,
@@ -54,4 +48,48 @@ export async function createProjectActivityAction(
 
   revalidatePath(revalidatePathValue);
   return { error: null };
+}
+
+export async function updateActivityAction(
+  activityId: string,
+  revalidatePathValue: string,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requirePermission("projects.update");
+
+  const parsed = activitySchema.safeParse({
+    type: String(formData.get("type") ?? "NOTE"),
+    description: String(formData.get("description") ?? ""),
+    activity_date: String(formData.get("activity_date") ?? ""),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+  }
+
+  const supabase = await createSupabaseClient();
+  const { error } = await supabase
+    .from("activities")
+    .update({
+      type: parsed.data.type,
+      description: parsed.data.description,
+    })
+    .eq("id", activityId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath(revalidatePathValue);
+  return { error: null };
+}
+
+export async function deleteActivityAction(
+  activityId: string,
+  revalidatePathValue: string,
+): Promise<void> {
+  await requirePermission("projects.update");
+  const supabase = await createSupabaseClient();
+  const { error } = await supabase.from("activities").delete().eq("id", activityId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(revalidatePathValue);
 }
