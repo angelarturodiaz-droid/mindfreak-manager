@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import {
   deleteDocumentAction,
   getDocumentDownloadUrlAction,
@@ -21,6 +21,44 @@ function formatSize(bytes: number | null) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function Thumbnail({ doc }: { doc: Doc }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const isImage = doc.mime_type?.startsWith("image/");
+
+  useEffect(() => {
+    if (!isImage) return;
+    let cancelled = false;
+    getDocumentDownloadUrlAction(doc.storage_path).then((result) => {
+      if (!cancelled && result.url) setUrl(result.url);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [doc.storage_path, isImage]);
+
+  if (!isImage) {
+    return (
+      <div className="flex h-10 w-10 items-center justify-center border border-brand-muted/20 bg-brand-surface text-xs text-brand-muted">
+        {doc.mime_type?.includes("pdf") ? "PDF" : "Archivo"}
+      </div>
+    );
+  }
+
+  if (!url) {
+    return <div className="h-10 w-10 animate-pulse bg-brand-muted/10" />;
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={url}
+      alt={doc.file_name}
+      className="h-10 w-10 cursor-pointer border border-brand-muted/20 object-cover"
+      onClick={() => window.open(url, "_blank")}
+    />
+  );
+}
+
 function DocumentRow({
   doc,
   canDelete,
@@ -33,10 +71,24 @@ function DocumentRow({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  function handleDownload() {
+  function handleView() {
     setError(null);
     startTransition(async () => {
       const result = await getDocumentDownloadUrlAction(doc.storage_path);
+      if (result.error || !result.url) {
+        setError(result.error ?? "No se pudo generar el link.");
+        return;
+      }
+      window.open(result.url, "_blank");
+    });
+  }
+
+  function handleDownload() {
+    setError(null);
+    startTransition(async () => {
+      const result = await getDocumentDownloadUrlAction(doc.storage_path, {
+        download: doc.file_name,
+      });
       if (result.error || !result.url) {
         setError(result.error ?? "No se pudo generar el link.");
         return;
@@ -54,6 +106,9 @@ function DocumentRow({
 
   return (
     <tr className="border-b border-brand-muted/10">
+      <td className="py-2">
+        <Thumbnail doc={doc} />
+      </td>
       <td className="py-2">{doc.file_name}</td>
       <td className="py-2 text-brand-muted">{formatSize(doc.size_bytes)}</td>
       <td className="py-2 text-brand-muted">
@@ -62,9 +117,17 @@ function DocumentRow({
       <td className="py-2 text-right">
         <button
           type="button"
-          onClick={handleDownload}
+          onClick={handleView}
           disabled={isPending}
           className="mr-3 text-brand-accent hover:underline disabled:opacity-50"
+        >
+          Ver
+        </button>
+        <button
+          type="button"
+          onClick={handleDownload}
+          disabled={isPending}
+          className="mr-3 text-brand-muted hover:text-brand-text disabled:opacity-50"
         >
           Descargar
         </button>
@@ -101,6 +164,7 @@ export function DocumentList({
     <table className="w-full max-w-2xl border-collapse text-sm">
       <thead>
         <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
+          <th className="py-2 font-medium"></th>
           <th className="py-2 font-medium">Archivo</th>
           <th className="py-2 font-medium">Tamaño</th>
           <th className="py-2 font-medium">Subido</th>

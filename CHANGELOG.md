@@ -1,5 +1,15 @@
 # CHANGELOG — Mindfreak Manager
 
+## Mejora: previsualizar documentos sin descargar
+
+- La lista de documentos ahora separa **"Ver"** (abre el archivo en una
+  pestaña nueva sin forzar descarga — funciona para PDFs e imágenes, que el
+  navegador ya sabe mostrar inline) de **"Descargar"** (fuerza guardar el
+  archivo, vía el parámetro `download` de la URL firmada de Supabase
+  Storage).
+- Imágenes ahora muestran una **miniatura** directamente en la lista (clic
+  para verla en grande); otros tipos muestran un ícono genérico (PDF/Archivo).
+
 ## Fix: subir documentos daba "Body exceeded 1 MB limit"
 
 - Next.js limita el tamaño del body de los Server Actions a **1MB por

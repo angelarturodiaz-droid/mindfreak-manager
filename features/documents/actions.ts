@@ -106,12 +106,13 @@ export async function deleteDocumentAction(
 
 export async function getDocumentDownloadUrlAction(
   storagePath: string,
+  options?: { download?: string },
 ): Promise<{ url: string | null; error: string | null }> {
   await requirePermission("documents.view");
   const supabase = await createSupabaseClient();
   const { data, error } = await supabase.storage
     .from("documents")
-    .createSignedUrl(storagePath, 60 * 10); // 10 minutos
+    .createSignedUrl(storagePath, 60 * 10, options?.download ? { download: options.download } : undefined); // 10 minutos
   if (error || !data) return { url: null, error: error?.message ?? "No se pudo generar el link." };
   return { url: data.signedUrl, error: null };
 }
