@@ -39,7 +39,8 @@ Auth, Storage, RLS) · Vitest + Playwright · Git/GitHub.
 | F14 — Bancos | ✅ Completada |
 | F15 — Rentabilidad | ✅ Completada |
 | F16 — Dashboard | ✅ Completada |
-| F17–F23 | ⬜ Pendiente |
+| F17 — Documentos/Storage | ✅ Completada |
+| F18–F23 | ⬜ Pendiente |
 
 ## Decisiones arquitectónicas clave (ver F0 para detalle completo)
 

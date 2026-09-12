@@ -1,5 +1,31 @@
 # CHANGELOG — Mindfreak Manager
 
+## F17 — Documentos/Storage
+
+- La infraestructura base (tabla `documents`, bucket privado `documents`,
+  RLS por `company_id` + permisos) ya se había adelantado en F8 para el PDF
+  de cotizaciones (F0, sección R lo fijaba como requisito de V1). F17
+  construye la **UI genérica** sobre esa misma infraestructura, reutilizable
+  en cualquier módulo vía el patrón polimórfico `entity_type`/`entity_id`.
+- **Fix de RLS**: faltaba la política de `DELETE` tanto en la tabla
+  `documents` como en `storage.objects` (bucket `documents`) — sin ella,
+  borrar un documento habría fallado en silencio, igual que el bug de
+  "Descartar borrador" de hace unas rondas. Se agregó y se verificó con una
+  simulación real de RLS antes de darla por buena (migración
+  `029_documents_delete.sql`).
+- `features/documents/{schema,queries,actions}.ts` + componentes reutilizables
+  `components/documents/{upload-document-form,document-list}.tsx`:
+  subir (máx. 15MB), listar, descargar (link firmado de 10 minutos) y
+  eliminar (borra el archivo de Storage y la fila de metadata).
+- Conectado en: pestaña **Documentos** del detalle de Proyecto (la pestaña
+  que faltaba de la lista original), y además en **Gastos** ("Recibos y
+  comprobantes"), **Clientes** y **Proveedores** ("Documentos y contratos")
+  — coincide con el alcance de la sección 21 del prompt maestro
+  (cotizaciones, facturas, recibos, contratos, fotografías, comprobantes).
+- Documentos **sí se pueden borrar físicamente** (a diferencia de
+  cotizaciones/facturas/gastos) — no están en la lista de "nunca borrar" de
+  F0-Arquitectura sección M.
+
 ## F16 — Dashboard
 
 - Se instaló **recharts** (dependencia npm), la librería de gráficos que

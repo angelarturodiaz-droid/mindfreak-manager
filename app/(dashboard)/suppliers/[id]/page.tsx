@@ -7,6 +7,10 @@ import {
 } from "@/features/suppliers/actions";
 import { SupplierEditForm } from "./supplier-edit-form";
 import { NewSupplierContactForm } from "./new-contact-form";
+import { DocumentList } from "@/components/documents/document-list";
+import { UploadDocumentForm } from "@/components/documents/upload-document-form";
+import { listDocuments } from "@/features/documents/queries";
+import { hasPermission } from "@/lib/auth/permissions";
 
 export default async function SupplierDetailPage({
   params,
@@ -23,7 +27,11 @@ export default async function SupplierDetailPage({
   }
   if (!supplier) notFound();
 
-  const contacts = await listSupplierContacts(id);
+  const [contacts, documents, canManageDocs] = await Promise.all([
+    listSupplierContacts(id),
+    listDocuments("supplier", id),
+    hasPermission("documents.upload"),
+  ]);
 
   return (
     <main className="flex flex-1 flex-col gap-8 p-8">
@@ -102,6 +110,26 @@ export default async function SupplierDetailPage({
 
         <div className="mt-4">
           <NewSupplierContactForm supplierId={supplier.id} />
+        </div>
+      </section>
+
+      <section className="max-w-2xl">
+        <h2 className="mb-3 text-sm font-medium text-brand-text">
+          Documentos y contratos
+        </h2>
+        <div className="flex flex-col gap-4">
+          {canManageDocs && (
+            <UploadDocumentForm
+              entityType="supplier"
+              entityId={supplier.id}
+              revalidatePathValue={`/suppliers/${supplier.id}`}
+            />
+          )}
+          <DocumentList
+            documents={documents}
+            canDelete={canManageDocs}
+            revalidatePathValue={`/suppliers/${supplier.id}`}
+          />
         </div>
       </section>
     </main>

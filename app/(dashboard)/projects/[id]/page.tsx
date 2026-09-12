@@ -14,6 +14,9 @@ import {
   listProjectSupplierPayments,
   listProjectBankTransactions,
 } from "@/features/projects/queries";
+import { DocumentList } from "@/components/documents/document-list";
+import { UploadDocumentForm } from "@/components/documents/upload-document-form";
+import { listDocuments } from "@/features/documents/queries";
 import { updateProjectStatusAction, deleteProjectItemAction } from "@/features/projects/actions";
 import { hasPermission } from "@/lib/auth/permissions";
 import { ProjectEditForm } from "./project-edit-form";
@@ -53,7 +56,7 @@ const TABS = [
   { key: "pagos", label: "Pagos" },
   { key: "bancos", label: "Bancos" },
   { key: "tareas", label: "Tareas", phase: "F18" },
-  { key: "documentos", label: "Documentos", phase: "F17" },
+  { key: "documentos", label: "Documentos" },
   { key: "actividades", label: "Actividades", phase: "F18" },
   { key: "rentabilidad", label: "Rentabilidad" },
 ];
@@ -110,6 +113,9 @@ export default async function ProjectDetailPage({
     activeTab === "pagos" ? await listProjectSupplierPayments(id) : null;
   const bankTransactions =
     activeTab === "bancos" ? await listProjectBankTransactions(id) : null;
+  const documents = activeTab === "documentos" ? await listDocuments("project", id) : null;
+  const canManageDocs =
+    activeTab === "documentos" ? await hasPermission("documents.upload") : false;
 
   const clientData = project.clients as { name: string } | { name: string }[] | null;
   const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
@@ -683,6 +689,24 @@ export default async function ProjectDetailPage({
               </tbody>
             </table>
           )}
+        </div>
+      ) : activeTab === "documentos" && documents ? (
+        <div className="flex max-w-2xl flex-col gap-4">
+          <h2 className="text-sm font-medium text-brand-text">
+            Documentos del proyecto
+          </h2>
+          {canManageDocs && (
+            <UploadDocumentForm
+              entityType="project"
+              entityId={id}
+              revalidatePathValue={`/projects/${id}?tab=documentos`}
+            />
+          )}
+          <DocumentList
+            documents={documents}
+            canDelete={canManageDocs}
+            revalidatePathValue={`/projects/${id}?tab=documentos`}
+          />
         </div>
       ) : (
         <div className="border border-dashed border-brand-muted/30 p-8 text-center">

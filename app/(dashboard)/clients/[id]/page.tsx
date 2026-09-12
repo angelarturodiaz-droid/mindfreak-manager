@@ -8,6 +8,10 @@ import {
 } from "@/features/clients/actions";
 import { ClientEditForm } from "./client-edit-form";
 import { NewContactForm } from "./new-contact-form";
+import { DocumentList } from "@/components/documents/document-list";
+import { UploadDocumentForm } from "@/components/documents/upload-document-form";
+import { listDocuments } from "@/features/documents/queries";
+import { hasPermission } from "@/lib/auth/permissions";
 
 export default async function ClientDetailPage({
   params,
@@ -24,7 +28,11 @@ export default async function ClientDetailPage({
   }
   if (!client) notFound();
 
-  const contacts = await listClientContacts(id);
+  const [contacts, documents, canManageDocs] = await Promise.all([
+    listClientContacts(id),
+    listDocuments("client", id),
+    hasPermission("documents.upload"),
+  ]);
 
   return (
     <main className="flex flex-1 flex-col gap-8 p-8">
@@ -117,6 +125,26 @@ export default async function ClientDetailPage({
 
         <div className="mt-4">
           <NewContactForm clientId={client.id} />
+        </div>
+      </section>
+
+      <section className="max-w-2xl">
+        <h2 className="mb-3 text-sm font-medium text-brand-text">
+          Documentos y contratos
+        </h2>
+        <div className="flex flex-col gap-4">
+          {canManageDocs && (
+            <UploadDocumentForm
+              entityType="client"
+              entityId={client.id}
+              revalidatePathValue={`/clients/${client.id}`}
+            />
+          )}
+          <DocumentList
+            documents={documents}
+            canDelete={canManageDocs}
+            revalidatePathValue={`/clients/${client.id}`}
+          />
         </div>
       </section>
     </main>

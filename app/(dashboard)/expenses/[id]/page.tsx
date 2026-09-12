@@ -12,6 +12,9 @@ import { PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
 import { hasPermission } from "@/lib/auth/permissions";
 import { ExpenseEditForm } from "./expense-edit-form";
 import { RegisterSupplierPaymentForm } from "./register-supplier-payment-form";
+import { DocumentList } from "@/components/documents/document-list";
+import { UploadDocumentForm } from "@/components/documents/upload-document-form";
+import { listDocuments } from "@/features/documents/queries";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente",
@@ -41,7 +44,7 @@ export default async function ExpenseDetailPage({
   }
   if (!expense) notFound();
 
-  const [categories, suppliers, projects, canEdit, canPay, payments, bankAccounts] =
+  const [categories, suppliers, projects, canEdit, canPay, payments, bankAccounts, documents] =
     await Promise.all([
       listExpenseCategories(),
       listActiveSuppliers(),
@@ -50,6 +53,7 @@ export default async function ExpenseDetailPage({
       hasPermission("payments.create"),
       listPaymentsForExpense(id),
       listBankAccounts(),
+      listDocuments("expense", id),
     ]);
 
   const category = expense.expense_categories as { name: string } | null;
@@ -177,6 +181,24 @@ export default async function ExpenseDetailPage({
           </table>
         </div>
       )}
+
+      <div className="flex max-w-2xl flex-col gap-4">
+        <h2 className="text-sm font-medium text-brand-text">
+          Recibos y comprobantes
+        </h2>
+        {canEdit && (
+          <UploadDocumentForm
+            entityType="expense"
+            entityId={expense.id}
+            revalidatePathValue={`/expenses/${expense.id}`}
+          />
+        )}
+        <DocumentList
+          documents={documents}
+          canDelete={canEdit}
+          revalidatePathValue={`/expenses/${expense.id}`}
+        />
+      </div>
 
       {isEditable ? (
         <div>
