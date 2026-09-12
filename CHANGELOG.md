@@ -1,5 +1,14 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: subir documentos daba "Body exceeded 1 MB limit"
+
+- Next.js limita el tamaño del body de los Server Actions a **1MB por
+  defecto** — la validación propia de 15MB en `uploadDocumentAction` (F17)
+  nunca llegaba a ejecutarse porque el framework rechazaba la petición
+  antes. Corregido en `next.config.ts` con
+  `experimental.serverActions.bodySizeLimit: "16mb"` (con margen sobre el
+  límite de 15MB de la aplicación, para no cortar justo en el borde).
+
 ## F18 — Tareas y actividades
 
 - Tablas `tasks`/`activities` ya existían desde F3, RLS (select/insert/update
