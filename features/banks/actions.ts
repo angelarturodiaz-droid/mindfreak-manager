@@ -78,6 +78,15 @@ export async function toggleBankAccountActiveAction(
     .eq("id", accountId);
   if (error) throw new Error(error.message);
 
+  const companyId = await getPrimaryCompanyId();
+  await logAudit({
+    companyId,
+    action: currentlyActive ? "DEACTIVATE" : "ACTIVATE",
+    entityType: "bank_account",
+    entityId: accountId,
+    newValues: { is_active: !currentlyActive },
+  });
+
   revalidatePath("/banks");
   revalidatePath(`/banks/${accountId}`);
 }
@@ -115,17 +124,29 @@ export async function createManualTransactionAction(
     .single();
   if (accError || !account) return { error: "Cuenta no encontrada." };
 
-  const { error } = await supabase.from("bank_transactions").insert({
-    company_id: companyId,
-    bank_account_id: bankAccountId,
-    type: parsed.data.type,
-    amount: parsed.data.amount,
-    currency: account.currency,
-    exchange_rate: 1,
-    transaction_date: parsed.data.transaction_date,
-    description: parsed.data.description,
-  });
+  const { data: inserted, error } = await supabase
+    .from("bank_transactions")
+    .insert({
+      company_id: companyId,
+      bank_account_id: bankAccountId,
+      type: parsed.data.type,
+      amount: parsed.data.amount,
+      currency: account.currency,
+      exchange_rate: 1,
+      transaction_date: parsed.data.transaction_date,
+      description: parsed.data.description,
+    })
+    .select("id")
+    .single();
   if (error) return { error: error.message };
+
+  await logAudit({
+    companyId,
+    action: "CREATE",
+    entityType: "bank_transaction",
+    entityId: inserted.id,
+    newValues: parsed.data,
+  });
 
   revalidatePath(`/banks/${bankAccountId}`);
   revalidatePath("/banks");
@@ -191,6 +212,15 @@ export async function toggleReconciledAction(
     .update({ reconciled: !currentlyReconciled })
     .eq("id", transactionId);
   if (error) throw new Error(error.message);
+
+  const companyId = await getPrimaryCompanyId();
+  await logAudit({
+    companyId,
+    action: currentlyReconciled ? "UNRECONCILE" : "RECONCILE",
+    entityType: "bank_transaction",
+    entityId: transactionId,
+    newValues: { reconciled: !currentlyReconciled },
+  });
 
   revalidatePath(`/banks/${bankAccountId}`);
 }

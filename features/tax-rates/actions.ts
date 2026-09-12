@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
+import { logAudit } from "@/lib/audit/log";
 import { taxRateSchema } from "./schema";
 
 export type ActionState = { error: string | null };
@@ -41,13 +42,25 @@ export async function createTaxRateAction(
       .eq("is_default", true);
   }
 
-  const { error } = await supabase.from("tax_rates").insert({
-    company_id: companyId,
-    name: parsed.data.name,
-    rate: parsed.data.rate,
-    is_default: parsed.data.is_default,
-  });
+  const { data: inserted, error } = await supabase
+    .from("tax_rates")
+    .insert({
+      company_id: companyId,
+      name: parsed.data.name,
+      rate: parsed.data.rate,
+      is_default: parsed.data.is_default,
+    })
+    .select("id")
+    .single();
   if (error) return { error: error.message };
+
+  await logAudit({
+    companyId,
+    action: "CREATE",
+    entityType: "tax_rate",
+    entityId: inserted.id,
+    newValues: parsed.data,
+  });
 
   revalidatePath("/settings/tax-rates");
   return { error: null };
@@ -70,6 +83,14 @@ export async function setDefaultTaxRateAction(taxRateId: string): Promise<void> 
     .eq("id", taxRateId);
   if (error) throw new Error(error.message);
 
+  await logAudit({
+    companyId,
+    action: "UPDATE",
+    entityType: "tax_rate",
+    entityId: taxRateId,
+    newValues: { is_default: true },
+  });
+
   revalidatePath("/settings/tax-rates");
 }
 
@@ -84,6 +105,15 @@ export async function toggleTaxRateActiveAction(
     .update({ is_active: !currentlyActive })
     .eq("id", taxRateId);
   if (error) throw new Error(error.message);
+
+  const companyId = await getPrimaryCompanyId();
+  await logAudit({
+    companyId,
+    action: currentlyActive ? "DEACTIVATE" : "ACTIVATE",
+    entityType: "tax_rate",
+    entityId: taxRateId,
+    newValues: { is_active: !currentlyActive },
+  });
 
   revalidatePath("/settings/tax-rates");
 }

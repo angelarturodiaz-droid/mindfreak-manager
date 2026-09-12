@@ -13,7 +13,8 @@ const NAV_ITEMS = [
   { href: "/banks", label: "Bancos" },
   { href: "/tasks", label: "Tareas" },
   { href: "/reports", label: "Reportes" },
-  // El resto de los módulos se agregan a medida que se implementan (F20 en adelante)
+  { href: "/audit", label: "Auditoría" },
+  // El resto de los módulos se agregan a medida que se implementan (F21 en adelante)
 ];
 
 export default function DashboardLayout({

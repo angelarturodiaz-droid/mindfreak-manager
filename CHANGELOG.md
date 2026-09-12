@@ -1,5 +1,32 @@
 # CHANGELOG — Mindfreak Manager
 
+## F20 — Auditoría
+
+- `audit_logs` ya existía desde F3, con RLS desde F4 (lectura gateada por
+  `settings.manage`, cada quien registra solo sus propias acciones). F20
+  construye la **UI de consulta** (`/audit`, gateada por `settings.manage`):
+  filtro por entidad y por acción, últimos 200 registros, con usuario,
+  fecha, acción y detalle (valores nuevos/anteriores en JSON).
+- **Gaps reales encontrados y corregidos** (revisando qué acciones ya
+  registraban auditoría vs. lo que exige la sección 22 del prompt maestro
+  — "Facturas, Pagos, Gastos, Cotizaciones, Bancos, Configuración"):
+  - Bancos: `toggleBankAccountActiveAction`, `createManualTransactionAction`
+    y `toggleReconciledAction` no registraban nada — corregido.
+  - Configuración (tasas de impuesto): `createTaxRateAction`,
+    `setDefaultTaxRateAction` y `toggleTaxRateActiveAction` no registraban
+    nada — corregido.
+  - Cobros/Pagos a proveedores y transferencias bancarias sí estaban
+    cubiertos, pero desde dentro de las funciones Postgres
+    (`register_customer_payment`/`register_supplier_payment`/
+    `create_bank_transfer`), no vía el helper `logAudit` de la aplicación —
+    confirmado al revisar, no requirió cambios.
+- Verificado con inserción real simulando el usuario admin (mismo shape que
+  usa `logAudit`) antes de dar por buenos los fixes. Datos de prueba limpiados.
+- Nuevo link "Auditoría" en el menú lateral.
+- Pendiente para más adelante (no bloqueante): Aprobaciones y Usuarios/
+  Permisos también están listados en la sección 22, pero esos módulos
+  todavía no tienen UI propia (siguen en backlog).
+
 ## F19 — Reportes
 
 - `features/reports/queries.ts` + página `/reports`, cinco reportes de solo
