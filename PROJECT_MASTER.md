@@ -41,7 +41,8 @@ Auth, Storage, RLS) · Vitest + Playwright · Git/GitHub.
 | F16 — Dashboard | ✅ Completada |
 | F17 — Documentos/Storage | ✅ Completada |
 | F18 — Tareas y actividades | ✅ Completada |
-| F19–F23 | ⬜ Pendiente |
+| F19 — Reportes | ✅ Completada |
+| F20–F23 | ⬜ Pendiente |
 
 ## Decisiones arquitectónicas clave (ver F0 para detalle completo)
 

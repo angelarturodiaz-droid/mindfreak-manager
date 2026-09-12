@@ -1,5 +1,32 @@
 # CHANGELOG — Mindfreak Manager
 
+## F19 — Reportes
+
+- `features/reports/queries.ts` + página `/reports`, cinco reportes de solo
+  lectura sobre datos ya registrados (nada nuevo que capturar):
+  - **Rentabilidad por proyecto**: todos los proyectos con Cotizado/
+    Facturado/Cobrado/Costo real/Utilidad real/Margen (misma fórmula de F15,
+    pero agregada en 5 consultas totales en vez de 5 por proyecto — evita
+    N+1).
+  - **Cuentas por cobrar**: facturas con balance pendiente, con antigüedad
+    (días vencida) calculada respecto a la fecha de vencimiento.
+  - **Cuentas por pagar**: gastos con balance pendiente.
+  - **Ventas por cliente** y **Gastos por categoría**: totales agregados.
+  - Todo consolidado en la moneda base de la empresa (mismo enfoque de F15/F16).
+- **Fix de RLS real encontrado durante esta fase**: el permiso
+  `reports.view` existía en el catálogo desde F0/F4, pero ninguna política
+  RLS lo usaba — alguien con `reports.view` pero sin `invoices.view`/
+  `expenses.view`/etc. habría visto los reportes vacíos, ya que RLS es la
+  última línea de defensa y bloquea la lectura de esas tablas sin el
+  permiso específico. Corregido en `031_reports_rls.sql`: las políticas de
+  `select` de `quotations`, `projects`, `project_items`, `invoices`,
+  `invoice_items`, `customer_payments` y `expenses` ahora aceptan
+  `reports.view` como alternativa al permiso propio del módulo. Verificado
+  revisando las políticas aplicadas directamente en Postgres.
+- Página gateada por `reports.view` a nivel de aplicación (redirige a
+  `/dashboard` si no se tiene) además del RLS.
+- Nuevo link "Reportes" en el menú lateral.
+
 ## Mejora: previsualizar documentos sin descargar
 
 - La lista de documentos ahora separa **"Ver"** (abre el archivo en una
