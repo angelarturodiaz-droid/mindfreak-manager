@@ -17,6 +17,11 @@ import {
 import { DocumentList } from "@/components/documents/document-list";
 import { UploadDocumentForm } from "@/components/documents/upload-document-form";
 import { listDocuments } from "@/features/documents/queries";
+import { listTasks } from "@/features/tasks/queries";
+import { NewTaskForm } from "@/components/tasks/new-task-form";
+import { TaskList } from "@/components/tasks/task-list";
+import { listProjectActivities } from "@/features/activities/queries";
+import { NewActivityForm } from "./new-activity-form";
 import { updateProjectStatusAction, deleteProjectItemAction } from "@/features/projects/actions";
 import { hasPermission } from "@/lib/auth/permissions";
 import { ProjectEditForm } from "./project-edit-form";
@@ -55,9 +60,9 @@ const TABS = [
   { key: "cobros", label: "Cobros" },
   { key: "pagos", label: "Pagos" },
   { key: "bancos", label: "Bancos" },
-  { key: "tareas", label: "Tareas", phase: "F18" },
+  { key: "tareas", label: "Tareas" },
   { key: "documentos", label: "Documentos" },
-  { key: "actividades", label: "Actividades", phase: "F18" },
+  { key: "actividades", label: "Actividades" },
   { key: "rentabilidad", label: "Rentabilidad" },
 ];
 
@@ -116,6 +121,9 @@ export default async function ProjectDetailPage({
   const documents = activeTab === "documentos" ? await listDocuments("project", id) : null;
   const canManageDocs =
     activeTab === "documentos" ? await hasPermission("documents.upload") : false;
+  const projectTasks = activeTab === "tareas" ? await listTasks({ projectId: id }) : null;
+  const projectActivities =
+    activeTab === "actividades" ? await listProjectActivities(id) : null;
 
   const clientData = project.clients as { name: string } | { name: string }[] | null;
   const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
@@ -708,13 +716,57 @@ export default async function ProjectDetailPage({
             revalidatePathValue={`/projects/${id}?tab=documentos`}
           />
         </div>
+      ) : activeTab === "tareas" && projectTasks ? (
+        <div className="flex flex-col gap-4">
+          <h2 className="text-sm font-medium text-brand-text">
+            Tareas del proyecto
+          </h2>
+          {canUpdate && (
+            <NewTaskForm
+              members={members}
+              defaultProjectId={id}
+              revalidatePathValue={`/projects/${id}?tab=tareas`}
+            />
+          )}
+          <TaskList
+            tasks={projectTasks}
+            showProjectColumn={false}
+            revalidatePathValue={`/projects/${id}?tab=tareas`}
+          />
+        </div>
+      ) : activeTab === "actividades" && projectActivities ? (
+        <div className="flex max-w-2xl flex-col gap-4">
+          <h2 className="text-sm font-medium text-brand-text">
+            Actividades del proyecto
+          </h2>
+          {canUpdate && (
+            <NewActivityForm
+              projectId={id}
+              revalidatePathValue={`/projects/${id}?tab=actividades`}
+            />
+          )}
+          {projectActivities.length === 0 ? (
+            <p className="text-sm text-brand-muted">Sin actividades todavía.</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {projectActivities.map((a) => {
+                const author = Array.isArray(a.profiles) ? a.profiles[0] : a.profiles;
+                return (
+                  <li key={a.id} className="border border-brand-muted/20 px-3 py-2 text-sm">
+                    <p>{a.description}</p>
+                    <p className="text-xs text-brand-muted">
+                      {a.type} · {new Date(a.activity_date).toLocaleString("es-DO")}
+                      {author?.full_name && ` · ${author.full_name}`}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       ) : (
         <div className="border border-dashed border-brand-muted/30 p-8 text-center">
-          <p className="text-sm text-brand-muted">
-            Esta pestaña se construye en{" "}
-            {TABS.find((t) => t.key === activeTab)?.phase} — todavía no existe
-            ese módulo.
-          </p>
+          <p className="text-sm text-brand-muted">Pestaña no encontrada.</p>
         </div>
       )}
     </main>

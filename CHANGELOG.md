@@ -1,5 +1,28 @@
 # CHANGELOG — Mindfreak Manager
 
+## F18 — Tareas y actividades
+
+- Tablas `tasks`/`activities` ya existían desde F3, RLS (select/insert/update
+  de tasks; select/insert de activities) desde F4 — gateadas con
+  `projects.view`/`projects.update` (no tienen permiso propio en el
+  catálogo). **Fix de RLS**: faltaba la política de `DELETE` en `tasks`
+  (migración `030_tasks_delete.sql`) — verificado con inserción/actualización/
+  borrado real simulando el usuario admin antes de darlo por bueno.
+- Una tarea puede ser **general de la empresa o ligada a un proyecto**
+  (`project_id` opcional, igual que gastos). `features/tasks/*` +
+  `components/tasks/{new-task-form,task-list}.tsx` (reutilizables: la misma
+  lista/formulario sirven en `/tasks` y en la pestaña "Tareas" del proyecto).
+- Estado de tarea (Pendiente/En curso/Hecha/Cancelada) se cambia inline desde
+  un select en la lista, sin recargar la página.
+- **Actividades** (`features/activities/*`): bitácora de llamadas, reuniones,
+  correos y notas por proyecto. **A propósito, no tiene update ni delete** —
+  es un registro tipo bitácora, mismo espíritu que `audit_logs` (se registra,
+  no se edita ni se borra después).
+- Conectado: página general `/tasks` (con filtro por estado) + pestañas
+  "Tareas" y "Actividades" del detalle de Proyecto (ambas placeholder hasta
+  ahora).
+- Nuevo link "Tareas" en el menú lateral.
+
 ## F17 — Documentos/Storage
 
 - La infraestructura base (tabla `documents`, bucket privado `documents`,
