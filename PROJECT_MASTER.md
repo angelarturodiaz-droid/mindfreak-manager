@@ -153,8 +153,11 @@ para subtotal/impuesto/total/balance, `ConfirmButton` para cancelar,
 `DataTable` para historial de pagos) y formularios (nuevo, editar,
 registrar pago a proveedor) migrados al Design System.
 
-**⬜ Pendiente (próximas etapas)**: Proveedores → Servicios → Bancos →
-Tareas → Reportes → Auditoría → Configuración → Login.
+**✅ Etapa 8 (completada)**: módulo **Proveedores** — lista, detalle y
+formularios (nuevo, editar, nuevo contacto) migrados al Design System.
+
+**⬜ Pendiente (próximas etapas)**: Servicios → Bancos → Tareas → Reportes →
+Auditoría → Configuración → Login.
 
 ## Backlog
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { getSupplier, listSupplierContacts } from "@/features/suppliers/queries";
 import {
   deactivateSupplierAction,
@@ -11,6 +12,9 @@ import { DocumentList } from "@/components/documents/document-list";
 import { UploadDocumentForm } from "@/components/documents/upload-document-form";
 import { listDocuments } from "@/features/documents/queries";
 import { hasPermission } from "@/lib/auth/permissions";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 
 export default async function SupplierDetailPage({
   params,
@@ -36,38 +40,36 @@ export default async function SupplierDetailPage({
   return (
     <main className="flex flex-1 flex-col gap-8 p-8">
       <div>
-        <Link href="/suppliers" className="text-sm text-brand-muted hover:text-brand-text">
-          ← Proveedores
+        <Link
+          href="/suppliers"
+          className="inline-flex items-center gap-1 text-sm text-brand-muted hover:text-brand-text"
+        >
+          <ArrowLeft size={14} /> Proveedores
         </Link>
         <div className="mt-2 flex items-center gap-3">
           <h1 className="text-xl font-semibold text-brand-primary">
             {supplier.name}
           </h1>
-          {supplier.category && (
-            <span className="text-sm text-brand-accent">{supplier.category}</span>
-          )}
-          {!supplier.is_active && (
-            <span className="text-sm text-brand-danger">(inactivo)</span>
-          )}
+          {supplier.category && <Badge tone="info">{supplier.category}</Badge>}
+          {!supplier.is_active && <Badge tone="danger">Inactivo</Badge>}
         </div>
       </div>
 
       {supplier.is_active && (
-        <form action={deactivateSupplierAction.bind(null, supplier.id)}>
-          <button
-            type="submit"
-            className="border border-brand-muted/30 px-4 py-2 text-sm text-brand-muted hover:border-brand-danger hover:text-brand-danger"
-          >
-            Desactivar proveedor
-          </button>
-        </form>
+        <ConfirmButton
+          label="Desactivar proveedor"
+          confirmTitle={`¿Desactivar a "${supplier.name}"?`}
+          onConfirm={deactivateSupplierAction.bind(null, supplier.id)}
+        />
       )}
 
       <section className="max-w-md">
         <h2 className="mb-3 text-sm font-medium text-brand-text">
           Información general
         </h2>
-        <SupplierEditForm supplier={supplier} />
+        <Card>
+          <SupplierEditForm supplier={supplier} />
+        </Card>
       </section>
 
       <section className="max-w-2xl">
@@ -77,34 +79,29 @@ export default async function SupplierDetailPage({
             <p className="text-sm text-brand-muted">Sin contactos todavía.</p>
           )}
           {contacts.map((contact) => (
-            <div
-              key={contact.id}
-              className="flex items-center justify-between border border-brand-muted/20 px-3 py-2 text-sm"
-            >
+            <Card key={contact.id} padded={false} className="flex items-center justify-between px-3 py-2">
               <div>
-                <span className="font-medium text-brand-text">
+                <span className="text-sm font-medium text-brand-text">
                   {contact.full_name}
                 </span>
                 {contact.is_primary && (
-                  <span className="ml-2 text-xs text-brand-accent">Principal</span>
+                  <span className="ml-2">
+                    <Badge tone="info">Principal</Badge>
+                  </span>
                 )}
-                <p className="text-brand-muted">
+                <p className="text-sm text-brand-muted">
                   {[contact.position, contact.email, contact.phone]
                     .filter(Boolean)
                     .join(" · ")}
                 </p>
               </div>
-              <form
-                action={deleteSupplierContactAction.bind(null, contact.id, supplier.id)}
-              >
-                <button
-                  type="submit"
-                  className="text-brand-muted hover:text-brand-danger"
-                >
-                  Eliminar
-                </button>
-              </form>
-            </div>
+              <ConfirmButton
+                label="Eliminar"
+                icon={<Trash2 size={14} />}
+                confirmTitle={`¿Eliminar a ${contact.full_name}?`}
+                onConfirm={deleteSupplierContactAction.bind(null, contact.id, supplier.id)}
+              />
+            </Card>
           ))}
         </div>
 
