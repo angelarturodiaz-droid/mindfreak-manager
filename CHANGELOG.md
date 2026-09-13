@@ -1,5 +1,19 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: `npm install` daba ERESOLVE (conflicto @types/node vs. vitest)
+
+- **Bug real** encontrado por el usuario al instalar en su Mac: `vitest@5`
+  requiere `@types/node` ^22 (o >=24), pero el proyecto tenía `@types/node`
+  ^20 (heredado de F1) — `npm install` fallaba con `ERESOLVE` sin la
+  bandera `--legacy-peer-deps`. Yo lo había resuelto localmente con esa
+  bandera al construir F21, pero eso no queda "guardado" para quien clona
+  el repo de cero.
+- **Corregido de raíz**: `@types/node` subido a `^22` en `package.json`.
+  Reinstalado desde cero (`rm -rf node_modules package-lock.json &&
+  npm install`) sin ninguna bandera especial — instala limpio. Verificado
+  que build, lint, tipos y los 15 tests unitarios siguen pasando tras el
+  cambio.
+
 ## Ampliación de cobertura E2E
 
 - Se agregaron 4 specs E2E más a las 3 de F21 (siguen sin ejecutarse en
