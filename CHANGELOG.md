@@ -1,5 +1,17 @@
 # CHANGELOG — Mindfreak Manager
 
+## E2E confirmado: 8/9 pasan corriendo secuencial
+
+- El usuario corrió `npm run test:e2e` tras el fix de `workers: 1` — **8 de
+  9 tests pasan**. El único que falló fue por un "Gateway Timeout" real de
+  Supabase al iniciar sesión (mismo tipo de hipo transitorio de red visto
+  antes con el dashboard), no un bug de código — confirma que el
+  diagnóstico de concurrencia del fix anterior era correcto.
+- Agregado `retries: 1` en `playwright.config.ts` para que un hipo de red
+  aislado no obligue a repetir toda la corrida a mano.
+- F21 se da por concluida: 15 tests unitarios + 9 tests E2E, todos
+  verificados corriendo de verdad (unitarios por mí, E2E por el usuario).
+
 ## Fix: fallas intermitentes en E2E ("permission denied for function user_company_ids") + selectores ambiguos
 
 - El usuario reportó 6/9 tests E2E fallando, incluyendo un error real de

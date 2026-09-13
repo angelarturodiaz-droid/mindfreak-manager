@@ -19,7 +19,10 @@ export default defineConfig({
   // pool de conexiones y producir errores intermitentes tipo "permission
   // denied" que en realidad no son de permisos — son de concurrencia.
   workers: 1,
-  retries: 0,
+  // Un reintento automático absorbe hipos transitorios de red hacia
+  // Supabase (ej. "Gateway Timeout" ocasional en el plan gratuito) sin
+  // que haya que volver a correr toda la suite a mano.
+  retries: 1,
   reporter: "list",
   use: {
     baseURL: "http://localhost:3000",

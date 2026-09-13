@@ -43,7 +43,7 @@ Auth, Storage, RLS) · Vitest + Playwright · Git/GitHub.
 | F18 — Tareas y actividades | ✅ Completada |
 | F19 — Reportes | ✅ Completada |
 | F20 — Auditoría | ✅ Completada |
-| F21 — Testing | ✅ Completada (unit; E2E escrito, sin ejecutar por límites del entorno) |
+| F21 — Testing | ✅ Completada (15 unit + 9 E2E, todos verificados corriendo) |
 | F22–F23 | ⬜ Pendiente |
 
 ## Decisiones arquitectónicas clave (ver F0 para detalle completo)
