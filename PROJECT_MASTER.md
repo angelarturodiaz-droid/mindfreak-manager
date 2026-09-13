@@ -68,13 +68,59 @@ Auth, Storage, RLS) · Vitest + Playwright · Git/GitHub.
 
 Ver sección D del documento de arquitectura. Implementada tal cual en F1.
 
+## Módulo de Configuración — primera etapa
+
+Construido tras F23, con la estructura que el usuario definió (acceso vía
+ícono de engranaje arriba a la derecha, no menú lateral). Pestañas:
+
+- **Organización**: nombre legal, RNC, dirección, teléfono, correo, moneda
+  base (`companies.address`/`phone`/`email` — columnas nuevas, migración
+  `034_settings_organization.sql`).
+- **Impuestos**: ya existía (`/settings/tax-rates`, F19/tax_rates), solo se
+  colgó dentro del layout de pestañas.
+- **Categorías de gastos**: gap real encontrado — la tabla
+  `expense_categories` existía desde F3 pero nunca tuvo pantalla propia.
+  Construida con crear/listar/eliminar (muestra cuántos gastos usan cada
+  categoría antes de dejar eliminar).
+- **Sistema**: nombre de la plataforma, colores de marca, logo (bucket
+  público nuevo `branding`, distinto al privado `documents` de F8, para que
+  la URL del logo no dependa de un link firmado que expira).
+- **Notificaciones, Documentos, Seguridad, Usuarios**: páginas informativas
+  honestas sobre qué aplica y qué no (ver tabla de backlog) — Usuarios
+  muestra el listado real (solo lectura) de usuarios y roles.
+
+**Verificación**: Organización y Categorías de gastos se probaron con
+inserción/actualización/borrado real bajo RLS simulando el usuario admin —
+funcionan. **La subida de logo (bucket `branding`) no se pudo verificar por
+esta vía**: al probar un INSERT directo a `storage.objects` para simular la
+subida, falló con "violates row-level security policy" incluso con una
+política de prueba trivial (`with check (true)`) — se investigó a fondo
+(triggers, grants, políticas restrictivas, todo descartado) sin encontrar la
+causa real; parece ser una restricción de la herramienta de SQL directo
+sobre esa tabla específica, no necesariamente un bug de la política en sí
+(que sigue exactamente el mismo patrón ya probado y funcionando del bucket
+`documents`). **Pendiente que el usuario confirme en la app real** que subir
+un logo funciona; si falla, revisar la política `branding_storage_insert`
+primero. Queda un registro de metadata huérfano (`logo-test-noauth.png`, sin
+archivo real detrás) en el bucket `branding` de la prueba — inofensivo, no
+se pudo borrar por SQL directo (protegido por trigger de Supabase Storage).
+
 ## Backlog
 
 | Idea | Módulo | Prioridad | Alcance |
 |---|---|---|---|
 | Alerta de presupuesto (gasto real vs. `projects.budget`) | Proyectos / Rentabilidad / Notificaciones | Media | Se revisa en F9/F15 |
 | Marcar cotizaciones como `EXPIRED` automáticamente cuando pasa `valid_until` sin respuesta (hoy no hay botón ni proceso automático — se usa Rechazar/Cancelar manualmente mientras tanto) | Cotizaciones | Baja | F8 (revisar) o job automático futuro |
-| Módulo de Configuración completo, acceso vía **ícono (rueda de engranaje) en la esquina superior derecha**, no en el menú lateral principal. Estructura definitiva (dada por el usuario):<br>**Organización**: Datos de la empresa, Logo y branding, Datos fiscales, NCF, ITBIS, Moneda, Datos de contacto<br>**Usuarios**: Usuarios, Roles, Permisos, Sesiones/acceso<br>**Notificaciones y alertas**: Alertas del sistema, Alertas financieras, Vencimientos, Cobros pendientes, Notificaciones por usuario<br>**Seguridad**: Políticas de acceso, Autenticación, Sesiones, Auditoría<br>**Finanzas**: Impuestos, ITBIS, Métodos de pago, Categorías de gastos, Parámetros financieros<br>**Documentos**: Tipos de documentos, Plantillas, Numeración<br>**Sistema**: Parámetros generales, Estados, Campos personalizados, Integraciones, Mantenimiento<br>Nota: "Impuestos/ITBIS" ya existe construido como `/settings/tax-rates` (tabla `tax_rates`), listo para colgarse dentro de Organización/Finanzas cuando se arme esta pantalla. "Categorías de gastos" (`expense_categories`) también ya existe en BD desde F3, sin pantalla propia — hoy se gestiona implícitamente al crear un gasto | Configuración | Media-Alta (abarca varios módulos sensibles: usuarios/auth, seguridad) | Sin número de fase propio en el plan F1-F23 (módulo 22 de la sección 10) — se agenda cuando se aborde. Estructura congelada arriba, no re-preguntar por la ubicación de Usuarios/Seguridad — ya quedó definida como pestañas propias dentro de Configuración |
+| Módulo de Configuración — **primera etapa construida** (ver sección
+  dedicada más abajo): Organización, Impuestos, Categorías de gastos,
+  Sistema. Acceso vía ícono de engranaje en la esquina superior derecha,
+  como se pidió. **Pendiente para una ronda aparte**: Usuarios/Roles reales
+  (invitar/gestionar — sensible, toca autenticación), Notificaciones reales
+  (sigue V2), Campos personalizados y Mantenimiento (fuera de alcance V1).
+  NCF/ITBIS como activación fiscal completa sigue V2. Documentos con
+  tipos/plantillas/numeración no aplica al diseño actual del sistema. |
+  Configuración | Media-Alta | Primera etapa completada; Usuarios queda
+  pendiente por su sensibilidad |
 | Campana de notificaciones en la barra superior (contador de no leídas + panel desplegable + marcar como leída). La tabla `notifications` ya existe desde F3/F4 con RLS (cada quien ve solo las suyas) — falta la UI y quién dispara cada notificación (ej. factura por vencer, tarea asignada, alerta de presupuesto ya listada arriba, cotización por expirar) | Notificaciones | Media | Sin número de fase propio en el plan F1-F23 (módulo 21 de la sección 10) — se agenda cuando se aborde, probablemente junto a F16 (Dashboard) |
 | **Manual de usuario del sistema**: documento explicando cómo funciona cada módulo (Clientes, Cotizaciones, Proyectos, Facturas, Cobros, Gastos, Pagos, Bancos, etc.) y el flujo completo del proceso de negocio de punta a punta (Cliente → Cotización → Proyecto → Factura → Cobro, y en paralelo Proyecto → Gastos → Proveedores → Pagos → Banco). Es un documento para el USUARIO final (equipo de Mindfreak Events), distinto de `README.md` (que es técnico, para desarrolladores) | Documentación | Media | Pedido explícitamente para el cierre del proyecto, después de F23 (Deployment) — cuando todos los módulos estén construidos y el flujo sea el definitivo |
 

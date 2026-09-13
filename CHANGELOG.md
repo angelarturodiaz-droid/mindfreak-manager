@@ -1,5 +1,43 @@
 # CHANGELOG — Mindfreak Manager
 
+## Módulo de Configuración — primera etapa
+
+- Nuevo layout `/settings` con pestañas: Organización, Impuestos (existente),
+  Categorías de gastos, Sistema, Notificaciones, Documentos, Seguridad,
+  Usuarios. Acceso vía ícono de engranaje en la esquina superior derecha del
+  dashboard (no en el menú lateral), como se pidió.
+- **Organización**: datos de empresa editables (nombre legal, RNC,
+  dirección, teléfono, correo, moneda base). Columnas nuevas en `companies`
+  (`address`, `phone`, `email` — migración `034_settings_organization.sql`).
+- **Categorías de gastos**: gap real — existía la tabla desde F3 sin
+  ninguna pantalla. Construida con crear/listar/eliminar, mostrando cuántos
+  gastos usan cada categoría antes de dejar eliminarla.
+- **Sistema**: nombre de plataforma y colores de marca editables (con nota
+  honesta: todavía no están conectados en vivo a los Design Tokens de
+  Tailwind, que siguen fijos en `globals.css`). Logo con subida a un bucket
+  de Storage **público** nuevo (`branding`), distinto al privado
+  (`documents`, F8) para que la URL no dependa de un link firmado que
+  expira.
+- El sidebar ahora muestra el nombre de plataforma y logo reales de la
+  empresa (antes decía "Mindfreak Manager" fijo en el código).
+- **Usuarios**: página de solo lectura (lista de usuarios + roles). Invitar/
+  gestionar usuarios de verdad queda para una ronda aparte — toca
+  autenticación directamente (ya tuvimos un incidente real con esto en F4).
+- **Notificaciones/Documentos/Seguridad**: páginas informativas honestas
+  sobre qué aplica a este sistema y qué no (NCF/notificaciones reales siguen
+  V2; tipos/plantillas de documento no aplican al diseño actual; sesiones/
+  autenticación ya las maneja Supabase Auth).
+- Verificado con datos reales (insert/update/delete bajo RLS simulando
+  admin) para Organización y Categorías de gastos.
+- **Sin verificar**: la subida de logo al bucket `branding`. Se investigó a
+  fondo un fallo de "violates row-level security policy" al intentar
+  simularlo con SQL directo (se descartaron triggers, grants y políticas
+  restrictivas como causa) sin llegar a una conclusión definitiva — parece
+  una limitación de probar `storage.objects` por esta vía, no
+  necesariamente un bug de la política (que replica exactamente el patrón
+  ya probado del bucket `documents`). Pendiente que el usuario lo pruebe en
+  la app real.
+
 ## F23 — Deployment
 
 - Revisado que el proyecto esté listo para desplegarse: sin URLs

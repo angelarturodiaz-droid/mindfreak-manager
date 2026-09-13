@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { listTaxRates } from "@/features/tax-rates/queries";
 import {
   setDefaultTaxRateAction,
@@ -14,14 +13,11 @@ export default async function TaxRatesPage() {
   ]);
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-8">
+    <div className="flex flex-col gap-6">
       <div>
-        <Link href="/dashboard" className="text-sm text-brand-muted hover:text-brand-text">
-          ← Dashboard
-        </Link>
-        <h1 className="mt-2 text-xl font-semibold text-brand-primary">
+        <h2 className="text-lg font-semibold text-brand-primary">
           Tasas de impuesto
-        </h1>
+        </h2>
         <p className="text-sm text-brand-muted">
           Se usan al agregar líneas en cotizaciones y facturas. Esto no activa la
           facturación fiscal completa (NCF/DGII) — eso sigue pendiente para V2.
@@ -89,6 +85,6 @@ export default async function TaxRatesPage() {
           <NewTaxRateForm />
         </section>
       )}
-    </main>
+    </div>
   );
 }
