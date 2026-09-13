@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { getService, listServiceCategories } from "@/features/services/queries";
 import { deactivateServiceAction } from "@/features/services/actions";
 import { ServiceEditForm } from "./service-edit-form";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 
 export default async function ServiceDetailPage({
   params,
@@ -24,32 +28,32 @@ export default async function ServiceDetailPage({
   return (
     <main className="flex flex-1 flex-col gap-8 p-8">
       <div>
-        <Link href="/services" className="text-sm text-brand-muted hover:text-brand-text">
-          ← Productos y Servicios
+        <Link
+          href="/services"
+          className="inline-flex items-center gap-1 text-sm text-brand-muted hover:text-brand-text"
+        >
+          <ArrowLeft size={14} /> Productos y Servicios
         </Link>
         <div className="mt-2 flex items-center gap-3">
           <h1 className="text-xl font-semibold text-brand-primary">
             {service.name}
           </h1>
-          {!service.is_active && (
-            <span className="text-sm text-brand-danger">(inactivo)</span>
-          )}
+          {!service.is_active && <Badge tone="danger">Inactivo</Badge>}
         </div>
       </div>
 
       {service.is_active && (
-        <form action={deactivateServiceAction.bind(null, service.id)}>
-          <button
-            type="submit"
-            className="w-fit border border-brand-muted/30 px-4 py-2 text-sm text-brand-muted hover:border-brand-danger hover:text-brand-danger"
-          >
-            Desactivar
-          </button>
-        </form>
+        <ConfirmButton
+          label="Desactivar"
+          confirmTitle={`¿Desactivar "${service.name}"?`}
+          onConfirm={deactivateServiceAction.bind(null, service.id)}
+        />
       )}
 
       <section className="max-w-md">
-        <ServiceEditForm service={service} categories={categories} />
+        <Card>
+          <ServiceEditForm service={service} categories={categories} />
+        </Card>
       </section>
     </main>
   );

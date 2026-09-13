@@ -1,7 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
+import { Plus } from "lucide-react";
 import { createServiceCategoryAction, type ActionState } from "@/features/services/actions";
+import { Input } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
 
@@ -13,19 +16,10 @@ export function NewCategoryForm() {
 
   return (
     <form action={formAction} className="flex items-end gap-2">
-      <input
-        name="name"
-        placeholder="Nombre de la categoría"
-        required
-        className="border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-      />
-      <button
-        type="submit"
-        disabled={pending}
-        className="border border-brand-muted/30 px-4 py-2 text-sm text-brand-text hover:border-brand-accent disabled:opacity-50"
-      >
-        {pending ? "Agregando…" : "Agregar categoría"}
-      </button>
+      <Input name="name" placeholder="Nombre de la categoría" required />
+      <Button type="submit" variant="outline" loading={pending} icon={<Plus size={14} />}>
+        Agregar categoría
+      </Button>
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
     </form>
   );

@@ -1,5 +1,13 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño ERP SaaS — Etapa 9: módulo Productos y Servicios
+
+- Lista, detalle y formularios (nueva categoría, nuevo producto/servicio,
+  editar) migrados a `DataTable`, `Badge`, `Card`, `Button`/`ConfirmButton`,
+  `Input`/`Select`/`Textarea`.
+- Sin cambios de lógica/queries/actions/rutas. Verificado: `tsc`,
+  `npm run build`, `eslint` y los 15 tests unitarios limpios.
+
 ## Rediseño ERP SaaS — Etapa 8: módulo Proveedores
 
 - Lista, detalle y formularios (nuevo, editar, nuevo contacto) migrados a

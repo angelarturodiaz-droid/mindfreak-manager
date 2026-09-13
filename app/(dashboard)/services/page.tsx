@@ -2,6 +2,8 @@ import Link from "next/link";
 import { listServiceCategories, listServices } from "@/features/services/queries";
 import { NewCategoryForm } from "./new-category-form";
 import { NewServiceForm } from "./new-service-form";
+import { Badge } from "@/components/ui/badge";
+import { DataTable, type Column } from "@/components/ui/data-table";
 
 function formatMoney(amount: number) {
   return new Intl.NumberFormat("es-DO", {
@@ -15,11 +17,40 @@ const TYPE_LABELS: Record<string, string> = {
   SERVICIO: "Servicio",
 };
 
+type ServiceRow = Awaited<ReturnType<typeof listServices>>[number];
+
 export default async function ServicesPage() {
   const [categories, services] = await Promise.all([
     listServiceCategories(),
     listServices(),
   ]);
+
+  const columns: Column<ServiceRow>[] = [
+    {
+      header: "Nombre",
+      accessor: (s) => (
+        <div className="flex items-center gap-2">
+          <Link href={`/services/${s.id}`} className="font-medium text-brand-text hover:text-brand-accent">
+            {s.name}
+          </Link>
+          {!s.is_active && <Badge tone="danger">Inactivo</Badge>}
+        </div>
+      ),
+    },
+    { header: "Tipo", accessor: (s) => <Badge tone="info">{TYPE_LABELS[s.type] ?? s.type}</Badge> },
+    {
+      header: "Categoría",
+      accessor: (s) => (
+        <span className="text-brand-muted">
+          {(s.service_categories as { name: string }[] | null)?.[0]?.name ?? "—"}
+        </span>
+      ),
+    },
+    { header: "Unidad", accessor: (s) => <span className="text-brand-muted">{s.unit || "—"}</span> },
+    { header: "Costo", accessor: (s) => <span className="text-brand-muted">{formatMoney(s.default_cost)}</span> },
+    { header: "Precio", accessor: (s) => formatMoney(s.default_price) },
+    { header: "Impuesto", accessor: (s) => <span className="text-brand-muted">{s.default_tax_percent}%</span> },
+  ];
 
   return (
     <main className="flex flex-1 flex-col gap-8 p-8">
@@ -44,7 +75,7 @@ export default async function ServicesPage() {
             categories.map((c) => (
               <span
                 key={c.id}
-                className="border border-brand-muted/20 px-3 py-1 text-sm text-brand-text"
+                className="rounded-[var(--radius-md)] border border-brand-border px-3 py-1 text-sm text-brand-text"
               >
                 {c.name}
               </span>
@@ -68,53 +99,7 @@ export default async function ServicesPage() {
         {services.length === 0 ? (
           <p className="text-sm text-brand-muted">Aún no tienes productos ni servicios.</p>
         ) : (
-          <table className="w-full max-w-4xl border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-                <th className="py-2 font-medium">Nombre</th>
-                <th className="py-2 font-medium">Tipo</th>
-                <th className="py-2 font-medium">Categoría</th>
-                <th className="py-2 font-medium">Unidad</th>
-                <th className="py-2 font-medium">Costo</th>
-                <th className="py-2 font-medium">Precio</th>
-                <th className="py-2 font-medium">Impuesto</th>
-              </tr>
-            </thead>
-            <tbody>
-              {services.map((s) => (
-                <tr key={s.id} className="border-b border-brand-muted/10">
-                  <td className="py-2">
-                    <Link
-                      href={`/services/${s.id}`}
-                      className="font-medium text-brand-text hover:text-brand-accent"
-                    >
-                      {s.name}
-                    </Link>
-                    {!s.is_active && (
-                      <span className="ml-2 text-xs text-brand-danger">
-                        (inactivo)
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-2 text-brand-muted">
-                    {TYPE_LABELS[s.type] ?? s.type}
-                  </td>
-                  <td className="py-2 text-brand-muted">
-                    {(s.service_categories as { name: string }[] | null)?.[0]
-                      ?.name ?? "—"}
-                  </td>
-                  <td className="py-2 text-brand-muted">{s.unit || "—"}</td>
-                  <td className="py-2 text-brand-muted">
-                    {formatMoney(s.default_cost)}
-                  </td>
-                  <td className="py-2">{formatMoney(s.default_price)}</td>
-                  <td className="py-2 text-brand-muted">
-                    {s.default_tax_percent}%
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <DataTable columns={columns} rows={services} keyFor={(s) => s.id} maxWidth="max-w-4xl" />
         )}
       </section>
     </main>

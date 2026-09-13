@@ -156,8 +156,12 @@ registrar pago a proveedor) migrados al Design System.
 **✅ Etapa 8 (completada)**: módulo **Proveedores** — lista, detalle y
 formularios (nuevo, editar, nuevo contacto) migrados al Design System.
 
-**⬜ Pendiente (próximas etapas)**: Servicios → Bancos → Tareas → Reportes →
-Auditoría → Configuración → Login.
+**✅ Etapa 9 (completada)**: módulo **Productos y Servicios** — lista,
+detalle y formularios (nueva categoría, nuevo producto/servicio, editar)
+migrados al Design System.
+
+**⬜ Pendiente (próximas etapas)**: Bancos → Tareas → Reportes → Auditoría →
+Configuración → Login.
 
 ## Backlog
 
