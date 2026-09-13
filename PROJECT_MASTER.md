@@ -105,6 +105,28 @@ primero. Queda un registro de metadata huérfano (`logo-test-noauth.png`, sin
 archivo real detrás) en el bucket `branding` de la prueba — inofensivo, no
 se pudo borrar por SQL directo (protegido por trigger de Supabase Storage).
 
+## Rediseño de interfaz (ERP SaaS) — en curso, por etapas
+
+Brief completo del usuario: rediseño visual total (estilo Odoo/ERPNext/Zoho)
+sin tocar funcionalidad/lógica/datos/rutas/permisos. Alcance real: ~40
+pantallas. Se aborda en rondas, no en una sola.
+
+**✅ Etapa 1 (completada)**: Design System (`app/globals.css` — negro/blanco/
+azul claro + semánticos + estados), librería de componentes
+(`components/ui/`: Button, Badge, Input/Select/Textarea, Card/KpiCard,
+EmptyState, Skeleton, Modal, ConfirmButton, Toaster, DataTable), `lucide-react`
++ `sonner` instalados, Sidebar rediseñado (agrupado, íconos, colapsable,
+activo/hover), Dashboard rediseñado (KpiCard + accesos rápidos).
+
+**⬜ Pendiente (próximas etapas)**: aplicar `components/ui/` módulo por
+módulo — reemplazar tablas planas por `DataTable`, botones nativos por
+`Button`, badges de texto por `Badge`, `window.confirm()` por
+`ConfirmButton`, agregar `EmptyState`/`TableSkeleton` donde falte, y
+breadcrumbs. Orden sugerido (de mayor a menor tráfico esperado): Clientes →
+Cotizaciones → Proyectos → Facturas → Cobros/Pagos → Gastos → Proveedores →
+Servicios → Bancos → Tareas → Reportes → Auditoría → Configuración → página
+de Login.
+
 ## Backlog
 
 | Idea | Módulo | Prioridad | Alcance |

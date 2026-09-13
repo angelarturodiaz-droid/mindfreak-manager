@@ -1,28 +1,52 @@
 @import "tailwindcss";
 
 /*
-  Design Tokens — Mindfreak Events / Mindfreak Manager
-  Ver F0-Arquitectura, sección U (UX/UI — Design System e Identidad Visual).
+  Design System — Mindfreak Manager (rediseño ERP SaaS moderno)
+  Ver F0-Arquitectura, sección U, y el brief de rediseño de la interfaz.
 
-  brand-primary y brand-accent salen del logo oficial (negro + teal).
-  El resto de la paleta funcional (secondary/background/surface/text/muted)
-  se define en esta fase (F1) como punto de partida razonable, y puede
-  ajustarse sin tocar ningún componente, ya que todos consumen estas
-  variables — nunca un HEX directo.
+  Paleta: negro + blanco + azul claro (identidad Mindfreak), con colores
+  semánticos completos (éxito/advertencia/error/info) y estados
+  (hover/active/focus/disabled). Los nombres de tokens existentes
+  (brand-primary, brand-accent, brand-surface, etc.) se mantienen para no
+  romper ninguna de las pantallas ya construidas — solo se actualizan sus
+  valores y se agregan tokens nuevos (hover, bordes, radios, sombras,
+  semánticos con fondo suave a juego).
 */
 :root {
-  --brand-primary: #000000;   /* Negro del logo (texto "MINDFREAK") */
-  --brand-accent: #17a6b8;    /* Teal del logo (barras + "EVENTS") — confirmar HEX exacto si existe guía de marca oficial */
-  --brand-secondary: #0e2b30; /* Teal oscuro derivado, para contraste/hover */
+  /* Marca */
+  --brand-primary: #0b0e14;        /* negro profundo, no puro — para texto/headers/botón principal */
+  --brand-primary-hover: #1c212b;
+  --brand-accent: #2e90fa;         /* azul claro — color interactivo principal */
+  --brand-accent-hover: #1570d6;
+  --brand-accent-light: #eaf4ff;   /* fondo suave para estados activos/seleccionados */
+  --brand-secondary: #101828;      /* variante oscura para navegación/sidebar si se usa sólido */
 
-  --brand-background: #f7f9fa;
+  /* Superficie y texto */
+  --brand-background: #f6f8fb;
   --brand-surface: #ffffff;
-  --brand-text: #101418;
-  --brand-muted: #6b7280;
+  --brand-surface-hover: #f1f5f9;
+  --brand-border: #e2e8f0;
+  --brand-text: #101828;
+  --brand-muted: #667085;
+  --brand-disabled: #cbd5e1;
 
-  --brand-success: #16a34a;
-  --brand-warning: #d97706;
-  --brand-danger: #dc2626;
+  /* Semánticos (con variante de fondo suave para badges/alerts) */
+  --brand-success: #12b76a;
+  --brand-success-bg: #ecfdf3;
+  --brand-warning: #f79009;
+  --brand-warning-bg: #fffaeb;
+  --brand-danger: #f04438;
+  --brand-danger-bg: #fef3f2;
+  --brand-info: #2e90fa;
+  --brand-info-bg: #eaf4ff;
+
+  /* Escala de radios y sombras */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --shadow-sm: 0 1px 2px 0 rgb(16 24 40 / 0.05);
+  --shadow-md: 0 4px 8px -2px rgb(16 24 40 / 0.08), 0 2px 4px -2px rgb(16 24 40 / 0.06);
+  --shadow-lg: 0 12px 16px -4px rgb(16 24 40 / 0.08), 0 4px 6px -2px rgb(16 24 40 / 0.03);
 
   --background: var(--brand-background);
   --foreground: var(--brand-text);
@@ -33,17 +57,37 @@
   --color-foreground: var(--foreground);
 
   --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-hover: var(--brand-primary-hover);
   --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-hover: var(--brand-accent-hover);
+  --color-brand-accent-light: var(--brand-accent-light);
   --color-brand-secondary: var(--brand-secondary);
+
   --color-brand-background: var(--brand-background);
   --color-brand-surface: var(--brand-surface);
+  --color-brand-surface-hover: var(--brand-surface-hover);
+  --color-brand-border: var(--brand-border);
   --color-brand-text: var(--brand-text);
   --color-brand-muted: var(--brand-muted);
-  --color-brand-success: var(--brand-success);
-  --color-brand-warning: var(--brand-warning);
-  --color-brand-danger: var(--brand-danger);
+  --color-brand-disabled: var(--brand-disabled);
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --color-brand-success: var(--brand-success);
+  --color-brand-success-bg: var(--brand-success-bg);
+  --color-brand-warning: var(--brand-warning);
+  --color-brand-warning-bg: var(--brand-warning-bg);
+  --color-brand-danger: var(--brand-danger);
+  --color-brand-danger-bg: var(--brand-danger-bg);
+  --color-brand-info: var(--brand-info);
+  --color-brand-info-bg: var(--brand-info-bg);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, monospace;
 }
 
@@ -51,4 +95,21 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--brand-border) transparent;
+}
+
+/* Skeleton loader */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.skeleton {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  background-color: var(--brand-border);
+  border-radius: var(--radius-sm);
 }

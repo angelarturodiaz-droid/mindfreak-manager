@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
 
 // TODO (F5+): mover a companies.platform_name vía Settings (sección 26 del prompt maestro).
 export const metadata: Metadata = {
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="es" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-brand-background text-brand-text font-sans">
         {children}
+        <Toaster />
       </body>
     </html>
   );

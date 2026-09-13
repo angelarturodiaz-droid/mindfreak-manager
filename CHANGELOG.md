@@ -38,6 +38,48 @@
   ya probado del bucket `documents`). Pendiente que el usuario lo pruebe en
   la app real.
 
+## Rediseño de interfaz (ERP SaaS) — Etapa 1: fundación
+
+Pedido explícito del usuario: rediseño visual completo (Odoo/ERPNext/Zoho),
+**sin tocar funcionalidad, lógica, datos, rutas ni permisos**. Dado el
+tamaño real (~40 pantallas construidas en 23 fases), se aborda por etapas.
+
+**Etapa 1 (esta ronda) — fundación del Design System + Sidebar + Dashboard:**
+
+- **Tokens** (`app/globals.css`): paleta negro + blanco + azul claro (antes
+  negro + teal), colores semánticos completos con fondo suave a juego
+  (`success`/`warning`/`danger`/`info`, cada uno con su `-bg`), estados
+  (`hover`, `disabled`), escala de radios y sombras. Se mantienen los
+  nombres de variable existentes (`brand-primary`, `brand-accent`, etc.)
+  para no romper ninguna pantalla ya construida — solo cambian valores y se
+  agregan tokens nuevos.
+- **Librería de componentes** (`components/ui/`): `Button` (variantes
+  primary/secondary/outline/ghost/danger, estados loading/disabled),
+  `Badge` (con mapeo automático de estados de negocio → color: PAID=verde,
+  PENDING=amarillo, OVERDUE=rojo, etc.), `Input`/`Select`/`Textarea` (con
+  label/error/hint, **de paso corrige la deuda de accesibilidad** detectada
+  en F21 — ahora sí asocian `htmlFor`/`id`), `Card`/`KpiCard`, `EmptyState`,
+  `Skeleton`/`TableSkeleton`, `Modal`, `ConfirmButton` (reemplaza
+  `window.confirm()` nativo por un modal propio), `Toaster` (via `sonner`,
+  montado en el layout raíz), `DataTable` (tabla con estilo consistente).
+- **Iconos**: `lucide-react` instalado.
+- **Sidebar** (`components/layout/sidebar.tsx`): agrupado por dominio
+  (Comercial, Operaciones, Finanzas, Análisis), ícono por módulo, estado
+  activo/hover diferenciado (vía `usePathname`), colapsable.
+- **Dashboard**: KPIs con `KpiCard` + íconos, sección de accesos rápidos
+  (Nueva cotización/cliente/factura/gasto).
+- Verificado: `tsc`, `npm run build`, `eslint` y los 15 tests unitarios
+  siguen limpios tras el cambio (cambio puramente visual, sin tocar
+  lógica/queries/actions).
+
+**Pendiente (próximas etapas, no en esta ronda)**: aplicar estos mismos
+componentes al resto de los módulos (Clientes, Proveedores, Cotizaciones,
+Proyectos, Facturas, Cobros, Gastos, Bancos, Tareas, Reportes, Auditoría,
+Configuración) — tablas, formularios, botones e iconografía de cada
+pantalla individual siguen con el estilo anterior hasta que se aborden.
+También pendiente: breadcrumbs, empty/skeleton states aplicados por
+pantalla, responsive real para tablas complejas en mobile.
+
 ## F23 — Deployment
 
 - Revisado que el proyecto esté listo para desplegarse: sin URLs

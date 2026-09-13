@@ -1,8 +1,25 @@
 import Link from "next/link";
+import {
+  TrendingUp,
+  Wallet,
+  CreditCard,
+  Banknote,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  PiggyBank,
+  Percent,
+  FolderKanban,
+  FileClock,
+  FileCheck2,
+  LogOut,
+  Plus,
+} from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/permissions";
 import { signOut } from "@/features/auth/actions";
 import { getDashboardKPIs, getFinancialFlowSeries } from "@/features/dashboard/queries";
 import { FinancialFlowChart } from "./financial-flow-chart";
+import { KpiCard } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 function formatMoney(amount: number) {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(
@@ -15,38 +32,19 @@ function formatPercent(value: number | null) {
   return `${value.toFixed(1)}%`;
 }
 
+const QUICK_ACTIONS = [
+  { href: "/quotations/new", label: "Nueva cotización" },
+  { href: "/clients/new", label: "Nuevo cliente" },
+  { href: "/invoices/new", label: "Nueva factura" },
+  { href: "/expenses/new", label: "Nuevo gasto" },
+];
+
 export default async function DashboardPage() {
   const [user, kpis, flow] = await Promise.all([
     getCurrentUser(),
     getDashboardKPIs(),
     getFinancialFlowSeries(6),
   ]);
-
-  const kpiCards = [
-    { label: "Ventas (mes)", value: formatMoney(kpis.ventas) },
-    { label: "Cobros (mes)", value: formatMoney(kpis.cobros) },
-    { label: "Gastos (mes)", value: formatMoney(kpis.gastos) },
-    { label: "Pagos (mes)", value: formatMoney(kpis.pagos) },
-    { label: "Cuentas por cobrar", value: formatMoney(kpis.cuentasPorCobrar) },
-    { label: "Cuentas por pagar", value: formatMoney(kpis.cuentasPorPagar) },
-    {
-      label: "Utilidad (mes)",
-      value: formatMoney(kpis.utilidad),
-      danger: kpis.utilidad < 0,
-    },
-    { label: "Margen (mes)", value: formatPercent(kpis.margen) },
-    { label: "Proyectos activos", value: String(kpis.proyectosActivos), link: "/projects" },
-    {
-      label: "Cotizaciones pendientes",
-      value: String(kpis.cotizacionesPendientes),
-      link: "/quotations",
-    },
-    {
-      label: "Cotizaciones aprobadas",
-      value: String(kpis.cotizacionesAprobadas),
-      link: "/quotations",
-    },
-  ];
 
   return (
     <main className="flex flex-1 flex-col gap-8 p-8">
@@ -58,41 +56,68 @@ export default async function DashboardPage() {
           </p>
         </div>
         <form action={signOut}>
-          <button
-            type="submit"
-            className="w-fit border border-brand-muted/30 px-4 py-2 text-sm text-brand-text hover:border-brand-accent"
-          >
+          <Button type="submit" variant="outline" size="sm" icon={<LogOut size={14} />}>
             Cerrar sesión
-          </button>
+          </Button>
         </form>
       </div>
 
-      <section>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {kpiCards.map((kpi) => {
-            const content = (
-              <div className="border border-brand-muted/20 px-4 py-3">
-                <p className="text-xs text-brand-muted">{kpi.label}</p>
-                <p
-                  className={
-                    "danger" in kpi && kpi.danger
-                      ? "text-lg font-semibold text-brand-danger"
-                      : "text-lg font-semibold text-brand-primary"
-                  }
-                >
-                  {kpi.value}
-                </p>
-              </div>
-            );
-            return "link" in kpi && kpi.link ? (
-              <Link key={kpi.label} href={kpi.link} className="hover:border-brand-accent">
-                {content}
-              </Link>
-            ) : (
-              <div key={kpi.label}>{content}</div>
-            );
-          })}
-        </div>
+      <section className="flex flex-wrap gap-2">
+        {QUICK_ACTIONS.map((action) => (
+          <Link key={action.href} href={action.href}>
+            <Button variant="outline" size="sm" icon={<Plus size={14} />}>
+              {action.label}
+            </Button>
+          </Link>
+        ))}
+      </section>
+
+      <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <KpiCard label="Ventas (mes)" value={formatMoney(kpis.ventas)} icon={<TrendingUp size={16} />} />
+        <KpiCard label="Cobros (mes)" value={formatMoney(kpis.cobros)} icon={<Wallet size={16} />} />
+        <KpiCard label="Gastos (mes)" value={formatMoney(kpis.gastos)} icon={<CreditCard size={16} />} />
+        <KpiCard label="Pagos (mes)" value={formatMoney(kpis.pagos)} icon={<Banknote size={16} />} />
+        <KpiCard
+          label="Cuentas por cobrar"
+          value={formatMoney(kpis.cuentasPorCobrar)}
+          icon={<ArrowDownCircle size={16} />}
+        />
+        <KpiCard
+          label="Cuentas por pagar"
+          value={formatMoney(kpis.cuentasPorPagar)}
+          icon={<ArrowUpCircle size={16} />}
+        />
+        <KpiCard
+          label="Utilidad (mes)"
+          value={formatMoney(kpis.utilidad)}
+          danger={kpis.utilidad < 0}
+          icon={<PiggyBank size={16} />}
+        />
+        <KpiCard label="Margen (mes)" value={formatPercent(kpis.margen)} icon={<Percent size={16} />} />
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Link href="/projects">
+          <KpiCard
+            label="Proyectos activos"
+            value={String(kpis.proyectosActivos)}
+            icon={<FolderKanban size={16} />}
+          />
+        </Link>
+        <Link href="/quotations">
+          <KpiCard
+            label="Cotizaciones pendientes"
+            value={String(kpis.cotizacionesPendientes)}
+            icon={<FileClock size={16} />}
+          />
+        </Link>
+        <Link href="/quotations">
+          <KpiCard
+            label="Cotizaciones aprobadas"
+            value={String(kpis.cotizacionesAprobadas)}
+            icon={<FileCheck2 size={16} />}
+          />
+        </Link>
       </section>
 
       <section>
@@ -104,4 +129,3 @@ export default async function DashboardPage() {
     </main>
   );
 }
-
