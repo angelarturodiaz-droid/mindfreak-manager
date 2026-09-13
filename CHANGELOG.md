@@ -1,5 +1,44 @@
 # CHANGELOG — Mindfreak Manager
 
+## F22 — Optimización
+
+Basado en una revisión directa de los *advisors* de rendimiento de
+Supabase (migración `033_optimization.sql`):
+
+- **RLS ineficiente (WARN, 8 hallazgos, resuelto)**: varias políticas
+  llamaban `auth.uid()` directo en vez de `(select auth.uid())` —
+  Postgres las re-evaluaba por cada fila en vez de una sola vez por
+  consulta. Corregido en `profiles`, `user_roles`, `approvals`,
+  `audit_logs`, `notifications`.
+- **Políticas duplicadas (WARN, 45 hallazgos, resuelto)**: 9 tablas
+  (`exchange_rates`, `expense_categories`, `invoice_items`, `project_items`,
+  `quotation_items`, `service_categories`, `services`, `settings`,
+  `tax_rates`) tenían una política `_select` y otra `_write` (`FOR ALL`)
+  que también cubría `SELECT` — Postgres evaluaba ambas en cada lectura.
+  Separadas en políticas explícitas de `insert`/`update`/`delete` sin
+  volver a cubrir `select`.
+- **61 índices de cobertura faltantes en FKs (INFO, resuelto)**: ya estaba
+  documentado como deuda técnica desde F3. Se agregaron todos —
+  `company_id` en 15 tablas (el filtro más usado de todo el sistema, vía
+  RLS), más FKs de negocio (`bank_transactions`, `customer_payments`,
+  `supplier_payments`, `quotation_items`/`invoice_items`.`service_id`/
+  `tax_rate_id`, `projects`.`manager_id`/`quotation_id`/`contact_id`, etc.)
+  y columnas de auditoría (`created_by`/`approved_by`/`uploaded_by`).
+- **No se tocaron los "unused index" (INFO, 7→68 tras la migración)**: es
+  esperado — la base de datos todavía no tiene tráfico real de producción,
+  así que Postgres no ha registrado uso de ningún índice todavía (ni los
+  viejos ni los nuevos). No hay motivo para borrar índices que se van a
+  necesitar según crezca el uso real.
+- **Verificado exhaustivamente antes de dar por bueno**: tras aplicar la
+  migración, se re-consultaron los *advisors* — los WARN de RLS ineficiente
+  y políticas duplicadas desaparecieron por completo. Se probó
+  insert/select/update/delete real bajo RLS simulando el usuario admin en
+  `services` (política simple) y `quotation_items` (política vía `EXISTS`,
+  la más compleja de dividir) para confirmar que separar las políticas no
+  rompió ningún flujo. También se confirmó `profiles` (crítica para login)
+  sigue funcionando tras el fix de `auth.uid()`. Datos de prueba limpiados
+  después. Los *advisors* de seguridad no mostraron ningún hallazgo nuevo.
+
 ## E2E confirmado: 8/9 pasan corriendo secuencial
 
 - El usuario corrió `npm run test:e2e` tras el fix de `workers: 1` — **8 de
