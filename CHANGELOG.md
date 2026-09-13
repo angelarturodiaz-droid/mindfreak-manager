@@ -1,5 +1,23 @@
 # CHANGELOG — Mindfreak Manager
 
+## Ampliación de cobertura E2E
+
+- Se agregaron 4 specs E2E más a las 3 de F21 (siguen sin ejecutarse en
+  este entorno, mismo motivo — sin navegador ni red a Supabase):
+  - `quotation-to-project.spec.ts`: crear cotización → agregar línea →
+    marcar enviada → aprobar → convertir a proyecto.
+  - `invoice-payment.spec.ts`: crear factura → agregar línea → emitir →
+    registrar el cobro completo (verifica que quede "Pagada").
+  - `expense-payment.spec.ts`: crear proveedor → crear gasto asociado →
+    registrar el pago completo (verifica que quede "Pagado").
+  - `documents.spec.ts`: crear cliente → subir un documento → verificar que
+    aparece → eliminarlo → verificar que desaparece.
+- Total ahora: 7 specs E2E cubriendo los flujos de negocio principales de
+  punta a punta (Cliente→Cotización→Proyecto, Factura→Cobro,
+  Proveedor→Gasto→Pago, Documentos), además de autenticación.
+- Selectores verificados contra el código real de cada página (no
+  adivinados) antes de darlos por buenos.
+
 ## F21 — Testing
 
 - **Unit tests (Vitest)**: 15 tests sobre las funciones puras de cálculo
