@@ -86,4 +86,43 @@ con datos de prueba reales antes de dar por buena cada fase (ver
 
 ## Deployment
 
-Se define en F23.
+Se recomienda **Vercel** (misma empresa que Next.js — cero configuración
+rara, plan gratuito de sobra para este proyecto).
+
+1. Entra a [vercel.com](https://vercel.com) e inicia sesión con tu cuenta
+   de GitHub.
+2. **Add New → Project**, selecciona el repo `mindfreak-manager` de la
+   lista (ya existe, no hay que importar nada nuevo) y dale **Import**.
+   Vercel detecta automáticamente que es Next.js — no toca configurar
+   build command ni output directory.
+3. Antes de darle deploy, en **Environment Variables** agrega las mismas
+   dos que tienes en tu `.env.local`:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+4. Dale **Deploy**. Vercel corre el mismo `npm run build` que usamos aquí
+   y te da una URL pública (`mindfreak-manager.vercel.app` o similar).
+5. **A partir de ahí, cada push a `main` en GitHub dispara un deploy
+   automático** — no hay que hacer nada más.
+
+### Configuración pendiente en Supabase tras el primer deploy
+
+La recuperación de contraseña (`resetPasswordForEmail`) usa la **Site URL**
+configurada en el dashboard de Supabase (Authentication → URL
+Configuration), no una URL fija en el código. Una vez tengas tu dominio de
+Vercel:
+
+1. Ve a tu proyecto en Supabase → **Authentication → URL Configuration**.
+2. Cambia **Site URL** de `http://localhost:3000` a tu dominio real de
+   producción.
+3. Agrega ese mismo dominio a **Redirect URLs** (con `/**` al final si
+   pide un patrón).
+
+Sin este paso, los links del correo de "recuperar contraseña" seguirían
+apuntando a `localhost` en producción.
+
+### Dominio propio (opcional)
+
+Si más adelante quieres algo como `manager.mindfreakevents.com` en vez del
+subdominio de Vercel, se agrega en **Settings → Domains** del proyecto en
+Vercel, y luego se actualiza la Site URL de Supabase (paso anterior) con
+ese dominio.

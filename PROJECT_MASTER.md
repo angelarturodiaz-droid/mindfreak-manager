@@ -45,7 +45,7 @@ Auth, Storage, RLS) · Vitest + Playwright · Git/GitHub.
 | F20 — Auditoría | ✅ Completada |
 | F21 — Testing | ✅ Completada (15 unit + 9 E2E, todos verificados corriendo) |
 | F22 — Optimización | ✅ Completada |
-| F23 — Deployment | ⬜ Pendiente |
+| F23 — Deployment | ✅ Completada (guía lista; falta que el usuario conecte Vercel) |
 
 ## Decisiones arquitectónicas clave (ver F0 para detalle completo)
 

@@ -1,5 +1,25 @@
 # CHANGELOG — Mindfreak Manager
 
+## F23 — Deployment
+
+- Revisado que el proyecto esté listo para desplegarse: sin URLs
+  hardcodeadas a `localhost` en el código (verificado por búsqueda), solo
+  2 variables de entorno necesarias (`NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`), build de producción limpio.
+- Agregado `engines.node: ">=20"` en `package.json` para que Vercel (u
+  otro host) use una versión de Node compatible con Next.js 16.
+- **README actualizado** con la guía completa de deployment en Vercel
+  (conectar el repo ya existente, variables de entorno, deploy automático
+  en cada push a `main`) y un paso importante que se detectó al revisar el
+  código: `resetPasswordForEmail` (recuperar contraseña) depende de la
+  **Site URL** configurada en el dashboard de Supabase, no de una URL en
+  el código — hay que actualizarla de `localhost:3000` al dominio de
+  producción una vez desplegado, o los links de recuperación de contraseña
+  seguirían apuntando a localhost.
+- **Nota importante**: yo no puedo conectar Vercel por ti — mi entorno no
+  tiene acceso a esa web ni a tu cuenta. Esto es lo único de F23 que
+  depende de que tú lo hagas (son ~5 minutos siguiendo la guía del README).
+
 ## F22 — Optimización
 
 Basado en una revisión directa de los *advisors* de rendimiento de
