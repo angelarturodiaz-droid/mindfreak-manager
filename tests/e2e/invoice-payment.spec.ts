@@ -10,7 +10,7 @@ test.describe("Facturas y cobros", () => {
     await page.goto("/invoices/new");
     await page.locator('select[name="client_id"]').selectOption({ index: 1 });
     await page.getByRole("button", { name: /crear factura/i }).click();
-    await expect(page.getByText(/borrador/i)).toBeVisible();
+    await expect(page.getByText("Borrador", { exact: true })).toBeVisible();
 
     await page.locator('input[name="description"]').fill("Línea E2E factura");
     await page.locator('input[name="quantity"]').fill("1");

@@ -1,5 +1,29 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: fallas intermitentes en E2E ("permission denied for function user_company_ids") + selectores ambiguos
+
+- El usuario reportó 6/9 tests E2E fallando, incluyendo un error real de
+  Postgres: `permission denied for function user_company_ids`.
+- **Investigado directamente en la base de datos** (no asumido): consulté
+  `has_function_privilege('authenticated', ...)` para `user_company_ids`,
+  `has_permission`, `register_customer_payment`, `register_supplier_payment`
+  y `create_bank_transfer` — **los 5 confirman `true`**, el permiso está
+  correctamente configurado. No es un bug de RLS/permisos.
+- **Diagnóstico**: los tests corrían con 5 workers en paralelo contra un
+  proyecto Supabase real (plan gratuito, límite bajo de conexiones
+  simultáneas) — bajo esa carga concurrente, el pool de conexiones puede
+  producir errores intermitentes que se reportan como "permission denied"
+  sin serlo realmente. Corregido en `playwright.config.ts`: `workers: 1`
+  (corre secuencial, sin paralelismo, evita saturar el pool).
+- **Bug real de los tests** (no de la app): 2 selectores usaban
+  `getByText(/borrador/i)`, que coincidía con **dos elementos** — el badge
+  de estado "Borrador" y el botón "Descartar borrador" — causando
+  "strict mode violation". Corregido en `quotations.spec.ts`,
+  `quotation-to-project.spec.ts` e `invoice-payment.spec.ts` usando
+  `getByText("Borrador", { exact: true })`.
+- Pendiente de confirmar por el usuario: volver a correr `npm run test:e2e`
+  con estos dos fixes debería resolver la mayoría de las fallas reportadas.
+
 ## Fix real: los tests E2E no leían `.env.test` (8 de 9 fallaban)
 
 - **Bug real detectado por el usuario** al correr `npm run test:e2e` por

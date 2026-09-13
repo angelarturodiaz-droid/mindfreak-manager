@@ -8,7 +8,7 @@ test.describe("Cotización → Proyecto", () => {
     await page.goto("/quotations/new");
     await page.locator('select[name="client_id"]').selectOption({ index: 1 });
     await page.getByRole("button", { name: /crear cotización/i }).click();
-    await expect(page.getByText(/borrador/i)).toBeVisible();
+    await expect(page.getByText("Borrador", { exact: true })).toBeVisible();
 
     // Necesita al menos una línea para poder enviarla/aprobarla con sentido
     await page.locator('input[name="description"]').fill("Línea E2E flujo completo");

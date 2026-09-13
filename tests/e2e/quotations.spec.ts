@@ -13,7 +13,9 @@ test.describe("Cotizaciones", () => {
     await page.getByRole("button", { name: /crear cotización/i }).click();
 
     // Redirige al detalle de la cotización recién creada (estado DRAFT)
-    await expect(page.getByText(/borrador/i)).toBeVisible();
+    // Redirige al detalle de la cotización recién creada (estado DRAFT).
+    // exact: true evita coincidir también con el botón "Descartar borrador".
+    await expect(page.getByText("Borrador", { exact: true })).toBeVisible();
 
     // Agrega una línea personalizada (sin servicio del catálogo)
     await page.locator('input[name="description"]').fill("Línea de prueba E2E");

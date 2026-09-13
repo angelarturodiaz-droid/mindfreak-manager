@@ -14,6 +14,11 @@ config({ path: ".env.test" });
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false,
+  // Un solo worker: correr en paralelo contra un proyecto Supabase real
+  // (gratuito, con límite bajo de conexiones simultáneas) puede saturar el
+  // pool de conexiones y producir errores intermitentes tipo "permission
+  // denied" que en realidad no son de permisos — son de concurrencia.
+  workers: 1,
   retries: 0,
   reporter: "list",
   use: {
