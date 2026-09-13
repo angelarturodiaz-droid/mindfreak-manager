@@ -1,7 +1,10 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { Plus } from "lucide-react";
 import { addInvoiceItemAction, type ActionState } from "@/features/invoices/actions";
+import { Input, Select } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
 
@@ -35,117 +38,89 @@ export function NewInvoiceItemForm({
   return (
     <form action={formAction} className="flex flex-wrap items-end gap-2">
       {projectItems.length > 0 && (
-        <div>
-          <label className="block text-xs text-brand-muted">
-            Copiar del proyecto
-          </label>
-          <select
-            defaultValue=""
-            onChange={(e) => {
-              const item = projectItems.find((p) => p.id === e.target.value);
-              if (item) {
-                setPrefill({
-                  description: item.description,
-                  unit_price: item.unit_price,
-                  quantity: item.quantity,
-                });
-              }
-            }}
-            className="border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-          >
-            <option value="">— Elegir línea del proyecto —</option>
-            {projectItems.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.description}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-      <div>
-        <label className="block text-xs text-brand-muted">Servicio</label>
-        <select
-          name="service_id"
+        <Select
+          label="Copiar del proyecto"
           defaultValue=""
           onChange={(e) => {
-            const svc = services.find((s) => s.id === e.target.value) ?? null;
-            setSelectedService(svc);
-            if (svc) setPrefill({ description: svc.name, unit_price: svc.default_price, quantity: 1 });
+            const item = projectItems.find((p) => p.id === e.target.value);
+            if (item) {
+              setPrefill({
+                description: item.description,
+                unit_price: item.unit_price,
+                quantity: item.quantity,
+              });
+            }
           }}
-          className="border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
+          className="w-56"
         >
-          <option value="">Servicio personalizado</option>
-          {services.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
+          <option value="">— Elegir línea del proyecto —</option>
+          {projectItems.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.description}
             </option>
           ))}
-        </select>
-      </div>
-      <div>
-        <label className="block text-xs text-brand-muted">Descripción</label>
-        <input
-          name="description"
-          required
-          defaultValue={prefill?.description ?? ""}
-          key={`desc-${prefill?.description ?? "empty"}`}
-          className="border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-        />
-      </div>
-      <div>
-        <label className="block text-xs text-brand-muted">Cant.</label>
-        <input
-          name="quantity"
-          type="number"
-          step="0.01"
-          min="0.01"
-          defaultValue={prefill?.quantity ?? 1}
-          key={`qty-${prefill?.description ?? "empty"}`}
-          className="w-20 border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-        />
-      </div>
-      <div>
-        <label className="block text-xs text-brand-muted">Precio</label>
-        <input
-          name="unit_price"
-          type="number"
-          step="0.01"
-          min="0"
-          defaultValue={prefill?.unit_price ?? 0}
-          key={`price-${prefill?.description ?? "empty"}`}
-          className="w-28 border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-        />
-      </div>
-      <div>
-        <label className="block text-xs text-brand-muted">Descuento</label>
-        <input
-          name="discount"
-          type="number"
-          step="0.01"
-          min="0"
-          defaultValue="0"
-          className="w-24 border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-        />
-      </div>
-      <div>
-        <label className="block text-xs text-brand-muted">Impuesto (%)</label>
-        <input
-          name="tax_percent"
-          type="number"
-          step="0.01"
-          min="0"
-          defaultValue={selectedService?.default_tax_percent ?? 18}
-          key={`tax-${selectedService?.id ?? "custom"}`}
-          className="w-20 border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-        />
-      </div>
-      <button
-        type="submit"
-        disabled={pending}
-        className="bg-brand-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+        </Select>
+      )}
+      <Select
+        label="Servicio"
+        name="service_id"
+        defaultValue=""
+        onChange={(e) => {
+          const svc = services.find((s) => s.id === e.target.value) ?? null;
+          setSelectedService(svc);
+          if (svc) setPrefill({ description: svc.name, unit_price: svc.default_price, quantity: 1 });
+        }}
+        className="w-44"
       >
-        {pending ? "Agregando…" : "Agregar línea"}
-      </button>
+        <option value="">Servicio personalizado</option>
+        {services.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
+      </Select>
+      <Input
+        label="Descripción"
+        name="description"
+        required
+        defaultValue={prefill?.description ?? ""}
+        key={`desc-${prefill?.description ?? "empty"}`}
+        className="w-48"
+      />
+      <Input
+        label="Cant."
+        name="quantity"
+        type="number"
+        step="0.01"
+        min="0.01"
+        defaultValue={prefill?.quantity ?? 1}
+        key={`qty-${prefill?.description ?? "empty"}`}
+        className="w-20"
+      />
+      <Input
+        label="Precio"
+        name="unit_price"
+        type="number"
+        step="0.01"
+        min="0"
+        defaultValue={prefill?.unit_price ?? 0}
+        key={`price-${prefill?.description ?? "empty"}`}
+        className="w-28"
+      />
+      <Input label="Descuento" name="discount" type="number" step="0.01" min="0" defaultValue="0" className="w-24" />
+      <Input
+        label="Impuesto (%)"
+        name="tax_percent"
+        type="number"
+        step="0.01"
+        min="0"
+        defaultValue={selectedService?.default_tax_percent ?? 18}
+        key={`tax-${selectedService?.id ?? "custom"}`}
+        className="w-20"
+      />
+      <Button type="submit" loading={pending} icon={<Plus size={14} />}>
+        Agregar línea
+      </Button>
       {state.error && <p className="w-full text-sm text-brand-danger">{state.error}</p>}
     </form>
   );

@@ -1,19 +1,23 @@
 "use client";
 
 import { useTransition } from "react";
+import { Copy } from "lucide-react";
 import { duplicateInvoiceAction } from "@/features/invoices/actions";
+import { Button } from "@/components/ui/button";
 
 export function DuplicateInvoiceButton({ invoiceId }: { invoiceId: string }) {
   const [isPending, startTransition] = useTransition();
 
   return (
-    <button
+    <Button
       type="button"
-      disabled={isPending}
+      variant="outline"
+      size="sm"
+      loading={isPending}
+      icon={<Copy size={14} />}
       onClick={() => startTransition(() => duplicateInvoiceAction(invoiceId))}
-      className="border border-brand-muted/30 px-4 py-2 text-sm text-brand-text hover:border-brand-accent disabled:opacity-50"
     >
-      {isPending ? "Duplicando…" : "Duplicar factura"}
-    </button>
+      Duplicar factura
+    </Button>
   );
 }

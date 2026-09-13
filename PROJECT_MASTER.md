@@ -139,9 +139,13 @@ Rentabilidad), reescrito completo con `DataTable`/`Badge`/`KpiCard`/
 formularios (nuevo proyecto, editar, línea, convertir cotización, nueva
 actividad) y el componente `ActivityItem` (con editar/eliminar).
 
-**⬜ Pendiente (próximas etapas)**: Facturas → Cobros/Pagos → Gastos →
-Proveedores → Servicios → Bancos → Tareas → Reportes → Auditoría →
-Configuración → Login.
+**✅ Etapa 5 (completada)**: módulo **Facturas** — lista, detalle (líneas +
+cobros con `DataTable`, tarjeta de totales), formularios (nueva, línea,
+NCF/vencimiento, registrar cobro) y botones auxiliares (compartir/duplicar/
+descartar, con `toast` en vez de mensajes inline) migrados al Design System.
+
+**⬜ Pendiente (próximas etapas)**: Cobros/Pagos → Gastos → Proveedores →
+Servicios → Bancos → Tareas → Reportes → Auditoría → Configuración → Login.
 
 ## Backlog
 
