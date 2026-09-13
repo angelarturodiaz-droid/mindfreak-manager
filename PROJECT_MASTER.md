@@ -43,7 +43,8 @@ Auth, Storage, RLS) · Vitest + Playwright · Git/GitHub.
 | F18 — Tareas y actividades | ✅ Completada |
 | F19 — Reportes | ✅ Completada |
 | F20 — Auditoría | ✅ Completada |
-| F21–F23 | ⬜ Pendiente |
+| F21 — Testing | ✅ Completada (unit; E2E escrito, sin ejecutar por límites del entorno) |
+| F22–F23 | ⬜ Pendiente |
 
 ## Decisiones arquitectónicas clave (ver F0 para detalle completo)
 
@@ -78,6 +79,13 @@ Ver sección D del documento de arquitectura. Implementada tal cual en F1.
 
 ## Deuda técnica
 
+- **Accesibilidad de formularios**: la mayoría de los `<label>` en el
+  proyecto no están asociados a su `<input>` vía `htmlFor`/`id` (excepto
+  los formularios de autenticación). Detectado al escribir los tests E2E de
+  F21 — no afecta la funcionalidad, pero sí a lectores de pantalla y a
+  `getByLabel()` de Playwright (por eso los tests E2E usan selectores por
+  `name` en vez de por label). No se corrige ahora (tocaría decenas de
+  formularios); queda para una ronda dedicada de accesibilidad.
 - Varios FKs (mayormente `created_by`/`approved_by`/`updated_by`, poco consultados) sin
   índice de cobertura. Nivel INFO en los *advisors* de Supabase, base de datos aún sin
   tráfico real. Revisar con datos de uso real en **F22 — Optimización**.

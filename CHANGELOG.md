@@ -1,5 +1,32 @@
 # CHANGELOG — Mindfreak Manager
 
+## F21 — Testing
+
+- **Unit tests (Vitest)**: 15 tests sobre las funciones puras de cálculo
+  financiero — `calculateItemSubtotal`/`calculateQuotationTotals`
+  (cotizaciones), `calculateInvoiceItemSubtotal`/`calculateInvoiceTotals`
+  (facturas), `calculateExpenseTotals` (gastos, incluyendo redondeo e
+  impuesto como %). Ejecutados y verificados en este entorno: los 15 pasan.
+  `npm test` / `npm run test:watch`.
+- **E2E tests (Playwright)**: `auth.spec.ts` (login válido/inválido,
+  logout), `clients.spec.ts` (crear cliente), `quotations.spec.ts` (crear
+  cotización + línea). Selectores verificados contra el código real (no
+  adivinados). **No se pudieron ejecutar en este entorno** — sin navegador
+  ni acceso de red a Supabase — quedan listos para correr localmente con
+  `npm run test:e2e` (requiere `.env.test` con un usuario de prueba, ver
+  `.env.test.example`, y `npx playwright install chromium` una vez).
+- **Sin tests de integración automatizados contra Supabase real**: mismo
+  motivo (sin red desde este entorno hacia Supabase). En su lugar, cada
+  función Postgres transaccional y cada política RLS nueva de F11 en
+  adelante se verificó manualmente con datos de prueba reales antes de
+  cerrar cada fase — ya documentado en las entradas anteriores de este
+  changelog.
+- **Hallazgo de la fase**: casi todos los formularios (excepto login)
+  tienen `<label>` sin `htmlFor`/`id` asociado a su `<input>` — no rompe
+  funcionalidad, pero afecta accesibilidad y forzó a que los tests E2E usen
+  selectores por `name` en vez de `getByLabel()`. Documentado como deuda
+  técnica, no corregido en esta fase (afectaría decenas de formularios).
+
 ## Reportes: filtros por reporte
 
 - Cada uno de los 5 reportes ahora tiene sus propios filtros (todos los

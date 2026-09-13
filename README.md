@@ -53,8 +53,36 @@ detalle en F2–F3.
 
 ## Testing
 
-Se configura en F21. Estructura ya presente en `tests/unit`,
-`tests/integration`, `tests/e2e`.
+**Unit tests** (Vitest) — funciones puras de cálculo financiero
+(subtotales, impuestos, totales). No requieren red ni Supabase:
+
+```bash
+npm test          # corre una vez
+npm run test:watch
+```
+
+**E2E tests** (Playwright) — flujos reales de UI (login, crear cliente,
+crear cotización). Requieren:
+
+1. `npm run dev` corriendo en otra terminal (o dejar que Playwright lo
+   levante solo, ya configurado en `playwright.config.ts`).
+2. Un usuario de prueba: copiar `.env.test.example` a `.env.test` y
+   completar `E2E_ADMIN_EMAIL`/`E2E_ADMIN_PASSWORD` (preferir un usuario de
+   prueba, no el admin real — `.env.test` nunca se sube a git).
+3. La primera vez, instalar los navegadores de Playwright:
+   `npx playwright install chromium`.
+
+```bash
+npm run test:e2e
+```
+
+**Nota de alcance**: no hay tests de integración automatizados contra
+Supabase real en este repo — el entorno de build no tiene acceso de red a
+Supabase. En su lugar, cada función Postgres transaccional
+(`register_customer_payment`, `register_supplier_payment`,
+`create_bank_transfer`) y cada política RLS nueva se verificó manualmente
+con datos de prueba reales antes de dar por buena cada fase (ver
+`CHANGELOG.md` para el detalle de cada verificación).
 
 ## Deployment
 
