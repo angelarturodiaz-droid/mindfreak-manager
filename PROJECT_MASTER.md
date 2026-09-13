@@ -144,8 +144,12 @@ cobros con `DataTable`, tarjeta de totales), formularios (nueva, línea,
 NCF/vencimiento, registrar cobro) y botones auxiliares (compartir/duplicar/
 descartar, con `toast` en vez de mensajes inline) migrados al Design System.
 
-**⬜ Pendiente (próximas etapas)**: Cobros/Pagos → Gastos → Proveedores →
-Servicios → Bancos → Tareas → Reportes → Auditoría → Configuración → Login.
+**✅ Etapa 6 (completada)**: módulo **Cobros/Pagos** (`/payments`) — las dos
+tablas (Cobros, Pagos a proveedores) migradas a `DataTable`. Los
+formularios de registro ya estaban migrados (viven en Facturas/Gastos).
+
+**⬜ Pendiente (próximas etapas)**: Gastos → Proveedores → Servicios →
+Bancos → Tareas → Reportes → Auditoría → Configuración → Login.
 
 ## Backlog
 

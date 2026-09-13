@@ -1,5 +1,13 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño ERP SaaS — Etapa 6: módulo Cobros/Pagos
+
+- `/payments`: las dos tablas (Cobros, Pagos a proveedores) migradas a
+  `DataTable`. Los formularios de registro ya vivían migrados dentro de
+  Facturas (Etapa 5) y Gastos (próxima etapa).
+- Sin cambios de lógica/queries/rutas. Verificado: `tsc`, `npm run build`,
+  `eslint` y los 15 tests unitarios limpios.
+
 ## Rediseño ERP SaaS — Etapa 5: módulo Facturas
 
 - Lista, detalle (líneas + cobros con `DataTable`, tarjeta de totales) y

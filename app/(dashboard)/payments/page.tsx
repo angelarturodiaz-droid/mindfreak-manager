@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listAllPayments, listAllSupplierPayments } from "@/features/payments/queries";
 import { PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
+import { DataTable, type Column } from "@/components/ui/data-table";
 
 function formatMoney(amount: number) {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(
@@ -8,11 +9,66 @@ function formatMoney(amount: number) {
   );
 }
 
+type PaymentRow = Awaited<ReturnType<typeof listAllPayments>>[number];
+type SupplierPaymentRow = Awaited<ReturnType<typeof listAllSupplierPayments>>[number];
+
 export default async function PaymentsPage() {
   const [payments, supplierPayments] = await Promise.all([
     listAllPayments(),
     listAllSupplierPayments(),
   ]);
+
+  const paymentColumns: Column<PaymentRow>[] = [
+    { header: "Fecha", accessor: (p) => p.payment_date },
+    {
+      header: "Factura",
+      accessor: (p) => {
+        const invoiceData = p.invoices as { number: string }[] | { number: string } | null;
+        const invoiceNumber = Array.isArray(invoiceData) ? invoiceData[0]?.number : invoiceData?.number;
+        return (
+          <Link href={`/invoices/${p.invoice_id}`} className="text-brand-accent hover:underline">
+            {invoiceNumber ?? "—"}
+          </Link>
+        );
+      },
+    },
+    {
+      header: "Cliente",
+      accessor: (p) => {
+        const clientData = p.clients as { name: string }[] | { name: string } | null;
+        const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
+        return <span className="text-brand-muted">{clientName ?? "—"}</span>;
+      },
+    },
+    { header: "Monto", accessor: (p) => <span className="font-medium">{formatMoney(p.amount)}</span> },
+    { header: "Método", accessor: (p) => <span className="text-brand-muted">{PAYMENT_METHOD_LABELS[p.method] ?? p.method}</span> },
+  ];
+
+  const supplierPaymentColumns: Column<SupplierPaymentRow>[] = [
+    { header: "Fecha", accessor: (p) => p.payment_date },
+    {
+      header: "Gasto",
+      accessor: (p) => {
+        const expenseData = p.expenses as { description: string }[] | { description: string } | null;
+        const expenseDescription = Array.isArray(expenseData) ? expenseData[0]?.description : expenseData?.description;
+        return (
+          <Link href={`/expenses/${p.expense_id}`} className="text-brand-accent hover:underline">
+            {expenseDescription ?? "—"}
+          </Link>
+        );
+      },
+    },
+    {
+      header: "Proveedor",
+      accessor: (p) => {
+        const supplierData = p.suppliers as { name: string }[] | { name: string } | null;
+        const supplierName = Array.isArray(supplierData) ? supplierData[0]?.name : supplierData?.name;
+        return <span className="text-brand-muted">{supplierName ?? "—"}</span>;
+      },
+    },
+    { header: "Monto", accessor: (p) => <span className="font-medium">{formatMoney(p.amount)}</span> },
+    { header: "Método", accessor: (p) => <span className="text-brand-muted">{PAYMENT_METHOD_LABELS[p.method] ?? p.method}</span> },
+  ];
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-8">
@@ -26,123 +82,33 @@ export default async function PaymentsPage() {
         </p>
       </div>
 
-      <h2 className="text-lg font-semibold text-brand-primary">Cobros</h2>
-
-      {payments.length === 0 ? (
-        <div className="border border-dashed border-brand-muted/30 p-8 text-center">
-          <p className="text-sm text-brand-muted">
-            Aún no se ha registrado ningún cobro.
-          </p>
-        </div>
-      ) : (
-        <table className="w-full max-w-3xl border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-              <th className="py-2 font-medium">Fecha</th>
-              <th className="py-2 font-medium">Factura</th>
-              <th className="py-2 font-medium">Cliente</th>
-              <th className="py-2 font-medium">Monto</th>
-              <th className="py-2 font-medium">Método</th>
-            </tr>
-          </thead>
-          <tbody>
-            {payments.map((p) => {
-              const invoiceData = p.invoices as { number: string }[] | { number: string } | null;
-              const invoiceNumber = Array.isArray(invoiceData)
-                ? invoiceData[0]?.number
-                : invoiceData?.number;
-              const clientData = p.clients as { name: string }[] | { name: string } | null;
-              const clientName = Array.isArray(clientData)
-                ? clientData[0]?.name
-                : clientData?.name;
-              return (
-                <tr key={p.id} className="border-b border-brand-muted/10">
-                  <td className="py-2">{p.payment_date}</td>
-                  <td className="py-2">
-                    <Link
-                      href={`/invoices/${p.invoice_id}`}
-                      className="text-brand-accent hover:underline"
-                    >
-                      {invoiceNumber ?? "—"}
-                    </Link>
-                  </td>
-                  <td className="py-2 text-brand-muted">{clientName ?? "—"}</td>
-                  <td className="py-2 font-medium">{formatMoney(p.amount)}</td>
-                  <td className="py-2 text-brand-muted">
-                    {PAYMENT_METHOD_LABELS[p.method] ?? p.method}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
+      <div>
+        <h2 className="mb-3 text-lg font-semibold text-brand-primary">Cobros</h2>
+        <DataTable
+          columns={paymentColumns}
+          rows={payments}
+          keyFor={(p) => p.id}
+          maxWidth="max-w-3xl"
+          emptyMessage="Aún no se ha registrado ningún cobro."
+        />
+      </div>
 
       <div>
         <h2 className="text-lg font-semibold text-brand-primary">
           Pagos a proveedores
         </h2>
-        <p className="text-sm text-brand-muted">
+        <p className="mb-3 text-sm text-brand-muted">
           Historial de pagos registrados. Para registrar uno nuevo, ve al
           gasto correspondiente.
         </p>
+        <DataTable
+          columns={supplierPaymentColumns}
+          rows={supplierPayments}
+          keyFor={(p) => p.id}
+          maxWidth="max-w-3xl"
+          emptyMessage="Aún no se ha registrado ningún pago a proveedor."
+        />
       </div>
-
-      {supplierPayments.length === 0 ? (
-        <div className="border border-dashed border-brand-muted/30 p-8 text-center">
-          <p className="text-sm text-brand-muted">
-            Aún no se ha registrado ningún pago a proveedor.
-          </p>
-        </div>
-      ) : (
-        <table className="w-full max-w-3xl border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-              <th className="py-2 font-medium">Fecha</th>
-              <th className="py-2 font-medium">Gasto</th>
-              <th className="py-2 font-medium">Proveedor</th>
-              <th className="py-2 font-medium">Monto</th>
-              <th className="py-2 font-medium">Método</th>
-            </tr>
-          </thead>
-          <tbody>
-            {supplierPayments.map((p) => {
-              const expenseData = p.expenses as
-                | { description: string }[]
-                | { description: string }
-                | null;
-              const expenseDescription = Array.isArray(expenseData)
-                ? expenseData[0]?.description
-                : expenseData?.description;
-              const supplierData = p.suppliers as
-                | { name: string }[]
-                | { name: string }
-                | null;
-              const supplierName = Array.isArray(supplierData)
-                ? supplierData[0]?.name
-                : supplierData?.name;
-              return (
-                <tr key={p.id} className="border-b border-brand-muted/10">
-                  <td className="py-2">{p.payment_date}</td>
-                  <td className="py-2">
-                    <Link
-                      href={`/expenses/${p.expense_id}`}
-                      className="text-brand-accent hover:underline"
-                    >
-                      {expenseDescription ?? "—"}
-                    </Link>
-                  </td>
-                  <td className="py-2 text-brand-muted">{supplierName ?? "—"}</td>
-                  <td className="py-2 font-medium">{formatMoney(p.amount)}</td>
-                  <td className="py-2 text-brand-muted">
-                    {PAYMENT_METHOD_LABELS[p.method] ?? p.method}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
     </main>
   );
 }
