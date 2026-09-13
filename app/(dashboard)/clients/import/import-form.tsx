@@ -1,10 +1,12 @@
 "use client";
 
 import { useActionState } from "react";
+import { Upload } from "lucide-react";
 import {
   importClientsCsvAction,
   type ImportActionState,
 } from "@/features/clients/actions";
+import { Button } from "@/components/ui/button";
 
 const initialState: ImportActionState = { error: null };
 
@@ -15,7 +17,7 @@ export function ImportForm() {
   );
 
   return (
-    <form action={formAction} className="flex items-end gap-3">
+    <form action={formAction} className="flex flex-wrap items-end gap-3">
       <div>
         <label className="block text-sm font-medium text-brand-text">
           Archivo CSV
@@ -25,16 +27,12 @@ export function ImportForm() {
           name="file"
           accept=".csv,text/csv"
           required
-          className="mt-1 text-sm"
+          className="mt-1 text-sm text-brand-muted file:mr-3 file:rounded-[var(--radius-md)] file:border-0 file:bg-brand-primary file:px-3 file:py-1.5 file:text-sm file:text-white"
         />
       </div>
-      <button
-        type="submit"
-        disabled={pending}
-        className="bg-brand-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-      >
-        {pending ? "Importando…" : "Importar"}
-      </button>
+      <Button type="submit" loading={pending} icon={<Upload size={14} />}>
+        Importar
+      </Button>
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
       {state.result && (

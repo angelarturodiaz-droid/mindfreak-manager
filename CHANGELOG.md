@@ -1,5 +1,16 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño ERP SaaS — Etapa 2: módulo Clientes
+
+- Lista (`/clients`): `DataTable`, `Badge` por estado (Lead/Activo/Inactivo),
+  `Input`/`Select` para el filtro, `EmptyState` cuando no hay resultados.
+- Detalle (`/clients/[id]`): `Badge`, `ConfirmButton` (modal propio) en vez
+  de `window.confirm()` para desactivar cliente y eliminar contacto.
+- Formularios (nuevo/editar cliente, nuevo contacto, importar CSV):
+  migrados a `Input`/`Select`/`Button` del Design System.
+- Sin cambios de lógica, queries, actions ni rutas — verificado con `tsc`,
+  `npm run build`, `eslint` y los 15 tests unitarios, todos limpios.
+
 ## Módulo de Configuración — primera etapa
 
 - Nuevo layout `/settings` con pestañas: Organización, Impuestos (existente),

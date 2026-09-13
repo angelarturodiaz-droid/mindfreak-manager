@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft, UserCheck, Trash2 } from "lucide-react";
 import { getClient, listClientContacts } from "@/features/clients/queries";
 import {
   convertClientToActiveAction,
@@ -12,6 +13,10 @@ import { DocumentList } from "@/components/documents/document-list";
 import { UploadDocumentForm } from "@/components/documents/upload-document-form";
 import { listDocuments } from "@/features/documents/queries";
 import { hasPermission } from "@/lib/auth/permissions";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 
 export default async function ClientDetailPage({
   params,
@@ -37,46 +42,36 @@ export default async function ClientDetailPage({
   return (
     <main className="flex flex-1 flex-col gap-8 p-8">
       <div>
-        <Link href="/clients" className="text-sm text-brand-muted hover:text-brand-text">
-          ← Clientes
+        <Link
+          href="/clients"
+          className="inline-flex items-center gap-1 text-sm text-brand-muted hover:text-brand-text"
+        >
+          <ArrowLeft size={14} /> Clientes
         </Link>
         <div className="mt-2 flex items-center gap-3">
-          <h1 className="text-xl font-semibold text-brand-primary">
-            {client.name}
-          </h1>
-          <span
-            className={
-              client.status === "ACTIVE" ? "text-brand-success" : "text-brand-accent"
-            }
-          >
+          <h1 className="text-xl font-semibold text-brand-primary">{client.name}</h1>
+          <Badge tone={client.status === "ACTIVE" ? "success" : "info"}>
             {client.status === "ACTIVE" ? "Cliente activo" : "Lead"}
-          </span>
-          {!client.is_active && (
-            <span className="text-sm text-brand-danger">(inactivo)</span>
-          )}
+          </Badge>
+          {!client.is_active && <Badge tone="danger">Inactivo</Badge>}
         </div>
       </div>
 
       <div className="flex gap-3">
         {client.status === "LEAD" && (
           <form action={convertClientToActiveAction.bind(null, client.id)}>
-            <button
-              type="submit"
-              className="border border-brand-accent px-4 py-2 text-sm text-brand-accent hover:bg-brand-accent hover:text-white"
-            >
+            <Button type="submit" variant="secondary" size="sm" icon={<UserCheck size={14} />}>
               Convertir a cliente activo
-            </button>
+            </Button>
           </form>
         )}
         {client.is_active && (
-          <form action={deactivateClientAction.bind(null, client.id)}>
-            <button
-              type="submit"
-              className="border border-brand-muted/30 px-4 py-2 text-sm text-brand-muted hover:border-brand-danger hover:text-brand-danger"
-            >
-              Desactivar cliente
-            </button>
-          </form>
+          <ConfirmButton
+            label="Desactivar cliente"
+            confirmTitle={`¿Desactivar a "${client.name}"?`}
+            confirmMessage="Podrás reactivarlo más adelante si hace falta."
+            onConfirm={deactivateClientAction.bind(null, client.id)}
+          />
         )}
       </div>
 
@@ -84,7 +79,9 @@ export default async function ClientDetailPage({
         <h2 className="mb-3 text-sm font-medium text-brand-text">
           Información general
         </h2>
-        <ClientEditForm client={client} />
+        <Card>
+          <ClientEditForm client={client} />
+        </Card>
       </section>
 
       <section className="max-w-2xl">
@@ -94,32 +91,29 @@ export default async function ClientDetailPage({
             <p className="text-sm text-brand-muted">Sin contactos todavía.</p>
           )}
           {contacts.map((contact) => (
-            <div
-              key={contact.id}
-              className="flex items-center justify-between border border-brand-muted/20 px-3 py-2 text-sm"
-            >
+            <Card key={contact.id} padded={false} className="flex items-center justify-between px-3 py-2">
               <div>
-                <span className="font-medium text-brand-text">
+                <span className="text-sm font-medium text-brand-text">
                   {contact.full_name}
                 </span>
                 {contact.is_primary && (
-                  <span className="ml-2 text-xs text-brand-accent">Principal</span>
+                  <span className="ml-2">
+                    <Badge tone="info">Principal</Badge>
+                  </span>
                 )}
-                <p className="text-brand-muted">
+                <p className="text-sm text-brand-muted">
                   {[contact.position, contact.email, contact.phone]
                     .filter(Boolean)
                     .join(" · ")}
                 </p>
               </div>
-              <form action={deleteContactAction.bind(null, contact.id, client.id)}>
-                <button
-                  type="submit"
-                  className="text-brand-muted hover:text-brand-danger"
-                >
-                  Eliminar
-                </button>
-              </form>
-            </div>
+              <ConfirmButton
+                label="Eliminar"
+                icon={<Trash2 size={14} />}
+                confirmTitle={`¿Eliminar a ${contact.full_name}?`}
+                onConfirm={deleteContactAction.bind(null, contact.id, client.id)}
+              />
+            </Card>
           ))}
         </div>
 

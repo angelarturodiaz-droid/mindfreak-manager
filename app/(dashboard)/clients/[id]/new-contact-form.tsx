@@ -1,7 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
+import { UserPlus } from "lucide-react";
 import { createContactAction, type ActionState } from "@/features/clients/actions";
+import { Input } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
 
@@ -11,39 +14,17 @@ export function NewContactForm({ clientId }: { clientId: string }) {
 
   return (
     <form action={formAction} className="flex flex-wrap items-end gap-2">
-      <input
-        name="full_name"
-        placeholder="Nombre completo"
-        required
-        className="border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-      />
-      <input
-        name="position"
-        placeholder="Cargo"
-        className="border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-      />
-      <input
-        name="email"
-        type="email"
-        placeholder="Correo"
-        className="border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-      />
-      <input
-        name="phone"
-        placeholder="Teléfono"
-        className="border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-      />
-      <label className="flex items-center gap-1 text-sm text-brand-muted">
+      <Input name="full_name" placeholder="Nombre completo" required className="w-44" />
+      <Input name="position" placeholder="Cargo" className="w-32" />
+      <Input name="email" type="email" placeholder="Correo" className="w-44" />
+      <Input name="phone" placeholder="Teléfono" className="w-36" />
+      <label className="flex items-center gap-1 pb-2 text-sm text-brand-muted">
         <input type="checkbox" name="is_primary" />
         Principal
       </label>
-      <button
-        type="submit"
-        disabled={pending}
-        className="border border-brand-muted/30 px-4 py-2 text-sm text-brand-text hover:border-brand-accent disabled:opacity-50"
-      >
-        {pending ? "Agregando…" : "Agregar contacto"}
-      </button>
+      <Button type="submit" variant="outline" loading={pending} icon={<UserPlus size={14} />}>
+        Agregar contacto
+      </Button>
       {state.error && <p className="w-full text-sm text-brand-danger">{state.error}</p>}
     </form>
   );

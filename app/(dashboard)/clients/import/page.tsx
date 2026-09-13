@@ -1,15 +1,31 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { listImportBatches } from "@/features/clients/queries";
 import { ImportForm } from "./import-form";
+import { Badge } from "@/components/ui/badge";
+import { DataTable, type Column } from "@/components/ui/data-table";
+
+type Batch = Awaited<ReturnType<typeof listImportBatches>>[number];
 
 export default async function ImportClientsPage() {
   const batches = await listImportBatches();
 
+  const columns: Column<Batch>[] = [
+    { header: "Archivo", accessor: (b) => b.file_name },
+    { header: "Filas", accessor: (b) => b.total_rows },
+    { header: "Éxito", accessor: (b) => <span className="text-brand-success">{b.success_count}</span> },
+    { header: "Errores", accessor: (b) => <span className="text-brand-danger">{b.error_count}</span> },
+    { header: "Estado", accessor: (b) => <Badge status={b.status}>{b.status}</Badge> },
+  ];
+
   return (
     <main className="flex flex-1 flex-col gap-6 p-8">
       <div>
-        <Link href="/clients" className="text-sm text-brand-muted hover:text-brand-text">
-          ← Clientes
+        <Link
+          href="/clients"
+          className="inline-flex items-center gap-1 text-sm text-brand-muted hover:text-brand-text"
+        >
+          <ArrowLeft size={14} /> Clientes
         </Link>
         <h1 className="mt-2 text-xl font-semibold text-brand-primary">
           Importar clientes (CSV)
@@ -29,28 +45,7 @@ export default async function ImportClientsPage() {
         {batches.length === 0 ? (
           <p className="text-sm text-brand-muted">Aún no has importado nada.</p>
         ) : (
-          <table className="w-full max-w-2xl border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-                <th className="py-2 font-medium">Archivo</th>
-                <th className="py-2 font-medium">Filas</th>
-                <th className="py-2 font-medium">Éxito</th>
-                <th className="py-2 font-medium">Errores</th>
-                <th className="py-2 font-medium">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {batches.map((b) => (
-                <tr key={b.id} className="border-b border-brand-muted/10">
-                  <td className="py-2">{b.file_name}</td>
-                  <td className="py-2">{b.total_rows}</td>
-                  <td className="py-2 text-brand-success">{b.success_count}</td>
-                  <td className="py-2 text-brand-danger">{b.error_count}</td>
-                  <td className="py-2 text-brand-muted">{b.status}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <DataTable columns={columns} rows={batches} keyFor={(b) => b.id} maxWidth="max-w-2xl" />
         )}
       </section>
     </main>

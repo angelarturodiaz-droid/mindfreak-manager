@@ -118,14 +118,15 @@ EmptyState, Skeleton, Modal, ConfirmButton, Toaster, DataTable), `lucide-react`
 + `sonner` instalados, Sidebar rediseñado (agrupado, íconos, colapsable,
 activo/hover), Dashboard rediseñado (KpiCard + accesos rápidos).
 
-**⬜ Pendiente (próximas etapas)**: aplicar `components/ui/` módulo por
-módulo — reemplazar tablas planas por `DataTable`, botones nativos por
-`Button`, badges de texto por `Badge`, `window.confirm()` por
-`ConfirmButton`, agregar `EmptyState`/`TableSkeleton` donde falte, y
-breadcrumbs. Orden sugerido (de mayor a menor tráfico esperado): Clientes →
-Cotizaciones → Proyectos → Facturas → Cobros/Pagos → Gastos → Proveedores →
-Servicios → Bancos → Tareas → Reportes → Auditoría → Configuración → página
-de Login.
+**✅ Etapa 2 (completada)**: módulo **Clientes** — lista (`DataTable`,
+`Badge`, `Input`/`Select` para filtros, `EmptyState`), detalle (`Badge` de
+estado, `ConfirmButton` en vez de `window.confirm` para desactivar/eliminar
+contacto), formularios (nuevo/editar cliente, nuevo contacto, importar CSV)
+usando `Input`/`Select`/`Button` — sin tocar ninguna acción, query ni ruta.
+
+**⬜ Pendiente (próximas etapas)**: Cotizaciones → Proyectos → Facturas →
+Cobros/Pagos → Gastos → Proveedores → Servicios → Bancos → Tareas →
+Reportes → Auditoría → Configuración → Login.
 
 ## Backlog
 
