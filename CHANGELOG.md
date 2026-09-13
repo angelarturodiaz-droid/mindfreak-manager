@@ -1,5 +1,13 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño ERP SaaS — Etapa 7: módulo Gastos
+
+- Lista, detalle (`KpiCard` para totales, `ConfirmButton` para cancelar,
+  `DataTable` para historial de pagos) y formularios (nuevo, editar,
+  registrar pago a proveedor) migrados al Design System.
+- Sin cambios de lógica/queries/actions/rutas. Verificado: `tsc`,
+  `npm run build`, `eslint` y los 15 tests unitarios limpios.
+
 ## Rediseño ERP SaaS — Etapa 6: módulo Cobros/Pagos
 
 - `/payments`: las dos tablas (Cobros, Pagos a proveedores) migradas a

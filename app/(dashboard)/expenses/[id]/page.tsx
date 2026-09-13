@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import {
   getExpense,
   listExpenseCategories,
@@ -15,6 +16,10 @@ import { RegisterSupplierPaymentForm } from "./register-supplier-payment-form";
 import { DocumentList } from "@/components/documents/document-list";
 import { UploadDocumentForm } from "@/components/documents/upload-document-form";
 import { listDocuments } from "@/features/documents/queries";
+import { Badge } from "@/components/ui/badge";
+import { KpiCard } from "@/components/ui/card";
+import { ConfirmButton } from "@/components/ui/confirm-button";
+import { DataTable, type Column } from "@/components/ui/data-table";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente",
@@ -28,6 +33,8 @@ function formatMoney(amount: number, currency: string) {
     amount,
   );
 }
+
+type PaymentRow = Awaited<ReturnType<typeof listPaymentsForExpense>>[number];
 
 export default async function ExpenseDetailPage({
   params,
@@ -65,11 +72,21 @@ export default async function ExpenseDetailPage({
 
   const isEditable = canEdit && expense.status === "PENDING" && expense.paid_amount === 0;
 
+  const paymentColumns: Column<PaymentRow>[] = [
+    { header: "Fecha", accessor: (p) => p.payment_date },
+    { header: "Monto", accessor: (p) => <span className="font-medium">{formatMoney(p.amount, expense.currency)}</span> },
+    { header: "Método", accessor: (p) => <span className="text-brand-muted">{PAYMENT_METHOD_LABELS[p.method] ?? p.method}</span> },
+    { header: "Referencia", accessor: (p) => <span className="text-brand-muted">{p.reference ?? "—"}</span> },
+  ];
+
   return (
     <main className="flex flex-1 flex-col gap-6 p-8">
       <div>
-        <Link href="/expenses" className="text-sm text-brand-muted hover:text-brand-text">
-          ← Gastos
+        <Link
+          href="/expenses"
+          className="inline-flex items-center gap-1 text-sm text-brand-muted hover:text-brand-text"
+        >
+          <ArrowLeft size={14} /> Gastos
         </Link>
         <div className="mt-2 flex items-center justify-between">
           <div>
@@ -83,52 +100,28 @@ export default async function ExpenseDetailPage({
               {project && ` · ${project.number} — ${project.name}`}
             </p>
           </div>
-          <span className="text-sm font-medium text-brand-accent">
-            {STATUS_LABELS[expense.status] ?? expense.status}
-          </span>
+          <Badge status={expense.status}>{STATUS_LABELS[expense.status] ?? expense.status}</Badge>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 text-sm">
-        <div className="border border-brand-muted/20 px-4 py-3">
-          <p className="text-xs text-brand-muted">Subtotal</p>
-          <p className="font-medium">{formatMoney(expense.subtotal, expense.currency)}</p>
-        </div>
-        <div className="border border-brand-muted/20 px-4 py-3">
-          <p className="text-xs text-brand-muted">Impuesto</p>
-          <p className="font-medium">{formatMoney(expense.tax, expense.currency)}</p>
-        </div>
-        <div className="border border-brand-muted/20 px-4 py-3">
-          <p className="text-xs text-brand-muted">Total</p>
-          <p className="font-medium">{formatMoney(expense.total, expense.currency)}</p>
-        </div>
-        <div className="border border-brand-muted/20 px-4 py-3">
-          <p className="text-xs text-brand-muted">Balance</p>
-          <p className="font-medium">{formatMoney(expense.balance, expense.currency)}</p>
-        </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <KpiCard label="Subtotal" value={formatMoney(expense.subtotal, expense.currency)} />
+        <KpiCard label="Impuesto" value={formatMoney(expense.tax, expense.currency)} />
+        <KpiCard label="Total" value={formatMoney(expense.total, expense.currency)} />
+        <KpiCard label="Balance" value={formatMoney(expense.balance, expense.currency)} />
         {expense.payment_method && (
-          <div className="border border-brand-muted/20 px-4 py-3">
-            <p className="text-xs text-brand-muted">Método de pago</p>
-            <p className="font-medium">{expense.payment_method}</p>
-          </div>
+          <KpiCard label="Método de pago" value={expense.payment_method} />
         )}
-        {bankAccount && (
-          <div className="border border-brand-muted/20 px-4 py-3">
-            <p className="text-xs text-brand-muted">Cuenta</p>
-            <p className="font-medium">{bankAccount.name}</p>
-          </div>
-        )}
+        {bankAccount && <KpiCard label="Cuenta" value={bankAccount.name} />}
       </div>
 
       {canEdit && expense.status !== "CANCELLED" && (
-        <form action={cancelExpenseAction.bind(null, expense.id)}>
-          <button
-            type="submit"
-            className="border border-brand-muted/30 px-4 py-2 text-sm text-brand-muted hover:border-brand-danger hover:text-brand-danger"
-          >
-            Cancelar gasto
-          </button>
-        </form>
+        <ConfirmButton
+          label="Cancelar gasto"
+          confirmTitle="¿Cancelar este gasto?"
+          confirmMessage="Se conserva el registro (nunca se borra un gasto), solo cambia su estado."
+          onConfirm={cancelExpenseAction.bind(null, expense.id)}
+        />
       )}
 
       {["PENDING", "PARTIALLY_PAID"].includes(expense.status) && canPay && (
@@ -157,28 +150,7 @@ export default async function ExpenseDetailPage({
           <h2 className="mb-2 text-sm font-medium text-brand-text">
             Historial de pagos
           </h2>
-          <table className="w-full max-w-2xl border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-                <th className="py-2 font-medium">Fecha</th>
-                <th className="py-2 font-medium">Monto</th>
-                <th className="py-2 font-medium">Método</th>
-                <th className="py-2 font-medium">Referencia</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payments.map((p) => (
-                <tr key={p.id} className="border-b border-brand-muted/10">
-                  <td className="py-2">{p.payment_date}</td>
-                  <td className="py-2">{formatMoney(p.amount, expense.currency)}</td>
-                  <td className="py-2 text-brand-muted">
-                    {PAYMENT_METHOD_LABELS[p.method] ?? p.method}
-                  </td>
-                  <td className="py-2 text-brand-muted">{p.reference ?? "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <DataTable columns={paymentColumns} rows={payments} keyFor={(p) => p.id} maxWidth="max-w-2xl" />
         </div>
       )}
 

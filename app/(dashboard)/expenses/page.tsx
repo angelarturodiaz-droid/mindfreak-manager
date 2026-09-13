@@ -1,6 +1,12 @@
 import Link from "next/link";
+import { CreditCard, Plus } from "lucide-react";
 import { listExpenses } from "@/features/expenses/queries";
 import { EXPENSE_STATUSES } from "@/features/expenses/schema";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/field";
+import { DataTable, type Column } from "@/components/ui/data-table";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente",
@@ -15,6 +21,8 @@ function formatMoney(amount: number, currency: string) {
   );
 }
 
+type ExpenseRow = Awaited<ReturnType<typeof listExpenses>>[number];
+
 export default async function ExpensesPage({
   searchParams,
 }: {
@@ -22,6 +30,44 @@ export default async function ExpensesPage({
 }) {
   const params = await searchParams;
   const expenses = await listExpenses(params.status);
+
+  const columns: Column<ExpenseRow>[] = [
+    { header: "Fecha", accessor: (e) => <span className="text-brand-muted">{e.expense_date}</span> },
+    {
+      header: "Descripción",
+      accessor: (e) => (
+        <Link href={`/expenses/${e.id}`} className="font-medium text-brand-text hover:text-brand-accent">
+          {e.description}
+        </Link>
+      ),
+    },
+    {
+      header: "Categoría",
+      accessor: (e) => {
+        const category = e.expense_categories as { name: string }[] | null;
+        return <span className="text-brand-muted">{category?.[0]?.name ?? "—"}</span>;
+      },
+    },
+    {
+      header: "Proveedor",
+      accessor: (e) => {
+        const supplier = e.suppliers as { name: string }[] | null;
+        return <span className="text-brand-muted">{supplier?.[0]?.name ?? "—"}</span>;
+      },
+    },
+    {
+      header: "Proyecto",
+      accessor: (e) => {
+        const project = e.projects as { number: string; name: string }[] | null;
+        return <span className="text-brand-muted">{project?.[0] ? project[0].number : "—"}</span>;
+      },
+    },
+    { header: "Total", accessor: (e) => formatMoney(e.total, e.currency) },
+    {
+      header: "Estado",
+      accessor: (e) => <Badge status={e.status}>{STATUS_LABELS[e.status] ?? e.status}</Badge>,
+    },
+  ];
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-8">
@@ -32,94 +78,41 @@ export default async function ExpensesPage({
             De un proyecto/evento específico o de la empresa en general.
           </p>
         </div>
-        <Link
-          href="/expenses/new"
-          className="bg-brand-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-        >
-          Nuevo gasto
+        <Link href="/expenses/new">
+          <Button size="sm" icon={<Plus size={14} />}>
+            Nuevo gasto
+          </Button>
         </Link>
       </div>
 
-      <form className="flex gap-2" action="/expenses" method="get">
-        <select
-          name="status"
-          defaultValue={params.status ?? ""}
-          className="border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-        >
+      <form className="flex flex-wrap items-end gap-2" action="/expenses" method="get">
+        <Select name="status" defaultValue={params.status ?? ""} className="w-48">
           <option value="">Todos los estados</option>
           {EXPENSE_STATUSES.map((s) => (
             <option key={s} value={s}>
               {STATUS_LABELS[s]}
             </option>
           ))}
-        </select>
-        <button
-          type="submit"
-          className="border border-brand-muted/30 px-4 py-2 text-sm text-brand-text hover:border-brand-accent"
-        >
+        </Select>
+        <Button type="submit" variant="outline" size="md">
           Filtrar
-        </button>
+        </Button>
       </form>
 
       {expenses.length === 0 ? (
-        <div className="border border-dashed border-brand-muted/30 p-8 text-center">
-          <p className="text-sm text-brand-muted">
-            Aún no tienes gastos que coincidan con este filtro.
-          </p>
-          <Link
-            href="/expenses/new"
-            className="mt-2 inline-block text-sm text-brand-accent hover:underline"
-          >
-            Crear el primero
-          </Link>
-        </div>
+        <EmptyState
+          icon={<CreditCard size={28} />}
+          title="Aún no tienes gastos que coincidan con este filtro."
+          action={
+            <Link href="/expenses/new">
+              <Button size="sm" icon={<Plus size={14} />}>
+                Crear el primero
+              </Button>
+            </Link>
+          }
+        />
       ) : (
-        <table className="w-full max-w-5xl border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-              <th className="py-2 font-medium">Fecha</th>
-              <th className="py-2 font-medium">Descripción</th>
-              <th className="py-2 font-medium">Categoría</th>
-              <th className="py-2 font-medium">Proveedor</th>
-              <th className="py-2 font-medium">Proyecto</th>
-              <th className="py-2 font-medium">Total</th>
-              <th className="py-2 font-medium">Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {expenses.map((e) => {
-              const category = e.expense_categories as { name: string }[] | null;
-              const supplier = e.suppliers as { name: string }[] | null;
-              const project = e.projects as { number: string; name: string }[] | null;
-              return (
-                <tr key={e.id} className="border-b border-brand-muted/10">
-                  <td className="py-3 text-brand-muted">{e.expense_date}</td>
-                  <td className="py-3">
-                    <Link
-                      href={`/expenses/${e.id}`}
-                      className="font-medium text-brand-text hover:text-brand-accent"
-                    >
-                      {e.description}
-                    </Link>
-                  </td>
-                  <td className="py-3 text-brand-muted">
-                    {category?.[0]?.name ?? "—"}
-                  </td>
-                  <td className="py-3 text-brand-muted">
-                    {supplier?.[0]?.name ?? "—"}
-                  </td>
-                  <td className="py-3 text-brand-muted">
-                    {project?.[0] ? `${project[0].number}` : "—"}
-                  </td>
-                  <td className="py-3">{formatMoney(e.total, e.currency)}</td>
-                  <td className="py-3 text-brand-accent">
-                    {STATUS_LABELS[e.status] ?? e.status}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <DataTable columns={columns} rows={expenses} keyFor={(e) => e.id} maxWidth="max-w-5xl" />
       )}
     </main>
   );

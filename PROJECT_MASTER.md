@@ -148,8 +148,13 @@ descartar, con `toast` en vez de mensajes inline) migrados al Design System.
 tablas (Cobros, Pagos a proveedores) migradas a `DataTable`. Los
 formularios de registro ya estaban migrados (viven en Facturas/Gastos).
 
-**⬜ Pendiente (próximas etapas)**: Gastos → Proveedores → Servicios →
-Bancos → Tareas → Reportes → Auditoría → Configuración → Login.
+**✅ Etapa 7 (completada)**: módulo **Gastos** — lista, detalle (`KpiCard`
+para subtotal/impuesto/total/balance, `ConfirmButton` para cancelar,
+`DataTable` para historial de pagos) y formularios (nuevo, editar,
+registrar pago a proveedor) migrados al Design System.
+
+**⬜ Pendiente (próximas etapas)**: Proveedores → Servicios → Bancos →
+Tareas → Reportes → Auditoría → Configuración → Login.
 
 ## Backlog
 
