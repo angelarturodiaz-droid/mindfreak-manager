@@ -1,6 +1,12 @@
 import Link from "next/link";
+import { FileText, Plus } from "lucide-react";
 import { listQuotations } from "@/features/quotations/queries";
 import { QUOTATION_STATUSES } from "@/features/quotations/schema";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/field";
+import { DataTable, type Column } from "@/components/ui/data-table";
+import { EmptyState } from "@/components/ui/empty-state";
 
 function formatMoney(amount: number, currency: string) {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency }).format(
@@ -19,6 +25,8 @@ const STATUS_LABELS: Record<string, string> = {
   CANCELLED: "Cancelada",
 };
 
+type QuotationRow = Awaited<ReturnType<typeof listQuotations>>[number];
+
 export default async function QuotationsPage({
   searchParams,
 }: {
@@ -26,6 +34,31 @@ export default async function QuotationsPage({
 }) {
   const params = await searchParams;
   const quotations = await listQuotations(params.status);
+
+  const columns: Column<QuotationRow>[] = [
+    {
+      header: "Número",
+      accessor: (q) => (
+        <Link href={`/quotations/${q.id}`} className="font-medium text-brand-text hover:text-brand-accent">
+          {q.number}
+        </Link>
+      ),
+    },
+    {
+      header: "Cliente",
+      accessor: (q) => (
+        <span className="text-brand-muted">
+          {(q.clients as { name: string }[] | null)?.[0]?.name ?? "—"}
+        </span>
+      ),
+    },
+    { header: "Fecha", accessor: (q) => <span className="text-brand-muted">{q.issue_date}</span> },
+    { header: "Total", accessor: (q) => formatMoney(q.total, q.currency) },
+    {
+      header: "Estado",
+      accessor: (q) => <Badge status={q.status}>{STATUS_LABELS[q.status] ?? q.status}</Badge>,
+    },
+  ];
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-8">
@@ -38,81 +71,41 @@ export default async function QuotationsPage({
             Cotiza a clientes activos o potenciales (leads).
           </p>
         </div>
-        <Link
-          href="/quotations/new"
-          className="bg-brand-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-        >
-          Nueva cotización
+        <Link href="/quotations/new">
+          <Button size="sm" icon={<Plus size={14} />}>
+            Nueva cotización
+          </Button>
         </Link>
       </div>
 
-      <form className="flex gap-2" action="/quotations" method="get">
-        <select
-          name="status"
-          defaultValue={params.status ?? ""}
-          className="border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-        >
+      <form className="flex flex-wrap items-end gap-2" action="/quotations" method="get">
+        <Select name="status" defaultValue={params.status ?? ""} className="w-48">
           <option value="">Todos los estados</option>
           {QUOTATION_STATUSES.map((s) => (
             <option key={s} value={s}>
               {STATUS_LABELS[s]}
             </option>
           ))}
-        </select>
-        <button
-          type="submit"
-          className="border border-brand-muted/30 px-4 py-2 text-sm text-brand-text hover:border-brand-accent"
-        >
+        </Select>
+        <Button type="submit" variant="outline" size="md">
           Filtrar
-        </button>
+        </Button>
       </form>
 
       {quotations.length === 0 ? (
-        <div className="border border-dashed border-brand-muted/30 p-8 text-center">
-          <p className="text-sm text-brand-muted">
-            Aún no tienes cotizaciones que coincidan con este filtro.
-          </p>
-          <Link
-            href="/quotations/new"
-            className="mt-2 inline-block text-sm text-brand-accent hover:underline"
-          >
-            Crear la primera
-          </Link>
-        </div>
+        <EmptyState
+          icon={<FileText size={28} />}
+          title="Aún no tienes cotizaciones que coincidan con este filtro."
+          action={
+            <Link href="/quotations/new">
+              <Button size="sm" icon={<Plus size={14} />}>
+                Crear la primera
+              </Button>
+            </Link>
+          }
+        />
       ) : (
-        <table className="w-full max-w-3xl border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-              <th className="py-2 font-medium">Número</th>
-              <th className="py-2 font-medium">Cliente</th>
-              <th className="py-2 font-medium">Fecha</th>
-              <th className="py-2 font-medium">Total</th>
-              <th className="py-2 font-medium">Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {quotations.map((q) => (
-              <tr key={q.id} className="border-b border-brand-muted/10">
-                <td className="py-3">
-                  <Link
-                    href={`/quotations/${q.id}`}
-                    className="font-medium text-brand-text hover:text-brand-accent"
-                  >
-                    {q.number}
-                  </Link>
-                </td>
-                <td className="py-3 text-brand-muted">
-                  {(q.clients as { name: string }[] | null)?.[0]?.name ?? "—"}
-                </td>
-                <td className="py-3 text-brand-muted">{q.issue_date}</td>
-                <td className="py-3">{formatMoney(q.total, q.currency)}</td>
-                <td className="py-3 text-brand-accent">
-                  {STATUS_LABELS[q.status] ?? q.status}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <DataTable columns={columns} rows={quotations} keyFor={(q) => q.id} />
       )}
     </main>
   );

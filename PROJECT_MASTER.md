@@ -124,9 +124,16 @@ estado, `ConfirmButton` en vez de `window.confirm` para desactivar/eliminar
 contacto), formularios (nuevo/editar cliente, nuevo contacto, importar CSV)
 usando `Input`/`Select`/`Button` — sin tocar ninguna acción, query ni ruta.
 
-**⬜ Pendiente (próximas etapas)**: Cotizaciones → Proyectos → Facturas →
-Cobros/Pagos → Gastos → Proveedores → Servicios → Bancos → Tareas →
-Reportes → Auditoría → Configuración → Login.
+**✅ Etapa 3 (completada)**: módulo **Cotizaciones** — lista, detalle
+(botones de flujo con `Button`, `ConfirmButton` para cancelar/descartar,
+`DataTable` para líneas, tarjeta de totales), formularios (nuevo, línea) y
+botones auxiliares (compartir/duplicar/descartar) migrados al Design
+System. `ShareLinkButton` ahora usa `toast` en vez de mensajes de error
+inline.
+
+**⬜ Pendiente (próximas etapas)**: Proyectos → Facturas → Cobros/Pagos →
+Gastos → Proveedores → Servicios → Bancos → Tareas → Reportes → Auditoría →
+Configuración → Login.
 
 ## Backlog
 

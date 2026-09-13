@@ -1,5 +1,13 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño ERP SaaS — Etapa 3: módulo Cotizaciones
+
+- Lista, detalle y formularios migrados a `DataTable`, `Badge`,
+  `Button`/`ConfirmButton`, `Input`/`Select`/`Textarea`.
+- `ShareLinkButton` ahora usa `toast` (éxito/error) en vez de texto inline.
+- Sin cambios de lógica, queries, actions ni rutas. Verificado: `tsc`,
+  `npm run build`, `eslint` y los 15 tests unitarios limpios.
+
 ## Rediseño ERP SaaS — Etapa 2: módulo Clientes
 
 - Lista (`/clients`): `DataTable`, `Badge` por estado (Lead/Activo/Inactivo),

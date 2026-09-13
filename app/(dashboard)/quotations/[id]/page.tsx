@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft, Send, Check, X, ArrowRightCircle, Eye } from "lucide-react";
 import {
   getQuotation,
   listQuotationItems,
@@ -17,6 +18,11 @@ import { NewItemForm } from "./new-item-form";
 import { ShareLinkButton } from "./share-link-button";
 import { DuplicateQuotationButton } from "./duplicate-quotation-button";
 import { DiscardQuotationButton } from "./discard-quotation-button";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { ConfirmButton } from "@/components/ui/confirm-button";
+import { DataTable, type Column } from "@/components/ui/data-table";
 
 function formatMoney(amount: number, currency: string) {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency }).format(
@@ -34,6 +40,8 @@ const STATUS_LABELS: Record<string, string> = {
   EXPIRED: "Expirada",
   CANCELLED: "Cancelada",
 };
+
+type Item = Awaited<ReturnType<typeof listQuotationItems>>[number];
 
 export default async function QuotationDetailPage({
   params,
@@ -62,19 +70,47 @@ export default async function QuotationDetailPage({
 
   const isEditable = quotation.status === "DRAFT" || quotation.status === "NEGOTIATING";
 
+  const columns: Column<Item>[] = [
+    { header: "Descripción", accessor: (item) => item.description },
+    { header: "Cant.", accessor: (item) => item.quantity },
+    { header: "Precio", accessor: (item) => formatMoney(item.unit_price, quotation.currency) },
+    { header: "Descuento", accessor: (item) => formatMoney(item.discount, quotation.currency) },
+    {
+      header: "Subtotal",
+      accessor: (item) => (
+        <span className="font-medium">{formatMoney(item.subtotal, quotation.currency)}</span>
+      ),
+    },
+    {
+      header: "",
+      className: "text-right",
+      accessor: (item) =>
+        isEditable && canUpdate ? (
+          <ConfirmButton
+            label="Eliminar"
+            confirmTitle="¿Eliminar esta línea?"
+            onConfirm={deleteQuotationItemAction.bind(null, item.id, quotation.id)}
+          />
+        ) : null,
+    },
+  ];
+
   return (
     <main className="flex flex-1 flex-col gap-8 p-8">
       <div>
-        <Link href="/quotations" className="text-sm text-brand-muted hover:text-brand-text">
-          ← Cotizaciones
+        <Link
+          href="/quotations"
+          className="inline-flex items-center gap-1 text-sm text-brand-muted hover:text-brand-text"
+        >
+          <ArrowLeft size={14} /> Cotizaciones
         </Link>
         <div className="mt-2 flex items-center gap-3">
           <h1 className="text-xl font-semibold text-brand-primary">
             {quotation.number}
           </h1>
-          <span className="text-brand-accent">
+          <Badge status={quotation.status}>
             {STATUS_LABELS[quotation.status] ?? quotation.status}
-          </span>
+          </Badge>
         </div>
         <p className="text-sm text-brand-muted">
           Cliente: {clientName ?? "—"} · Emitida: {quotation.issue_date}
@@ -85,12 +121,9 @@ export default async function QuotationDetailPage({
       <div className="flex flex-wrap gap-3">
         {quotation.status === "DRAFT" && canUpdate && (
           <form action={sendQuotationAction.bind(null, quotation.id)}>
-            <button
-              type="submit"
-              className="border border-brand-accent px-4 py-2 text-sm text-brand-accent hover:bg-brand-accent hover:text-white"
-            >
+            <Button type="submit" variant="secondary" size="sm" icon={<Send size={14} />}>
               Marcar como enviada
-            </button>
+            </Button>
           </form>
         )}
         {(quotation.status === "SENT" ||
@@ -99,33 +132,25 @@ export default async function QuotationDetailPage({
           canApprove && (
             <>
               <form action={approveQuotationAction.bind(null, quotation.id)}>
-                <button
-                  type="submit"
-                  className="border border-brand-success px-4 py-2 text-sm text-brand-success hover:bg-brand-success hover:text-white"
-                >
+                <Button type="submit" size="sm" icon={<Check size={14} />} className="!bg-brand-success">
                   Aprobar
-                </button>
+                </Button>
               </form>
               <form action={rejectQuotationAction.bind(null, quotation.id)}>
-                <button
-                  type="submit"
-                  className="border border-brand-danger px-4 py-2 text-sm text-brand-danger hover:bg-brand-danger hover:text-white"
-                >
+                <Button type="submit" variant="danger" size="sm" icon={<X size={14} />}>
                   Rechazar
-                </button>
+                </Button>
               </form>
             </>
           )}
         {!["APPROVED", "CANCELLED", "REJECTED"].includes(quotation.status) &&
           canUpdate && (
-            <form action={cancelQuotationAction.bind(null, quotation.id)}>
-              <button
-                type="submit"
-                className="border border-brand-muted/30 px-4 py-2 text-sm text-brand-muted hover:border-brand-danger hover:text-brand-danger"
-              >
-                Cancelar cotización
-              </button>
-            </form>
+            <ConfirmButton
+              label="Cancelar cotización"
+              confirmTitle="¿Cancelar esta cotización?"
+              confirmMessage="Se conserva el registro para auditoría, pero ya no se podrá editar."
+              onConfirm={cancelQuotationAction.bind(null, quotation.id)}
+            />
           )}
         {quotation.status === "DRAFT" && canUpdate && (
           <DiscardQuotationButton quotationId={quotation.id} />
@@ -133,19 +158,17 @@ export default async function QuotationDetailPage({
         <ShareLinkButton quotationId={quotation.id} />
         {canUpdate && <DuplicateQuotationButton quotationId={quotation.id} />}
         {quotation.status === "APPROVED" && !quotation.project_id && (
-          <Link
-            href={`/projects/from-quotation/${quotation.id}`}
-            className="border border-brand-success px-4 py-2 text-sm text-brand-success hover:bg-brand-success hover:text-white"
-          >
-            Convertir a Proyecto →
+          <Link href={`/projects/from-quotation/${quotation.id}`}>
+            <Button variant="secondary" size="sm" className="!bg-brand-success" icon={<ArrowRightCircle size={14} />}>
+              Convertir a Proyecto
+            </Button>
           </Link>
         )}
         {quotation.project_id && (
-          <Link
-            href={`/projects/${quotation.project_id}`}
-            className="border border-brand-muted/30 px-4 py-2 text-sm text-brand-muted hover:border-brand-accent hover:text-brand-accent"
-          >
-            Ver proyecto →
+          <Link href={`/projects/${quotation.project_id}`}>
+            <Button variant="outline" size="sm" icon={<Eye size={14} />}>
+              Ver proyecto
+            </Button>
           </Link>
         )}
       </div>
@@ -154,60 +177,7 @@ export default async function QuotationDetailPage({
         <h2 className="mb-3 text-sm font-medium text-brand-text">
           Líneas de servicio
         </h2>
-        <table className="w-full max-w-4xl border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-              <th className="py-2 font-medium">Descripción</th>
-              <th className="py-2 font-medium">Cant.</th>
-              <th className="py-2 font-medium">Precio</th>
-              <th className="py-2 font-medium">Descuento</th>
-              <th className="py-2 font-medium">Subtotal</th>
-              <th className="py-2 font-medium"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.id} className="border-b border-brand-muted/10">
-                <td className="py-2">{item.description}</td>
-                <td className="py-2">{item.quantity}</td>
-                <td className="py-2">
-                  {formatMoney(item.unit_price, quotation.currency)}
-                </td>
-                <td className="py-2">
-                  {formatMoney(item.discount, quotation.currency)}
-                </td>
-                <td className="py-2 font-medium">
-                  {formatMoney(item.subtotal, quotation.currency)}
-                </td>
-                <td className="py-2 text-right">
-                  {isEditable && canUpdate && (
-                    <form
-                      action={deleteQuotationItemAction.bind(
-                        null,
-                        item.id,
-                        quotation.id,
-                      )}
-                    >
-                      <button
-                        type="submit"
-                        className="text-brand-muted hover:text-brand-danger"
-                      >
-                        Eliminar
-                      </button>
-                    </form>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {items.length === 0 && (
-              <tr>
-                <td colSpan={6} className="py-4 text-center text-brand-muted">
-                  Sin líneas todavía.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        <DataTable columns={columns} rows={items} keyFor={(i) => i.id} maxWidth="max-w-4xl" emptyMessage="Sin líneas todavía." />
 
         {isEditable && canUpdate && (
           <div className="mt-4">
@@ -215,7 +185,7 @@ export default async function QuotationDetailPage({
           </div>
         )}
 
-        <div className="mt-6 flex max-w-4xl flex-col items-end gap-1 text-sm">
+        <Card className="mt-6 ml-auto flex max-w-sm flex-col items-end gap-1 text-sm">
           <p>
             Subtotal:{" "}
             <span className="font-medium">
@@ -245,7 +215,7 @@ export default async function QuotationDetailPage({
             {" · "}
             Margen estimado: {quotation.estimated_margin?.toFixed(1) ?? "0.0"}%
           </p>
-        </div>
+        </Card>
       </section>
 
       {quotation.terms && (
