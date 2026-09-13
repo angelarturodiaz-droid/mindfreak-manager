@@ -1,4 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
+import { config } from "dotenv";
+
+// Carga .env.test para que E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD lleguen a
+// process.env — Playwright NO lee archivos .env por sí solo.
+config({ path: ".env.test" });
 
 /**
  * Tests E2E — requieren `npm run dev` corriendo en localhost:3000 y una

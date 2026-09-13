@@ -1,5 +1,23 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix real: los tests E2E no leían `.env.test` (8 de 9 fallaban)
+
+- **Bug real detectado por el usuario** al correr `npm run test:e2e` por
+  primera vez: 8 de 9 tests fallaron con "Faltan E2E_ADMIN_EMAIL/
+  E2E_ADMIN_PASSWORD en el entorno", aunque el usuario sí había creado
+  `.env.test` correctamente. Causa: **Playwright no lee archivos `.env` por
+  sí solo** — yo documenté el paso de crear `.env.test` pero nunca conecté
+  nada en el código para que efectivamente se cargara a `process.env`. El
+  único test que pasó ("credenciales inválidas") no depende de esas
+  variables, por eso no mostró el problema.
+- **Corregido**: se agregó `dotenv` como dependencia de desarrollo y
+  `playwright.config.ts` ahora carga `.env.test` explícitamente al inicio
+  (`config({ path: ".env.test" })`) antes de que corra cualquier test.
+- Verificado el mecanismo de carga con un archivo `.env.test` de prueba
+  (creado y borrado de inmediato, sin credenciales reales): confirmado que
+  `process.env.E2E_ADMIN_EMAIL`/`E2E_ADMIN_PASSWORD` se llenan
+  correctamente tras el fix.
+
 ## Fix: `npm install` daba ERESOLVE (conflicto @types/node vs. vitest)
 
 - **Bug real** encontrado por el usuario al instalar en su Mac: `vitest@5`
