@@ -131,8 +131,16 @@ botones auxiliares (compartir/duplicar/descartar) migrados al Design
 System. `ShareLinkButton` ahora usa `toast` en vez de mensajes de error
 inline.
 
-**⬜ Pendiente (próximas etapas)**: Proyectos → Facturas → Cobros/Pagos →
-Gastos → Proveedores → Servicios → Bancos → Tareas → Reportes → Auditoría →
+**✅ Etapa 4 (completada)**: módulo **Proyectos** — el archivo más grande del
+proyecto (770 líneas, 13 pestañas: Resumen/Finanzas/Ingresos/Gastos/
+Proveedores/Facturas/Cobros/Pagos/Bancos/Tareas/Documentos/Actividades/
+Rentabilidad), reescrito completo con `DataTable`/`Badge`/`KpiCard`/
+`Button`/`ConfirmButton` en las 13 pestañas. También: lista de proyectos,
+formularios (nuevo proyecto, editar, línea, convertir cotización, nueva
+actividad) y el componente `ActivityItem` (con editar/eliminar).
+
+**⬜ Pendiente (próximas etapas)**: Facturas → Cobros/Pagos → Gastos →
+Proveedores → Servicios → Bancos → Tareas → Reportes → Auditoría →
 Configuración → Login.
 
 ## Backlog

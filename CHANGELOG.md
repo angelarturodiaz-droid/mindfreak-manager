@@ -1,5 +1,15 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño ERP SaaS — Etapa 4: módulo Proyectos
+
+- Detalle de proyecto (el archivo más grande, 770 líneas, 13 pestañas)
+  reescrito completo con `DataTable`, `Badge`, `KpiCard` (Finanzas/
+  Rentabilidad), `Button`/`ConfirmButton`.
+- Lista de proyectos, formularios (nuevo, editar, línea, convertir
+  cotización, nueva actividad) y `ActivityItem` migrados al Design System.
+- Sin cambios de lógica, queries, actions ni rutas. Verificado: `tsc`,
+  `npm run build`, `eslint` y los 15 tests unitarios limpios.
+
 ## Rediseño ERP SaaS — Etapa 3: módulo Cotizaciones
 
 - Lista, detalle y formularios migrados a `DataTable`, `Badge`,

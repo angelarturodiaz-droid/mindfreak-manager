@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft, Plus } from "lucide-react";
 import {
   getProject,
   listProjectItems,
@@ -27,6 +28,11 @@ import { updateProjectStatusAction, deleteProjectItemAction } from "@/features/p
 import { hasPermission } from "@/lib/auth/permissions";
 import { ProjectEditForm } from "./project-edit-form";
 import { NewProjectItemForm } from "./new-item-form";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, KpiCard } from "@/components/ui/card";
+import { ConfirmButton } from "@/components/ui/confirm-button";
+import { DataTable, type Column } from "@/components/ui/data-table";
 
 const STATUS_LABELS: Record<string, string> = {
   PLANNING: "Planificación",
@@ -67,8 +73,8 @@ const TABS = [
   { key: "rentabilidad", label: "Rentabilidad" },
 ];
 
-function formatMoney(amount: number) {
-  return new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(
+function formatMoney(amount: number, currency = "DOP") {
+  return new Intl.NumberFormat("es-DO", { style: "currency", currency }).format(
     amount,
   );
 }
@@ -77,6 +83,15 @@ function formatPercent(value: number | null) {
   if (value === null) return "—";
   return `${value.toFixed(1)}%`;
 }
+
+type ProjectItemRow = Awaited<ReturnType<typeof listProjectItems>>[number];
+type QuotationRow = Awaited<ReturnType<typeof listProjectQuotations>>[number];
+type InvoiceRow = Awaited<ReturnType<typeof listProjectInvoices>>[number];
+type PaymentRow = Awaited<ReturnType<typeof listProjectCustomerPayments>>[number];
+type ExpenseRow = Awaited<ReturnType<typeof listProjectExpenses>>[number];
+type SupplierRow = Awaited<ReturnType<typeof listProjectSuppliers>>[number];
+type SupplierPaymentRow = Awaited<ReturnType<typeof listProjectSupplierPayments>>[number];
+type BankTxRow = Awaited<ReturnType<typeof listProjectBankTransactions>>[number];
 
 export default async function ProjectDetailPage({
   params,
@@ -135,19 +150,165 @@ export default async function ProjectDetailPage({
 
   const estimatedCostTotal = items.reduce((sum, i) => sum + i.estimated_cost, 0);
 
+  const itemColumns: Column<ProjectItemRow>[] = [
+    { header: "Descripción", accessor: (i) => i.description },
+    { header: "Cant.", accessor: (i) => i.quantity },
+    { header: "Precio", accessor: (i) => formatMoney(i.unit_price) },
+    { header: "Costo est.", accessor: (i) => <span className="text-brand-muted">{formatMoney(i.estimated_cost)}</span> },
+    { header: "Subtotal", accessor: (i) => <span className="font-medium">{formatMoney(i.subtotal)}</span> },
+    {
+      header: "",
+      className: "text-right",
+      accessor: (i) =>
+        canUpdate ? (
+          <ConfirmButton
+            label="Eliminar"
+            confirmTitle="¿Eliminar esta línea?"
+            onConfirm={deleteProjectItemAction.bind(null, i.id, project.id)}
+          />
+        ) : null,
+    },
+  ];
+
+  const quotationColumns: Column<QuotationRow>[] = [
+    {
+      header: "Número",
+      accessor: (q) => (
+        <Link href={`/quotations/${q.id}`} className="text-brand-accent hover:underline">
+          {q.number}
+        </Link>
+      ),
+    },
+    { header: "Fecha", accessor: (q) => <span className="text-brand-muted">{q.issue_date}</span> },
+    { header: "Estado", accessor: (q) => <Badge status={q.status}>{q.status}</Badge> },
+    { header: "Total", accessor: (q) => <span className="font-medium">{formatMoney(q.total, q.currency)}</span> },
+  ];
+
+  const invoiceColumns: Column<InvoiceRow>[] = [
+    {
+      header: "Número",
+      accessor: (inv) => (
+        <Link href={`/invoices/${inv.id}`} className="text-brand-accent hover:underline">
+          {inv.number}
+        </Link>
+      ),
+    },
+    { header: "Fecha", accessor: (inv) => <span className="text-brand-muted">{inv.issue_date}</span> },
+    { header: "Estado", accessor: (inv) => <Badge status={inv.status}>{inv.status}</Badge> },
+    { header: "Total", accessor: (inv) => <span className="font-medium">{formatMoney(inv.total, inv.currency)}</span> },
+    { header: "Balance", accessor: (inv) => <span className="text-brand-muted">{formatMoney(inv.balance, inv.currency)}</span> },
+  ];
+
+  const paymentColumns: Column<PaymentRow>[] = [
+    { header: "Fecha", accessor: (p) => p.payment_date },
+    {
+      header: "Factura",
+      accessor: (p) => {
+        const invoiceData = p.invoices as { number: string }[] | { number: string } | null;
+        const invoiceNumber = Array.isArray(invoiceData) ? invoiceData[0]?.number : invoiceData?.number;
+        return (
+          <Link href={`/invoices/${p.invoice_id}`} className="text-brand-accent hover:underline">
+            {invoiceNumber ?? "—"}
+          </Link>
+        );
+      },
+    },
+    { header: "Monto", accessor: (p) => <span className="font-medium">{formatMoney(p.amount, p.currency)}</span> },
+    { header: "Método", accessor: (p) => <span className="text-brand-muted">{PAYMENT_METHOD_LABELS[p.method] ?? p.method}</span> },
+  ];
+
+  const expenseColumns: Column<ExpenseRow>[] = [
+    { header: "Fecha", accessor: (e) => <span className="text-brand-muted">{e.expense_date}</span> },
+    {
+      header: "Descripción",
+      accessor: (e) => (
+        <Link href={`/expenses/${e.id}`} className="text-brand-accent hover:underline">
+          {e.description}
+        </Link>
+      ),
+    },
+    {
+      header: "Proveedor",
+      accessor: (e) => {
+        const supplierData = e.suppliers as { name: string }[] | { name: string } | null;
+        const supplierName = Array.isArray(supplierData) ? supplierData[0]?.name : supplierData?.name;
+        return <span className="text-brand-muted">{supplierName ?? "—"}</span>;
+      },
+    },
+    { header: "Estado", accessor: (e) => <Badge status={e.status}>{e.status}</Badge> },
+    { header: "Total", accessor: (e) => <span className="font-medium">{formatMoney(e.total, e.currency)}</span> },
+  ];
+
+  const supplierColumns: Column<SupplierRow>[] = [
+    {
+      header: "Proveedor",
+      accessor: (s) => (
+        <Link href={`/suppliers/${s.supplierId}`} className="text-brand-accent hover:underline">
+          {s.name}
+        </Link>
+      ),
+    },
+    { header: "Total gastado", accessor: (s) => <span className="font-medium">{formatMoney(s.total)}</span> },
+  ];
+
+  const supplierPaymentColumns: Column<SupplierPaymentRow>[] = [
+    { header: "Fecha", accessor: (p) => <span className="text-brand-muted">{p.payment_date}</span> },
+    {
+      header: "Proveedor",
+      accessor: (p) => {
+        const supplierData = p.suppliers as { name: string }[] | { name: string } | null;
+        const supplierName = Array.isArray(supplierData) ? supplierData[0]?.name : supplierData?.name;
+        return supplierName ?? "—";
+      },
+    },
+    {
+      header: "Gasto",
+      accessor: (p) => (
+        <Link href={`/expenses/${p.expense_id}`} className="text-brand-accent hover:underline">
+          Ver gasto
+        </Link>
+      ),
+    },
+    { header: "Monto", accessor: (p) => <span className="font-medium">{formatMoney(p.amount, p.currency)}</span> },
+    { header: "Método", accessor: (p) => <span className="text-brand-muted">{PAYMENT_METHOD_LABELS[p.method] ?? p.method}</span> },
+  ];
+
+  const bankColumns: Column<BankTxRow>[] = [
+    { header: "Fecha", accessor: (t) => <span className="text-brand-muted">{t.transaction_date}</span> },
+    {
+      header: "Cuenta",
+      accessor: (t) => {
+        const accountData = t.bank_accounts as { name: string }[] | { name: string } | null;
+        const accountName = Array.isArray(accountData) ? accountData[0]?.name : accountData?.name;
+        return accountName ?? "—";
+      },
+    },
+    { header: "Tipo", accessor: (t) => <span className="text-brand-muted">{BANK_TX_TYPE_LABELS[t.type] ?? t.type}</span> },
+    { header: "Descripción", accessor: (t) => t.description ?? "—" },
+    {
+      header: "Monto",
+      accessor: (t) => (
+        <span className={t.amount < 0 ? "font-medium text-brand-danger" : "font-medium"}>
+          {formatMoney(t.amount, t.currency)}
+        </span>
+      ),
+    },
+  ];
+
   return (
     <main className="flex flex-1 flex-col gap-6 p-8">
       <div>
-        <Link href="/projects" className="text-sm text-brand-muted hover:text-brand-text">
-          ← Proyectos
+        <Link
+          href="/projects"
+          className="inline-flex items-center gap-1 text-sm text-brand-muted hover:text-brand-text"
+        >
+          <ArrowLeft size={14} /> Proyectos
         </Link>
         <div className="mt-2 flex items-center gap-3">
           <h1 className="text-xl font-semibold text-brand-primary">
             {project.number} — {project.name}
           </h1>
-          <span className="text-brand-accent">
-            {STATUS_LABELS[project.status] ?? project.status}
-          </span>
+          <Badge status={project.status}>{STATUS_LABELS[project.status] ?? project.status}</Badge>
         </div>
         <p className="text-sm text-brand-muted">
           Cliente: {clientName ?? "—"}
@@ -160,23 +321,20 @@ export default async function ProjectDetailPage({
         <div className="flex flex-wrap gap-2">
           {Object.entries(STATUS_LABELS).map(([status, label]) => (
             <form key={status} action={updateProjectStatusAction.bind(null, project.id, status)}>
-              <button
+              <Button
                 type="submit"
+                variant={project.status === status ? "secondary" : "outline"}
+                size="sm"
                 disabled={project.status === status}
-                className={
-                  project.status === status
-                    ? "border border-brand-accent bg-brand-accent px-3 py-1.5 text-xs text-white"
-                    : "border border-brand-muted/30 px-3 py-1.5 text-xs text-brand-text hover:border-brand-accent"
-                }
               >
                 {label}
-              </button>
+              </Button>
             </form>
           ))}
         </div>
       )}
 
-      <div className="flex flex-wrap gap-1 border-b border-brand-muted/20">
+      <div className="flex flex-wrap gap-1 border-b border-brand-border">
         {TABS.map((t) => (
           <Link
             key={t.key}
@@ -198,59 +356,16 @@ export default async function ProjectDetailPage({
             <h2 className="mb-3 text-sm font-medium text-brand-text">
               Información general
             </h2>
-            <ProjectEditForm project={project} members={members} />
+            <Card>
+              <ProjectEditForm project={project} members={members} />
+            </Card>
           </section>
 
           <section>
             <h2 className="mb-3 text-sm font-medium text-brand-text">
               Líneas del proyecto
             </h2>
-            <table className="w-full max-w-3xl border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-                  <th className="py-2 font-medium">Descripción</th>
-                  <th className="py-2 font-medium">Cant.</th>
-                  <th className="py-2 font-medium">Precio</th>
-                  <th className="py-2 font-medium">Costo est.</th>
-                  <th className="py-2 font-medium">Subtotal</th>
-                  <th className="py-2 font-medium"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.id} className="border-b border-brand-muted/10">
-                    <td className="py-2">{item.description}</td>
-                    <td className="py-2">{item.quantity}</td>
-                    <td className="py-2">{formatMoney(item.unit_price)}</td>
-                    <td className="py-2 text-brand-muted">
-                      {formatMoney(item.estimated_cost)}
-                    </td>
-                    <td className="py-2 font-medium">{formatMoney(item.subtotal)}</td>
-                    <td className="py-2 text-right">
-                      {canUpdate && (
-                        <form
-                          action={deleteProjectItemAction.bind(null, item.id, project.id)}
-                        >
-                          <button
-                            type="submit"
-                            className="text-brand-muted hover:text-brand-danger"
-                          >
-                            Eliminar
-                          </button>
-                        </form>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {items.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="py-4 text-center text-brand-muted">
-                      Sin líneas todavía.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+            <DataTable columns={itemColumns} rows={items} keyFor={(i) => i.id} maxWidth="max-w-3xl" emptyMessage="Sin líneas todavía." />
 
             {canUpdate && (
               <div className="mt-4">
@@ -277,40 +392,25 @@ export default async function ProjectDetailPage({
           </section>
         </div>
       ) : activeTab === "finanzas" && profitability ? (
-        <div className="max-w-2xl">
+        <div className="max-w-3xl">
           <h2 className="mb-3 text-sm font-medium text-brand-text">
             Resumen financiero
           </h2>
-          <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
-            <div className="border border-brand-muted/20 px-4 py-3">
-              <p className="text-xs text-brand-muted">Cotizado</p>
-              <p className="font-medium">{formatMoney(profitability.cotizado)}</p>
-            </div>
-            <div className="border border-brand-muted/20 px-4 py-3">
-              <p className="text-xs text-brand-muted">Facturado</p>
-              <p className="font-medium">{formatMoney(profitability.facturado)}</p>
-            </div>
-            <div className="border border-brand-muted/20 px-4 py-3">
-              <p className="text-xs text-brand-muted">Cobrado</p>
-              <p className="font-medium">{formatMoney(profitability.cobrado)}</p>
-            </div>
-            <div className="border border-brand-muted/20 px-4 py-3">
-              <p className="text-xs text-brand-muted">Costo estimado</p>
-              <p className="font-medium">{formatMoney(profitability.costoEstimado)}</p>
-            </div>
-            <div className="border border-brand-muted/20 px-4 py-3">
-              <p className="text-xs text-brand-muted">Costo real</p>
-              <p className="font-medium">{formatMoney(profitability.costoReal)}</p>
-            </div>
-            <div className="border border-brand-muted/20 px-4 py-3">
-              <p className="text-xs text-brand-muted">Presupuesto</p>
-              <p className="font-medium">{formatMoney(profitability.presupuesto)}</p>
-              {profitability.presupuestoConsumidoPct !== null && (
-                <p className="text-xs text-brand-muted">
-                  {formatPercent(profitability.presupuestoConsumidoPct)} consumido
-                </p>
-              )}
-            </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <KpiCard label="Cotizado" value={formatMoney(profitability.cotizado)} />
+            <KpiCard label="Facturado" value={formatMoney(profitability.facturado)} />
+            <KpiCard label="Cobrado" value={formatMoney(profitability.cobrado)} />
+            <KpiCard label="Costo estimado" value={formatMoney(profitability.costoEstimado)} />
+            <KpiCard label="Costo real" value={formatMoney(profitability.costoReal)} />
+            <KpiCard
+              label="Presupuesto"
+              value={formatMoney(profitability.presupuesto)}
+              trend={
+                profitability.presupuestoConsumidoPct !== null
+                  ? `${formatPercent(profitability.presupuestoConsumidoPct)} consumido`
+                  : undefined
+              }
+            />
           </div>
           <p className="mt-4 text-xs text-brand-muted">
             Todos los montos se consolidan en la moneda base de la empresa,
@@ -323,38 +423,22 @@ export default async function ProjectDetailPage({
           <h2 className="mb-3 text-sm font-medium text-brand-text">
             Rentabilidad
           </h2>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="border border-brand-muted/20 px-4 py-3">
-              <p className="text-xs text-brand-muted">Utilidad estimada</p>
-              <p
-                className={
-                  profitability.utilidadEstimada < 0
-                    ? "font-medium text-brand-danger"
-                    : "font-medium"
-                }
-              >
-                {formatMoney(profitability.utilidadEstimada)}
-              </p>
-              <p className="text-xs text-brand-muted">
-                Margen: {formatPercent(profitability.margenEstimado)}
-              </p>
-            </div>
-            <div className="border border-brand-muted/20 px-4 py-3">
-              <p className="text-xs text-brand-muted">Utilidad real</p>
-              <p
-                className={
-                  profitability.utilidadReal < 0
-                    ? "font-medium text-brand-danger"
-                    : "font-medium"
-                }
-              >
-                {formatMoney(profitability.utilidadReal)}
-              </p>
-              <p className="text-xs text-brand-muted">
-                Margen: {formatPercent(profitability.margenReal)}
-              </p>
-            </div>
+          <div className="grid grid-cols-2 gap-3">
+            <KpiCard
+              label="Utilidad estimada"
+              value={formatMoney(profitability.utilidadEstimada)}
+              danger={profitability.utilidadEstimada < 0}
+            />
+            <KpiCard
+              label="Utilidad real"
+              value={formatMoney(profitability.utilidadReal)}
+              danger={profitability.utilidadReal < 0}
+            />
           </div>
+          <p className="mt-2 text-xs text-brand-muted">
+            Margen estimado: {formatPercent(profitability.margenEstimado)} · Margen
+            real: {formatPercent(profitability.margenReal)}
+          </p>
           <p className="mt-4 text-xs text-brand-muted">
             Utilidad estimada = Cotizado − Costo estimado · Utilidad real =
             Facturado − Costo real.
@@ -365,42 +449,7 @@ export default async function ProjectDetailPage({
           <h2 className="mb-3 text-sm font-medium text-brand-text">
             Cotizaciones del proyecto
           </h2>
-          {quotations.length === 0 ? (
-            <p className="text-sm text-brand-muted">Sin cotizaciones ligadas.</p>
-          ) : (
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-                  <th className="py-2 font-medium">Número</th>
-                  <th className="py-2 font-medium">Fecha</th>
-                  <th className="py-2 font-medium">Estado</th>
-                  <th className="py-2 font-medium">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {quotations.map((q) => (
-                  <tr key={q.id} className="border-b border-brand-muted/10">
-                    <td className="py-2">
-                      <Link
-                        href={`/quotations/${q.id}`}
-                        className="text-brand-accent hover:underline"
-                      >
-                        {q.number}
-                      </Link>
-                    </td>
-                    <td className="py-2 text-brand-muted">{q.issue_date}</td>
-                    <td className="py-2 text-brand-muted">{q.status}</td>
-                    <td className="py-2 font-medium">
-                      {new Intl.NumberFormat("es-DO", {
-                        style: "currency",
-                        currency: q.currency,
-                      }).format(q.total)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+          <DataTable columns={quotationColumns} rows={quotations} keyFor={(q) => q.id} emptyMessage="Sin cotizaciones ligadas." maxWidth="max-w-3xl" />
         </div>
       ) : activeTab === "facturas" && invoices ? (
         <div className="max-w-3xl">
@@ -408,103 +457,20 @@ export default async function ProjectDetailPage({
             <h2 className="text-sm font-medium text-brand-text">
               Facturas del proyecto
             </h2>
-            <Link href="/invoices/new" className="text-sm text-brand-accent hover:underline">
-              Nueva factura
+            <Link href="/invoices/new">
+              <Button variant="ghost" size="sm" icon={<Plus size={14} />}>
+                Nueva factura
+              </Button>
             </Link>
           </div>
-          {invoices.length === 0 ? (
-            <p className="text-sm text-brand-muted">Sin facturas todavía.</p>
-          ) : (
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-                  <th className="py-2 font-medium">Número</th>
-                  <th className="py-2 font-medium">Fecha</th>
-                  <th className="py-2 font-medium">Estado</th>
-                  <th className="py-2 font-medium">Total</th>
-                  <th className="py-2 font-medium">Balance</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.map((inv) => (
-                  <tr key={inv.id} className="border-b border-brand-muted/10">
-                    <td className="py-2">
-                      <Link
-                        href={`/invoices/${inv.id}`}
-                        className="text-brand-accent hover:underline"
-                      >
-                        {inv.number}
-                      </Link>
-                    </td>
-                    <td className="py-2 text-brand-muted">{inv.issue_date}</td>
-                    <td className="py-2 text-brand-muted">{inv.status}</td>
-                    <td className="py-2 font-medium">
-                      {new Intl.NumberFormat("es-DO", {
-                        style: "currency",
-                        currency: inv.currency,
-                      }).format(inv.total)}
-                    </td>
-                    <td className="py-2 text-brand-muted">
-                      {new Intl.NumberFormat("es-DO", {
-                        style: "currency",
-                        currency: inv.currency,
-                      }).format(inv.balance)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+          <DataTable columns={invoiceColumns} rows={invoices} keyFor={(i) => i.id} emptyMessage="Sin facturas todavía." maxWidth="max-w-3xl" />
         </div>
       ) : activeTab === "cobros" && customerPayments ? (
         <div className="max-w-3xl">
           <h2 className="mb-3 text-sm font-medium text-brand-text">
             Cobros del proyecto
           </h2>
-          {customerPayments.length === 0 ? (
-            <p className="text-sm text-brand-muted">Sin cobros todavía.</p>
-          ) : (
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-                  <th className="py-2 font-medium">Fecha</th>
-                  <th className="py-2 font-medium">Factura</th>
-                  <th className="py-2 font-medium">Monto</th>
-                  <th className="py-2 font-medium">Método</th>
-                </tr>
-              </thead>
-              <tbody>
-                {customerPayments.map((p) => {
-                  const invoiceData = p.invoices as { number: string }[] | { number: string } | null;
-                  const invoiceNumber = Array.isArray(invoiceData)
-                    ? invoiceData[0]?.number
-                    : invoiceData?.number;
-                  return (
-                    <tr key={p.id} className="border-b border-brand-muted/10">
-                      <td className="py-2">{p.payment_date}</td>
-                      <td className="py-2">
-                        <Link
-                          href={`/invoices/${p.invoice_id}`}
-                          className="text-brand-accent hover:underline"
-                        >
-                          {invoiceNumber ?? "—"}
-                        </Link>
-                      </td>
-                      <td className="py-2 font-medium">
-                        {new Intl.NumberFormat("es-DO", {
-                          style: "currency",
-                          currency: p.currency,
-                        }).format(p.amount)}
-                      </td>
-                      <td className="py-2 text-brand-muted">
-                        {PAYMENT_METHOD_LABELS[p.method] ?? p.method}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+          <DataTable columns={paymentColumns} rows={customerPayments} keyFor={(p) => p.id} emptyMessage="Sin cobros todavía." maxWidth="max-w-3xl" />
         </div>
       ) : activeTab === "gastos" && expenses ? (
         <div className="max-w-3xl">
@@ -512,192 +478,46 @@ export default async function ProjectDetailPage({
             <h2 className="text-sm font-medium text-brand-text">
               Gastos del proyecto
             </h2>
-            <Link href="/expenses/new" className="text-sm text-brand-accent hover:underline">
-              Nuevo gasto
+            <Link href="/expenses/new">
+              <Button variant="ghost" size="sm" icon={<Plus size={14} />}>
+                Nuevo gasto
+              </Button>
             </Link>
           </div>
-          {expenses.length === 0 ? (
-            <p className="text-sm text-brand-muted">Sin gastos todavía.</p>
-          ) : (
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-                  <th className="py-2 font-medium">Fecha</th>
-                  <th className="py-2 font-medium">Descripción</th>
-                  <th className="py-2 font-medium">Proveedor</th>
-                  <th className="py-2 font-medium">Estado</th>
-                  <th className="py-2 font-medium">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {expenses.map((e) => {
-                  const supplierData = e.suppliers as { name: string }[] | { name: string } | null;
-                  const supplierName = Array.isArray(supplierData)
-                    ? supplierData[0]?.name
-                    : supplierData?.name;
-                  return (
-                    <tr key={e.id} className="border-b border-brand-muted/10">
-                      <td className="py-2 text-brand-muted">{e.expense_date}</td>
-                      <td className="py-2">
-                        <Link
-                          href={`/expenses/${e.id}`}
-                          className="text-brand-accent hover:underline"
-                        >
-                          {e.description}
-                        </Link>
-                      </td>
-                      <td className="py-2 text-brand-muted">{supplierName ?? "—"}</td>
-                      <td className="py-2 text-brand-muted">{e.status}</td>
-                      <td className="py-2 font-medium">
-                        {new Intl.NumberFormat("es-DO", {
-                          style: "currency",
-                          currency: e.currency,
-                        }).format(e.total)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+          <DataTable columns={expenseColumns} rows={expenses} keyFor={(e) => e.id} emptyMessage="Sin gastos todavía." maxWidth="max-w-3xl" />
         </div>
       ) : activeTab === "proveedores" && projectSuppliers ? (
         <div className="max-w-2xl">
           <h2 className="mb-3 text-sm font-medium text-brand-text">
             Proveedores del proyecto
           </h2>
-          {projectSuppliers.length === 0 ? (
-            <p className="text-sm text-brand-muted">
-              Sin proveedores asociados a gastos de este proyecto.
-            </p>
-          ) : (
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-                  <th className="py-2 font-medium">Proveedor</th>
-                  <th className="py-2 font-medium">Total gastado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {projectSuppliers.map((s) => (
-                  <tr key={s.supplierId} className="border-b border-brand-muted/10">
-                    <td className="py-2">
-                      <Link
-                        href={`/suppliers/${s.supplierId}`}
-                        className="text-brand-accent hover:underline"
-                      >
-                        {s.name}
-                      </Link>
-                    </td>
-                    <td className="py-2 font-medium">{formatMoney(s.total)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+          <DataTable
+            columns={supplierColumns}
+            rows={projectSuppliers}
+            keyFor={(s) => s.supplierId}
+            emptyMessage="Sin proveedores asociados a gastos de este proyecto."
+            maxWidth="max-w-2xl"
+          />
         </div>
       ) : activeTab === "pagos" && supplierPayments ? (
         <div className="max-w-3xl">
           <h2 className="mb-3 text-sm font-medium text-brand-text">
             Pagos a proveedores del proyecto
           </h2>
-          {supplierPayments.length === 0 ? (
-            <p className="text-sm text-brand-muted">Sin pagos todavía.</p>
-          ) : (
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-                  <th className="py-2 font-medium">Fecha</th>
-                  <th className="py-2 font-medium">Proveedor</th>
-                  <th className="py-2 font-medium">Gasto</th>
-                  <th className="py-2 font-medium">Monto</th>
-                  <th className="py-2 font-medium">Método</th>
-                </tr>
-              </thead>
-              <tbody>
-                {supplierPayments.map((p) => {
-                  const supplierData = p.suppliers as { name: string }[] | { name: string } | null;
-                  const supplierName = Array.isArray(supplierData)
-                    ? supplierData[0]?.name
-                    : supplierData?.name;
-                  return (
-                    <tr key={p.id} className="border-b border-brand-muted/10">
-                      <td className="py-2 text-brand-muted">{p.payment_date}</td>
-                      <td className="py-2">{supplierName ?? "—"}</td>
-                      <td className="py-2">
-                        <Link
-                          href={`/expenses/${p.expense_id}`}
-                          className="text-brand-accent hover:underline"
-                        >
-                          Ver gasto
-                        </Link>
-                      </td>
-                      <td className="py-2 font-medium">
-                        {new Intl.NumberFormat("es-DO", {
-                          style: "currency",
-                          currency: p.currency,
-                        }).format(p.amount)}
-                      </td>
-                      <td className="py-2 text-brand-muted">
-                        {PAYMENT_METHOD_LABELS[p.method] ?? p.method}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+          <DataTable
+            columns={supplierPaymentColumns}
+            rows={supplierPayments}
+            keyFor={(p) => p.id}
+            emptyMessage="Sin pagos todavía."
+            maxWidth="max-w-3xl"
+          />
         </div>
       ) : activeTab === "bancos" && bankTransactions ? (
         <div className="max-w-3xl">
           <h2 className="mb-3 text-sm font-medium text-brand-text">
             Movimientos bancarios del proyecto
           </h2>
-          {bankTransactions.length === 0 ? (
-            <p className="text-sm text-brand-muted">Sin movimientos todavía.</p>
-          ) : (
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-                  <th className="py-2 font-medium">Fecha</th>
-                  <th className="py-2 font-medium">Cuenta</th>
-                  <th className="py-2 font-medium">Tipo</th>
-                  <th className="py-2 font-medium">Descripción</th>
-                  <th className="py-2 font-medium">Monto</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bankTransactions.map((t) => {
-                  const accountData = t.bank_accounts as { name: string }[] | { name: string } | null;
-                  const accountName = Array.isArray(accountData)
-                    ? accountData[0]?.name
-                    : accountData?.name;
-                  return (
-                    <tr key={t.id} className="border-b border-brand-muted/10">
-                      <td className="py-2 text-brand-muted">{t.transaction_date}</td>
-                      <td className="py-2">{accountName ?? "—"}</td>
-                      <td className="py-2 text-brand-muted">
-                        {BANK_TX_TYPE_LABELS[t.type] ?? t.type}
-                      </td>
-                      <td className="py-2">{t.description ?? "—"}</td>
-                      <td
-                        className={
-                          t.amount < 0
-                            ? "py-2 font-medium text-brand-danger"
-                            : "py-2 font-medium"
-                        }
-                      >
-                        {new Intl.NumberFormat("es-DO", {
-                          style: "currency",
-                          currency: t.currency,
-                        }).format(t.amount)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+          <DataTable columns={bankColumns} rows={bankTransactions} keyFor={(t) => t.id} emptyMessage="Sin movimientos todavía." maxWidth="max-w-3xl" />
         </div>
       ) : activeTab === "documentos" && documents ? (
         <div className="flex max-w-2xl flex-col gap-4">
@@ -761,7 +581,7 @@ export default async function ProjectDetailPage({
           )}
         </div>
       ) : (
-        <div className="border border-dashed border-brand-muted/30 p-8 text-center">
+        <div className="border border-dashed border-brand-border p-8 text-center">
           <p className="text-sm text-brand-muted">Pestaña no encontrada.</p>
         </div>
       )}
