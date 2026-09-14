@@ -1,5 +1,29 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: gap real encontrado al revisar el trabajo de "banco del proveedor"
+
+Al retomar esta funcionalidad (por una compactación de contexto, se había
+perdido de vista que ya estaba construida) encontré y corregí dos
+problemas reales:
+
+1. **Funciones SQL duplicadas**: cada migración que le agregó un parámetro
+   a `register_supplier_payment`/`create_card_expense` dejó una función
+   **sobrecargada nueva** conviviendo con la anterior en vez de
+   reemplazarla (2-3 versiones de cada una). Corregido con `DROP FUNCTION`
+   explícito de las firmas viejas — confirmado que solo queda una versión
+   de cada una.
+2. **`create_card_expense` no generaba `supplier_payments`**: un gasto que
+   nace ya pagado (tarjeta o banco elegido al crear) solo generaba el
+   `bank_transaction`, nunca su fila de pago — el "Historial de pagos" del
+   gasto se veía **vacío** aunque estuviera pagado. Corregido: ahora
+   también inserta en `supplier_payments` (con el mismo `payee_bank_name`)
+   cuando hay proveedor. Migración `039_card_expense_creates_payment_record.sql`.
+- Verificado end-to-end con datos reales: gasto pagado de inmediato con
+  proveedor + banco del proveedor — el pago apareció correctamente en
+  `supplier_payments`, y el saldo del banco propio bajó igual que antes.
+  Datos de prueba limpiados.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 15 tests unitarios.
+
 ## Feat: banco del proveedor (destino) separado del banco propio (origen)
 
 Aclaración del usuario: quería anotar a qué banco se le deposita **al
