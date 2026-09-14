@@ -1,5 +1,28 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: feedback tras el rediseño (layout, textos en inglés, comas en números)
+
+- **Layout roto en Cotizaciones y Facturas**: la tarjeta de totales usaba
+  `ml-auto` (flotaba pegada a la derecha) — antes del rediseño era solo
+  texto simple así que no se notaba, pero con el borde/sombra de `Card`
+  se veía como una caja perdida. Corregido: ahora es una tarjeta normal con
+  cada línea en formato etiqueta-izquierda/monto-derecha, separador antes
+  del Total.
+- **Estados en inglés**: en la pestaña "Ingresos"/"Facturas"/"Gastos" del
+  detalle de Proyecto, y en "Importaciones recientes" de Clientes, el
+  badge de estado mostraba el valor crudo de la base de datos (`DRAFT`,
+  `SENT`, `PAID`, `PROCESSING`, etc.) en vez de traducido — se corrigieron
+  los 4 casos encontrados con una búsqueda en todo el proyecto para
+  confirmar que no quedó ninguno más.
+- **Números sin comas al escribir**: nuevo componente `MoneyInput`
+  (`components/ui/money-input.tsx`) que muestra separador de miles en vivo
+  mientras se escribe (ej. "1,000.50"), enviando el valor numérico real al
+  formulario vía un input oculto — el servidor no cambia nada. Aplicado por
+  ahora en el formulario de línea de Cotizaciones (Precio, Descuento, Costo
+  estimado); se puede extender a otros formularios de dinero si se pide.
+- Verificado: `tsc`, `npm run build`, `eslint` y los 15 tests unitarios
+  limpios.
+
 ## Rediseño ERP SaaS — Etapa 15 (ÚLTIMA): Login y Recuperar contraseña
 
 - Login y Recuperar contraseña migrados a `Input`/`Button`/`Card`.

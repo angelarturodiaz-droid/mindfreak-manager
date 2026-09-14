@@ -1,7 +1,7 @@
 import { forwardRef, useId } from "react";
 import type { InputHTMLAttributes, SelectHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
 
-const FIELD_CLASSES =
+export const FIELD_CLASSES =
   "w-full rounded-[var(--radius-md)] border border-brand-border bg-brand-surface px-3 py-2 text-sm text-brand-text outline-none transition-colors placeholder:text-brand-muted focus:border-brand-accent focus:ring-2 focus:ring-brand-accent-light disabled:cursor-not-allowed disabled:bg-brand-background disabled:text-brand-disabled";
 
 function FieldWrapper({

@@ -4,6 +4,7 @@ export { Badge } from "./badge";
 export type { BadgeTone } from "./badge";
 export { Input, Select, Textarea } from "./field";
 export type { InputProps, SelectProps, TextareaProps } from "./field";
+export { MoneyInput } from "./money-input";
 export { Card, KpiCard } from "./card";
 export { EmptyState } from "./empty-state";
 export { Skeleton, TableSkeleton } from "./skeleton";

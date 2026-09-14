@@ -7,6 +7,13 @@ import { DataTable, type Column } from "@/components/ui/data-table";
 
 type Batch = Awaited<ReturnType<typeof listImportBatches>>[number];
 
+const BATCH_STATUS_LABELS: Record<string, string> = {
+  PROCESSING: "Procesando",
+  COMPLETED: "Completado",
+  COMPLETED_WITH_ERRORS: "Completado con errores",
+  FAILED: "Falló",
+};
+
 export default async function ImportClientsPage() {
   const batches = await listImportBatches();
 
@@ -15,7 +22,7 @@ export default async function ImportClientsPage() {
     { header: "Filas", accessor: (b) => b.total_rows },
     { header: "Éxito", accessor: (b) => <span className="text-brand-success">{b.success_count}</span> },
     { header: "Errores", accessor: (b) => <span className="text-brand-danger">{b.error_count}</span> },
-    { header: "Estado", accessor: (b) => <Badge status={b.status}>{b.status}</Badge> },
+    { header: "Estado", accessor: (b) => <Badge status={b.status}>{BATCH_STATUS_LABELS[b.status] ?? b.status}</Badge> },
   ];
 
   return (

@@ -42,6 +42,33 @@ const STATUS_LABELS: Record<string, string> = {
   CANCELLED: "Cancelado",
 };
 
+const QUOTATION_STATUS_LABELS: Record<string, string> = {
+  DRAFT: "Borrador",
+  SENT: "Enviada",
+  VIEWED: "Vista",
+  NEGOTIATING: "Negociando",
+  APPROVED: "Aprobada",
+  REJECTED: "Rechazada",
+  EXPIRED: "Expirada",
+  CANCELLED: "Cancelada",
+};
+
+const INVOICE_STATUS_LABELS: Record<string, string> = {
+  DRAFT: "Borrador",
+  ISSUED: "Emitida",
+  PARTIALLY_PAID: "Pago parcial",
+  PAID: "Pagada",
+  OVERDUE: "Vencida",
+  CANCELLED: "Cancelada",
+};
+
+const EXPENSE_STATUS_LABELS: Record<string, string> = {
+  PENDING: "Pendiente",
+  PARTIALLY_PAID: "Pago parcial",
+  PAID: "Pagado",
+  CANCELLED: "Cancelado",
+};
+
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   TRANSFER: "Transferencia",
   DEPOSIT: "Depósito",
@@ -180,7 +207,7 @@ export default async function ProjectDetailPage({
       ),
     },
     { header: "Fecha", accessor: (q) => <span className="text-brand-muted">{q.issue_date}</span> },
-    { header: "Estado", accessor: (q) => <Badge status={q.status}>{q.status}</Badge> },
+    { header: "Estado", accessor: (q) => <Badge status={q.status}>{QUOTATION_STATUS_LABELS[q.status] ?? q.status}</Badge> },
     { header: "Total", accessor: (q) => <span className="font-medium">{formatMoney(q.total, q.currency)}</span> },
   ];
 
@@ -194,7 +221,7 @@ export default async function ProjectDetailPage({
       ),
     },
     { header: "Fecha", accessor: (inv) => <span className="text-brand-muted">{inv.issue_date}</span> },
-    { header: "Estado", accessor: (inv) => <Badge status={inv.status}>{inv.status}</Badge> },
+    { header: "Estado", accessor: (inv) => <Badge status={inv.status}>{INVOICE_STATUS_LABELS[inv.status] ?? inv.status}</Badge> },
     { header: "Total", accessor: (inv) => <span className="font-medium">{formatMoney(inv.total, inv.currency)}</span> },
     { header: "Balance", accessor: (inv) => <span className="text-brand-muted">{formatMoney(inv.balance, inv.currency)}</span> },
   ];
@@ -235,7 +262,7 @@ export default async function ProjectDetailPage({
         return <span className="text-brand-muted">{supplierName ?? "—"}</span>;
       },
     },
-    { header: "Estado", accessor: (e) => <Badge status={e.status}>{e.status}</Badge> },
+    { header: "Estado", accessor: (e) => <Badge status={e.status}>{EXPENSE_STATUS_LABELS[e.status] ?? e.status}</Badge> },
     { header: "Total", accessor: (e) => <span className="font-medium">{formatMoney(e.total, e.currency)}</span> },
   ];
 

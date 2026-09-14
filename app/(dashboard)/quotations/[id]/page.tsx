@@ -185,32 +185,32 @@ export default async function QuotationDetailPage({
           </div>
         )}
 
-        <Card className="mt-6 ml-auto flex max-w-sm flex-col items-end gap-1 text-sm">
-          <p>
-            Subtotal:{" "}
+        <Card className="mt-6 max-w-sm text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-brand-muted">Subtotal</span>
             <span className="font-medium">
               {formatMoney(quotation.subtotal, quotation.currency)}
             </span>
-          </p>
-          <p>
-            Descuento:{" "}
+          </div>
+          <div className="mt-1 flex items-center justify-between">
+            <span className="text-brand-muted">Descuento</span>
             <span className="font-medium">
               -{formatMoney(quotation.discount, quotation.currency)}
             </span>
-          </p>
-          <p>
-            Impuesto:{" "}
+          </div>
+          <div className="mt-1 flex items-center justify-between">
+            <span className="text-brand-muted">Impuesto</span>
             <span className="font-medium">
               {formatMoney(quotation.tax, quotation.currency)}
             </span>
-          </p>
-          <p className="text-base">
-            Total:{" "}
+          </div>
+          <div className="mt-2 flex items-center justify-between border-t border-brand-border pt-2 text-base">
+            <span className="text-brand-text">Total</span>
             <span className="font-semibold text-brand-primary">
               {formatMoney(quotation.total, quotation.currency)}
             </span>
-          </p>
-          <p className="text-brand-muted">
+          </div>
+          <p className="mt-3 border-t border-brand-border pt-2 text-xs text-brand-muted">
             Costo estimado: {formatMoney(quotation.estimated_cost, quotation.currency)}
             {" · "}
             Margen estimado: {quotation.estimated_margin?.toFixed(1) ?? "0.0"}%
