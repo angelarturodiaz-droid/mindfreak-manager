@@ -60,3 +60,15 @@ export async function listProjectsForSelect() {
   if (error) throw new Error(error.message);
   return data;
 }
+
+export async function listCreditCardsForSelect() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("bank_accounts")
+    .select("id, name, bank_name, credit_limit")
+    .eq("is_active", true)
+    .eq("type", "CREDIT_CARD")
+    .order("name");
+  if (error) throw new Error(error.message);
+  return data;
+}

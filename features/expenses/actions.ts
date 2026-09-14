@@ -47,6 +47,43 @@ export async function createExpenseAction(
   const { tax, total } = calculateExpenseTotals(parsed.data);
   const companyId = await getPrimaryCompanyId();
   const supabase = await createSupabaseClient();
+
+  // Gasto pagado con tarjeta: se crea YA PAGADO y genera su movimiento
+  // contra la tarjeta en el mismo momento — no hay un paso de "pagar"
+  // posterior (la compra y el cargo a la tarjeta ocurren a la vez).
+  if (parsed.data.payment_method === "CARD") {
+    if (!parsed.data.bank_account_id) {
+      return { error: "Selecciona con qué tarjeta se pagó este gasto." };
+    }
+    const { data, error } = await supabase.rpc("create_card_expense", {
+      p_company_id: companyId,
+      p_category_id: parsed.data.category_id || null,
+      p_supplier_id: parsed.data.supplier_id || null,
+      p_project_id: parsed.data.project_id || null,
+      p_card_account_id: parsed.data.bank_account_id,
+      p_expense_date: parsed.data.expense_date,
+      p_description: parsed.data.description,
+      p_subtotal: parsed.data.subtotal,
+      p_tax: tax,
+      p_total: total,
+      p_currency: parsed.data.currency,
+      p_exchange_rate: parsed.data.exchange_rate,
+    });
+    if (error) return { error: error.message };
+
+    await logAudit({
+      companyId,
+      action: "CREATE",
+      entityType: "expense",
+      entityId: data as string,
+      newValues: { ...parsed.data, tax, total, paidWithCard: true },
+    });
+
+    revalidatePath("/expenses");
+    revalidatePath("/banks");
+    redirect(`/expenses/${data}`);
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -58,7 +95,6 @@ export async function createExpenseAction(
       category_id: parsed.data.category_id || null,
       supplier_id: parsed.data.supplier_id || null,
       project_id: parsed.data.project_id || null,
-      bank_account_id: parsed.data.bank_account_id || null,
       expense_date: parsed.data.expense_date,
       description: parsed.data.description,
       subtotal: parsed.data.subtotal,

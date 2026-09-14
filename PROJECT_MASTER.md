@@ -207,20 +207,18 @@ Sin duplicar movimientos ni gastos.
 `register_customer_payment`/`register_supplier_payment` (antes opcional).
 Ver CHANGELOG para el detalle completo.
 
-**⬜ Ronda 2 (siguiente)**: módulo de Tarjetas de crédito. Diseño decidido:
-`bank_accounts` gana columna `type` ('BANK'/'CREDIT_CARD') + `credit_limit`
-— una tarjeta es una cuenta más, reutilizando toda la infraestructura de
-Bancos (RLS, vista de balance, transferencias) en vez de una tabla
-paralela. Un gasto pagado con tarjeta se crea YA PAGADO (no hay paso de
-"pagar" separado — la compra y el cargo a la tarjeta son el mismo momento),
-y genera su `bank_transaction` contra la tarjeta automáticamente. Pagar la
-tarjeta reutiliza `create_bank_transfer` (Banco→Tarjeta) sin crear ningún
-gasto nuevo. Intereses/comisiones de tarjeta = un gasto más pagado con esa
-tarjeta, mismo mecanismo, sin lógica especial.
+**✅ Ronda 2 (completada)**: módulo de Tarjetas de crédito. `bank_accounts`
+ganó `type`/`credit_limit`, nueva función `create_card_expense` (gasto
+pagado con tarjeta nace ya PAID), pago de tarjeta reutiliza
+`create_bank_transfer` sin crear gasto nuevo, resguardos para que un cobro/
+pago no pueda ir a una tarjeta por el camino equivocado, trigger que impide
+cancelar un gasto ya pagado. Verificado end-to-end con datos reales (compra
+→ deuda sube, pago → banco baja y deuda baja sin duplicar gasto). Ver
+CHANGELOG para el detalle completo.
 
-**⬜ Ronda 3**: extender `MoneyInput` (comas en vivo al escribir) a todos
-los formularios de dinero del sistema — hoy solo está en la línea de
-Cotizaciones.
+**⬜ Ronda 3 (siguiente, última)**: extender `MoneyInput` (comas en vivo al
+escribir) a todos los formularios de dinero del sistema — hoy solo está en
+la línea de Cotizaciones.
 
 ## Backlog
 

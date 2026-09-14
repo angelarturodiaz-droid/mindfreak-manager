@@ -28,8 +28,10 @@ export async function createBankAccountAction(
     bank_name: String(formData.get("bank_name") ?? ""),
     account_number_masked: String(formData.get("account_number_masked") ?? ""),
     currency: String(formData.get("currency") ?? "DOP"),
+    type: String(formData.get("type") ?? "BANK"),
     opening_balance: String(formData.get("opening_balance") ?? "0"),
     opening_balance_date: String(formData.get("opening_balance_date") ?? ""),
+    credit_limit: formData.get("credit_limit") ? String(formData.get("credit_limit")) : undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -37,6 +39,15 @@ export async function createBankAccountAction(
 
   const companyId = await getPrimaryCompanyId();
   const supabase = await createSupabaseClient();
+
+  // Para una tarjeta, la "deuda inicial" que se escribe en el formulario
+  // (positiva) se guarda como opening_balance NEGATIVO — así toda la
+  // fórmula de balance/deuda es la misma que para un banco normal, sin
+  // casos especiales (ver migración 036_credit_cards.sql).
+  const openingBalance =
+    parsed.data.type === "CREDIT_CARD"
+      ? -Math.abs(parsed.data.opening_balance)
+      : parsed.data.opening_balance;
 
   const { data, error } = await supabase
     .from("bank_accounts")
@@ -46,8 +57,10 @@ export async function createBankAccountAction(
       bank_name: parsed.data.bank_name || null,
       account_number_masked: parsed.data.account_number_masked || null,
       currency: parsed.data.currency,
-      opening_balance: parsed.data.opening_balance,
+      type: parsed.data.type,
+      opening_balance: openingBalance,
       opening_balance_date: parsed.data.opening_balance_date,
+      credit_limit: parsed.data.type === "CREDIT_CARD" ? parsed.data.credit_limit ?? null : null,
     })
     .select("id")
     .single();

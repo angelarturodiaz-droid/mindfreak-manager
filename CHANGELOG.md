@@ -1,5 +1,46 @@
 # CHANGELOG — Mindfreak Manager
 
+## Cambio de lógica financiera — Ronda 2: Tarjetas de crédito
+
+Migración `036_credit_cards.sql`. Diseño: una tarjeta es una fila más de
+`bank_accounts` (columna nueva `type`: BANK/CREDIT_CARD, + `credit_limit`),
+reutilizando toda la infraestructura ya probada de Bancos (RLS, vista de
+balance, transferencias) en vez de una tabla paralela. Convención: el
+balance calculado de una tarjeta es negativo = deuda (ej. -6,000 = se deben
+6,000) — funciona con la fórmula existente sin modificarla.
+
+- **`create_card_expense`** (nueva función transaccional): un gasto pagado
+  con tarjeta se crea **ya pagado** (`status='PAID'`, sin paso de "pagar"
+  posterior) y genera su movimiento contra la tarjeta en el mismo momento.
+  Intereses/comisiones de tarjeta usan esta misma función — son un gasto
+  más pagado con esa tarjeta, sin lógica especial.
+- **Pagar la tarjeta** reutiliza `create_bank_transfer` (Banco→Tarjeta) ya
+  existente de F14 — sin crear ningún gasto nuevo.
+- **Resguardos agregados**: `register_customer_payment` y
+  `register_supplier_payment` ahora rechazan una tarjeta como cuenta (un
+  cobro de cliente no entra a una tarjeta; un gasto pagado con tarjeta se
+  registra vía `create_card_expense`, no como "pago posterior"). Un gasto
+  ya pagado (`paid_amount > 0`) no se puede cancelar sin más — nuevo
+  trigger `guard_expense_cancel` — evitaría dejar la deuda de la tarjeta
+  desincronizada; requeriría un flujo de reembolso, fuera de este alcance.
+- **UI**: formulario de nueva cuenta con selector Banco/Tarjeta (con
+  "Deuda inicial" y "Límite de crédito" para tarjetas), lista de Bancos
+  separada en dos secciones, detalle de cuenta muestra "Deuda actual" +
+  crédito disponible para tarjetas, nuevo selector de tarjeta en "Nuevo
+  gasto" cuando el método de pago es "Tarjeta", "Cancelar gasto" ya no se
+  muestra para gastos pagados (el trigger lo bloquearía de todas formas).
+- **Verificado end-to-end con datos reales**: creé una tarjeta con deuda
+  inicial de 5,000, simulé una compra de 1,000 (el gasto quedó `PAID` de
+  inmediato y la deuda subió a 6,000), pagué 2,000 de la tarjeta desde un
+  banco (el banco bajó a 8,000, la deuda bajó a 4,000, **sin crear ningún
+  gasto nuevo** — confirmado contando registros), y confirmé que cancelar
+  el gasto ya pagado es rechazado por el trigger. Datos de prueba limpiados
+  por completo al final.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 15 tests unitarios.
+
+**Pendiente (Ronda 3, última)**: separadores de miles en vivo (`MoneyInput`)
+en el resto de los formularios de dinero del sistema.
+
 ## Cambio de lógica financiera — Ronda 1: cuenta bancaria obligatoria en cobros y pagos
 
 Pedido del usuario: que Factura→Cobro→Banco y Gasto→Pago→Banco sean

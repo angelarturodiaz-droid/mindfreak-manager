@@ -1,12 +1,16 @@
 import { z } from "zod";
 
+export const ACCOUNT_TYPES = ["BANK", "CREDIT_CARD"] as const;
+
 export const bankAccountSchema = z.object({
   name: z.string().trim().min(1, "El nombre es requerido"),
   bank_name: z.string().trim().optional().or(z.literal("")),
   account_number_masked: z.string().trim().optional().or(z.literal("")),
   currency: z.enum(["DOP", "USD"]).default("DOP"),
+  type: z.enum(ACCOUNT_TYPES).default("BANK"),
   opening_balance: z.coerce.number().default(0),
   opening_balance_date: z.string().min(1, "La fecha es requerida"),
+  credit_limit: z.coerce.number().min(0).optional(),
 });
 
 export type BankAccountInput = z.infer<typeof bankAccountSchema>;

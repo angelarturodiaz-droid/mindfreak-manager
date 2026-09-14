@@ -110,12 +110,20 @@ export default async function ExpenseDetailPage({
         <KpiCard label="Total" value={formatMoney(expense.total, expense.currency)} />
         <KpiCard label="Balance" value={formatMoney(expense.balance, expense.currency)} />
         {expense.payment_method && (
-          <KpiCard label="Método de pago" value={expense.payment_method} />
+          <KpiCard
+            label="Método de pago"
+            value={PAYMENT_METHOD_LABELS[expense.payment_method] ?? expense.payment_method}
+          />
         )}
-        {bankAccount && <KpiCard label="Cuenta" value={bankAccount.name} />}
+        {bankAccount && (
+          <KpiCard
+            label={expense.payment_method === "CARD" ? "Tarjeta" : "Cuenta"}
+            value={bankAccount.name}
+          />
+        )}
       </div>
 
-      {canEdit && expense.status !== "CANCELLED" && (
+      {canEdit && expense.status === "PENDING" && (
         <ConfirmButton
           label="Cancelar gasto"
           confirmTitle="¿Cancelar este gasto?"

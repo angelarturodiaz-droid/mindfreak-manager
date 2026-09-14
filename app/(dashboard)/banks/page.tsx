@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Landmark, Plus } from "lucide-react";
+import { Landmark, CreditCard, Plus } from "lucide-react";
 import { listBankAccountsWithBalance } from "@/features/banks/queries";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,8 +16,10 @@ type AccountRow = Awaited<ReturnType<typeof listBankAccountsWithBalance>>[number
 
 export default async function BanksPage() {
   const accounts = await listBankAccountsWithBalance();
+  const banks = accounts.filter((a) => a.type !== "CREDIT_CARD");
+  const cards = accounts.filter((a) => a.type === "CREDIT_CARD");
 
-  const columns: Column<AccountRow>[] = [
+  const bankColumns: Column<AccountRow>[] = [
     {
       header: "Cuenta",
       accessor: (a) => (
@@ -34,18 +36,47 @@ export default async function BanksPage() {
     },
   ];
 
+  const cardColumns: Column<AccountRow>[] = [
+    {
+      header: "Tarjeta",
+      accessor: (a) => (
+        <Link href={`/banks/${a.id}`} className="font-medium text-brand-text hover:text-brand-accent">
+          {a.name}
+        </Link>
+      ),
+    },
+    { header: "Banco", accessor: (a) => <span className="text-brand-muted">{a.bank_name ?? "—"}</span> },
+    {
+      header: "Deuda actual",
+      accessor: (a) => {
+        const debt = Math.max(0, -a.current_balance);
+        return <span className={debt > 0 ? "font-medium text-brand-danger" : "font-medium"}>{formatMoney(debt, a.currency)}</span>;
+      },
+    },
+    {
+      header: "Límite",
+      accessor: (a) => <span className="text-brand-muted">{a.credit_limit != null ? formatMoney(a.credit_limit, a.currency) : "—"}</span>,
+    },
+    {
+      header: "Estado",
+      accessor: (a) => <Badge tone={a.is_active ? "success" : "danger"}>{a.is_active ? "Activa" : "Inactiva"}</Badge>,
+    },
+  ];
+
   return (
-    <main className="flex flex-1 flex-col gap-6 p-8">
+    <main className="flex flex-1 flex-col gap-8 p-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-brand-primary">Bancos</h1>
           <p className="text-sm text-brand-muted">
-            Cuentas bancarias de la empresa y sus movimientos.
+            Consolidado de los movimientos generados por facturas, cobros,
+            gastos y pagos. Los movimientos manuales siguen disponibles para
+            lo que no venga de ahí.
           </p>
         </div>
         <Link href="/banks/new">
           <Button size="sm" icon={<Plus size={14} />}>
-            Nueva cuenta
+            Nueva cuenta o tarjeta
           </Button>
         </Link>
       </div>
@@ -53,7 +84,7 @@ export default async function BanksPage() {
       {accounts.length === 0 ? (
         <EmptyState
           icon={<Landmark size={28} />}
-          title="Aún no tienes cuentas bancarias registradas."
+          title="Aún no tienes cuentas bancarias ni tarjetas registradas."
           action={
             <Link href="/banks/new">
               <Button size="sm" icon={<Plus size={14} />}>
@@ -63,7 +94,27 @@ export default async function BanksPage() {
           }
         />
       ) : (
-        <DataTable columns={columns} rows={accounts} keyFor={(a) => a.id} maxWidth="max-w-2xl" />
+        <>
+          <section>
+            <h2 className="mb-3 text-sm font-medium text-brand-text">Cuentas bancarias</h2>
+            {banks.length === 0 ? (
+              <p className="text-sm text-brand-muted">Sin cuentas bancarias todavía.</p>
+            ) : (
+              <DataTable columns={bankColumns} rows={banks} keyFor={(a) => a.id} maxWidth="max-w-2xl" />
+            )}
+          </section>
+
+          <section>
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-medium text-brand-text">
+              <CreditCard size={16} /> Tarjetas de crédito
+            </h2>
+            {cards.length === 0 ? (
+              <p className="text-sm text-brand-muted">Sin tarjetas registradas todavía.</p>
+            ) : (
+              <DataTable columns={cardColumns} rows={cards} keyFor={(a) => a.id} maxWidth="max-w-3xl" />
+            )}
+          </section>
+        </>
       )}
     </main>
   );

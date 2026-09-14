@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { createExpenseAction, type ActionState } from "@/features/expenses/actions";
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
@@ -12,17 +12,21 @@ const today = new Date().toISOString().slice(0, 10);
 
 type Option = { id: string; name: string };
 type ProjectOption = { id: string; number: string; name: string };
+type CreditCard = { id: string; name: string; bank_name: string | null; credit_limit: number | null };
 
 export function NewExpenseForm({
   categories,
   suppliers,
   projects,
+  creditCards,
 }: {
   categories: Option[];
   suppliers: Option[];
   projects: ProjectOption[];
+  creditCards: CreditCard[];
 }) {
   const [state, formAction, pending] = useActionState(createExpenseAction, initialState);
+  const [paymentMethod, setPaymentMethod] = useState("");
 
   return (
     <form action={formAction} className="max-w-md space-y-4">
@@ -61,7 +65,12 @@ export function NewExpenseForm({
         <Input label="Impuesto (%)" name="tax_percent" type="number" step="0.01" min="0" defaultValue="18" />
       </div>
 
-      <Select label="Método de pago" name="payment_method" defaultValue="">
+      <Select
+        label="Método de pago"
+        name="payment_method"
+        defaultValue=""
+        onChange={(e) => setPaymentMethod(e.target.value)}
+      >
         <option value="">Sin especificar</option>
         {PAYMENT_METHODS.map((m) => (
           <option key={m} value={m}>
@@ -69,6 +78,34 @@ export function NewExpenseForm({
           </option>
         ))}
       </Select>
+
+      {paymentMethod === "CARD" && (
+        <Select
+          label="Tarjeta"
+          name="bank_account_id"
+          required
+          defaultValue=""
+          hint="El gasto queda pagado de inmediato y la deuda de la tarjeta sube sola."
+        >
+          <option value="" disabled>
+            Selecciona una tarjeta…
+          </option>
+          {creditCards.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name} {c.bank_name ? `(${c.bank_name})` : ""}
+            </option>
+          ))}
+        </Select>
+      )}
+      {paymentMethod === "CARD" && creditCards.length === 0 && (
+        <p className="text-sm text-brand-danger">
+          Todavía no tienes ninguna tarjeta de crédito creada —{" "}
+          <Link href="/banks/new" className="underline">
+            crea una primero
+          </Link>
+          .
+        </p>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <Select label="Moneda" name="currency" defaultValue="DOP">

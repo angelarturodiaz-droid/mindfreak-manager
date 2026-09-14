@@ -28,6 +28,7 @@ export async function listBankAccounts() {
     .from("bank_accounts")
     .select("id, name, bank_name, currency")
     .eq("is_active", true)
+    .eq("type", "BANK")
     .order("name");
   if (error) throw new Error(error.message);
   return data;

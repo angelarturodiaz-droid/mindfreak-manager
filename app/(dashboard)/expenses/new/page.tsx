@@ -2,14 +2,16 @@ import {
   listExpenseCategories,
   listActiveSuppliers,
   listProjectsForSelect,
+  listCreditCardsForSelect,
 } from "@/features/expenses/queries";
 import { NewExpenseForm } from "./new-expense-form";
 
 export default async function NewExpensePage() {
-  const [categories, suppliers, projects] = await Promise.all([
+  const [categories, suppliers, projects, creditCards] = await Promise.all([
     listExpenseCategories(),
     listActiveSuppliers(),
     listProjectsForSelect(),
+    listCreditCardsForSelect(),
   ]);
 
   return (
@@ -21,7 +23,12 @@ export default async function NewExpensePage() {
           empresa.
         </p>
       </div>
-      <NewExpenseForm categories={categories} suppliers={suppliers} projects={projects} />
+      <NewExpenseForm
+        categories={categories}
+        suppliers={suppliers}
+        projects={projects}
+        creditCards={creditCards}
+      />
     </main>
   );
 }

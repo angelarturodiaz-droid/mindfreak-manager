@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 const initialState: ActionState = { error: null };
 const today = new Date().toISOString().slice(0, 10);
 
-type Account = { id: string; name: string; bank_name: string | null; currency: string };
+type Account = { id: string; name: string; bank_name: string | null; currency: string; type: string };
 
 export function TransferForm({
   fromAccountId,
@@ -38,7 +38,7 @@ export function TransferForm({
         </option>
         {otherAccounts.map((a) => (
           <option key={a.id} value={a.id}>
-            {a.name} ({a.currency})
+            {a.name} ({a.currency}){a.type === "CREDIT_CARD" ? " — Tarjeta" : ""}
           </option>
         ))}
       </Select>

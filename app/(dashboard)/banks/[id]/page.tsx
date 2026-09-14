@@ -97,10 +97,31 @@ export default async function BankAccountDetailPage({
             </p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-brand-muted">Balance actual</p>
-            <p className="text-lg font-semibold text-brand-primary">
-              {formatMoney(account.current_balance, account.currency)}
-            </p>
+            {account.type === "CREDIT_CARD" ? (
+              <>
+                <p className="text-xs text-brand-muted">Deuda actual</p>
+                <p className="text-lg font-semibold text-brand-danger">
+                  {formatMoney(Math.max(0, -account.current_balance), account.currency)}
+                </p>
+                {account.credit_limit != null && (
+                  <p className="text-xs text-brand-muted">
+                    Límite disponible:{" "}
+                    {formatMoney(
+                      account.credit_limit - Math.max(0, -account.current_balance),
+                      account.currency,
+                    )}{" "}
+                    de {formatMoney(account.credit_limit, account.currency)}
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-brand-muted">Balance actual</p>
+                <p className="text-lg font-semibold text-brand-primary">
+                  {formatMoney(account.current_balance, account.currency)}
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -121,7 +142,7 @@ export default async function BankAccountDetailPage({
           </div>
           <div>
             <h2 className="mb-3 text-sm font-medium text-brand-text">
-              Transferir a otra cuenta
+              Transferir a otra cuenta{account.type === "BANK" ? " o pagar una tarjeta" : ""}
             </h2>
             <TransferForm fromAccountId={account.id} otherAccounts={otherAccounts} />
           </div>
