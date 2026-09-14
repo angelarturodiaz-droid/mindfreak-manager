@@ -4,6 +4,8 @@ import { listProjectsForSelect } from "@/features/expenses/queries";
 import { NewTaskForm } from "@/components/tasks/new-task-form";
 import { TaskList } from "@/components/tasks/task-list";
 import { TASK_STATUSES } from "@/features/tasks/schema";
+import { Select } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente",
@@ -33,25 +35,18 @@ export default async function TasksPage({
         </p>
       </div>
 
-      <form className="flex gap-2" action="/tasks" method="get">
-        <select
-          name="status"
-          defaultValue={params.status ?? ""}
-          className="border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-        >
+      <form className="flex flex-wrap items-end gap-2" action="/tasks" method="get">
+        <Select name="status" defaultValue={params.status ?? ""} className="w-48">
           <option value="">Todos los estados</option>
           {TASK_STATUSES.map((s) => (
             <option key={s} value={s}>
               {STATUS_LABELS[s]}
             </option>
           ))}
-        </select>
-        <button
-          type="submit"
-          className="border border-brand-muted/30 px-4 py-2 text-sm text-brand-text hover:border-brand-accent"
-        >
+        </Select>
+        <Button type="submit" variant="outline" size="md">
           Filtrar
-        </button>
+        </Button>
       </form>
 
       <NewTaskForm members={members} projects={projects} revalidatePathValue="/tasks" />

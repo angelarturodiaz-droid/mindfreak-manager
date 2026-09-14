@@ -1,5 +1,14 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño ERP SaaS — Etapa 11: módulo Tareas
+
+- `/tasks` y los componentes compartidos `NewTaskForm`/`TaskList` (también
+  usados en la pestaña "Tareas" de Proyectos) migrados a `Input`/`Select`,
+  `Button`, tabla con estilo consistente y `ConfirmButton` en vez de
+  `window.confirm()` para eliminar.
+- Sin cambios de lógica/queries/actions/rutas. Verificado: `tsc`,
+  `npm run build`, `eslint` y los 15 tests unitarios limpios.
+
 ## Rediseño ERP SaaS — Etapa 10: módulo Bancos
 
 - Lista y detalle (ya venían con cambios sin commitear de una pasada
