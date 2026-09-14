@@ -38,7 +38,7 @@ export function RegisterSupplierPaymentForm({
     <form action={formAction} className="flex flex-wrap items-end gap-2">
       <Input label="Fecha" name="payment_date" type="date" required defaultValue={today} />
       <Input
-        label={`Monto (máx. ${balance.toFixed(2)} ${currency})`}
+        label="Monto"
         name="amount"
         type="number"
         step="0.01"
@@ -46,6 +46,7 @@ export function RegisterSupplierPaymentForm({
         max={balance}
         required
         defaultValue={balance}
+        hint={`Máx. ${balance.toFixed(2)} ${currency}`}
         className="w-40"
       />
       <Select label="Método" name="method" defaultValue="TRANSFER">

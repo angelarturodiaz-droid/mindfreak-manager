@@ -1,5 +1,18 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: campo "Monto" distorsionado en Facturas y Gastos
+
+- En "Registrar cobro" (Facturas) y "Registrar pago" (Gastos), el campo
+  Monto tenía una etiqueta dinámica muy larga (ej. "Monto (máx. 15000.00
+  DOP)") metida en una caja de solo 160px de ancho — se desbordaba y
+  distorsionaba el resto de la fila del formulario. Corregido: la etiqueta
+  ahora es solo "Monto", y el máximo se muestra como texto de ayuda debajo
+  del campo (usando el prop `hint` ya existente en `Input`).
+- Revisado el resto del proyecto por el mismo patrón (etiquetas dinámicas
+  largas) — no se encontró ningún otro caso.
+- Verificado: `tsc`, `npm run build`, `eslint` y los 15 tests unitarios
+  limpios.
+
 ## Fix: feedback tras el rediseño (layout, textos en inglés, comas en números)
 
 - **Layout roto en Cotizaciones y Facturas**: la tarjeta de totales usaba
