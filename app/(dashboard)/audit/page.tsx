@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
 import { hasPermission } from "@/lib/auth/permissions";
 import { listAuditLogs, listAuditEntityTypes } from "@/features/audit/queries";
+import { Select } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
+import { Badge, type BadgeTone } from "@/components/ui/badge";
+import { DataTable, type Column } from "@/components/ui/data-table";
 
 const ENTITY_LABELS: Record<string, string> = {
   client: "Cliente",
@@ -30,6 +34,19 @@ const ACTION_LABELS: Record<string, string> = {
   STATUS_CANCELLED: "Canceló",
 };
 
+const ACTION_TONES: Record<string, BadgeTone> = {
+  CREATE: "success",
+  UPDATE: "info",
+  DELETE: "danger",
+  ACTIVATE: "success",
+  DEACTIVATE: "danger",
+  RECONCILE: "success",
+  UNRECONCILE: "neutral",
+  STATUS_CANCELLED: "danger",
+};
+
+type LogRow = Awaited<ReturnType<typeof listAuditLogs>>[number];
+
 export default async function AuditPage({
   searchParams,
 }: {
@@ -45,6 +62,54 @@ export default async function AuditPage({
     listAuditEntityTypes(),
   ]);
 
+  const columns: Column<LogRow>[] = [
+    {
+      header: "Fecha",
+      className: "whitespace-nowrap align-top",
+      accessor: (log) => new Date(log.created_at).toLocaleString("es-DO"),
+    },
+    {
+      header: "Usuario",
+      className: "align-top",
+      accessor: (log) => {
+        const profileData = log.profiles as
+          | { full_name: string | null; email: string }[]
+          | { full_name: string | null; email: string }
+          | null;
+        const profile = Array.isArray(profileData) ? profileData[0] : profileData;
+        return <span className="text-brand-muted">{profile?.full_name ?? profile?.email ?? "—"}</span>;
+      },
+    },
+    {
+      header: "Acción",
+      className: "align-top",
+      accessor: (log) => (
+        <Badge tone={ACTION_TONES[log.action] ?? "neutral"}>
+          {ACTION_LABELS[log.action] ?? log.action}
+        </Badge>
+      ),
+    },
+    {
+      header: "Entidad",
+      className: "align-top",
+      accessor: (log) => <span className="text-brand-muted">{ENTITY_LABELS[log.entity_type] ?? log.entity_type}</span>,
+    },
+    {
+      header: "Detalle",
+      className: "align-top",
+      accessor: (log) => {
+        const detail = log.new_values ?? log.old_values;
+        return detail ? (
+          <pre className="max-h-32 max-w-lg overflow-auto whitespace-pre-wrap break-words rounded-[var(--radius-sm)] bg-brand-background p-2 text-xs text-brand-muted">
+            {JSON.stringify(detail, null, 2)}
+          </pre>
+        ) : (
+          "—"
+        );
+      },
+    },
+  ];
+
   return (
     <main className="flex flex-1 flex-col gap-6 p-8">
       <div>
@@ -55,89 +120,35 @@ export default async function AuditPage({
         </p>
       </div>
 
-      <form className="flex gap-2" action="/audit" method="get">
-        <select
-          name="entity_type"
-          defaultValue={params.entity_type ?? ""}
-          className="border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-        >
+      <form className="flex flex-wrap items-end gap-2" action="/audit" method="get">
+        <Select name="entity_type" defaultValue={params.entity_type ?? ""} className="w-48">
           <option value="">Todas las entidades</option>
           {entityTypes.map((t) => (
             <option key={t} value={t}>
               {ENTITY_LABELS[t] ?? t}
             </option>
           ))}
-        </select>
-        <select
-          name="action"
-          defaultValue={params.action ?? ""}
-          className="border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-        >
+        </Select>
+        <Select name="action" defaultValue={params.action ?? ""} className="w-44">
           <option value="">Todas las acciones</option>
           {Object.keys(ACTION_LABELS).map((a) => (
             <option key={a} value={a}>
               {ACTION_LABELS[a]}
             </option>
           ))}
-        </select>
-        <button
-          type="submit"
-          className="border border-brand-muted/30 px-4 py-2 text-sm text-brand-text hover:border-brand-accent"
-        >
+        </Select>
+        <Button type="submit" variant="outline" size="md">
           Filtrar
-        </button>
+        </Button>
       </form>
 
-      {logs.length === 0 ? (
-        <p className="text-sm text-brand-muted">Sin registros que coincidan.</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-                <th className="w-40 py-2 pr-4 font-medium">Fecha</th>
-                <th className="w-44 py-2 pr-4 font-medium">Usuario</th>
-                <th className="w-24 py-2 pr-4 font-medium">Acción</th>
-                <th className="w-36 py-2 pr-4 font-medium">Entidad</th>
-                <th className="py-2 font-medium">Detalle</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((log) => {
-                const profileData = log.profiles as
-                  | { full_name: string | null; email: string }[]
-                  | { full_name: string | null; email: string }
-                  | null;
-                const profile = Array.isArray(profileData) ? profileData[0] : profileData;
-                const detail = log.new_values ?? log.old_values;
-                return (
-                  <tr key={log.id} className="border-b border-brand-muted/10 align-top">
-                    <td className="py-3 pr-4 whitespace-nowrap text-brand-muted">
-                      {new Date(log.created_at).toLocaleString("es-DO")}
-                    </td>
-                    <td className="py-3 pr-4 text-brand-muted">
-                      {profile?.full_name ?? profile?.email ?? "—"}
-                    </td>
-                    <td className="py-3 pr-4">{ACTION_LABELS[log.action] ?? log.action}</td>
-                    <td className="py-3 pr-4 text-brand-muted">
-                      {ENTITY_LABELS[log.entity_type] ?? log.entity_type}
-                    </td>
-                    <td className="py-3 text-xs text-brand-muted">
-                      {detail ? (
-                        <pre className="max-h-32 max-w-lg overflow-auto whitespace-pre-wrap break-words rounded bg-brand-surface p-2">
-                          {JSON.stringify(detail, null, 2)}
-                        </pre>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <DataTable
+        columns={columns}
+        rows={logs}
+        keyFor={(log) => log.id}
+        emptyMessage="Sin registros que coincidan."
+        maxWidth="max-w-none"
+      />
     </main>
   );
 }

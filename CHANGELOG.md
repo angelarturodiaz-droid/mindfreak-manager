@@ -1,5 +1,13 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño ERP SaaS — Etapa 13: módulo Auditoría
+
+- Filtros migrados a `Select`/`Button`, tabla a `DataTable`, acción con
+  `Badge` coloreado (crear=verde, actualizar=azul, eliminar/cancelar/
+  desactivar=rojo).
+- Sin cambios de lógica/queries/rutas. Verificado: `tsc`, `npm run build`,
+  `eslint` y los 15 tests unitarios limpios.
+
 ## Rediseño ERP SaaS — Etapa 12: módulo Reportes
 
 - Hub de 5 reportes (737 líneas) reescrito completo: sidebar de navegación

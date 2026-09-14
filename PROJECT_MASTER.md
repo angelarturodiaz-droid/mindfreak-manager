@@ -175,7 +175,11 @@ reemplazar `window.confirm()` por `ConfirmButton` en eliminar tarea.
 filtros con `Select`, tablas con `DataTable`, estados con `Badge`
 (incluyendo "días vencida" como badge rojo/verde).
 
-**⬜ Pendiente (próximas etapas)**: Auditoría → Configuración → Login.
+**✅ Etapa 13 (completada)**: módulo **Auditoría** — filtros con `Select`,
+tabla con `DataTable`, acción coloreada con `Badge` (crear=verde,
+actualizar=azul, eliminar/cancelar/desactivar=rojo).
+
+**⬜ Pendiente (próximas etapas)**: Configuración → Login.
 
 ## Backlog
 
