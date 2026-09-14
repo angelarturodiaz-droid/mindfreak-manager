@@ -117,6 +117,8 @@ export async function registerSupplierPaymentAction(
     .single();
   if (expError || !expense) return { error: "Gasto no encontrado." };
 
+  const payeeBankName = String(formData.get("payee_bank_name") ?? "").trim() || null;
+
   const { error } = await supabase.rpc("register_supplier_payment", {
     p_company_id: companyIds[0],
     p_supplier_id: supplierId,
@@ -130,6 +132,7 @@ export async function registerSupplierPaymentAction(
     p_currency: expense.currency,
     p_exchange_rate: expense.exchange_rate,
     p_notes: parsed.data.notes || null,
+    p_payee_bank_name: payeeBankName,
   });
 
   if (error) {

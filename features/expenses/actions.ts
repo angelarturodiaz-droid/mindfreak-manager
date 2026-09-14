@@ -30,6 +30,7 @@ function parseExpenseForm(formData: FormData) {
     payment_method: String(formData.get("payment_method") ?? ""),
     currency: String(formData.get("currency") ?? "DOP"),
     exchange_rate: String(formData.get("exchange_rate") ?? "1"),
+    payee_bank_name: String(formData.get("payee_bank_name") ?? ""),
   });
 }
 
@@ -71,6 +72,7 @@ export async function createExpenseAction(
       p_currency: parsed.data.currency,
       p_exchange_rate: parsed.data.exchange_rate,
       p_payment_method: parsed.data.payment_method || "TRANSFER",
+      p_payee_bank_name: parsed.data.payee_bank_name || null,
     });
     if (error) return { error: error.message };
 
@@ -108,6 +110,7 @@ export async function createExpenseAction(
       currency: parsed.data.currency,
       exchange_rate: parsed.data.exchange_rate,
       status: "PENDING",
+      payee_bank_name: parsed.data.payee_bank_name || null,
       created_by: user?.id,
     })
     .select("id")
@@ -172,6 +175,7 @@ export async function updateExpenseAction(
       payment_method: parsed.data.payment_method || null,
       currency: parsed.data.currency,
       exchange_rate: parsed.data.exchange_rate,
+      payee_bank_name: parsed.data.payee_bank_name || null,
     })
     .eq("id", expenseId);
 

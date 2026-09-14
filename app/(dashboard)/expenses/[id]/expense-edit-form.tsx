@@ -29,6 +29,7 @@ export function ExpenseEditForm({
     payment_method: string | null;
     currency: string;
     exchange_rate: number;
+    payee_bank_name: string | null;
   };
   categories: Option[];
   suppliers: Option[];
@@ -61,6 +62,13 @@ export function ExpenseEditForm({
           </option>
         ))}
       </Select>
+
+      <Input
+        label="Banco del proveedor (opcional)"
+        name="payee_bank_name"
+        defaultValue={expense.payee_bank_name ?? ""}
+        hint="A qué banco se le deposita a él. No es la cuenta desde la que tú pagas."
+      />
 
       <Select label="Proyecto/Evento" name="project_id" defaultValue={expense.project_id ?? ""}>
         <option value="">Sin proyecto (gasto general de la empresa)</option>

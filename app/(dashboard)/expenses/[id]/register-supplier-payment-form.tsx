@@ -67,6 +67,13 @@ export function RegisterSupplierPaymentForm({
         ))}
       </Select>
       <Input label="Referencia" name="reference" />
+      <Input
+        label="Banco del proveedor (opcional)"
+        name="payee_bank_name"
+        placeholder="Ej. Banreservas — a nombre del proveedor"
+        hint="A dónde se le depositó a él, no tu cuenta de origen."
+        className="w-56"
+      />
       <Button type="submit" loading={pending}>
         Registrar pago
       </Button>

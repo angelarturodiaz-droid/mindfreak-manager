@@ -40,7 +40,9 @@ export async function listPaymentsForExpense(expenseId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("supplier_payments")
-    .select("id, payment_date, amount, method, reference, notes, bank_accounts(name, bank_name)")
+    .select(
+      "id, payment_date, amount, method, reference, notes, payee_bank_name, bank_accounts(name, bank_name)",
+    )
     .eq("expense_id", expenseId)
     .order("payment_date", { ascending: false });
   if (error) throw new Error(error.message);

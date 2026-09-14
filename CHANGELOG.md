@@ -1,5 +1,24 @@
 # CHANGELOG — Mindfreak Manager
 
+## Feat: banco del proveedor (destino) separado del banco propio (origen)
+
+Aclaración del usuario: quería anotar a qué banco se le deposita **al
+proveedor**, no de cuál de sus propias cuentas sale el dinero (eso ya
+existía). Es un dato informativo — puede variar de un pago a otro para el
+mismo proveedor, así que va por gasto/pago, no en la ficha del proveedor.
+
+- Migración `038_payee_bank_name.sql`: columna `payee_bank_name` nueva en
+  `expenses` y `supplier_payments`. No participa en ningún cálculo de
+  saldo — puramente informativo.
+- Campo "Banco del proveedor (opcional)" agregado en: Nuevo Gasto, Editar
+  Gasto, y Registrar Pago.
+- Nueva columna "Banco del proveedor" en el historial de pagos del gasto
+  (junto a "Banco (propio)", para no confundirlas).
+- Verificado con datos reales: gasto creado con `payee_bank_name` guardó
+  el valor correctamente y por separado de la cuenta propia de origen.
+  Datos de prueba limpiados.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 15 tests unitarios.
+
 ## Feat: elegir banco al crear un gasto (no solo con tarjeta) — se paga de inmediato
 
 Pedido del usuario: en "Nuevo gasto", poder indicar desde qué banco se pagó

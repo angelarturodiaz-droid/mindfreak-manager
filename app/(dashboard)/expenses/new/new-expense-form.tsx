@@ -56,6 +56,13 @@ export function NewExpenseForm({
         ))}
       </Select>
 
+      <Input
+        label="Banco del proveedor (opcional)"
+        name="payee_bank_name"
+        placeholder="Ej. Banreservas — a nombre del proveedor"
+        hint="A qué banco se le deposita a él. No es la cuenta desde la que tú pagas."
+      />
+
       <Select label="Proyecto/Evento" name="project_id" defaultValue="">
         <option value="">Sin proyecto (gasto general de la empresa)</option>
         {projects.map((p) => (

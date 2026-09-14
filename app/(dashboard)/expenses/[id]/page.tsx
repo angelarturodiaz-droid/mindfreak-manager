@@ -77,7 +77,7 @@ export default async function ExpenseDetailPage({
     { header: "Monto", accessor: (p) => <span className="font-medium">{formatMoney(p.amount, expense.currency)}</span> },
     { header: "Método", accessor: (p) => <span className="text-brand-muted">{PAYMENT_METHOD_LABELS[p.method] ?? p.method}</span> },
     {
-      header: "Banco",
+      header: "Banco (propio)",
       accessor: (p) => {
         const account = p.bank_accounts as
           | { name: string; bank_name: string | null }
@@ -86,6 +86,10 @@ export default async function ExpenseDetailPage({
         const a = Array.isArray(account) ? account[0] : account;
         return <span className="text-brand-muted">{a ? `${a.name}${a.bank_name ? ` (${a.bank_name})` : ""}` : "—"}</span>;
       },
+    },
+    {
+      header: "Banco del proveedor",
+      accessor: (p) => <span className="text-brand-muted">{p.payee_bank_name ?? "—"}</span>,
     },
     { header: "Referencia", accessor: (p) => <span className="text-brand-muted">{p.reference ?? "—"}</span> },
   ];
@@ -131,6 +135,9 @@ export default async function ExpenseDetailPage({
             label={expense.payment_method === "CARD" ? "Tarjeta" : "Cuenta"}
             value={bankAccount.name}
           />
+        )}
+        {expense.payee_bank_name && (
+          <KpiCard label="Banco del proveedor" value={expense.payee_bank_name} />
         )}
       </div>
 
@@ -178,7 +185,7 @@ export default async function ExpenseDetailPage({
           <h2 className="mb-2 text-sm font-medium text-brand-text">
             Historial de pagos
           </h2>
-          <DataTable columns={paymentColumns} rows={payments} keyFor={(p) => p.id} maxWidth="max-w-3xl" />
+          <DataTable columns={paymentColumns} rows={payments} keyFor={(p) => p.id} maxWidth="max-w-4xl" />
         </div>
       )}
 

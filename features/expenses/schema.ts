@@ -21,6 +21,10 @@ export const expenseSchema = z.object({
   payment_method: z.string().optional().or(z.literal("")),
   currency: z.enum(["DOP", "USD"]).default("DOP"),
   exchange_rate: z.coerce.number().positive().default(1),
+  // Informativo, nunca afecta ningún cálculo: a qué banco del PROVEEDOR se
+  // le depositó (distinto de bank_account_id, que es siempre la cuenta
+  // PROPIA de origen del dinero).
+  payee_bank_name: z.string().trim().optional().or(z.literal("")),
 });
 
 export type ExpenseInput = z.infer<typeof expenseSchema>;
