@@ -1,5 +1,28 @@
 # CHANGELOG — Mindfreak Manager
 
+## Feat: elegir banco al crear un gasto (no solo con tarjeta) — se paga de inmediato
+
+Pedido del usuario: en "Nuevo gasto", poder indicar desde qué banco se pagó
+aunque el método no sea tarjeta (ej. ya se hizo una transferencia y se sabe
+de una vez desde dónde salió), en vez de tener que crear el gasto pendiente
+y luego ir a "Registrar pago" a elegir el mismo banco por separado.
+
+- `create_card_expense` generalizada: ahora acepta **cualquier tipo de
+  cuenta** (banco o tarjeta), no solo tarjetas, y recibe el método de pago
+  real como parámetro (antes fijo en 'CARD').
+- "Nuevo gasto": si el método es Tarjeta, el selector de cuenta es
+  obligatorio (solo tarjetas). Para cualquier otro método, aparece un
+  selector **opcional** de banco ("Aún no lo sé" por defecto) — si se
+  elige uno, el gasto queda pagado de inmediato con esa cuenta; si se deja
+  en blanco, sigue naciendo pendiente como siempre (flujo de dos pasos
+  intacto).
+- Nueva query `listActiveAccountsForSelect` (bancos + tarjetas, filtrados
+  en el formulario según el método elegido).
+- Verificado con datos reales: gasto creado con método "Transferencia" +
+  banco elegido quedó `PAID` de inmediato y el saldo del banco bajó en el
+  mismo momento (10,000 → 9,500). Datos de prueba limpiados.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 15 tests unitarios.
+
 ## Fix: la página general /payments tampoco mostraba el banco
 
 Mismo fix que la ronda anterior, pero en la pantalla que se me había

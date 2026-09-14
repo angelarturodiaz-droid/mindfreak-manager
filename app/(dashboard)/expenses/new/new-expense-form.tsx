@@ -12,21 +12,26 @@ const today = new Date().toISOString().slice(0, 10);
 
 type Option = { id: string; name: string };
 type ProjectOption = { id: string; number: string; name: string };
-type CreditCard = { id: string; name: string; bank_name: string | null; credit_limit: number | null };
+type Account = { id: string; name: string; bank_name: string | null; type: string };
 
 export function NewExpenseForm({
   categories,
   suppliers,
   projects,
-  creditCards,
+  accounts,
 }: {
   categories: Option[];
   suppliers: Option[];
   projects: ProjectOption[];
-  creditCards: CreditCard[];
+  accounts: Account[];
 }) {
   const [state, formAction, pending] = useActionState(createExpenseAction, initialState);
   const [paymentMethod, setPaymentMethod] = useState("");
+
+  const isCard = paymentMethod === "CARD";
+  const relevantAccounts = accounts.filter((a) =>
+    isCard ? a.type === "CREDIT_CARD" : a.type === "BANK",
+  );
 
   return (
     <form action={formAction} className="max-w-md space-y-4">
@@ -79,32 +84,54 @@ export function NewExpenseForm({
         ))}
       </Select>
 
-      {paymentMethod === "CARD" && (
-        <Select
-          label="Tarjeta"
-          name="bank_account_id"
-          required
-          defaultValue=""
-          hint="El gasto queda pagado de inmediato y la deuda de la tarjeta sube sola."
-        >
-          <option value="" disabled>
-            Selecciona una tarjeta…
-          </option>
-          {creditCards.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name} {c.bank_name ? `(${c.bank_name})` : ""}
+      {isCard ? (
+        <>
+          <Select
+            label="Tarjeta"
+            name="bank_account_id"
+            required
+            defaultValue=""
+            hint="El gasto queda pagado de inmediato y la deuda de la tarjeta sube sola."
+          >
+            <option value="" disabled>
+              Selecciona una tarjeta…
             </option>
-          ))}
-        </Select>
-      )}
-      {paymentMethod === "CARD" && creditCards.length === 0 && (
-        <p className="text-sm text-brand-danger">
-          Todavía no tienes ninguna tarjeta de crédito creada —{" "}
-          <Link href="/banks/new" className="underline">
-            crea una primero
-          </Link>
-          .
-        </p>
+            {relevantAccounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name} {a.bank_name ? `(${a.bank_name})` : ""}
+              </option>
+            ))}
+          </Select>
+          {relevantAccounts.length === 0 && (
+            <p className="text-sm text-brand-danger">
+              Todavía no tienes ninguna tarjeta de crédito creada —{" "}
+              <Link href="/banks/new" className="underline">
+                crea una primero
+              </Link>
+              .
+            </p>
+          )}
+        </>
+      ) : (
+        paymentMethod !== "" && (
+          <Select
+            label="Banco (opcional)"
+            name="bank_account_id"
+            defaultValue=""
+            hint={
+              relevantAccounts.length === 0
+                ? "Sin cuentas bancarias todavía — se puede pagar después desde el detalle del gasto."
+                : "Si ya sabes desde qué banco se pagó, el gasto queda pagado de inmediato. Si no, déjalo en blanco y lo pagas después."
+            }
+          >
+            <option value="">Aún no lo sé (queda pendiente de pago)</option>
+            {relevantAccounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name} {a.bank_name ? `(${a.bank_name})` : ""}
+              </option>
+            ))}
+          </Select>
+        )
       )}
 
       <div className="grid grid-cols-2 gap-3">

@@ -48,13 +48,15 @@ export async function createExpenseAction(
   const companyId = await getPrimaryCompanyId();
   const supabase = await createSupabaseClient();
 
-  // Gasto pagado con tarjeta: se crea YA PAGADO y genera su movimiento
-  // contra la tarjeta en el mismo momento — no hay un paso de "pagar"
-  // posterior (la compra y el cargo a la tarjeta ocurren a la vez).
-  if (parsed.data.payment_method === "CARD") {
-    if (!parsed.data.bank_account_id) {
-      return { error: "Selecciona con qué tarjeta se pagó este gasto." };
-    }
+  if (parsed.data.payment_method === "CARD" && !parsed.data.bank_account_id) {
+    return { error: "Selecciona con qué tarjeta se pagó este gasto." };
+  }
+
+  // Si se indica una cuenta (banco o tarjeta), el gasto se crea YA PAGADO
+  // y genera su movimiento contra esa cuenta en el mismo momento — evita
+  // el paso de "Registrar pago" cuando el usuario ya sabe desde dónde se
+  // pagó. Sin cuenta, sigue naciendo pendiente como siempre.
+  if (parsed.data.bank_account_id) {
     const { data, error } = await supabase.rpc("create_card_expense", {
       p_company_id: companyId,
       p_category_id: parsed.data.category_id || null,
@@ -68,6 +70,7 @@ export async function createExpenseAction(
       p_total: total,
       p_currency: parsed.data.currency,
       p_exchange_rate: parsed.data.exchange_rate,
+      p_payment_method: parsed.data.payment_method || "TRANSFER",
     });
     if (error) return { error: error.message };
 
@@ -76,7 +79,7 @@ export async function createExpenseAction(
       action: "CREATE",
       entityType: "expense",
       entityId: data as string,
-      newValues: { ...parsed.data, tax, total, paidWithCard: true },
+      newValues: { ...parsed.data, tax, total, paidImmediately: true },
     });
 
     revalidatePath("/expenses");

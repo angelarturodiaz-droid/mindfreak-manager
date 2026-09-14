@@ -72,3 +72,14 @@ export async function listCreditCardsForSelect() {
   if (error) throw new Error(error.message);
   return data;
 }
+
+export async function listActiveAccountsForSelect() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("bank_accounts")
+    .select("id, name, bank_name, type")
+    .eq("is_active", true)
+    .order("name");
+  if (error) throw new Error(error.message);
+  return data;
+}
