@@ -6,6 +6,9 @@ import {
   requestPasswordReset,
   type AuthActionState,
 } from "@/features/auth/actions";
+import { Input } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const initialState: AuthActionState = { error: null };
 
@@ -16,7 +19,7 @@ export default function RecoverPasswordPage() {
   );
 
   return (
-    <main className="flex min-h-full flex-1 items-center justify-center px-6">
+    <main className="flex min-h-full flex-1 items-center justify-center bg-brand-background px-6">
       <div className="w-full max-w-sm">
         <h1 className="text-xl font-semibold text-brand-primary">
           Recuperar contraseña
@@ -25,32 +28,15 @@ export default function RecoverPasswordPage() {
           Te enviaremos un enlace para restablecer tu contraseña.
         </p>
 
-        <form action={formAction} className="mt-8 space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-brand-text"
-            >
-              Correo
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-              className="mt-1 w-full border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm text-brand-text outline-none focus:border-brand-accent"
-            />
-          </div>
+        <Card className="mt-8">
+          <form action={formAction} className="space-y-4">
+            <Input id="email" label="Correo" name="email" type="email" required autoComplete="email" />
 
-          <button
-            type="submit"
-            disabled={pending}
-            className="w-full bg-brand-primary py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {pending ? "Enviando…" : "Enviar enlace"}
-          </button>
-        </form>
+            <Button type="submit" loading={pending} className="w-full justify-center">
+              Enviar enlace
+            </Button>
+          </form>
+        </Card>
 
         {state.submitted && (
           <p className="mt-4 text-sm text-brand-muted">

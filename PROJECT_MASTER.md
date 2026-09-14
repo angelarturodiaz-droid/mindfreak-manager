@@ -184,7 +184,18 @@ estado activo (`SettingsTabs`, componente cliente nuevo), Organización,
 Sistema (colores + logo), Categorías de gastos, Impuestos y Usuarios
 migrados al Design System.
 
-**⬜ Pendiente (próxima etapa, la última)**: Login.
+**✅ Etapa 15 (completada, ÚLTIMA)**: **Login y Recuperar contraseña** —
+migrados a `Input`/`Button`/`Card`. Selectores de los tests E2E preservados
+exactamente (`id="email"`/`id="password"`, texto "Ingresar").
+
+## 🎉 Rediseño de interfaz completo — las 15 etapas están terminadas
+
+Las ~40 pantallas del sistema fueron migradas al Design System nuevo
+(negro/blanco/azul claro, componentes reutilizables, íconos, toasts,
+modales de confirmación) sin tocar ninguna lógica de negocio, query,
+action, ruta ni permiso. Cada etapa se verificó con `tsc`+`build`+`eslint`+
+15 tests unitarios antes de darla por buena. Pendiente real: que el usuario
+haga el push final y pruebe la app completa en su Mac.
 
 ## Backlog
 

@@ -1,5 +1,20 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño ERP SaaS — Etapa 15 (ÚLTIMA): Login y Recuperar contraseña
+
+- Login y Recuperar contraseña migrados a `Input`/`Button`/`Card`.
+  Selectores de los tests E2E preservados exactamente (mismos `id`, mismo
+  texto "Ingresar").
+- **Con esto se completan las 15 etapas del rediseño ERP SaaS** — las ~40
+  pantallas del sistema ahora usan el Design System nuevo (negro/blanco/
+  azul claro, componentes reutilizables, íconos `lucide-react`, toasts
+  `sonner`, modales de confirmación en vez de `window.confirm()`), sin
+  tocar ninguna lógica de negocio, query, action, ruta ni permiso en
+  ningún momento. Cada etapa se verificó con `tsc` + `build` + `eslint` +
+  los 15 tests unitarios antes de darla por buena.
+- Sin cambios de lógica/queries/actions/rutas. Verificado: `tsc`,
+  `npm run build`, `eslint` y los 15 tests unitarios limpios.
+
 ## Rediseño ERP SaaS — Etapa 14: módulo Configuración
 
 - Pestañas con estado activo (nuevo componente cliente `SettingsTabs`, usa
