@@ -1,7 +1,24 @@
 import { getCompanyUsersWithRoles } from "@/features/settings/queries";
+import { Badge } from "@/components/ui/badge";
+import { DataTable, type Column } from "@/components/ui/data-table";
+
+type UserRow = Awaited<ReturnType<typeof getCompanyUsersWithRoles>>[number];
 
 export default async function UsersSettingsPage() {
   const users = await getCompanyUsersWithRoles();
+
+  const columns: Column<UserRow>[] = [
+    { header: "Nombre", accessor: (u) => u.full_name ?? "—" },
+    { header: "Correo", accessor: (u) => <span className="text-brand-muted">{u.email}</span> },
+    {
+      header: "Roles",
+      accessor: (u) => <span className="text-brand-muted">{u.roles.length > 0 ? u.roles.join(", ") : "—"}</span>,
+    },
+    {
+      header: "Estado",
+      accessor: (u) => <Badge tone={u.is_active ? "success" : "danger"}>{u.is_active ? "Activo" : "Inactivo"}</Badge>,
+    },
+  ];
 
   return (
     <div>
@@ -14,37 +31,7 @@ export default async function UsersSettingsPage() {
         documentado en <code>PROJECT_MASTER.md</code>.
       </p>
 
-      <table className="w-full max-w-2xl border-collapse text-sm">
-        <thead>
-          <tr className="border-b border-brand-muted/30 text-left text-brand-muted">
-            <th className="py-2 font-medium">Nombre</th>
-            <th className="py-2 font-medium">Correo</th>
-            <th className="py-2 font-medium">Roles</th>
-            <th className="py-2 font-medium">Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((u) => (
-            <tr key={u.id} className="border-b border-brand-muted/10">
-              <td className="py-2">{u.full_name ?? "—"}</td>
-              <td className="py-2 text-brand-muted">{u.email}</td>
-              <td className="py-2 text-brand-muted">
-                {u.roles.length > 0 ? u.roles.join(", ") : "—"}
-              </td>
-              <td className="py-2 text-brand-muted">
-                {u.is_active ? "Activo" : "Inactivo"}
-              </td>
-            </tr>
-          ))}
-          {users.length === 0 && (
-            <tr>
-              <td colSpan={4} className="py-4 text-center text-brand-muted">
-                Sin usuarios registrados.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <DataTable columns={columns} rows={users} keyFor={(u) => u.id} maxWidth="max-w-2xl" emptyMessage="Sin usuarios registrados." />
     </div>
   );
 }

@@ -2,6 +2,8 @@
 
 import { useActionState } from "react";
 import { updateSystemAction, type ActionState } from "@/features/settings/actions";
+import { Input } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
 
@@ -14,20 +16,13 @@ export function SystemForm({
 
   return (
     <form action={formAction} className="max-w-md space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-brand-text">
-          Nombre de la plataforma
-        </label>
-        <input
-          name="platform_name"
-          required
-          defaultValue={company.platform_name}
-          className="mt-1 w-full border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
-        />
-        <p className="mt-1 text-xs text-brand-muted">
-          Aparece en el menú lateral y en los documentos generados.
-        </p>
-      </div>
+      <Input
+        label="Nombre de la plataforma"
+        name="platform_name"
+        required
+        defaultValue={company.platform_name}
+        hint="Aparece en el menú lateral y en los documentos generados."
+      />
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-brand-text">
@@ -42,12 +37,12 @@ export function SystemForm({
                   .nextElementSibling as HTMLInputElement | null;
                 if (hidden) hidden.value = e.currentTarget.value;
               }}
-              className="h-9 w-9 border border-brand-muted/30"
+              className="h-9 w-9 rounded-[var(--radius-sm)] border border-brand-border"
             />
             <input
               name="brand_primary"
               defaultValue={company.brand_primary}
-              className="w-full border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
+              className="w-full rounded-[var(--radius-md)] border border-brand-border bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
             />
           </div>
         </div>
@@ -64,12 +59,12 @@ export function SystemForm({
                   .nextElementSibling as HTMLInputElement | null;
                 if (hidden) hidden.value = e.currentTarget.value;
               }}
-              className="h-9 w-9 border border-brand-muted/30"
+              className="h-9 w-9 rounded-[var(--radius-sm)] border border-brand-border"
             />
             <input
               name="brand_accent"
               defaultValue={company.brand_accent}
-              className="w-full border border-brand-muted/30 bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
+              className="w-full rounded-[var(--radius-md)] border border-brand-border bg-brand-surface px-3 py-2 text-sm outline-none focus:border-brand-accent"
             />
           </div>
         </div>
@@ -82,13 +77,9 @@ export function SystemForm({
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="bg-brand-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-      >
-        {pending ? "Guardando…" : "Guardar cambios"}
-      </button>
+      <Button type="submit" loading={pending}>
+        Guardar cambios
+      </Button>
     </form>
   );
 }

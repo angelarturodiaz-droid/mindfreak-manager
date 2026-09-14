@@ -179,7 +179,12 @@ filtros con `Select`, tablas con `DataTable`, estados con `Badge`
 tabla con `DataTable`, acción coloreada con `Badge` (crear=verde,
 actualizar=azul, eliminar/cancelar/desactivar=rojo).
 
-**⬜ Pendiente (próximas etapas)**: Configuración → Login.
+**✅ Etapa 14 (completada)**: módulo **Configuración** — pestañas con
+estado activo (`SettingsTabs`, componente cliente nuevo), Organización,
+Sistema (colores + logo), Categorías de gastos, Impuestos y Usuarios
+migrados al Design System.
+
+**⬜ Pendiente (próxima etapa, la última)**: Login.
 
 ## Backlog
 

@@ -1,5 +1,15 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño ERP SaaS — Etapa 14: módulo Configuración
+
+- Pestañas con estado activo (nuevo componente cliente `SettingsTabs`, usa
+  `usePathname` como el Sidebar).
+- Organización, Sistema (colores + logo), Categorías de gastos, Impuestos
+  y Usuarios migrados a `DataTable`, `Badge`, `Input`/`Select`,
+  `Button`/`ConfirmButton`.
+- Sin cambios de lógica/queries/actions/rutas. Verificado: `tsc`,
+  `npm run build`, `eslint` y los 15 tests unitarios limpios.
+
 ## Rediseño ERP SaaS — Etapa 13: módulo Auditoría
 
 - Filtros migrados a `Select`/`Button`, tabla a `DataTable`, acción con
