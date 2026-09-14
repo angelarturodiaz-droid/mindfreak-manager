@@ -1,5 +1,14 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño ERP SaaS — Etapa 10: módulo Bancos
+
+- Lista y detalle (ya venían con cambios sin commitear de una pasada
+  anterior — verificados y completados) + formularios (nueva cuenta,
+  movimiento manual, transferencia) migrados a `DataTable`, `Badge`,
+  `Button`/`ConfirmButton`, `Input`/`Select`.
+- Sin cambios de lógica/queries/actions/rutas. Verificado: `tsc`,
+  `npm run build`, `eslint` y los 15 tests unitarios limpios.
+
 ## Rediseño ERP SaaS — Etapa 9: módulo Productos y Servicios
 
 - Lista, detalle y formularios (nueva categoría, nuevo producto/servicio,

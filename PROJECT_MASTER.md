@@ -160,7 +160,12 @@ formularios (nuevo, editar, nuevo contacto) migrados al Design System.
 detalle y formularios (nueva categoría, nuevo producto/servicio, editar)
 migrados al Design System.
 
-**⬜ Pendiente (próximas etapas)**: Bancos → Tareas → Reportes → Auditoría →
+**✅ Etapa 10 (completada)**: módulo **Bancos** — lista y detalle (ya
+estaban parcialmente migrados de una ronda anterior sin commitear) +
+formularios (nueva cuenta, movimiento manual, transferencia) migrados al
+Design System.
+
+**⬜ Pendiente (próximas etapas)**: Tareas → Reportes → Auditoría →
 Configuración → Login.
 
 ## Backlog
