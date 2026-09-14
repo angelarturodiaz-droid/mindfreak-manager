@@ -127,7 +127,21 @@ export default async function ExpenseDetailPage({
       {["PENDING", "PARTIALLY_PAID"].includes(expense.status) && canPay && (
         <div>
           <h2 className="mb-3 text-sm font-medium text-brand-text">Registrar pago</h2>
-          {expense.supplier_id ? (
+          {!expense.supplier_id ? (
+            <p className="text-sm text-brand-muted">
+              Este gasto no tiene proveedor asignado — agrégalo editando el
+              gasto para poder registrarle un pago.
+            </p>
+          ) : bankAccounts.length === 0 ? (
+            <p className="text-sm text-brand-muted">
+              Necesitas crear al menos una{" "}
+              <Link href="/banks/new" className="text-brand-accent hover:underline">
+                cuenta bancaria
+              </Link>{" "}
+              antes de poder registrar un pago — el dinero siempre tiene que
+              salir de una cuenta.
+            </p>
+          ) : (
             <RegisterSupplierPaymentForm
               expenseId={expense.id}
               supplierId={expense.supplier_id}
@@ -136,11 +150,6 @@ export default async function ExpenseDetailPage({
               currency={expense.currency}
               bankAccounts={bankAccounts}
             />
-          ) : (
-            <p className="text-sm text-brand-muted">
-              Este gasto no tiene proveedor asignado — agrégalo editando el
-              gasto para poder registrarle un pago.
-            </p>
           )}
         </div>
       )}

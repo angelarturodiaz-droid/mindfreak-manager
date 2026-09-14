@@ -51,8 +51,10 @@ export function RegisterPaymentForm({
           </option>
         ))}
       </Select>
-      <Select label="Cuenta bancaria" name="bank_account_id" defaultValue="">
-        <option value="">Sin cuenta (aún no hay Bancos)</option>
+      <Select label="Cuenta bancaria" name="bank_account_id" required defaultValue="">
+        <option value="" disabled>
+          Selecciona una cuenta…
+        </option>
         {bankAccounts.map((b) => (
           <option key={b.id} value={b.id}>
             {b.name} ({b.bank_name})

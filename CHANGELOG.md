@@ -1,5 +1,32 @@
 # CHANGELOG — Mindfreak Manager
 
+## Cambio de lógica financiera — Ronda 1: cuenta bancaria obligatoria en cobros y pagos
+
+Pedido del usuario: que Factura→Cobro→Banco y Gasto→Pago→Banco sean
+inevitables, no opcionales. **El mecanismo ya existía** desde F11/F13
+(`register_customer_payment`/`register_supplier_payment` ya creaban el
+`bank_transaction` automáticamente cuando se pasaba una cuenta) — el
+problema real era que el campo era opcional, así que si no se elegía
+cuenta, no pasaba nada.
+
+- Migración `035_bank_account_required.sql`: ambas funciones ahora
+  **rechazan** el cobro/pago si no se pasa `p_bank_account_id` (`raise
+  exception 'bank_account_required'`).
+- `registerPaymentSchema` (Zod): `bank_account_id` pasó de opcional a
+  requerido — el error se muestra en el formulario antes de llegar a la
+  base de datos.
+- Formularios de registrar cobro (Facturas) y registrar pago (Gastos):
+  quitada la opción "Sin cuenta", el select ahora es `required`.
+- Si la empresa todavía no tiene ninguna cuenta bancaria creada, en vez
+  del formulario se muestra un aviso con link directo a crear una — no se
+  puede cobrar/pagar "en el aire".
+- Verificado con datos reales: confirmado que el RPC **rechaza** un cobro
+  sin cuenta, y que con cuenta sigue funcionando igual que antes (el saldo
+  del banco sube/baja correctamente). Datos de prueba limpiados.
+
+**Pendiente (rondas siguientes)**: módulo de Tarjetas de crédito, y
+separadores de miles en vivo en el resto de los formularios de dinero.
+
 ## Fix: campo "Monto" distorsionado en Facturas y Gastos
 
 - En "Registrar cobro" (Facturas) y "Registrar pago" (Gastos), el campo

@@ -19,7 +19,7 @@ export const PAYMENT_METHOD_LABELS: Record<string, string> = {
 };
 
 export const registerPaymentSchema = z.object({
-  bank_account_id: z.string().uuid().optional().or(z.literal("")),
+  bank_account_id: z.string().uuid("Debes elegir una cuenta bancaria"),
   payment_date: z.string().min(1, "La fecha es requerida"),
   amount: z.coerce.number().positive("El monto debe ser mayor a 0"),
   method: z.enum(PAYMENT_METHODS),

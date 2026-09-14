@@ -228,14 +228,25 @@ export default async function InvoiceDetailPage({
           invoice.balance > 0 &&
           canPay && (
             <div className="mt-4">
-              <RegisterPaymentForm
-                invoiceId={invoice.id}
-                clientId={invoice.client_id}
-                projectId={invoice.project_id}
-                balance={invoice.balance}
-                currency={invoice.currency}
-                bankAccounts={bankAccounts}
-              />
+              {bankAccounts.length === 0 ? (
+                <p className="text-sm text-brand-muted">
+                  Necesitas crear al menos una{" "}
+                  <Link href="/banks/new" className="text-brand-accent hover:underline">
+                    cuenta bancaria
+                  </Link>{" "}
+                  antes de poder registrar un cobro — el dinero siempre tiene
+                  que quedar asociado a una cuenta.
+                </p>
+              ) : (
+                <RegisterPaymentForm
+                  invoiceId={invoice.id}
+                  clientId={invoice.client_id}
+                  projectId={invoice.project_id}
+                  balance={invoice.balance}
+                  currency={invoice.currency}
+                  bankAccounts={bankAccounts}
+                />
+              )}
             </div>
           )}
       </section>
