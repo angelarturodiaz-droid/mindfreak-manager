@@ -170,8 +170,12 @@ componentes compartidos `NewTaskForm`/`TaskList` (usados también en la
 pestaña "Tareas" de Proyectos) migrados al Design System, incluyendo
 reemplazar `window.confirm()` por `ConfirmButton` en eliminar tarea.
 
-**⬜ Pendiente (próximas etapas)**: Reportes → Auditoría → Configuración →
-Login.
+**✅ Etapa 12 (completada)**: módulo **Reportes** — el hub de 5 reportes
+(737 líneas) reescrito completo: sidebar de navegación con estado activo,
+filtros con `Select`, tablas con `DataTable`, estados con `Badge`
+(incluyendo "días vencida" como badge rojo/verde).
+
+**⬜ Pendiente (próximas etapas)**: Auditoría → Configuración → Login.
 
 ## Backlog
 

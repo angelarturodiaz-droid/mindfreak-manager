@@ -1,5 +1,13 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño ERP SaaS — Etapa 12: módulo Reportes
+
+- Hub de 5 reportes (737 líneas) reescrito completo: sidebar de navegación
+  con estado activo, filtros migrados a `Select`, tablas a `DataTable`,
+  estados a `Badge` (incluyendo "días vencida" en rojo/verde).
+- Sin cambios de lógica/queries/rutas. Verificado: `tsc`, `npm run build`,
+  `eslint` y los 15 tests unitarios limpios.
+
 ## Rediseño ERP SaaS — Etapa 11: módulo Tareas
 
 - `/tasks` y los componentes compartidos `NewTaskForm`/`TaskList` (también
