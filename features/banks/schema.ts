@@ -13,7 +13,17 @@ export const bankAccountSchema = z.object({
   credit_limit: z.coerce.number().min(0).optional(),
 });
 
-export type BankAccountInput = z.infer<typeof bankAccountSchema>;
+export const bankAccountEditSchema = z.object({
+  name: z.string().trim().min(1, "El nombre es requerido"),
+  bank_name: z.string().trim().optional().or(z.literal("")),
+  account_number_masked: z.string().trim().optional().or(z.literal("")),
+  credit_limit: z.coerce.number().min(0).optional(),
+  // Solo se aplican si la cuenta todavía no tiene movimientos (ver acción).
+  opening_balance: z.coerce.number().optional(),
+  opening_balance_date: z.string().optional().or(z.literal("")),
+});
+
+export type BankAccountEditInput = z.infer<typeof bankAccountEditSchema>;
 
 export const manualTransactionSchema = z.object({
   type: z.enum(["INCOME", "EXPENSE"]),

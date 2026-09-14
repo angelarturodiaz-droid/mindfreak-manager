@@ -5,12 +5,15 @@ import {
   getBankAccount,
   listBankTransactions,
   listOtherActiveAccounts,
+  hasBankTransactions,
 } from "@/features/banks/queries";
 import { toggleBankAccountActiveAction, toggleReconciledAction } from "@/features/banks/actions";
 import { hasPermission } from "@/lib/auth/permissions";
 import { ManualTransactionForm } from "./manual-transaction-form";
 import { TransferForm } from "./transfer-form";
+import { BankAccountEditForm } from "./bank-account-edit-form";
 import { ConfirmButton } from "@/components/ui/confirm-button";
+import { Card } from "@/components/ui/card";
 import { DataTable, type Column } from "@/components/ui/data-table";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -42,11 +45,12 @@ export default async function BankAccountDetailPage({
   }
   if (!account) notFound();
 
-  const [transactions, otherAccounts, canCreate, canReconcile] = await Promise.all([
+  const [transactions, otherAccounts, canCreate, canReconcile, hasTx] = await Promise.all([
     listBankTransactions(id),
     listOtherActiveAccounts(id),
     hasPermission("banks.create"),
     hasPermission("banks.reconcile"),
+    hasBankTransactions(id),
   ]);
 
   const columns: Column<TransactionRow>[] = [
@@ -132,6 +136,17 @@ export default async function BankAccountDetailPage({
           confirmTitle={`¿${account.is_active ? "Desactivar" : "Activar"} "${account.name}"?`}
           onConfirm={toggleBankAccountActiveAction.bind(null, account.id, account.is_active)}
         />
+      )}
+
+      {canCreate && (
+        <section>
+          <h2 className="mb-3 text-sm font-medium text-brand-text">
+            Editar {account.type === "CREDIT_CARD" ? "tarjeta" : "cuenta"}
+          </h2>
+          <Card>
+            <BankAccountEditForm account={account} canEditOpeningBalance={!hasTx} />
+          </Card>
+        </section>
       )}
 
       {canCreate && (

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
-import { bankAccountSchema, manualTransactionSchema, transferSchema } from "./schema";
+import { bankAccountSchema, bankAccountEditSchema, manualTransactionSchema, transferSchema } from "./schema";
 
 export type ActionState = { error: string | null };
 
@@ -236,4 +236,87 @@ export async function toggleReconciledAction(
   });
 
   revalidatePath(`/banks/${bankAccountId}`);
+}
+
+export async function updateBankAccountAction(
+  accountId: string,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requirePermission("banks.create");
+
+  const parsed = bankAccountEditSchema.safeParse({
+    name: String(formData.get("name") ?? ""),
+    bank_name: String(formData.get("bank_name") ?? ""),
+    account_number_masked: String(formData.get("account_number_masked") ?? ""),
+    credit_limit: formData.get("credit_limit") ? String(formData.get("credit_limit")) : undefined,
+    opening_balance: formData.get("opening_balance")
+      ? String(formData.get("opening_balance"))
+      : undefined,
+    opening_balance_date: String(formData.get("opening_balance_date") ?? ""),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+  }
+
+  const companyId = await getPrimaryCompanyId();
+  const supabase = await createSupabaseClient();
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("bank_accounts")
+    .select("type")
+    .eq("id", accountId)
+    .single();
+  if (fetchError) return { error: fetchError.message };
+
+  // El balance/deuda inicial y su fecha solo se pueden tocar si la cuenta
+  // todavía no tiene ningún movimiento — cambiarlos después desincronizaría
+  // todo lo ya calculado (mismo criterio que "editable solo en borrador" ya
+  // usado en Cotizaciones/Gastos).
+  const { count: txCount, error: countError } = await supabase
+    .from("bank_transactions")
+    .select("id", { count: "exact", head: true })
+    .eq("bank_account_id", accountId);
+  if (countError) return { error: countError.message };
+
+  const canEditOpeningBalance = (txCount ?? 0) === 0;
+
+  const updatePayload: Record<string, unknown> = {
+    name: parsed.data.name,
+    bank_name: parsed.data.bank_name || null,
+    account_number_masked: parsed.data.account_number_masked || null,
+    credit_limit: parsed.data.credit_limit ?? null,
+  };
+
+  if (canEditOpeningBalance) {
+    if (parsed.data.opening_balance !== undefined) {
+      // Igual que al crear: para una tarjeta, la deuda se escribe positiva
+      // pero se guarda como opening_balance negativo (ver 036_credit_cards.sql).
+      updatePayload.opening_balance =
+        existing.type === "CREDIT_CARD"
+          ? -Math.abs(parsed.data.opening_balance)
+          : parsed.data.opening_balance;
+    }
+    if (parsed.data.opening_balance_date) {
+      updatePayload.opening_balance_date = parsed.data.opening_balance_date;
+    }
+  }
+
+  const { error } = await supabase
+    .from("bank_accounts")
+    .update(updatePayload)
+    .eq("id", accountId);
+  if (error) return { error: error.message };
+
+  await logAudit({
+    companyId,
+    action: "UPDATE",
+    entityType: "bank_account",
+    entityId: accountId,
+    newValues: updatePayload,
+  });
+
+  revalidatePath(`/banks/${accountId}`);
+  revalidatePath("/banks");
+  return { error: null };
 }

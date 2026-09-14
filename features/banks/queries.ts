@@ -61,3 +61,13 @@ export async function listOtherActiveAccounts(excludeId: string) {
   if (error) throw new Error(error.message);
   return data;
 }
+
+export async function hasBankTransactions(accountId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from("bank_transactions")
+    .select("id", { count: "exact", head: true })
+    .eq("bank_account_id", accountId);
+  if (error) throw new Error(error.message);
+  return (count ?? 0) > 0;
+}

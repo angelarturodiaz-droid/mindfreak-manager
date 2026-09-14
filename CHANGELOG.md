@@ -1,5 +1,28 @@
 # CHANGELOG — Mindfreak Manager
 
+## Edición de cuentas bancarias/tarjetas
+
+Hasta ahora no existía forma de editar una cuenta bancaria o tarjeta una
+vez creada (solo crear y activar/desactivar). Criterio adoptado (mismo
+usado en Cotizaciones/Gastos: "editable solo en borrador"):
+
+- **Siempre editable, sin restricción**: nombre, banco, número enmascarado,
+  y **límite de crédito** (para que se pueda ajustar cuando el banco suba o
+  baje el límite).
+- **Solo editable si la cuenta todavía no tiene ningún movimiento**: el
+  balance/deuda inicial y su fecha — cambiarlos después desincronizaría
+  todo lo ya calculado. El campo se deshabilita automáticamente en la UI
+  con una nota explicando por qué.
+- Tipo (Banco/Tarjeta) y moneda quedan fijos para siempre desde la
+  creación — cambiarlos retroactivamente no tiene sentido una vez que hay
+  movimientos con esa moneda/semántica.
+- Verificado con datos reales: con 0 movimientos, el conteo usado para
+  decidir si se puede editar el balance inicial da 0 (editable); tras
+  simular una compra con tarjeta, el conteo sube a 1 (bloqueado); el
+  límite de crédito y el nombre se pudieron actualizar igual, con o sin
+  movimientos. Datos de prueba limpiados.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 15 tests unitarios.
+
 ## Cambio de lógica financiera — Ronda 2: Tarjetas de crédito
 
 Migración `036_credit_cards.sql`. Diseño: una tarjeta es una fila más de
