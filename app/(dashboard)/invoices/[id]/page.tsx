@@ -108,6 +108,17 @@ export default async function InvoiceDetailPage({
     { header: "Fecha", accessor: (p) => p.payment_date },
     { header: "Monto", accessor: (p) => <span className="font-medium">{formatMoney(p.amount, invoice.currency)}</span> },
     { header: "Método", accessor: (p) => <span className="text-brand-muted">{PAYMENT_METHOD_LABELS[p.method] ?? p.method}</span> },
+    {
+      header: "Banco",
+      accessor: (p) => {
+        const account = p.bank_accounts as
+          | { name: string; bank_name: string | null }
+          | { name: string; bank_name: string | null }[]
+          | null;
+        const a = Array.isArray(account) ? account[0] : account;
+        return <span className="text-brand-muted">{a ? `${a.name}${a.bank_name ? ` (${a.bank_name})` : ""}` : "—"}</span>;
+      },
+    },
     { header: "Referencia", accessor: (p) => <span className="text-brand-muted">{p.reference || "—"}</span> },
   ];
 
@@ -222,7 +233,7 @@ export default async function InvoiceDetailPage({
 
       <section>
         <h2 className="mb-3 text-sm font-medium text-brand-text">Cobros</h2>
-        <DataTable columns={paymentColumns} rows={payments} keyFor={(p) => p.id} maxWidth="max-w-2xl" emptyMessage="Sin cobros registrados todavía." />
+        <DataTable columns={paymentColumns} rows={payments} keyFor={(p) => p.id} maxWidth="max-w-3xl" emptyMessage="Sin cobros registrados todavía." />
 
         {["ISSUED", "PARTIALLY_PAID", "OVERDUE"].includes(invoice.status) &&
           invoice.balance > 0 &&

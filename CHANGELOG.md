@@ -1,5 +1,15 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: historial de pagos no mostraba el banco
+
+En "Historial de pagos" (Gastos) y "Cobros" (Facturas) no se veía de qué
+banco/tarjeta salió o entró el dinero, solo fecha/monto/método/referencia.
+
+- `listPaymentsForExpense`/`listPaymentsForInvoice`: agregado el embed de
+  `bank_accounts(name, bank_name)`.
+- Nueva columna "Banco" en ambas tablas.
+- Verificado: `tsc`, `npm run build`, `eslint`, 15 tests unitarios limpios.
+
 ## Edición de cuentas bancarias/tarjetas
 
 Hasta ahora no existía forma de editar una cuenta bancaria o tarjeta una
