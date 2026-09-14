@@ -15,7 +15,9 @@ export async function listAllPayments() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("customer_payments")
-    .select("id, invoice_id, payment_date, amount, method, invoices(number), clients(name)")
+    .select(
+      "id, invoice_id, payment_date, amount, method, invoices(number), clients(name), bank_accounts(name, bank_name)",
+    )
     .order("payment_date", { ascending: false })
     .limit(100);
   if (error) throw new Error(error.message);
@@ -50,7 +52,7 @@ export async function listAllSupplierPayments() {
   const { data, error } = await supabase
     .from("supplier_payments")
     .select(
-      "id, expense_id, payment_date, amount, method, expenses(description), suppliers(name)",
+      "id, expense_id, payment_date, amount, method, expenses(description), suppliers(name), bank_accounts(name, bank_name)",
     )
     .order("payment_date", { ascending: false })
     .limit(100);

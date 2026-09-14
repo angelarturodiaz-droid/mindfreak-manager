@@ -1,5 +1,17 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: la página general /payments tampoco mostraba el banco
+
+Mismo fix que la ronda anterior, pero en la pantalla que se me había
+escapado: `/payments` (el listado general de "Cobros y pagos", separado de
+los historiales dentro de cada factura/gasto).
+
+- `listAllPayments`/`listAllSupplierPayments`: agregado el embed de
+  `bank_accounts(name, bank_name)`.
+- Nueva columna "Depositado en" (Cobros) / "Pagado desde" (Pagos a
+  proveedores).
+- Verificado: `tsc`, `npm run build`, `eslint`, 15 tests unitarios limpios.
+
 ## Fix: historial de pagos no mostraba el banco
 
 En "Historial de pagos" (Gastos) y "Cobros" (Facturas) no se veía de qué

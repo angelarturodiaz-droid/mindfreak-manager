@@ -12,6 +12,14 @@ function formatMoney(amount: number) {
 type PaymentRow = Awaited<ReturnType<typeof listAllPayments>>[number];
 type SupplierPaymentRow = Awaited<ReturnType<typeof listAllSupplierPayments>>[number];
 
+function bankLabel(
+  bankAccounts: { name: string; bank_name: string | null } | { name: string; bank_name: string | null }[] | null,
+) {
+  const a = Array.isArray(bankAccounts) ? bankAccounts[0] : bankAccounts;
+  if (!a) return "—";
+  return a.bank_name ? `${a.name} (${a.bank_name})` : a.name;
+}
+
 export default async function PaymentsPage() {
   const [payments, supplierPayments] = await Promise.all([
     listAllPayments(),
@@ -42,6 +50,10 @@ export default async function PaymentsPage() {
     },
     { header: "Monto", accessor: (p) => <span className="font-medium">{formatMoney(p.amount)}</span> },
     { header: "Método", accessor: (p) => <span className="text-brand-muted">{PAYMENT_METHOD_LABELS[p.method] ?? p.method}</span> },
+    {
+      header: "Depositado en",
+      accessor: (p) => <span className="text-brand-muted">{bankLabel(p.bank_accounts)}</span>,
+    },
   ];
 
   const supplierPaymentColumns: Column<SupplierPaymentRow>[] = [
@@ -68,6 +80,10 @@ export default async function PaymentsPage() {
     },
     { header: "Monto", accessor: (p) => <span className="font-medium">{formatMoney(p.amount)}</span> },
     { header: "Método", accessor: (p) => <span className="text-brand-muted">{PAYMENT_METHOD_LABELS[p.method] ?? p.method}</span> },
+    {
+      header: "Pagado desde",
+      accessor: (p) => <span className="text-brand-muted">{bankLabel(p.bank_accounts)}</span>,
+    },
   ];
 
   return (
@@ -88,7 +104,7 @@ export default async function PaymentsPage() {
           columns={paymentColumns}
           rows={payments}
           keyFor={(p) => p.id}
-          maxWidth="max-w-3xl"
+          maxWidth="max-w-4xl"
           emptyMessage="Aún no se ha registrado ningún cobro."
         />
       </div>
@@ -105,7 +121,7 @@ export default async function PaymentsPage() {
           columns={supplierPaymentColumns}
           rows={supplierPayments}
           keyFor={(p) => p.id}
-          maxWidth="max-w-3xl"
+          maxWidth="max-w-4xl"
           emptyMessage="Aún no se ha registrado ningún pago a proveedor."
         />
       </div>
