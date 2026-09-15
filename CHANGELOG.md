@@ -1,5 +1,38 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: "new row violates row-level security policy" al subir el logo
+
+El usuario reportó este error real al intentar subir el logo en
+Configuración → Sistema — confirma un problema que ya había investigado
+antes sin resolver del todo (ver nota en la Ronda de Configuración): el
+bucket `branding` (creado en `034_settings_organization.sql`) rechaza
+cualquier INSERT en `storage.objects`, **incluso con una política trivial
+`with check (true)`**, e **incluso en un bucket completamente nuevo creado
+desde cero con su propia política**. Se descartaron como causa: triggers,
+grants, permisos, public vs. private, nombre del bucket — nada de eso
+explica el fallo. El bucket `documents` (F8), en cambio, sigue funcionando
+perfecto para el mismo tipo de operación.
+
+**Solución (workaround estable, no una explicación del bug)**:
+`uploadLogoAction` ahora guarda el logo dentro del bucket `documents`
+(privado, probado) en una subcarpeta `{companyId}/branding/`, generando un
+**link firmado de ~10 años** en vez de una URL pública directa (ya que
+`documents` no es público). Confirmado con búsqueda que Supabase permite
+expiraciones de años sin problema.
+
+- Migración `041_deprecate_branding_bucket.sql`: elimina las políticas del
+  bucket `branding` (ya no se usa) — el bucket en sí queda inerte, no se
+  puede borrar por SQL directo (protegido por Supabase Storage), inofensivo.
+- Verificado con datos reales: INSERT en la ruta real
+  `{companyId}/branding/logo.png` dentro de `documents` — funciona.
+  Confirmados los permisos `documents.view`/`settings.manage` del usuario
+  admin, necesarios para insertar y para generar el link firmado.
+- **No pude probar la subida real end-to-end** (sin acceso de red desde
+  este entorno a la API de Storage de Supabase, solo a la base de datos vía
+  SQL) — la simulación por SQL confirma que la política ya no bloquea la
+  ruta, pero pide al usuario confirmar en la app real.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 17 tests unitarios.
+
 ## Rediseño de los PDF de Cotización y Factura (el documento que le llega al cliente)
 
 Pedido del usuario: mejorar visualmente el PDF real que se envía al

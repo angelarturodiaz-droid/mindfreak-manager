@@ -102,6 +102,7 @@ export async function updateSystemAction(
 }
 
 const MAX_LOGO_BYTES = 3 * 1024 * 1024; // 3MB
+const LOGO_SIGNED_URL_SECONDS = 60 * 60 * 24 * 365 * 10; // ~10 años
 
 export async function uploadLogoAction(
   _prevState: ActionState,
@@ -123,20 +124,29 @@ export async function uploadLogoAction(
   const companyId = await getPrimaryCompanyId();
   const supabase = await createSupabaseClient();
 
+  // NOTA: el logo se guarda en el bucket 'documents' (privado, ya probado y
+  // estable) dentro de una subcarpeta "branding/", en vez de en un bucket
+  // público dedicado — hubo un problema real de RLS con buckets nuevos que
+  // no se pudo resolver a nivel de política tras una investigación extensa;
+  // esta es la solución estable mientras tanto. Como el bucket es privado,
+  // se usa un link firmado de larga duración (~10 años) en vez de una URL
+  // pública directa.
   const ext = file.name.split(".").pop() ?? "png";
-  const path = `${companyId}/logo.${ext}`;
+  const path = `${companyId}/branding/logo.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
 
   const { error: uploadError } = await supabase.storage
-    .from("branding")
+    .from("documents")
     .upload(path, buffer, { contentType: file.type, upsert: true });
   if (uploadError) return { error: uploadError.message };
 
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from("branding").getPublicUrl(path);
-  // cache-bust para que el <img> refresque tras subir un logo nuevo
-  const logoUrl = `${publicUrl}?t=${Date.now()}`;
+  const { data: signedData, error: signError } = await supabase.storage
+    .from("documents")
+    .createSignedUrl(path, LOGO_SIGNED_URL_SECONDS);
+  if (signError || !signedData) {
+    return { error: signError?.message ?? "No se pudo generar el link del logo." };
+  }
+  const logoUrl = signedData.signedUrl;
 
   const { error } = await supabase
     .from("companies")
