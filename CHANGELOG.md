@@ -1,5 +1,22 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: el logo se veía sin el trazo negro en el header del PDF
+
+La subida del logo ya funcionó (confirma que el fix anterior de RLS
+resolvió el problema real) — pero en el PDF solo se veían las barras teal,
+sin la "M" negra. Causa: el header del PDF es negro y el logo tiene su
+trazo principal en negro sobre fondo transparente — se vuelve invisible al
+mezclarse con el fondo.
+
+- `lib/pdf/quotation-document.tsx` / `invoice-document.tsx`: el logo ahora
+  se muestra dentro de un recuadro blanco redondeado (40×40) dentro del
+  header oscuro, para que cualquier logo (sin importar sus colores) se vea
+  bien sobre el fondo oscuro.
+- Verificado de verdad: probé con el logo real del usuario (recortado al
+  ícono), lo rendericé y lo convertí a imagen — confirmado visualmente que
+  la "M" negra ahora se ve completa sobre su propio fondo blanco.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 17 tests unitarios.
+
 ## Fix: "new row violates row-level security policy" al subir el logo
 
 El usuario reportó este error real al intentar subir el logo en

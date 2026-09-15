@@ -77,7 +77,17 @@ export function QuotationPdfDocument({
       justifyContent: "space-between",
       alignItems: "flex-start",
     },
-    logo: { width: 34, height: 34, marginBottom: 6, objectFit: "contain" },
+    logoWrap: {
+      width: 40,
+      height: 40,
+      backgroundColor: "#ffffff",
+      borderRadius: 6,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 6,
+      padding: 4,
+    },
+    logo: { width: "100%", height: "100%", objectFit: "contain" },
     companyName: { color: "#ffffff", fontSize: 12, fontWeight: 700, letterSpacing: 0.5 },
     docPill: {
       marginTop: 8,
@@ -169,8 +179,12 @@ export function QuotationPdfDocument({
       <Page size="LETTER" style={styles.page}>
         <View style={styles.headerBar}>
           <View>
-            {/* eslint-disable-next-line jsx-a11y/alt-text -- Image de @react-pdf/renderer, no HTML img */}
-            {company.logo_url && <Image src={company.logo_url} style={styles.logo} />}
+            {company.logo_url && (
+              <View style={styles.logoWrap}>
+                {/* eslint-disable-next-line jsx-a11y/alt-text -- Image de @react-pdf/renderer, no HTML img */}
+                <Image src={company.logo_url} style={styles.logo} />
+              </View>
+            )}
             <Text style={styles.companyName}>{company.name}</Text>
             <Text style={styles.docPill}>COTIZACIÓN</Text>
           </View>
