@@ -6,6 +6,7 @@ import { createExpenseAction, type ActionState } from "@/features/expenses/actio
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
 import { Input, Select } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
+import { CurrencyExchangeFields } from "@/components/ui/currency-exchange-fields";
 import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
@@ -21,12 +22,14 @@ export function NewExpenseForm({
   projects,
   accounts,
   bankCatalog,
+  baseCurrency,
 }: {
   categories: Option[];
   suppliers: Option[];
   projects: ProjectOption[];
   accounts: Account[];
   bankCatalog: Option[];
+  baseCurrency: string;
 }) {
   const [state, formAction, pending] = useActionState(createExpenseAction, initialState);
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -151,20 +154,7 @@ export function NewExpenseForm({
         )
       )}
 
-      <div className="grid grid-cols-2 gap-3">
-        <Select label="Moneda" name="currency" defaultValue="DOP">
-          <option value="DOP">DOP</option>
-          <option value="USD">USD</option>
-        </Select>
-        <Input
-          label="Tasa de cambio"
-          name="exchange_rate"
-          type="number"
-          step="0.000001"
-          min="0.000001"
-          defaultValue="1"
-        />
-      </div>
+      <CurrencyExchangeFields baseCurrency={baseCurrency} />
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
 

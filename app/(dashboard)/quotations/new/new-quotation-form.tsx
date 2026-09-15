@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { createQuotationAction, type ActionState } from "@/features/quotations/actions";
 import { Input, Select, Textarea } from "@/components/ui/field";
+import { CurrencyExchangeFields } from "@/components/ui/currency-exchange-fields";
 import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
@@ -11,8 +12,10 @@ const today = new Date().toISOString().slice(0, 10);
 
 export function NewQuotationForm({
   clients,
+  baseCurrency,
 }: {
   clients: { id: string; name: string; status: string }[];
+  baseCurrency: string;
 }) {
   const [state, formAction, pending] = useActionState(
     createQuotationAction,
@@ -35,21 +38,7 @@ export function NewQuotationForm({
       <Input label="Fecha de emisión" name="issue_date" type="date" required defaultValue={today} />
       <Input label="Válida hasta" name="valid_until" type="date" />
 
-      <div className="flex gap-3">
-        <Select label="Moneda" name="currency" defaultValue="DOP" className="flex-1">
-          <option value="DOP">DOP</option>
-          <option value="USD">USD</option>
-        </Select>
-        <Input
-          label="Tasa de cambio"
-          name="exchange_rate"
-          type="number"
-          step="0.000001"
-          min="0"
-          defaultValue="1"
-          className="flex-1"
-        />
-      </div>
+      <CurrencyExchangeFields baseCurrency={baseCurrency} />
 
       <Textarea label="Condiciones / Notas" name="terms" rows={3} />
 

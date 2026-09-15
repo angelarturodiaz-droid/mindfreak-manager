@@ -1,8 +1,9 @@
 import { listActiveClients } from "@/features/quotations/queries";
+import { getCompany } from "@/features/settings/queries";
 import { NewQuotationForm } from "./new-quotation-form";
 
 export default async function NewQuotationPage() {
-  const clients = await listActiveClients();
+  const [clients, company] = await Promise.all([listActiveClients(), getCompany()]);
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-8">
@@ -15,7 +16,7 @@ export default async function NewQuotationPage() {
           ya sea cliente confirmado.
         </p>
       </div>
-      <NewQuotationForm clients={clients} />
+      <NewQuotationForm clients={clients} baseCurrency={company.base_currency} />
     </main>
   );
 }

@@ -17,6 +17,7 @@ import { DocumentList } from "@/components/documents/document-list";
 import { UploadDocumentForm } from "@/components/documents/upload-document-form";
 import { listDocuments } from "@/features/documents/queries";
 import { listBankCatalog } from "@/features/bank-catalog/queries";
+import { getCompany } from "@/features/settings/queries";
 import { Badge } from "@/components/ui/badge";
 import { KpiCard } from "@/components/ui/card";
 import { ConfirmButton } from "@/components/ui/confirm-button";
@@ -52,7 +53,7 @@ export default async function ExpenseDetailPage({
   }
   if (!expense) notFound();
 
-  const [categories, suppliers, projects, canEdit, canPay, payments, bankAccounts, documents, bankCatalog] =
+  const [categories, suppliers, projects, canEdit, canPay, payments, bankAccounts, documents, bankCatalog, company] =
     await Promise.all([
       listExpenseCategories(),
       listActiveSuppliers(),
@@ -63,6 +64,7 @@ export default async function ExpenseDetailPage({
       listBankAccounts(),
       listDocuments("expense", id),
       listBankCatalog(),
+      getCompany(),
     ]);
 
   const category = expense.expense_categories as { name: string } | null;
@@ -219,6 +221,7 @@ export default async function ExpenseDetailPage({
             suppliers={suppliers}
             projects={projects}
             bankCatalog={bankCatalog}
+            baseCurrency={company.base_currency}
           />
         </div>
       ) : (

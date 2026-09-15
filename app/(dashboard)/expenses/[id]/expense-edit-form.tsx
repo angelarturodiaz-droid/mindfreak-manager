@@ -5,6 +5,7 @@ import { updateExpenseAction, type ActionState } from "@/features/expenses/actio
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
 import { Input, Select } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
+import { CurrencyExchangeFields } from "@/components/ui/currency-exchange-fields";
 import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
@@ -18,6 +19,7 @@ export function ExpenseEditForm({
   suppliers,
   projects,
   bankCatalog,
+  baseCurrency,
 }: {
   expense: {
     id: string;
@@ -37,6 +39,7 @@ export function ExpenseEditForm({
   suppliers: Option[];
   projects: ProjectOption[];
   bankCatalog: Option[];
+  baseCurrency: string;
 }) {
   const updateWithId = updateExpenseAction.bind(null, expense.id);
   const [state, formAction, pending] = useActionState(updateWithId, initialState);
@@ -106,20 +109,11 @@ export function ExpenseEditForm({
         ))}
       </Select>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Select label="Moneda" name="currency" defaultValue={expense.currency}>
-          <option value="DOP">DOP</option>
-          <option value="USD">USD</option>
-        </Select>
-        <Input
-          label="Tasa de cambio"
-          name="exchange_rate"
-          type="number"
-          step="0.000001"
-          min="0.000001"
-          defaultValue={expense.exchange_rate}
-        />
-      </div>
+      <CurrencyExchangeFields
+        baseCurrency={baseCurrency}
+        defaultCurrency={expense.currency}
+        defaultExchangeRate={expense.exchange_rate}
+      />
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
 

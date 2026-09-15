@@ -1,5 +1,23 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: "Tasa de cambio" solo debe aparecer si la moneda no es la base
+
+Observación del usuario: mostrar siempre el campo "Tasa de cambio" no
+tenía sentido — solo aplica cuando la moneda elegida es distinta a la
+moneda base de la empresa (configurable en Configuración → Organización,
+hoy DOP). Si coinciden, no hay conversión que hacer.
+
+- Nuevo componente reutilizable `CurrencyExchangeFields`: el selector de
+  Moneda se mantiene siempre visible; "Tasa de cambio" solo aparece cuando
+  la moneda elegida ≠ moneda base de la empresa. Cuando no aplica, se envía
+  `1` automáticamente por un input oculto (mismo comportamiento de fondo,
+  nada cambia en el cálculo).
+- Aplicado en los 4 formularios que tenían este par de campos: Nueva
+  Cotización, Nueva Factura, Nuevo Gasto, Editar Gasto. Cada página ahora
+  trae la moneda base real de la empresa (`getCompany().base_currency`) en
+  vez de asumir DOP fijo.
+- Verificado: `tsc`, `npm run build`, `eslint`, 15 tests unitarios limpios.
+
 ## Ronda 3 (última) de la nueva lógica financiera: comas en vivo en todos los formularios de dinero
 
 Extendido `MoneyInput` (construido en una ronda anterior, solo aplicado en
