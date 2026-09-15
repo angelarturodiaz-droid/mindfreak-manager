@@ -285,7 +285,11 @@ export async function generateQuotationShareLinkAction(
 
   const [{ data: quotation, error: qError }, { data: items, error: iError }, { data: company }] =
     await Promise.all([
-      supabase.from("quotations").select("*, clients(name)").eq("id", quotationId).single(),
+      supabase
+        .from("quotations")
+        .select("*, clients(name, tax_id, email, phone)")
+        .eq("id", quotationId)
+        .single(),
       supabase
         .from("quotation_items")
         .select("description, quantity, unit_price, discount, subtotal")
@@ -293,7 +297,7 @@ export async function generateQuotationShareLinkAction(
         .order("sort_order"),
       supabase
         .from("companies")
-        .select("name, legal_name, tax_id")
+        .select("name, legal_name, tax_id, logo_url, brand_primary, brand_accent")
         .eq("id", companyId)
         .single(),
     ]);
@@ -301,14 +305,29 @@ export async function generateQuotationShareLinkAction(
   if (qError || !quotation) return { url: null, error: qError?.message ?? "Cotización no encontrada." };
   if (iError) return { url: null, error: iError.message };
 
-  const clientData = quotation.clients as { name: string } | { name: string }[] | null;
-  const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
+  const clientData = quotation.clients as
+    | { name: string; tax_id: string | null; email: string | null; phone: string | null }
+    | { name: string; tax_id: string | null; email: string | null; phone: string | null }[]
+    | null;
+  const clientRecord = Array.isArray(clientData) ? clientData[0] : clientData;
 
   const buffer = await renderToBuffer(
     QuotationPdfDocument({
-      company: company ?? { name: "Mindfreak Manager", legal_name: null, tax_id: null },
+      company: company ?? {
+        name: "Mindfreak Manager",
+        legal_name: null,
+        tax_id: null,
+        logo_url: null,
+        brand_primary: "#0b0e14",
+        brand_accent: "#17a6b8",
+      },
       quotation,
-      client: { name: clientName ?? "Cliente" },
+      client: {
+        name: clientRecord?.name ?? "Cliente",
+        tax_id: clientRecord?.tax_id ?? null,
+        email: clientRecord?.email ?? null,
+        phone: clientRecord?.phone ?? null,
+      },
       items: items ?? [],
     }),
   );

@@ -1,5 +1,40 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño de los PDF de Cotización y Factura (el documento que le llega al cliente)
+
+Pedido del usuario: mejorar visualmente el PDF real que se envía al
+cliente, usando como referencia una cotización de ejemplo ya bien diseñada
+(header oscuro + banda teal, tabla numerada, totales resaltados).
+
+- **Reescritos** `lib/pdf/quotation-document.tsx` e
+  `lib/pdf/invoice-document.tsx`: header con el logo y color de marca reales
+  de la empresa (`companies.logo_url`/`brand_primary`/`brand_accent` — ya
+  configurables desde Configuración → Sistema, cero pasos manuales extra),
+  pastilla de tipo de documento, metadatos alineados a la derecha (No. doc,
+  RNC, fecha, vencimiento), sección de datos del cliente (con RNC/email/
+  teléfono, antes no se mostraban), tabla numerada con encabezado y filas
+  alternas en el color de marca, bloque de totales con el total resaltado
+  en el color de acento. Factura además muestra estado (traducido al
+  español) y balance pendiente en rojo si aplica.
+- Las acciones de generar el PDF (`generateQuotationShareLinkAction`/
+  `generateInvoiceShareLinkAction`) ahora piden también `logo_url`,
+  `brand_primary`, `brand_accent` de la empresa y `tax_id`/`email`/`phone`
+  del cliente — antes no se pedían.
+- **Verificado de verdad, no solo por tipo**: generé ambos PDFs con datos
+  idénticos al ejemplo del usuario, los convertí a imagen (`pdftoppm`) y
+  los inspeccioné visualmente — coinciden con el estilo de referencia.
+  También confirmé que si el logo aún no existe o la URL está rota, el PDF
+  se sigue generando sin romperse (solo omite la imagen).
+- Nuevo test permanente `tests/unit/pdf-render.test.ts`: renderiza ambos
+  PDFs sin datos reales para detectar si un cambio futuro rompe la
+  generación.
+- Verificado: `tsc`, `npm run build`, `eslint`, ahora 17 tests unitarios
+  (15 + 2 nuevos de PDF) limpios.
+- **Pendiente para que se vea igual de completo que el ejemplo**: subir el
+  logo en Configuración → Sistema (hoy no hay ninguno), y si quieres el
+  campo "Concepto del servicio" del ejemplo, ese es nuevo (no existe hoy en
+  cotizaciones) — avísame si lo quieres agregar.
+
 ## Fix: "Tasa de cambio" solo debe aparecer si la moneda no es la base
 
 Observación del usuario: mostrar siempre el campo "Tasa de cambio" no
