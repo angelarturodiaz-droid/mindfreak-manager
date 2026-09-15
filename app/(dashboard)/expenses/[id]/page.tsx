@@ -16,6 +16,7 @@ import { RegisterSupplierPaymentForm } from "./register-supplier-payment-form";
 import { DocumentList } from "@/components/documents/document-list";
 import { UploadDocumentForm } from "@/components/documents/upload-document-form";
 import { listDocuments } from "@/features/documents/queries";
+import { listBankCatalog } from "@/features/bank-catalog/queries";
 import { Badge } from "@/components/ui/badge";
 import { KpiCard } from "@/components/ui/card";
 import { ConfirmButton } from "@/components/ui/confirm-button";
@@ -51,7 +52,7 @@ export default async function ExpenseDetailPage({
   }
   if (!expense) notFound();
 
-  const [categories, suppliers, projects, canEdit, canPay, payments, bankAccounts, documents] =
+  const [categories, suppliers, projects, canEdit, canPay, payments, bankAccounts, documents, bankCatalog] =
     await Promise.all([
       listExpenseCategories(),
       listActiveSuppliers(),
@@ -61,6 +62,7 @@ export default async function ExpenseDetailPage({
       listPaymentsForExpense(id),
       listBankAccounts(),
       listDocuments("expense", id),
+      listBankCatalog(),
     ]);
 
   const category = expense.expense_categories as { name: string } | null;
@@ -175,6 +177,7 @@ export default async function ExpenseDetailPage({
               balance={expense.balance}
               currency={expense.currency}
               bankAccounts={bankAccounts}
+              bankCatalog={bankCatalog}
             />
           )}
         </div>
@@ -215,6 +218,7 @@ export default async function ExpenseDetailPage({
             categories={categories}
             suppliers={suppliers}
             projects={projects}
+            bankCatalog={bankCatalog}
           />
         </div>
       ) : (

@@ -4,14 +4,16 @@ import {
   listProjectsForSelect,
   listActiveAccountsForSelect,
 } from "@/features/expenses/queries";
+import { listBankCatalog } from "@/features/bank-catalog/queries";
 import { NewExpenseForm } from "./new-expense-form";
 
 export default async function NewExpensePage() {
-  const [categories, suppliers, projects, accounts] = await Promise.all([
+  const [categories, suppliers, projects, accounts, bankCatalog] = await Promise.all([
     listExpenseCategories(),
     listActiveSuppliers(),
     listProjectsForSelect(),
     listActiveAccountsForSelect(),
+    listBankCatalog(),
   ]);
 
   return (
@@ -28,6 +30,7 @@ export default async function NewExpensePage() {
         suppliers={suppliers}
         projects={projects}
         accounts={accounts}
+        bankCatalog={bankCatalog}
       />
     </main>
   );

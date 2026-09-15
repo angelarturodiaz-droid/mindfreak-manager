@@ -7,6 +7,7 @@ const TABS = [
   { href: "/settings/organization", label: "Organización" },
   { href: "/settings/tax-rates", label: "Impuestos" },
   { href: "/settings/expense-categories", label: "Categorías de gastos" },
+  { href: "/settings/banks", label: "Bancos" },
   { href: "/settings/system", label: "Sistema" },
   { href: "/settings/notifications", label: "Notificaciones" },
   { href: "/settings/documents", label: "Documentos" },

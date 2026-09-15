@@ -16,6 +16,7 @@ export function ExpenseEditForm({
   categories,
   suppliers,
   projects,
+  bankCatalog,
 }: {
   expense: {
     id: string;
@@ -34,6 +35,7 @@ export function ExpenseEditForm({
   categories: Option[];
   suppliers: Option[];
   projects: ProjectOption[];
+  bankCatalog: Option[];
 }) {
   const updateWithId = updateExpenseAction.bind(null, expense.id);
   const [state, formAction, pending] = useActionState(updateWithId, initialState);
@@ -63,12 +65,22 @@ export function ExpenseEditForm({
         ))}
       </Select>
 
-      <Input
+      <Select
         label="Banco del proveedor (opcional)"
         name="payee_bank_name"
         defaultValue={expense.payee_bank_name ?? ""}
         hint="A qué banco se le deposita a él. No es la cuenta desde la que tú pagas."
-      />
+      >
+        <option value="">Sin especificar</option>
+        {expense.payee_bank_name && !bankCatalog.some((b) => b.name === expense.payee_bank_name) && (
+          <option value={expense.payee_bank_name}>{expense.payee_bank_name} (no está en el catálogo)</option>
+        )}
+        {bankCatalog.map((b) => (
+          <option key={b.id} value={b.name}>
+            {b.name}
+          </option>
+        ))}
+      </Select>
 
       <Select label="Proyecto/Evento" name="project_id" defaultValue={expense.project_id ?? ""}>
         <option value="">Sin proyecto (gasto general de la empresa)</option>

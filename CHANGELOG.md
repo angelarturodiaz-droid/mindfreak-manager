@@ -1,5 +1,30 @@
 # CHANGELOG — Mindfreak Manager
 
+## Feat: catálogo de bancos parametrizable (Configuración → Bancos)
+
+Pedido del usuario: poder elegir el banco de una lista desplegable en vez
+de escribirlo cada vez (evita "Banreservas" vs. "banreservas" vs.
+"BanReservas" regados por el sistema).
+
+- Nueva tabla `bank_catalog` (por compañía, con RLS igual al resto de
+  catálogos de Configuración — lectura abierta, escritura con
+  `settings.manage`). Migración `040_bank_catalog.sql`.
+- **Precargado con 12 bancos comunes de RD** (Banreservas, Banco Popular,
+  BHD, Scotiabank, Banco Caribe, Vimenca, APAP, Cibao, Promerica, Lafise,
+  Santa Cruz, y "Otro") — verificado que el seed insertó los 12 realmente.
+- Nueva pestaña **Configuración → Bancos**: agregar, activar/desactivar y
+  eliminar entradas del catálogo (mismo patrón que Categorías de gastos).
+- Reemplazados los campos de texto libre por `<select>` de este catálogo
+  en: "Nueva cuenta bancaria/tarjeta" y su edición (campo "Banco"), y
+  "Nuevo gasto"/"Registrar pago"/"Editar gasto" (campo "Banco del
+  proveedor"). Los formularios de edición muestran el valor guardado como
+  opción de respaldo si no está en el catálogo (para no perder datos
+  viejos ya escritos como texto libre).
+- Verificado con datos reales: catálogo con los 12 bancos confirmado,
+  insert/delete de una entrada nueva bajo RLS simulando el usuario admin.
+  Datos de prueba limpiados.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 15 tests unitarios.
+
 ## Fix: gap real encontrado al revisar el trabajo de "banco del proveedor"
 
 Al retomar esta funcionalidad (por una compactación de contexto, se había

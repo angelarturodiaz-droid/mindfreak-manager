@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { updateBankAccountAction, type ActionState } from "@/features/banks/actions";
-import { Input } from "@/components/ui/field";
+import { Input, Select } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
@@ -10,6 +10,7 @@ const initialState: ActionState = { error: null };
 export function BankAccountEditForm({
   account,
   canEditOpeningBalance,
+  bankCatalog,
 }: {
   account: {
     id: string;
@@ -22,6 +23,7 @@ export function BankAccountEditForm({
     opening_balance_date: string;
   };
   canEditOpeningBalance: boolean;
+  bankCatalog: { id: string; name: string }[];
 }) {
   const updateWithId = updateBankAccountAction.bind(null, account.id);
   const [state, formAction, pending] = useActionState(updateWithId, initialState);
@@ -30,7 +32,17 @@ export function BankAccountEditForm({
   return (
     <form action={formAction} className="max-w-md space-y-4">
       <Input label="Nombre" name="name" defaultValue={account.name} required />
-      <Input label="Banco" name="bank_name" defaultValue={account.bank_name ?? ""} />
+      <Select label="Banco" name="bank_name" defaultValue={account.bank_name ?? ""}>
+        <option value="">Selecciona un banco…</option>
+        {account.bank_name && !bankCatalog.some((b) => b.name === account.bank_name) && (
+          <option value={account.bank_name}>{account.bank_name} (no está en el catálogo)</option>
+        )}
+        {bankCatalog.map((b) => (
+          <option key={b.id} value={b.name}>
+            {b.name}
+          </option>
+        ))}
+      </Select>
       <Input
         label="Número (enmascarado)"
         name="account_number_masked"

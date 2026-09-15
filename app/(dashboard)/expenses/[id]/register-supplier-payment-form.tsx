@@ -10,6 +10,7 @@ const initialState: ActionState = { error: null };
 const today = new Date().toISOString().slice(0, 10);
 
 type BankAccount = { id: string; name: string; bank_name: string | null; currency: string };
+type BankCatalogEntry = { id: string; name: string };
 
 export function RegisterSupplierPaymentForm({
   expenseId,
@@ -18,6 +19,7 @@ export function RegisterSupplierPaymentForm({
   balance,
   currency,
   bankAccounts,
+  bankCatalog,
 }: {
   expenseId: string;
   supplierId: string | null;
@@ -25,6 +27,7 @@ export function RegisterSupplierPaymentForm({
   balance: number;
   currency: string;
   bankAccounts: BankAccount[];
+  bankCatalog: BankCatalogEntry[];
 }) {
   const registerWithIds = registerSupplierPaymentAction.bind(
     null,
@@ -67,13 +70,20 @@ export function RegisterSupplierPaymentForm({
         ))}
       </Select>
       <Input label="Referencia" name="reference" />
-      <Input
+      <Select
         label="Banco del proveedor (opcional)"
         name="payee_bank_name"
-        placeholder="Ej. Banreservas — a nombre del proveedor"
+        defaultValue=""
         hint="A dónde se le depositó a él, no tu cuenta de origen."
         className="w-56"
-      />
+      >
+        <option value="">Sin especificar</option>
+        {bankCatalog.map((b) => (
+          <option key={b.id} value={b.name}>
+            {b.name}
+          </option>
+        ))}
+      </Select>
       <Button type="submit" loading={pending}>
         Registrar pago
       </Button>

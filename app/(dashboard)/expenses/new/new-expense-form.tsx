@@ -19,11 +19,13 @@ export function NewExpenseForm({
   suppliers,
   projects,
   accounts,
+  bankCatalog,
 }: {
   categories: Option[];
   suppliers: Option[];
   projects: ProjectOption[];
   accounts: Account[];
+  bankCatalog: Option[];
 }) {
   const [state, formAction, pending] = useActionState(createExpenseAction, initialState);
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -56,12 +58,19 @@ export function NewExpenseForm({
         ))}
       </Select>
 
-      <Input
+      <Select
         label="Banco del proveedor (opcional)"
         name="payee_bank_name"
-        placeholder="Ej. Banreservas — a nombre del proveedor"
+        defaultValue=""
         hint="A qué banco se le deposita a él. No es la cuenta desde la que tú pagas."
-      />
+      >
+        <option value="">Sin especificar</option>
+        {bankCatalog.map((b) => (
+          <option key={b.id} value={b.name}>
+            {b.name}
+          </option>
+        ))}
+      </Select>
 
       <Select label="Proyecto/Evento" name="project_id" defaultValue="">
         <option value="">Sin proyecto (gasto general de la empresa)</option>

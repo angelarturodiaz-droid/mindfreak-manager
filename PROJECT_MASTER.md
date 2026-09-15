@@ -216,6 +216,18 @@ cancelar un gasto ya pagado. Verificado end-to-end con datos reales (compra
 → deuda sube, pago → banco baja y deuda baja sin duplicar gasto). Ver
 CHANGELOG para el detalle completo.
 
+**✅ Extras sobre la marcha (completados)**: edición de cuentas bancarias/
+tarjetas (nombre/banco/límite siempre editables, balance inicial bloqueado
+tras el primer movimiento); columna "Banco" en historiales de pago/cobro
+(detalle de gasto/factura y `/payments`); elegir banco al crear un gasto
+con cualquier método de pago (no solo tarjeta) para que quede pagado de
+inmediato; campo `payee_bank_name` (banco del proveedor, distinto de la
+cuenta propia de origen) en gastos/pagos, con fix de funciones SQL
+duplicadas y de que `create_card_expense` no generaba `supplier_payments`;
+**catálogo de bancos parametrizable** (Configuración → Bancos, precargado
+con 12 bancos de RD) usado como `<select>` en vez de texto libre en
+Bancos, Gastos y Pagos. Ver CHANGELOG para el detalle de cada uno.
+
 **⬜ Ronda 3 (siguiente, última)**: extender `MoneyInput` (comas en vivo al
 escribir) a todos los formularios de dinero del sistema — hoy solo está en
 la línea de Cotizaciones.

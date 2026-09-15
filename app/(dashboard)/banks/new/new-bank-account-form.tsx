@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 const initialState: ActionState = { error: null };
 const today = new Date().toISOString().slice(0, 10);
 
-export function NewBankAccountForm() {
+export function NewBankAccountForm({ bankCatalog }: { bankCatalog: { id: string; name: string }[] }) {
   const [state, formAction, pending] = useActionState(createBankAccountAction, initialState);
   const [type, setType] = useState<"BANK" | "CREDIT_CARD">("BANK");
   const isCard = type === "CREDIT_CARD";
@@ -32,7 +32,14 @@ export function NewBankAccountForm() {
         required
         placeholder={isCard ? "Ej. Visa Banreservas" : "Ej. Cuenta Corriente Banreservas"}
       />
-      <Input label="Banco" name="bank_name" />
+      <Select label="Banco" name="bank_name" defaultValue="">
+        <option value="">Selecciona un banco…</option>
+        {bankCatalog.map((b) => (
+          <option key={b.id} value={b.name}>
+            {b.name}
+          </option>
+        ))}
+      </Select>
       <Input
         label="Número (enmascarado)"
         name="account_number_masked"

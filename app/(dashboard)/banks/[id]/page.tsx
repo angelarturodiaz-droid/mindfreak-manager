@@ -12,6 +12,7 @@ import { hasPermission } from "@/lib/auth/permissions";
 import { ManualTransactionForm } from "./manual-transaction-form";
 import { TransferForm } from "./transfer-form";
 import { BankAccountEditForm } from "./bank-account-edit-form";
+import { listBankCatalog } from "@/features/bank-catalog/queries";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { Card } from "@/components/ui/card";
 import { DataTable, type Column } from "@/components/ui/data-table";
@@ -45,12 +46,13 @@ export default async function BankAccountDetailPage({
   }
   if (!account) notFound();
 
-  const [transactions, otherAccounts, canCreate, canReconcile, hasTx] = await Promise.all([
+  const [transactions, otherAccounts, canCreate, canReconcile, hasTx, bankCatalog] = await Promise.all([
     listBankTransactions(id),
     listOtherActiveAccounts(id),
     hasPermission("banks.create"),
     hasPermission("banks.reconcile"),
     hasBankTransactions(id),
+    listBankCatalog(),
   ]);
 
   const columns: Column<TransactionRow>[] = [
@@ -144,7 +146,7 @@ export default async function BankAccountDetailPage({
             Editar {account.type === "CREDIT_CARD" ? "tarjeta" : "cuenta"}
           </h2>
           <Card>
-            <BankAccountEditForm account={account} canEditOpeningBalance={!hasTx} />
+            <BankAccountEditForm account={account} canEditOpeningBalance={!hasTx} bankCatalog={bankCatalog} />
           </Card>
         </section>
       )}
