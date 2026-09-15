@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { updateBankAccountAction, type ActionState } from "@/features/banks/actions";
 import { Input, Select } from "@/components/ui/field";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
@@ -50,24 +51,19 @@ export function BankAccountEditForm({
       />
 
       {isCard && (
-        <Input
+        <MoneyInput
           label="Límite de crédito"
           name="credit_limit"
-          type="number"
-          step="0.01"
-          min="0"
+          min={0}
           defaultValue={account.credit_limit ?? ""}
-          placeholder="Opcional"
           hint="Puedes actualizarlo cuando el banco te suba o baje el límite."
         />
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <Input
+        <MoneyInput
           label={isCard ? "Deuda inicial" : "Balance inicial"}
           name="opening_balance"
-          type="number"
-          step="0.01"
           defaultValue={isCard ? Math.abs(account.opening_balance) : account.opening_balance}
           disabled={!canEditOpeningBalance}
           hint={

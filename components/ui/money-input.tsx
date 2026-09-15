@@ -31,6 +31,7 @@ export function MoneyInput({
   defaultValue = 0,
   required,
   min,
+  disabled,
   className = "",
   hint,
 }: {
@@ -39,6 +40,7 @@ export function MoneyInput({
   defaultValue?: number | string;
   required?: boolean;
   min?: number;
+  disabled?: boolean;
   className?: string;
   hint?: string;
 }) {
@@ -59,7 +61,8 @@ export function MoneyInput({
         inputMode="decimal"
         value={formatWithCommas(raw)}
         onChange={(e) => setRaw(sanitize(e.target.value))}
-        className={`${FIELD_CLASSES} ${className}`}
+        disabled={disabled}
+        className={`${FIELD_CLASSES} ${className} ${disabled ? "cursor-not-allowed bg-brand-background text-brand-disabled" : ""}`}
       />
       <input type="hidden" name={name} value={raw} required={required} min={min} />
       {hint && <p className="text-xs text-brand-muted">{hint}</p>}

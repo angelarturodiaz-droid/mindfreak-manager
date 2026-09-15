@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { Plus } from "lucide-react";
 import { addInvoiceItemAction, type ActionState } from "@/features/invoices/actions";
 import { Input, Select } from "@/components/ui/field";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
@@ -97,17 +98,14 @@ export function NewInvoiceItemForm({
         key={`qty-${prefill?.description ?? "empty"}`}
         className="w-20"
       />
-      <Input
+      <MoneyInput
         label="Precio"
         name="unit_price"
-        type="number"
-        step="0.01"
-        min="0"
         defaultValue={prefill?.unit_price ?? 0}
         key={`price-${prefill?.description ?? "empty"}`}
         className="w-28"
       />
-      <Input label="Descuento" name="discount" type="number" step="0.01" min="0" defaultValue="0" className="w-24" />
+      <MoneyInput label="Descuento" name="discount" defaultValue={0} className="w-24" />
       <Input
         label="Impuesto (%)"
         name="tax_percent"

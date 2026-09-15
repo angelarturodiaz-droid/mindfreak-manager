@@ -228,9 +228,12 @@ duplicadas y de que `create_card_expense` no generaba `supplier_payments`;
 con 12 bancos de RD) usado como `<select>` en vez de texto libre en
 Bancos, Gastos y Pagos. Ver CHANGELOG para el detalle de cada uno.
 
-**⬜ Ronda 3 (siguiente, última)**: extender `MoneyInput` (comas en vivo al
-escribir) a todos los formularios de dinero del sistema — hoy solo está en
-la línea de Cotizaciones.
+**✅ Ronda 3 (completada, ÚLTIMA)**: `MoneyInput` extendido a los 16
+formularios de dinero que faltaban (Cotizaciones/Facturas, Gastos, Pagos/
+Cobros, Proyectos, Servicios, Bancos). Ganó soporte para `disabled`.
+Verificado con los mismos ejemplos del usuario (1000→1,000,
+1000000→1,000,000, 125000.50→125,000.50). **Con esto se completan las 3
+rondas del cambio de lógica financiera.** Ver CHANGELOG para el detalle.
 
 ## Backlog
 

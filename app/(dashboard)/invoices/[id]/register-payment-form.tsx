@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { registerPaymentAction, type ActionState } from "@/features/payments/actions";
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
 import { Input, Select } from "@/components/ui/field";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
@@ -32,13 +33,10 @@ export function RegisterPaymentForm({
   return (
     <form action={formAction} className="flex flex-wrap items-end gap-2">
       <Input label="Fecha" name="payment_date" type="date" required defaultValue={today} />
-      <Input
+      <MoneyInput
         label="Monto"
         name="amount"
-        type="number"
-        step="0.01"
-        min="0.01"
-        max={balance}
+        min={0.01}
         required
         defaultValue={balance}
         hint={`Máx. ${balance.toFixed(2)} ${currency}`}

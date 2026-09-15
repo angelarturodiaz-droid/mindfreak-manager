@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { Plus } from "lucide-react";
 import { createManualTransactionAction, type ActionState } from "@/features/banks/actions";
 import { Input, Select } from "@/components/ui/field";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
@@ -20,7 +21,7 @@ export function ManualTransactionForm({ bankAccountId }: { bankAccountId: string
         <option value="EXPENSE">Gasto</option>
       </Select>
       <Input label="Fecha" name="transaction_date" type="date" required defaultValue={today} />
-      <Input label="Monto" name="amount" type="number" step="0.01" min="0.01" required className="w-28" />
+      <MoneyInput label="Monto" name="amount" min={0.01} required defaultValue={0} className="w-28" />
       <Input
         label="Descripción"
         name="description"

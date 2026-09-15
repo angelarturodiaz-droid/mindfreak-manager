@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { ArrowRightLeft } from "lucide-react";
 import { createTransferAction, type ActionState } from "@/features/banks/actions";
 import { Input, Select } from "@/components/ui/field";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
@@ -43,7 +44,7 @@ export function TransferForm({
         ))}
       </Select>
       <Input label="Fecha" name="transaction_date" type="date" required defaultValue={today} />
-      <Input label="Monto" name="amount" type="number" step="0.01" min="0.01" required className="w-28" />
+      <MoneyInput label="Monto" name="amount" min={0.01} required defaultValue={0} className="w-28" />
       <Input label="Descripción" name="description" placeholder="Opcional" className="w-48" />
       <Button type="submit" loading={pending} icon={<ArrowRightLeft size={14} />}>
         Transferir

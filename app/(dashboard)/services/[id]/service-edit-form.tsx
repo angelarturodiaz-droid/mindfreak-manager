@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { updateServiceAction, type ActionState } from "@/features/services/actions";
 import { SERVICE_TYPES } from "@/features/services/schema";
 import { Input, Select, Textarea } from "@/components/ui/field";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
@@ -58,13 +59,11 @@ export function ServiceEditForm({
       <Input label="Unidad" name="unit" defaultValue={service.unit ?? ""} />
 
       <div className="grid grid-cols-2 gap-3">
-        <Input label="Costo" name="default_cost" type="number" step="0.01" min="0" defaultValue={service.default_cost} />
-        <Input
+        <MoneyInput label="Costo" name="default_cost" min={0} defaultValue={service.default_cost} />
+        <MoneyInput
           label="Precio de venta"
           name="default_price"
-          type="number"
-          step="0.01"
-          min="0"
+          min={0}
           defaultValue={service.default_price}
         />
       </div>

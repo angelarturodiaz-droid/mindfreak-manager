@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { createProjectAction, type ActionState } from "@/features/projects/actions";
 import { Input, Select, Textarea } from "@/components/ui/field";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
@@ -54,7 +55,7 @@ export function NewProjectForm({
 
       <Input label="Lugar" name="location_name" />
       <Input label="Dirección" name="address" />
-      <Input label="Presupuesto" name="budget" type="number" step="0.01" min="0" defaultValue="0" />
+      <MoneyInput label="Presupuesto" name="budget" min={0} defaultValue={0} />
       <Textarea label="Notas" name="notes" rows={3} />
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}

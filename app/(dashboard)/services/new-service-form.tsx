@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { createServiceAction, type ActionState } from "@/features/services/actions";
 import { SERVICE_TYPES } from "@/features/services/schema";
 import { Input, Select } from "@/components/ui/field";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
@@ -44,14 +45,12 @@ export function NewServiceForm({
       </Select>
       <Input label="Descripción" name="description" placeholder="Opcional" />
       <Input label="Unidad" name="unit" placeholder="Ej. hora, unidad" className="w-28" />
-      <Input label="Costo" name="default_cost" type="number" step="0.01" min="0" defaultValue="0" className="w-24" />
-      <Input
+      <MoneyInput label="Costo" name="default_cost" min={0} defaultValue={0} className="w-24" />
+      <MoneyInput
         label="Precio de venta"
         name="default_price"
-        type="number"
-        step="0.01"
-        min="0"
-        defaultValue="0"
+        min={0}
+        defaultValue={0}
         className="w-24"
       />
       <Input

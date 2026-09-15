@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import { createBankAccountAction, type ActionState } from "@/features/banks/actions";
 import { Input, Select } from "@/components/ui/field";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
@@ -52,25 +53,22 @@ export function NewBankAccountForm({ bankCatalog }: { bankCatalog: { id: string;
           <option value="DOP">DOP</option>
           <option value="USD">USD</option>
         </Select>
-        <Input
+        <MoneyInput
           label={isCard ? "Deuda inicial" : "Balance inicial"}
           name="opening_balance"
-          type="number"
-          step="0.01"
-          min={isCard ? "0" : undefined}
-          defaultValue="0"
+          min={isCard ? 0 : undefined}
+          defaultValue={0}
           hint={isCard ? "Cuánto debes hoy en esta tarjeta (0 si es nueva)." : undefined}
         />
       </div>
 
       {isCard && (
-        <Input
+        <MoneyInput
           label="Límite de crédito"
           name="credit_limit"
-          type="number"
-          step="0.01"
-          min="0"
-          placeholder="Opcional"
+          min={0}
+          defaultValue=""
+          hint="Opcional"
         />
       )}
 

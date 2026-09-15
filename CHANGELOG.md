@@ -1,5 +1,28 @@
 # CHANGELOG — Mindfreak Manager
 
+## Ronda 3 (última) de la nueva lógica financiera: comas en vivo en todos los formularios de dinero
+
+Extendido `MoneyInput` (construido en una ronda anterior, solo aplicado en
+la línea de Cotizaciones) a **todos** los campos de dinero del sistema:
+
+- **Cotizaciones/Facturas**: precio y descuento de línea.
+- **Gastos**: subtotal (nuevo y editar).
+- **Pagos/Cobros**: monto en "Registrar cobro" y "Registrar pago".
+- **Proyectos**: precio y costo estimado de línea; presupuesto (nuevo,
+  editar, y al convertir una cotización en proyecto).
+- **Productos y Servicios**: costo y precio de venta (nuevo y editar).
+- **Bancos**: balance/deuda inicial y límite de crédito (nuevo y editar),
+  monto en movimiento manual y en transferencia.
+- `MoneyInput` ganó soporte para `disabled` (necesario para el balance
+  inicial bloqueado en cuentas con movimientos).
+- Verificado con los mismos ejemplos que pidió el usuario: `1000→1,000`,
+  `1000000→1,000,000`, `125000.50→125,000.50` — confirmado con una prueba
+  directa de la función de formateo.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 15 tests unitarios.
+- **Con esto se completan las 3 rondas** del cambio de lógica financiera
+  pedido por el usuario (cuenta obligatoria en cobros/pagos, tarjetas de
+  crédito, y comas en vivo).
+
 ## Feat: catálogo de bancos parametrizable (Configuración → Bancos)
 
 Pedido del usuario: poder elegir el banco de una lista desplegable en vez

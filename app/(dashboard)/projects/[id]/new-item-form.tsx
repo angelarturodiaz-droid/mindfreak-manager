@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { Plus } from "lucide-react";
 import { addProjectItemAction, type ActionState } from "@/features/projects/actions";
 import { Input, Select } from "@/components/ui/field";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
@@ -55,22 +56,16 @@ export function NewProjectItemForm({
         className="w-48"
       />
       <Input label="Cant." name="quantity" type="number" step="0.01" min="0.01" defaultValue="1" className="w-20" />
-      <Input
+      <MoneyInput
         label="Precio"
         name="unit_price"
-        type="number"
-        step="0.01"
-        min="0"
         defaultValue={selectedService?.default_price ?? 0}
         key={`price-${selectedService?.id ?? "custom"}`}
         className="w-28"
       />
-      <Input
+      <MoneyInput
         label="Costo unit. est."
         name="estimated_cost"
-        type="number"
-        step="0.01"
-        min="0"
         defaultValue={selectedService?.default_cost ?? 0}
         key={`cost-${selectedService?.id ?? "custom"}`}
         className="w-28"

@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { updateProjectHeaderAction, type ActionState } from "@/features/projects/actions";
 import { Input, Select, Textarea } from "@/components/ui/field";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
@@ -58,7 +59,7 @@ export function ProjectEditForm({
 
       <Input label="Lugar" name="location_name" defaultValue={project.location_name ?? ""} />
       <Input label="Dirección" name="address" defaultValue={project.address ?? ""} />
-      <Input label="Presupuesto" name="budget" type="number" step="0.01" min="0" defaultValue={project.budget} />
+      <MoneyInput label="Presupuesto" name="budget" min={0} defaultValue={project.budget} />
       <Textarea label="Notas" name="notes" rows={3} defaultValue={project.notes ?? ""} />
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}

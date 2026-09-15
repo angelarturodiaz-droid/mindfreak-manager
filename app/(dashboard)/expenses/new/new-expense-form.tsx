@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createExpenseAction, type ActionState } from "@/features/expenses/actions";
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
 import { Input, Select } from "@/components/ui/field";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
@@ -82,7 +83,7 @@ export function NewExpenseForm({
       </Select>
 
       <div className="grid grid-cols-2 gap-3">
-        <Input label="Subtotal" name="subtotal" type="number" step="0.01" min="0" required defaultValue="0" />
+        <MoneyInput label="Subtotal" name="subtotal" min={0} required defaultValue={0} />
         <Input label="Impuesto (%)" name="tax_percent" type="number" step="0.01" min="0" defaultValue="18" />
       </div>
 
