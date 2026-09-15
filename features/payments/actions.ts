@@ -1,9 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { renderToBuffer } from "@react-pdf/renderer";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { registerPaymentSchema } from "./schema";
+import { ReceiptPdfDocument } from "@/lib/pdf/receipt-document";
+import { SupplierReceiptPdfDocument } from "@/lib/pdf/supplier-receipt-document";
 
 export type ActionState = { error: string | null };
 /**
@@ -149,4 +152,162 @@ export async function registerSupplierPaymentAction(
   revalidatePath("/expenses");
   revalidatePath("/payments");
   return { error: null };
+}
+
+async function getPrimaryCompanyId(): Promise<string> {
+  const companyIds = await getCurrentUserCompanyIds();
+  if (companyIds.length === 0) {
+    throw new Error("Tu usuario no está asignado a ninguna compañía.");
+  }
+  return companyIds[0];
+}
+
+/**
+ * Genera el PDF del recibo de un cobro específico (customer_payments) y
+ * devuelve un link firmado de 7 días — mismo patrón que las cotizaciones/
+ * facturas.
+ */
+export async function generatePaymentReceiptAction(
+  paymentId: string,
+): Promise<{ url: string | null; error: string | null }> {
+  await requirePermission("payments.create");
+
+  const supabase = await createSupabaseClient();
+  const companyId = await getPrimaryCompanyId();
+
+  const [{ data: payment, error: pError }, { data: company }] = await Promise.all([
+    supabase
+      .from("customer_payments")
+      .select(
+        "id, payment_date, amount, method, reference, currency, invoices(number, balance), clients(name, tax_id, email, phone), bank_accounts(name, bank_name)",
+      )
+      .eq("id", paymentId)
+      .single(),
+    supabase
+      .from("companies")
+      .select("name, legal_name, tax_id, logo_url, brand_primary, brand_accent")
+      .eq("id", companyId)
+      .single(),
+  ]);
+
+  if (pError || !payment) return { url: null, error: pError?.message ?? "Cobro no encontrado." };
+
+  type One<T> = T | T[] | null;
+  const invoiceData = payment.invoices as One<{ number: string; balance: number }>;
+  const invoice = Array.isArray(invoiceData) ? invoiceData[0] : invoiceData;
+  const clientData = payment.clients as One<{
+    name: string;
+    tax_id: string | null;
+    email: string | null;
+    phone: string | null;
+  }>;
+  const client = Array.isArray(clientData) ? clientData[0] : clientData;
+  const bankData = payment.bank_accounts as One<{ name: string; bank_name: string | null }>;
+  const bankAccount = Array.isArray(bankData) ? bankData[0] : bankData;
+
+  const buffer = await renderToBuffer(
+    ReceiptPdfDocument({
+      company: company ?? {
+        name: "Mindfreak Manager",
+        legal_name: null,
+        tax_id: null,
+        logo_url: null,
+        brand_primary: "#0b0e14",
+        brand_accent: "#17a6b8",
+      },
+      payment,
+      invoice: invoice ?? { number: "—", balance: 0 },
+      client: client ?? { name: "Cliente", tax_id: null, email: null, phone: null },
+      bankAccount: bankAccount ?? null,
+    }),
+  );
+
+  const path = `${companyId}/receipts/customer-payment-${paymentId}.pdf`;
+  const { error: uploadError } = await supabase.storage
+    .from("documents")
+    .upload(path, buffer, { contentType: "application/pdf", upsert: true });
+  if (uploadError) return { url: null, error: uploadError.message };
+
+  const { data: signed, error: signError } = await supabase.storage
+    .from("documents")
+    .createSignedUrl(path, 60 * 60 * 24 * 7);
+  if (signError || !signed) {
+    return { url: null, error: signError?.message ?? "No se pudo generar el link." };
+  }
+
+  return { url: signed.signedUrl, error: null };
+}
+
+/**
+ * Genera el PDF del comprobante de un pago a proveedor (supplier_payments).
+ */
+export async function generateSupplierPaymentReceiptAction(
+  paymentId: string,
+): Promise<{ url: string | null; error: string | null }> {
+  await requirePermission("payments.create");
+
+  const supabase = await createSupabaseClient();
+  const companyId = await getPrimaryCompanyId();
+
+  const [{ data: payment, error: pError }, { data: company }] = await Promise.all([
+    supabase
+      .from("supplier_payments")
+      .select(
+        "id, payment_date, amount, method, reference, currency, payee_bank_name, expenses(description, balance), suppliers(name, tax_id, email, phone), bank_accounts(name, bank_name)",
+      )
+      .eq("id", paymentId)
+      .single(),
+    supabase
+      .from("companies")
+      .select("name, legal_name, tax_id, logo_url, brand_primary, brand_accent")
+      .eq("id", companyId)
+      .single(),
+  ]);
+
+  if (pError || !payment) return { url: null, error: pError?.message ?? "Pago no encontrado." };
+
+  type One<T> = T | T[] | null;
+  const expenseData = payment.expenses as One<{ description: string; balance: number }>;
+  const expense = Array.isArray(expenseData) ? expenseData[0] : expenseData;
+  const supplierData = payment.suppliers as One<{
+    name: string;
+    tax_id: string | null;
+    email: string | null;
+    phone: string | null;
+  }>;
+  const supplier = Array.isArray(supplierData) ? supplierData[0] : supplierData;
+  const bankData = payment.bank_accounts as One<{ name: string; bank_name: string | null }>;
+  const bankAccount = Array.isArray(bankData) ? bankData[0] : bankData;
+
+  const buffer = await renderToBuffer(
+    SupplierReceiptPdfDocument({
+      company: company ?? {
+        name: "Mindfreak Manager",
+        legal_name: null,
+        tax_id: null,
+        logo_url: null,
+        brand_primary: "#0b0e14",
+        brand_accent: "#17a6b8",
+      },
+      payment,
+      expense: expense ?? { description: "—", balance: 0 },
+      supplier: supplier ?? { name: "Proveedor", tax_id: null, email: null, phone: null },
+      bankAccount: bankAccount ?? null,
+    }),
+  );
+
+  const path = `${companyId}/receipts/supplier-payment-${paymentId}.pdf`;
+  const { error: uploadError } = await supabase.storage
+    .from("documents")
+    .upload(path, buffer, { contentType: "application/pdf", upsert: true });
+  if (uploadError) return { url: null, error: uploadError.message };
+
+  const { data: signed, error: signError } = await supabase.storage
+    .from("documents")
+    .createSignedUrl(path, 60 * 60 * 24 * 7);
+  if (signError || !signed) {
+    return { url: null, error: signError?.message ?? "No se pudo generar el link." };
+  }
+
+  return { url: signed.signedUrl, error: null };
 }

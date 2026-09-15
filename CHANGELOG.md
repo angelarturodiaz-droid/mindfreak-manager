@@ -1,5 +1,34 @@
 # CHANGELOG — Mindfreak Manager
 
+## Feat: PDF de Recibo de Cobro y Comprobante de Pago a Proveedor (nuevos)
+
+Pedido del usuario: aplicar el mismo diseño de Cotización/Factura a otros
+documentos. No existía ningún PDF de recibo en el sistema — se construyó
+desde cero, no solo se restiló.
+
+- **Nuevos documentos**: `lib/pdf/receipt-document.tsx` (Recibo de Cobro,
+  para `customer_payments`) y `lib/pdf/supplier-receipt-document.tsx`
+  (Comprobante de Pago, para `supplier_payments`). Mismo Design System que
+  Cotización/Factura: header oscuro con logo sobre fondo blanco, pastilla
+  de tipo de documento, acento de marca. Monto destacado en una caja grande
+  centrada, balance pendiente (de la factura o del gasto) resaltado abajo.
+  El comprobante de proveedor incluye el banco de origen (propio) y el
+  banco destino del proveedor (`payee_bank_name`) cuando existe.
+- **Nuevas acciones** en `features/payments/actions.ts`:
+  `generatePaymentReceiptAction` / `generateSupplierPaymentReceiptAction`
+  — mismo patrón que las de Cotización/Factura (genera el PDF, lo sube a
+  `documents/{companyId}/receipts/...`, devuelve un link firmado de 7 días).
+  El número de recibo se deriva del UUID del pago (`REC-XXXXXXXX` /
+  `PAG-XXXXXXXX`), ya que no existe una numeración secuencial dedicada.
+- **UI**: nuevo botón reutilizable `DownloadReceiptButton`, agregado como
+  columna en la tabla de Cobros (detalle de Factura) y en el Historial de
+  pagos (detalle de Gasto).
+- Verificado de verdad: ambos PDFs generados con datos de prueba,
+  convertidos a imagen (`pdftoppm`) e inspeccionados visualmente —
+  consistentes con el estilo de Cotización/Factura.
+- Verificado también: `tsc`, `npm run build`, `eslint`, ahora 19 tests
+  unitarios (17 + 2 nuevos de recibos) limpios.
+
 ## Fix: el logo se veía sin el trazo negro en el header del PDF
 
 La subida del logo ya funcionó (confirma que el fix anterior de RLS

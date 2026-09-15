@@ -26,6 +26,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { DataTable, type Column } from "@/components/ui/data-table";
+import { DownloadReceiptButton } from "@/components/payments/download-receipt-button";
+import { generatePaymentReceiptAction } from "@/features/payments/actions";
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Borrador",
@@ -120,6 +122,13 @@ export default async function InvoiceDetailPage({
       },
     },
     { header: "Referencia", accessor: (p) => <span className="text-brand-muted">{p.reference || "—"}</span> },
+    {
+      header: "",
+      className: "text-right",
+      accessor: (p) => (
+        <DownloadReceiptButton paymentId={p.id} label="Recibo" generateAction={generatePaymentReceiptAction} />
+      ),
+    },
   ];
 
   return (
