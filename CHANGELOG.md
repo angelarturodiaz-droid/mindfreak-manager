@@ -46,6 +46,23 @@ mezclarse con el fondo.
   la "M" negra ahora se ve completa sobre su propio fondo blanco.
 - Verificado también: `tsc`, `npm run build`, `eslint`, 17 tests unitarios.
 
+## Feat: "Inicio de sesión y seguridad" en formato de lista (estilo cuenta de Google)
+
+Ajuste sobre la pestaña de seguridad de "Mi perfil", con una captura de
+referencia: filas etiqueta-izquierda/valor-derecha, separadas por líneas,
+en vez de tarjetas sueltas.
+
+- Nuevo `SecurityRow`/`ComingSoonBadge` reutilizables.
+- Filas reales y funcionales: Id. de usuario, Correo (solo lectura),
+  **Contraseña** (clic en "Cambiar" expande el formulario inline, se
+  colapsa solo al guardar), **Teléfono** (editable inline sin recargar).
+- Filas de MFA (**Autenticador**, **Verificación en dos pasos**, **Claves
+  de acceso/Passkeys**) se muestran en la lista con una insignia
+  "Próximamente" — visibles para que el usuario sepa que van a existir,
+  pero sin fingir que ya funcionan (siguen pendientes, evaluadas en
+  `MANUAL_NOTES.md`).
+- Verificado: `tsc`, `npm run build`, `eslint`, 19 tests unitarios limpios.
+
 ## Feat: "Mi perfil" separado en Perfil / Inicio de sesión y seguridad
 
 Pedido del usuario (basado en un patrón común tipo Google/Slack): separar

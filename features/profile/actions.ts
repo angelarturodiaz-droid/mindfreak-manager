@@ -6,6 +6,22 @@ import { updateProfileSchema, changePasswordSchema } from "./schema";
 
 export type ActionState = { error: string | null; success?: boolean };
 
+export async function updateOwnPhoneAction(phone: string): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Sesión no encontrada.");
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ phone: phone.trim() || null })
+    .eq("id", user.id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/profile");
+}
+
 export async function updateOwnProfileAction(
   _prevState: ActionState,
   formData: FormData,

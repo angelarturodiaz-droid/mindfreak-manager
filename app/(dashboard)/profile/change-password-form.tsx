@@ -8,7 +8,7 @@ import { toast } from "@/components/ui/toaster";
 
 const initialState: ActionState = { error: null };
 
-export function ChangePasswordForm() {
+export function ChangePasswordForm({ onDone }: { onDone?: () => void }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState(changeOwnPasswordAction, initialState);
 
@@ -16,7 +16,9 @@ export function ChangePasswordForm() {
     if (state.success) {
       toast.success("Contraseña actualizada");
       formRef.current?.reset();
+      onDone?.();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.success]);
 
   return (

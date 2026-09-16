@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { EditProfileForm } from "./edit-profile-form";
-import { ChangePasswordForm } from "./change-password-form";
 import { ProfileTabs } from "./profile-tabs";
+import { PasswordRow } from "./password-row";
+import { PhoneRow } from "./phone-row";
+import { SecurityRow, ComingSoonBadge } from "./security-row";
 import { Card } from "@/components/ui/card";
 
 export default async function ProfilePage() {
@@ -41,26 +43,52 @@ export default async function ProfilePage() {
           </section>
         }
         securityContent={
-          <div className="flex flex-col gap-8">
-            <section className="max-w-md">
-              <h2 className="mb-3 text-sm font-medium text-brand-text">Correo</h2>
-              <Card>
-                <p className="text-sm text-brand-text">{user.email}</p>
-                <p className="mt-1 text-xs text-brand-muted">
-                  Para cambiar tu correo, contacta a un administrador.
-                </p>
-              </Card>
-            </section>
-
-            <section className="max-w-md">
-              <h2 className="mb-3 text-sm font-medium text-brand-text">
-                Cambiar contraseña
-              </h2>
-              <Card>
-                <ChangePasswordForm />
-              </Card>
-            </section>
-          </div>
+          <section className="max-w-2xl">
+            <h2 className="text-base font-semibold text-brand-primary">
+              Información de inicio de sesión
+            </h2>
+            <p className="mb-2 mt-1 text-sm text-brand-muted">
+              Usaremos esta información para verificar tu identidad y
+              proteger el acceso a tu cuenta.
+            </p>
+            <Card>
+              <SecurityRow label="Id. de usuario">
+                <span className="break-all text-brand-muted">{user.id}</span>
+              </SecurityRow>
+              <SecurityRow label="Correo electrónico">
+                <div className="flex items-center justify-between">
+                  <span>{user.email}</span>
+                  <span className="text-xs text-brand-muted">
+                    Contacta a un administrador para cambiarlo
+                  </span>
+                </div>
+              </SecurityRow>
+              <SecurityRow label="Contraseña">
+                <PasswordRow />
+              </SecurityRow>
+              <SecurityRow label="Teléfono">
+                <PhoneRow phone={profile?.phone ?? null} />
+              </SecurityRow>
+              <SecurityRow label="Autenticador">
+                <div className="flex items-center justify-between">
+                  <span className="text-brand-muted">App autenticadora (TOTP)</span>
+                  <ComingSoonBadge />
+                </div>
+              </SecurityRow>
+              <SecurityRow label="Verificación en dos pasos">
+                <div className="flex items-center justify-between">
+                  <span className="text-brand-muted">Capa extra de seguridad al iniciar sesión</span>
+                  <ComingSoonBadge />
+                </div>
+              </SecurityRow>
+              <SecurityRow label="Claves de acceso">
+                <div className="flex items-center justify-between">
+                  <span className="text-brand-muted">Inicia sesión con tu huella o reconocimiento facial</span>
+                  <ComingSoonBadge />
+                </div>
+              </SecurityRow>
+            </Card>
+          </section>
         }
       />
     </main>
