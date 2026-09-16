@@ -218,6 +218,25 @@ export default async function QuotationDetailPage({
         </Card>
       </section>
 
+      {quotation.payment_terms_id && (
+        <section className="max-w-2xl">
+          <h2 className="mb-1 text-sm font-medium text-brand-text">
+            Condición de pago
+          </h2>
+          <p className="text-sm text-brand-muted">
+            {(() => {
+              const pt = quotation.payment_terms as { name: string } | { name: string }[] | null;
+              const name = Array.isArray(pt) ? pt[0]?.name : pt?.name;
+              return name ?? "—";
+            })()}
+            {" · "}
+            {quotation.credit_days} días de crédito
+            {" · "}
+            {quotation.advance_percent}% anticipo / {quotation.balance_percent}% saldo
+          </p>
+        </section>
+      )}
+
       {quotation.terms && (
         <section className="max-w-2xl">
           <h2 className="mb-1 text-sm font-medium text-brand-text">

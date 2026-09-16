@@ -235,6 +235,40 @@ Verificado con los mismos ejemplos del usuario (1000→1,000,
 1000000→1,000,000, 125000.50→125,000.50). **Con esto se completan las 3
 rondas del cambio de lógica financiera.** Ver CHANGELOG para el detalle.
 
+## Módulo financiero avanzado (condiciones de pago, dashboard configurable, alertas) — en curso, por fases
+
+Pedido grande del usuario (14 secciones en su documento original). Dividido
+en 5 fases:
+
+**✅ Fase 1 (completada)**: catálogo de Condiciones de pago (nombre, días de
+crédito, forma de pago, % anticipo/saldo), integrado en Cotizaciones y
+Facturas, con vencimiento automático (`due_date = issue_date + credit_days`
+vía trigger) y herencia automática cotización→proyecto→factura. Verificado
+end-to-end con datos reales (cadena completa Cliente→Cotización→Proyecto→
+Factura). Ver CHANGELOG para el detalle completo.
+
+**⬜ Fase 2**: Dashboard de Cuentas por Cobrar y Vencimientos (total por
+cobrar, total vencido, vence hoy/7/15/30 días, facturas vencidas/próximas,
+cotizaciones pendientes/aceptadas sin facturar, vista calendario/timeline).
+
+**⬜ Fase 3**: Dashboard configurable por usuario — widgets independientes
+y reutilizables, agregar/quitar/reordenar/redimensionar, drag & drop,
+guardado por usuario en base de datos (persiste entre sesiones). El acceso
+a personalizar para usuarios no-admin sería desde su "Mi perfil" (ya existe
+la página, se le agregaría una pestaña o sección nueva).
+
+**⬜ Fase 4**: Alertas de vencimiento dentro del ERP (vencida/hoy/1/3/7
+días), responsable de cobro por factura (con alertas internas al
+responsable), historial de gestión de cobro (fecha, usuario, acción, medio,
+comentario, resultado, próxima acción).
+
+**⬜ Fase 5 (solo arquitectura, no funcional todavía — así lo pidió el
+usuario explícitamente)**: motor de automatizaciones (reglas SI/ENTONCES),
+recordatorios automáticos configurables (cuándo, a quién, canal, plantilla,
+aprobación manual, máximo de reenvíos), canales externos (email, WhatsApp)
+— dejar la base de datos y la arquitectura preparadas, sin conectar canales
+reales todavía.
+
 ## Backlog
 
 | Idea | Módulo | Prioridad | Alcance |

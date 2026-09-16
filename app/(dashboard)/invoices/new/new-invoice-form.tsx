@@ -23,16 +23,19 @@ export function NewInvoiceForm({
   clients,
   projects,
   baseCurrency,
+  paymentTerms,
 }: {
   clients: Client[];
   projects: Project[];
   baseCurrency: string;
+  paymentTerms: { id: string; name: string; credit_days: number }[];
 }) {
   const [state, formAction, pending] = useActionState(
     createInvoiceAction,
     initialState,
   );
   const [useProject, setUseProject] = useState(false);
+  const [paymentTermsId, setPaymentTermsId] = useState("");
 
   return (
     <form action={formAction} className="max-w-md space-y-4">
@@ -83,7 +86,33 @@ export function NewInvoiceForm({
       )}
 
       <Input label="Fecha de emisión" name="issue_date" type="date" required defaultValue={today} />
-      <Input label="Fecha de vencimiento" name="due_date" type="date" />
+
+      <Select
+        label="Condición de pago"
+        name="payment_terms_id"
+        defaultValue=""
+        onChange={(e) => setPaymentTermsId(e.target.value)}
+        hint={
+          useProject
+            ? "Si el proyecto viene de una cotización con condición de pago, se hereda automáticamente si dejas esto en blanco."
+            : undefined
+        }
+      >
+        <option value="">Sin especificar</option>
+        {paymentTerms.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.name}
+          </option>
+        ))}
+      </Select>
+
+      <Input
+        label="Fecha de vencimiento"
+        name="due_date"
+        type="date"
+        disabled={!!paymentTermsId}
+        hint={paymentTermsId ? "Se calcula automáticamente según la condición de pago." : undefined}
+      />
 
       <CurrencyExchangeFields baseCurrency={baseCurrency} />
 

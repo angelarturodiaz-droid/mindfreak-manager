@@ -19,6 +19,7 @@ export const quotationHeaderSchema = z.object({
   currency: z.enum(["DOP", "USD"]).default("DOP"),
   exchange_rate: z.coerce.number().positive().default(1),
   terms: z.string().trim().optional().or(z.literal("")),
+  payment_terms_id: z.string().uuid().optional().or(z.literal("")),
 });
 
 export type QuotationHeaderInput = z.infer<typeof quotationHeaderSchema>;

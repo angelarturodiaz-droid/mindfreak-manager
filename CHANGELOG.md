@@ -46,6 +46,49 @@ mezclarse con el fondo.
   la "M" negra ahora se ve completa sobre su propio fondo blanco.
 - Verificado también: `tsc`, `npm run build`, `eslint`, 17 tests unitarios.
 
+## Fase 1 del módulo financiero avanzado: Condiciones de pago + vencimiento automático
+
+Pedido grande del usuario (14 secciones) — dividido en 5 fases. Esta es la
+Fase 1: catálogo de Condiciones de pago, integrado en Cotizaciones y
+Facturas, con cálculo automático de vencimiento.
+
+- **Nueva tabla `payment_terms`** (catálogo por compañía, mismo patrón que
+  `bank_catalog`/`tax_rates`): nombre, días de crédito, forma de pago,
+  % anticipo, % saldo (deben sumar 100, validado en BD y en el formulario),
+  activo/inactivo. Migración `044_payment_terms.sql`. Prellenada con las 6
+  condiciones que pidió el usuario (Contado, Crédito 15/30/45/60 días,
+  50/50).
+- **Nueva pantalla Configuración → Condiciones de pago**: crear/activar-
+  desactivar/eliminar, sin tocar código para agregar nuevas.
+- **Cotizaciones**: nuevo selector "Condición de pago" en Nueva Cotización
+  — al elegir una, sus valores (días de crédito, % anticipo/saldo, forma
+  de pago) se "congelan" en la cotización (mismo criterio que la tasa de
+  cambio: si el catálogo cambia después, las cotizaciones ya hechas no se
+  alteran). Se muestra en el detalle.
+- **Facturas**: nuevo selector "Condición de pago" (en Nueva Factura y al
+  editar el borrador). **Vencimiento automático** vía trigger de base de
+  datos: `due_date = issue_date + credit_days`, recalculado si cambia la
+  fecha de emisión. Sin condición de pago, `due_date` se sigue escribiendo
+  a mano como antes — no se rompió nada de lo existente.
+- **Herencia automática cotización→factura** ("cuando se acepta la
+  cotización, la condición de pago pasa automáticamente a facturación"):
+  al crear una factura desde un proyecto que viene de una cotización con
+  condición de pago, se hereda sola si no se elige otra explícitamente.
+- **Verificado end-to-end con datos reales** (no solo por partes): probé
+  el ejemplo exacto del usuario (15/09/2026 + Crédito 30 días = 15/10/2026)
+  directo en la función del trigger — coincide. Después armé la cadena
+  completa Cliente → Cotización (con Crédito 15 días) → Proyecto → Factura
+  heredando la condición → confirmé que el vencimiento calculado fue
+  2026-09-30 (15/09 + 15 días), exacto. Todos los datos de prueba
+  limpiados sin dejar residuos.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
+
+**Pendiente (fases siguientes)**: Dashboard de Cuentas por Cobrar y
+Vencimientos (Fase 2), Dashboard configurable por usuario con widgets
+drag&drop (Fase 3), alertas de vencimiento + responsable de cobro +
+historial de gestión (Fase 4), arquitectura de automatizaciones futuras
+(Fase 5, solo preparar, no implementar todavía).
+
 ## Fix: el círculo del avatar usaba el azul de la interfaz, no el teal real de la marca
 
 El usuario notó que el círculo seguía azul en vez del teal de la "E" del

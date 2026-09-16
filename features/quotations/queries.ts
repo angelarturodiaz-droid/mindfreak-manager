@@ -18,7 +18,7 @@ export async function getQuotation(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("quotations")
-    .select("*, clients(name, status)")
+    .select("*, clients(name, status), payment_terms(name)")
     .eq("id", id)
     .single();
   if (error) throw new Error(error.message);

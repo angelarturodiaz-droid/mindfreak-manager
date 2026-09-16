@@ -13,9 +13,11 @@ const today = new Date().toISOString().slice(0, 10);
 export function NewQuotationForm({
   clients,
   baseCurrency,
+  paymentTerms,
 }: {
   clients: { id: string; name: string; status: string }[];
   baseCurrency: string;
+  paymentTerms: { id: string; name: string; credit_days: number }[];
 }) {
   const [state, formAction, pending] = useActionState(
     createQuotationAction,
@@ -37,6 +39,20 @@ export function NewQuotationForm({
 
       <Input label="Fecha de emisión" name="issue_date" type="date" required defaultValue={today} />
       <Input label="Válida hasta" name="valid_until" type="date" />
+
+      <Select
+        label="Condición de pago"
+        name="payment_terms_id"
+        defaultValue=""
+        hint="Al aceptarse, pasa automáticamente a la factura."
+      >
+        <option value="">Sin especificar</option>
+        {paymentTerms.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.name}
+          </option>
+        ))}
+      </Select>
 
       <CurrencyExchangeFields baseCurrency={baseCurrency} />
 

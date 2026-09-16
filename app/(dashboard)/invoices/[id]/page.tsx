@@ -14,6 +14,7 @@ import {
 } from "@/features/invoices/actions";
 import { listPaymentsForInvoice, listBankAccounts } from "@/features/payments/queries";
 import { PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
+import { listPaymentTerms } from "@/features/payment-terms/queries";
 import { hasPermission } from "@/lib/auth/permissions";
 import { NewInvoiceItemForm } from "./new-item-form";
 import { InvoiceHeaderForm } from "./invoice-header-form";
@@ -62,7 +63,7 @@ export default async function InvoiceDetailPage({
   }
   if (!invoice) notFound();
 
-  const [items, services, canEdit, canPay, projectItems, payments, bankAccounts] =
+  const [items, services, canEdit, canPay, projectItems, payments, bankAccounts, paymentTerms] =
     await Promise.all([
       listInvoiceItems(id),
       listActiveServices(),
@@ -71,6 +72,7 @@ export default async function InvoiceDetailPage({
       invoice.project_id ? listProjectItemsFor(invoice.project_id) : Promise.resolve([]),
       listPaymentsForInvoice(id),
       listBankAccounts(),
+      listPaymentTerms(),
     ]);
 
   const clientData = invoice.clients as { name: string } | { name: string }[] | null;
@@ -151,6 +153,12 @@ export default async function InvoiceDetailPage({
           {project && ` · Proyecto: ${project.number} (${project.name})`}
           {" · "}Emitida: {invoice.issue_date}
           {invoice.due_date && ` · Vence: ${invoice.due_date}`}
+          {invoice.payment_terms_id &&
+            (() => {
+              const ptData = invoice.payment_terms as { name: string } | { name: string }[] | null;
+              const ptName = Array.isArray(ptData) ? ptData[0]?.name : ptData?.name;
+              return ptName ? ` · Condición: ${ptName}` : "";
+            })()}
         </p>
       </div>
 
@@ -185,7 +193,7 @@ export default async function InvoiceDetailPage({
             NCF / Vencimiento
           </h2>
           <Card>
-            <InvoiceHeaderForm invoice={invoice} />
+            <InvoiceHeaderForm invoice={invoice} paymentTerms={paymentTerms} />
           </Card>
         </section>
       )}

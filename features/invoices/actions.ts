@@ -67,6 +67,7 @@ export async function createInvoiceAction(
     project_id: String(formData.get("project_id") ?? ""),
     issue_date: String(formData.get("issue_date") ?? ""),
     due_date: String(formData.get("due_date") ?? ""),
+    payment_terms_id: String(formData.get("payment_terms_id") ?? ""),
     currency: String(formData.get("currency") ?? "DOP"),
     exchange_rate: String(formData.get("exchange_rate") ?? "1"),
     ncf: String(formData.get("ncf") ?? ""),
@@ -79,16 +80,28 @@ export async function createInvoiceAction(
   const supabase = await createSupabaseClient();
   let clientId = parsed.data.client_id || null;
   let quotationId: string | null = null;
+  // "Cuando una cotización sea aceptada, la condición de pago debe pasar
+  // automáticamente al proceso de facturación": si la factura viene de un
+  // proyecto que a su vez viene de una cotización con condición de pago,
+  // se hereda de ahí por defecto (a menos que se elija otra explícitamente
+  // en el formulario).
+  let inheritedPaymentTermsId: string | null = null;
 
   if (parsed.data.project_id) {
     const { data: project, error: projError } = await supabase
       .from("projects")
-      .select("client_id, quotation_id")
+      .select("client_id, quotation_id, quotations(payment_terms_id)")
       .eq("id", parsed.data.project_id)
       .single();
     if (projError || !project) return { error: "Proyecto no encontrado." };
     clientId = project.client_id;
     quotationId = project.quotation_id;
+    const quotationData = project.quotations as
+      | { payment_terms_id: string | null }
+      | { payment_terms_id: string | null }[]
+      | null;
+    const quotation = Array.isArray(quotationData) ? quotationData[0] : quotationData;
+    inheritedPaymentTermsId = quotation?.payment_terms_id ?? null;
   }
 
   if (!clientId) {
@@ -101,6 +114,22 @@ export async function createInvoiceAction(
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Se "congela" credit_days en la factura (el trigger de la base de datos
+  // calcula due_date = issue_date + credit_days automáticamente). Si no
+  // hay condición de pago (ni elegida ni heredada), due_date se guarda tal
+  // cual se escribió a mano.
+  const effectivePaymentTermsId = parsed.data.payment_terms_id || inheritedPaymentTermsId;
+  let creditDays: number | null = null;
+  if (effectivePaymentTermsId) {
+    const { data: term, error: termError } = await supabase
+      .from("payment_terms")
+      .select("credit_days")
+      .eq("id", effectivePaymentTermsId)
+      .single();
+    if (termError || !term) return { error: "La condición de pago seleccionada no es válida." };
+    creditDays = term.credit_days;
+  }
+
   const { data, error } = await supabase
     .from("invoices")
     .insert({
@@ -111,6 +140,8 @@ export async function createInvoiceAction(
       number,
       issue_date: parsed.data.issue_date,
       due_date: parsed.data.due_date || null,
+      payment_terms_id: effectivePaymentTermsId || null,
+      credit_days: creditDays,
       currency: parsed.data.currency,
       exchange_rate: parsed.data.exchange_rate,
       ncf: parsed.data.ncf || null,
@@ -143,14 +174,32 @@ export async function updateInvoiceHeaderAction(
   await requirePermission("invoices.create"); // no hay invoices.update dedicado (ver F4)
 
   const dueDate = String(formData.get("due_date") ?? "");
+  const paymentTermsId = String(formData.get("payment_terms_id") ?? "");
   const ncf = String(formData.get("ncf") ?? "");
   const ncfType = String(formData.get("ncf_type") ?? "");
 
   const supabase = await createSupabaseClient();
+
+  let creditDays: number | null = null;
+  if (paymentTermsId) {
+    const { data: term, error: termError } = await supabase
+      .from("payment_terms")
+      .select("credit_days")
+      .eq("id", paymentTermsId)
+      .single();
+    if (termError || !term) return { error: "La condición de pago seleccionada no es válida." };
+    creditDays = term.credit_days;
+  }
+
   const { error } = await supabase
     .from("invoices")
     .update({
+      // Si hay condición de pago, due_date la recalcula el trigger de la
+      // base de datos — el valor que se manda aquí solo aplica si no hay
+      // condición seleccionada.
       due_date: dueDate || null,
+      payment_terms_id: paymentTermsId || null,
+      credit_days: creditDays,
       ncf: ncf || null,
       ncf_type: ncfType || null,
     })

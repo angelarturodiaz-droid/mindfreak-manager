@@ -64,6 +64,7 @@ export async function createQuotationAction(
     currency: String(formData.get("currency") ?? "DOP"),
     exchange_rate: String(formData.get("exchange_rate") ?? "1"),
     terms: String(formData.get("terms") ?? ""),
+    payment_terms_id: String(formData.get("payment_terms_id") ?? ""),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -75,6 +76,38 @@ export async function createQuotationAction(
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Si se eligió una condición de pago, se "congelan" sus valores en la
+  // cotización (mismo criterio que exchange_rate) — si el catálogo cambia
+  // después, esta cotización ya hecha no se ve afectada.
+  let paymentTermsFields: {
+    payment_terms_id: string | null;
+    credit_days: number | null;
+    payment_method: string | null;
+    advance_percent: number | null;
+    balance_percent: number | null;
+  } = {
+    payment_terms_id: null,
+    credit_days: null,
+    payment_method: null,
+    advance_percent: null,
+    balance_percent: null,
+  };
+  if (parsed.data.payment_terms_id) {
+    const { data: term, error: termError } = await supabase
+      .from("payment_terms")
+      .select("id, credit_days, payment_method, advance_percent, balance_percent")
+      .eq("id", parsed.data.payment_terms_id)
+      .single();
+    if (termError || !term) return { error: "La condición de pago seleccionada no es válida." };
+    paymentTermsFields = {
+      payment_terms_id: term.id,
+      credit_days: term.credit_days,
+      payment_method: term.payment_method,
+      advance_percent: term.advance_percent,
+      balance_percent: term.balance_percent,
+    };
+  }
 
   const { data, error } = await supabase
     .from("quotations")
@@ -90,6 +123,7 @@ export async function createQuotationAction(
       terms: parsed.data.terms || null,
       status: "DRAFT",
       created_by: user?.id,
+      ...paymentTermsFields,
     })
     .select("id")
     .single();

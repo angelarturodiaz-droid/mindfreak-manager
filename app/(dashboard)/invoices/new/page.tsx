@@ -1,12 +1,14 @@
 import { listActiveClients, listProjectsForSelect } from "@/features/invoices/queries";
 import { getCompany } from "@/features/settings/queries";
+import { listPaymentTerms } from "@/features/payment-terms/queries";
 import { NewInvoiceForm } from "./new-invoice-form";
 
 export default async function NewInvoicePage() {
-  const [clients, projects, company] = await Promise.all([
+  const [clients, projects, company, paymentTerms] = await Promise.all([
     listActiveClients(),
     listProjectsForSelect(),
     getCompany(),
+    listPaymentTerms(),
   ]);
 
   return (
@@ -19,7 +21,12 @@ export default async function NewInvoicePage() {
           Si eliges un proyecto, el cliente se toma automáticamente de ahí.
         </p>
       </div>
-      <NewInvoiceForm clients={clients} projects={projects} baseCurrency={company.base_currency} />
+      <NewInvoiceForm
+        clients={clients}
+        projects={projects}
+        baseCurrency={company.base_currency}
+        paymentTerms={paymentTerms}
+      />
     </main>
   );
 }

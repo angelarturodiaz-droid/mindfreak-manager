@@ -18,7 +18,7 @@ export async function getInvoice(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("invoices")
-    .select("*, clients(name), projects(number, name)")
+    .select("*, clients(name), projects(number, name), payment_terms(name)")
     .eq("id", id)
     .single();
   if (error) throw new Error(error.message);

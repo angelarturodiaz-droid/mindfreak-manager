@@ -14,6 +14,7 @@ export const invoiceHeaderSchema = z.object({
   project_id: z.string().uuid().optional().or(z.literal("")),
   issue_date: z.string().min(1, "La fecha es requerida"),
   due_date: z.string().optional().or(z.literal("")),
+  payment_terms_id: z.string().uuid().optional().or(z.literal("")),
   currency: z.enum(["DOP", "USD"]).default("DOP"),
   exchange_rate: z.coerce.number().positive().default(1),
   ncf: z.string().trim().optional().or(z.literal("")),
