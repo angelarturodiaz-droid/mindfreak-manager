@@ -355,6 +355,33 @@ Cambios:
   prueba revertido.
 - Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
 
+## Feat: admin puede restablecer la contraseña de otros usuarios
+
+- `resetUserPasswordAction`: usa el mismo cliente de administración
+  (`SUPABASE_SECRET_KEY`) ya construido para crear usuarios —
+  `admin.updateUserById(userId, {password})`, gatillado por
+  `users.manage`.
+- Nuevo botón "Restablecer contraseña" en Configuración → Usuarios, junto
+  a cada usuario — expande un campo inline con generador de contraseña
+  (mismo patrón que al crear un usuario).
+- **No se pudo probar end-to-end** (misma limitación que crear usuarios:
+  este entorno no tiene acceso de red a la API de administración de
+  Supabase) — la lógica es idéntica a `createUserAction`, ya confirmada
+  funcionando por el usuario en la app real.
+- Verificado: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
+
+## Fix: servicio "Capacitacion" tenía 0% de impuesto guardado (dato, no bug de código)
+
+El usuario reportó que al agregar el servicio "Capacitacion" a una
+factura, el Impuesto (%) salía en 0 en vez de 18. Investigado: el
+formulario de línea ya usa el `default_tax_percent` **propio del
+servicio** cuando se elige uno del catálogo (correcto, cada servicio puede
+tener su propia tasa) — pero ese servicio específico tenía 0% guardado
+desde su creación (antes de que "Nuevo Servicio" trajera 18% por
+defecto, o cambiado manualmente). Corregido el dato directamente (ahora
+18%, confirmado junto con el resto de los servicios). No fue necesario
+ningún cambio de código.
+
 ## Feat: módulo de Usuarios, Roles y Permisos (crear usuarios directo, sin invitación)
 
 Pedido del usuario: poder crear usuarios directo desde la app (sin correo

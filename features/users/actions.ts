@@ -92,6 +92,26 @@ export async function createUserAction(
   return { error: null };
 }
 
+export async function resetUserPasswordAction(userId: string, newPassword: string): Promise<void> {
+  await requirePermission("users.manage");
+  if (newPassword.length < 8) {
+    throw new Error("La contraseña debe tener al menos 8 caracteres.");
+  }
+
+  const adminClient = createAdminClient();
+  const { error } = await adminClient.auth.admin.updateUserById(userId, { password: newPassword });
+  if (error) throw new Error(error.message);
+
+  const companyId = await getPrimaryCompanyId();
+  await logAudit({
+    companyId,
+    action: "UPDATE",
+    entityType: "user",
+    entityId: userId,
+    newValues: { passwordReset: true },
+  });
+}
+
 export async function updateUserNameAction(userId: string, fullName: string): Promise<void> {
   await requirePermission("users.manage");
   if (!fullName.trim()) throw new Error("El nombre no puede quedar vacío.");

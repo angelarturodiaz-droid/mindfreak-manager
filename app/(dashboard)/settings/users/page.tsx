@@ -2,6 +2,7 @@ import { getCompanyUsersWithRoleIds, listRoles } from "@/features/users/queries"
 import { NewUserForm } from "./new-user-form";
 import { UserRoleEditor } from "./user-role-editor";
 import { EditableUserName } from "./editable-user-name";
+import { ResetPasswordButton } from "./reset-password-button";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
 
@@ -22,6 +23,10 @@ export default async function UsersSettingsPage() {
       accessor: (u) => (
         <UserRoleEditor userId={u.id} isActive={u.is_active} currentRoleIds={u.roleIds} allRoles={roles} />
       ),
+    },
+    {
+      header: "",
+      accessor: (u) => <ResetPasswordButton userId={u.id} userName={u.full_name ?? u.email} />,
     },
   ];
 
