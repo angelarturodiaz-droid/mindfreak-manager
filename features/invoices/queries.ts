@@ -18,7 +18,7 @@ export async function getInvoice(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("invoices")
-    .select("*, clients(name), projects(number, name), payment_terms(name)")
+    .select("*, clients(name), projects(number, name), payment_terms(name), profiles!responsible_user_id(full_name)")
     .eq("id", id)
     .single();
   if (error) throw new Error(error.message);
@@ -76,6 +76,39 @@ export async function listActiveServices() {
     .select("id, name, unit, default_price, default_tax_percent")
     .eq("is_active", true)
     .order("name");
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+/** Usuarios de la compañía, para elegir el responsable de cobro de una factura. */
+export async function listCompanyUsersForSelect() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("profiles(id, full_name, email)");
+  if (error) throw new Error(error.message);
+
+  const seen = new Map<string, { id: string; full_name: string | null; email: string }>();
+  for (const row of data ?? []) {
+    const profile = row.profiles as
+      | { id: string; full_name: string | null; email: string }
+      | { id: string; full_name: string | null; email: string }[]
+      | null;
+    const p = Array.isArray(profile) ? profile[0] : profile;
+    if (p && !seen.has(p.id)) seen.set(p.id, p);
+  }
+  return Array.from(seen.values()).sort((a, b) =>
+    (a.full_name ?? a.email).localeCompare(b.full_name ?? b.email),
+  );
+}
+
+export async function listCollectionHistory(invoiceId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("invoice_collection_history")
+    .select("id, action_date, action, comment, result, next_action_date, created_at, profiles(full_name)")
+    .eq("invoice_id", invoiceId)
+    .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return data;
 }

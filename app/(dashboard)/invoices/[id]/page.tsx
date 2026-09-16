@@ -6,12 +6,16 @@ import {
   listInvoiceItems,
   listActiveServices,
   listProjectItemsFor,
+  listCompanyUsersForSelect,
+  listCollectionHistory,
 } from "@/features/invoices/queries";
 import {
   deleteInvoiceItemAction,
   issueInvoiceAction,
   cancelInvoiceAction,
 } from "@/features/invoices/actions";
+import { ResponsibleSelector } from "./responsible-selector";
+import { AddCollectionHistoryForm } from "./add-collection-history-form";
 import { listPaymentsForInvoice, listBankAccounts } from "@/features/payments/queries";
 import { PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
 import { listPaymentTerms } from "@/features/payment-terms/queries";
@@ -30,6 +34,15 @@ import { ConfirmButton } from "@/components/ui/confirm-button";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { DownloadReceiptButton } from "@/components/payments/download-receipt-button";
 import { generatePaymentReceiptAction } from "@/features/payments/actions";
+
+const COLLECTION_ACTION_LABELS: Record<string, string> = {
+  CALL: "Llamada",
+  EMAIL: "Correo",
+  WHATSAPP: "WhatsApp",
+  VISIT: "Visita",
+  NOTE: "Nota",
+  OTHER: "Otro",
+};
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Borrador",
@@ -64,7 +77,7 @@ export default async function InvoiceDetailPage({
   }
   if (!invoice) notFound();
 
-  const [items, services, canEdit, canPay, projectItems, payments, bankAccounts, paymentTerms, defaultTaxPercent] =
+  const [items, services, canEdit, canPay, projectItems, payments, bankAccounts, paymentTerms, defaultTaxPercent, companyUsers, collectionHistory] =
     await Promise.all([
       listInvoiceItems(id),
       listActiveServices(),
@@ -75,6 +88,8 @@ export default async function InvoiceDetailPage({
       listBankAccounts(),
       listPaymentTerms(),
       getDefaultTaxRate(),
+      listCompanyUsersForSelect(),
+      listCollectionHistory(id),
     ]);
 
   const clientData = invoice.clients as { name: string } | { name: string }[] | null;
@@ -281,6 +296,52 @@ export default async function InvoiceDetailPage({
               )}
             </div>
           )}
+      </section>
+
+      <section className="max-w-2xl">
+        <h2 className="mb-2 text-sm font-medium text-brand-text">
+          Gestión de cobro
+        </h2>
+        <Card>
+          <ResponsibleSelector
+            invoiceId={invoice.id}
+            currentUserId={invoice.responsible_user_id}
+            users={companyUsers}
+          />
+
+          <div className="mt-4">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-brand-muted">
+              Historial
+            </h3>
+            {collectionHistory.length === 0 ? (
+              <p className="text-sm text-brand-muted">Sin gestiones registradas todavía.</p>
+            ) : (
+              <ul className="mb-4 flex flex-col gap-2">
+                {collectionHistory.map((h) => {
+                  const profileData = h.profiles as { full_name: string | null } | { full_name: string | null }[] | null;
+                  const profile = Array.isArray(profileData) ? profileData[0] : profileData;
+                  return (
+                    <li key={h.id} className="border-b border-brand-border pb-2 text-sm last:border-0">
+                      <p className="text-brand-text">
+                        <span className="font-medium">{COLLECTION_ACTION_LABELS[h.action] ?? h.action}</span>
+                        {" · "}
+                        {h.action_date}
+                        {" · "}
+                        {profile?.full_name ?? "—"}
+                      </p>
+                      {h.comment && <p className="text-brand-muted">{h.comment}</p>}
+                      {h.result && <p className="text-xs text-brand-muted">Resultado: {h.result}</p>}
+                      {h.next_action_date && (
+                        <p className="text-xs text-brand-muted">Próxima acción: {h.next_action_date}</p>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <AddCollectionHistoryForm invoiceId={invoice.id} />
+          </div>
+        </Card>
       </section>
     </main>
   );

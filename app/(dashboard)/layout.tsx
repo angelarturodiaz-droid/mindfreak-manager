@@ -3,8 +3,10 @@ import { Settings } from "lucide-react";
 import { getCompany } from "@/features/settings/queries";
 import { getCurrentUser, hasPermission } from "@/lib/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
+import { listMyNotifications, countUnreadNotifications } from "@/features/notifications/queries";
 import { Sidebar } from "@/components/layout/sidebar";
 import { UserMenu } from "@/components/layout/user-menu";
+import { NotificationBell } from "@/components/layout/notification-bell";
 
 export default async function DashboardLayout({
   children,
@@ -23,9 +25,11 @@ export default async function DashboardLayout({
     // si falla (ej. sin compañía asignada todavía), se usa el nombre por defecto
   }
 
-  const [user, canManageSettings] = await Promise.all([
+  const [user, canManageSettings, notifications, unreadCount] = await Promise.all([
     getCurrentUser(),
     hasPermission("settings.manage"),
+    listMyNotifications(),
+    countUnreadNotifications(),
   ]);
 
   let fullName: string | null = null;
@@ -44,6 +48,7 @@ export default async function DashboardLayout({
       <Sidebar platformName={platformName} logoUrl={logoUrl} />
       <div className="flex flex-1 flex-col">
         <header className="flex items-center justify-end gap-2 border-b border-brand-border bg-brand-surface px-6 py-3">
+          {user && <NotificationBell notifications={notifications} unreadCount={unreadCount} />}
           {canManageSettings && (
             <Link
               href="/settings"

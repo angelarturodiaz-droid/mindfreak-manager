@@ -68,6 +68,43 @@ datos), pero visualmente parecía roto/sin funcionar.
   usuario: 16/09/2026 + 30 días = 16/10/2026).
 - Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
 
+## Fase 4 del módulo financiero avanzado: Alertas, Responsable de cobro e Historial de gestión
+
+- **Alertas de vencimiento de verdad automáticas** (no solo calculadas al
+  abrir una pantalla): nueva función `generate_due_date_alerts()`
+  programada con **pg_cron** para correr todos los días a las 8:00am —
+  identifica facturas vencidas, que vencen hoy, o en 1/3/7 días
+  exactamente (tal como se pidió), y genera una notificación interna para
+  el **responsable de cobro** de esa factura. Protegida contra duplicados
+  (no genera la misma alerta dos veces el mismo día para la misma
+  factura).
+- **Responsable de cobro**: nuevo campo `invoices.responsible_user_id` +
+  selector en el detalle de cada factura — cualquier usuario de la
+  compañía puede ser asignado.
+- **Historial de gestión de cobro**: nueva tabla
+  `invoice_collection_history` — cada intento de cobro (llamada, correo,
+  WhatsApp, visita, nota) queda registrado con fecha, usuario, comentario,
+  resultado y próxima acción. No se edita ni se borra (igual que
+  audit_logs) — es un registro de auditoría de gestión.
+- **Campana de notificaciones** (nueva, en la esquina superior — pendiente
+  del backlog desde hacía tiempo): contador de no leídas, panel
+  desplegable, clic en una notificación la marca como leída y navega a la
+  factura correspondiente, "Marcar todas como leídas".
+- **Verificado con datos reales, la función completa de punta a punta**:
+  creé una factura vencida y otra que vence en 3 días, ambas con
+  responsable asignado, corrí `generate_due_date_alerts()` manualmente
+  (simula lo que hará el cron mañana) — generó exactamente 2
+  notificaciones con el título/monto/cliente correctos ("Factura vencida:
+  ...", "Vence en 3 días: ..."). Confirmé que correrla una segunda vez no
+  duplica nada (0 notificaciones nuevas). También probé asignar un
+  responsable y registrar una gestión de cobro real bajo RLS — ambos
+  funcionan. Confirmé que el cron job quedó programado y activo. Todos los
+  datos de prueba limpiados sin residuos.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
+- **Pendiente**: Fase 5 (arquitectura de automatizaciones más generales —
+  motor de reglas SI/ENTONCES, canales externos email/WhatsApp — solo
+  preparar, no implementar todavía, tal como se pidió explícitamente).
+
 ## Fase 3 del módulo financiero avanzado: Dashboard configurable por usuario
 
 La fase más grande de las 5. Diseño: sin librería de drag & drop nueva

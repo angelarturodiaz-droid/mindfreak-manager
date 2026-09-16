@@ -559,3 +559,53 @@ export async function discardInvoiceAction(invoiceId: string): Promise<void> {
   revalidatePath("/invoices");
   redirect("/invoices");
 }
+
+export async function setInvoiceResponsibleAction(invoiceId: string, userId: string | null): Promise<void> {
+  await requirePermission("invoices.create");
+  const supabase = await createSupabaseClient();
+  const { error } = await supabase
+    .from("invoices")
+    .update({ responsible_user_id: userId })
+    .eq("id", invoiceId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/invoices/${invoiceId}`);
+}
+
+const COLLECTION_ACTIONS = ["CALL", "EMAIL", "WHATSAPP", "VISIT", "NOTE", "OTHER"] as const;
+
+export async function addCollectionHistoryAction(
+  invoiceId: string,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requirePermission("invoices.view");
+
+  const action = String(formData.get("action") ?? "");
+  if (!COLLECTION_ACTIONS.includes(action as (typeof COLLECTION_ACTIONS)[number])) {
+    return { error: "Selecciona un tipo de gestión válido." };
+  }
+  const comment = String(formData.get("comment") ?? "").trim();
+  const result = String(formData.get("result") ?? "").trim();
+  const nextActionDate = String(formData.get("next_action_date") ?? "").trim();
+
+  const supabase = await createSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Sesión no encontrada." };
+
+  const companyId = await getPrimaryCompanyId();
+  const { error } = await supabase.from("invoice_collection_history").insert({
+    company_id: companyId,
+    invoice_id: invoiceId,
+    user_id: user.id,
+    action,
+    comment: comment || null,
+    result: result || null,
+    next_action_date: nextActionDate || null,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/invoices/${invoiceId}`);
+  return { error: null };
+}

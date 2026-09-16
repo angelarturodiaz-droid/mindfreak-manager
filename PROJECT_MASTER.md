@@ -263,10 +263,13 @@ la página del Dashboard para todos los usuarios (no escondido en "Mi
 perfil" solo para no-admins) — más descubrible, se puede mover si se
 prefiere. Ver CHANGELOG.
 
-**⬜ Fase 4**: Alertas de vencimiento dentro del ERP (vencida/hoy/1/3/7
-días), responsable de cobro por factura (con alertas internas al
-responsable), historial de gestión de cobro (fecha, usuario, acción, medio,
-comentario, resultado, próxima acción).
+**✅ Fase 4 (completada)**: Alertas de vencimiento **de verdad automáticas**
+vía pg_cron (corre diario a las 8am, genera notificaciones internas para el
+responsable), campana de notificaciones nueva en el header, responsable de
+cobro por factura, historial de gestión (llamada/correo/WhatsApp/visita/
+nota, con resultado y próxima acción). Verificado end-to-end con datos
+reales (2 notificaciones generadas correctamente, de-dup confirmado, cron
+job activo). Ver CHANGELOG.
 
 **⬜ Fase 5 (solo arquitectura, no funcional todavía — así lo pidió el
 usuario explícitamente)**: motor de automatizaciones (reglas SI/ENTONCES),
