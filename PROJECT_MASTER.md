@@ -253,11 +253,15 @@ tiempo de vencimientos, facturas vencidas/próximas, cotizaciones
 pendientes/aceptadas sin facturar. Verificado con datos reales (4 facturas
 con vencimientos exactos, buckets correctos). Ver CHANGELOG.
 
-**⬜ Fase 3**: Dashboard configurable por usuario — widgets independientes
-y reutilizables, agregar/quitar/reordenar/redimensionar, drag & drop,
-guardado por usuario en base de datos (persiste entre sesiones). El acceso
-a personalizar para usuarios no-admin sería desde su "Mi perfil" (ya existe
-la página, se le agregaría una pestaña o sección nueva).
+**✅ Fase 3 (completada)**: Dashboard configurable por usuario — 17 widgets
+reutilizables (`features/dashboard-widgets/registry.ts`), guardado por
+usuario en `dashboard_widget_preferences` (JSONB, persiste entre
+sesiones), `/dashboard/customize` con drag & drop nativo para reordenar,
+mostrar/ocultar y cambiar tamaño. Verificado con datos reales (insert/
+select bajo RLS). **Decisión**: el acceso a personalizar quedó directo en
+la página del Dashboard para todos los usuarios (no escondido en "Mi
+perfil" solo para no-admins) — más descubrible, se puede mover si se
+prefiere. Ver CHANGELOG.
 
 **⬜ Fase 4**: Alertas de vencimiento dentro del ERP (vencida/hoy/1/3/7
 días), responsable de cobro por factura (con alertas internas al

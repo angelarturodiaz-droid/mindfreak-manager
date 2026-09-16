@@ -68,6 +68,52 @@ datos), pero visualmente parecía roto/sin funcionar.
   usuario: 16/09/2026 + 30 días = 16/10/2026).
 - Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
 
+## Fase 3 del módulo financiero avanzado: Dashboard configurable por usuario
+
+La fase más grande de las 5. Diseño: sin librería de drag & drop nueva
+(HTML5 nativo), sin JSON-widgets-desde-cero (registro de widgets en
+código, agregar uno nuevo = una entrada + un caso, no rediseñar nada).
+
+- **Nueva tabla `dashboard_widget_preferences`**: un registro por usuario
+  por compañía, con la lista de widgets en JSONB (tipo, visible, tamaño —
+  el orden es la posición en el array). RLS: cada quien solo ve/edita su
+  propia fila, 100% personal (nadie más la puede tocar, ni un admin).
+  Migración `045_dashboard_widgets.sql`. Persiste de verdad: sobrevive a
+  cerrar sesión, recargar, y volver a entrar (es una fila en la base de
+  datos, no localStorage).
+- **Catálogo de 17 widgets** (`features/dashboard-widgets/registry.ts`):
+  Total por cobrar/vencido/vence hoy, Cuentas por pagar, Ingresos/Gastos/
+  Utilidad/Margen del mes, Proyectos activos, Cotizaciones pendientes,
+  Gráfico de flujo financiero, Facturas vencidas/próximas, Últimos cobros/
+  pagos, Tareas pendientes, Rentabilidad por proyecto (top 5). Cada uno
+  reutiliza queries ya existentes (KPIs del Dashboard, el Dashboard de CxC
+  de la Fase 2, Reportes, Pagos, Tareas) — una sola pasada de datos en
+  paralelo (`getDashboardWidgetBundle`), sin duplicar lógica.
+- **`/dashboard`**: ahora se arma en base a la configuración guardada del
+  usuario (o un layout por defecto — el mismo Dashboard "de fábrica" que
+  ya existía — si nunca ha personalizado nada). Botón "Personalizar
+  Dashboard" arriba.
+- **`/dashboard/customize`**: lista arrastrable (drag & drop nativo del
+  navegador, sin librería nueva) — mostrar/ocultar cada widget, cambiar su
+  tamaño (chico/mediano/grande), reordenar arrastrando. Guarda con un
+  botón, se aplica de inmediato al volver al Dashboard.
+- **Decisión de diseño**: el punto de entrada "Personalizar Dashboard" se
+  puso directo en la página del Dashboard, visible para **todos** los
+  usuarios por igual (admin o no) — en vez de esconderlo dentro de "Mi
+  perfil" solo para no-admins como se planteó originalmente. Es más
+  descubrible y consistente para todos, dado que es una preferencia 100%
+  personal en cualquier caso. Se puede mover si se prefiere la ubicación
+  original.
+- Verificado con datos reales: insert/select bajo RLS con la fila real del
+  usuario admin — guardó y leyó de vuelta exactamente la configuración de
+  prueba (2 widgets con tamaños distintos). Revertido al layout por
+  defecto al terminar (no se dejó una configuración de prueba puesta al
+  usuario real).
+- Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
+- **Pendiente**: Fase 4 (alertas de vencimiento + responsable de cobro +
+  historial de gestión) y Fase 5 (arquitectura de automatizaciones, solo
+  preparar).
+
 ## Fase 2 del módulo financiero avanzado: Dashboard de Cuentas por Cobrar y Vencimientos
 
 - **Nuevo reporte "Cuentas por Cobrar y Vencimientos"** dentro de Reportes

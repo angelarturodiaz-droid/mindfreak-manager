@@ -1,34 +1,11 @@
 import Link from "next/link";
-import {
-  TrendingUp,
-  Wallet,
-  CreditCard,
-  Banknote,
-  ArrowDownCircle,
-  ArrowUpCircle,
-  PiggyBank,
-  Percent,
-  FolderKanban,
-  FileClock,
-  FileCheck2,
-  Plus,
-} from "lucide-react";
-import { getCurrentUser } from "@/lib/auth/permissions";
-import { getDashboardKPIs, getFinancialFlowSeries } from "@/features/dashboard/queries";
-import { FinancialFlowChart } from "./financial-flow-chart";
-import { KpiCard } from "@/components/ui/card";
+import { Settings2, Plus } from "lucide-react";
+import { getCurrentUser, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
+import { getUserDashboardWidgets } from "@/features/dashboard-widgets/queries";
+import { getDashboardWidgetBundle } from "@/features/dashboard-widgets/bundle";
+import { SIZE_COLS } from "@/features/dashboard-widgets/registry";
+import { renderWidget } from "@/components/dashboard-widgets/render-widget";
 import { Button } from "@/components/ui/button";
-
-function formatMoney(amount: number) {
-  return new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(
-    amount,
-  );
-}
-
-function formatPercent(value: number | null) {
-  if (value === null) return "—";
-  return `${value.toFixed(1)}%`;
-}
 
 const QUICK_ACTIONS = [
   { href: "/quotations/new", label: "Nueva cotización" },
@@ -38,19 +15,30 @@ const QUICK_ACTIONS = [
 ];
 
 export default async function DashboardPage() {
-  const [user, kpis, flow] = await Promise.all([
-    getCurrentUser(),
-    getDashboardKPIs(),
-    getFinancialFlowSeries(6),
+  const [user, companyIds] = await Promise.all([getCurrentUser(), getCurrentUserCompanyIds()]);
+  const companyId = companyIds[0];
+
+  const [widgets, bundle] = await Promise.all([
+    user && companyId ? getUserDashboardWidgets(user.id, companyId) : Promise.resolve([]),
+    getDashboardWidgetBundle(),
   ]);
+
+  const visibleWidgets = widgets.filter((w) => w.visible);
 
   return (
     <main className="flex flex-1 flex-col gap-8 p-8">
-      <div>
-        <h1 className="text-xl font-semibold text-brand-primary">Dashboard</h1>
-        <p className="text-sm text-brand-muted">
-          Sesión activa: {user?.email ?? "—"}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-brand-primary">Dashboard</h1>
+          <p className="text-sm text-brand-muted">
+            Sesión activa: {user?.email ?? "—"}
+          </p>
+        </div>
+        <Link href="/dashboard/customize">
+          <Button variant="outline" size="sm" icon={<Settings2 size={14} />}>
+            Personalizar Dashboard
+          </Button>
+        </Link>
       </div>
 
       <section className="flex flex-wrap gap-2">
@@ -63,60 +51,23 @@ export default async function DashboardPage() {
         ))}
       </section>
 
-      <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        <KpiCard label="Ventas (mes)" value={formatMoney(kpis.ventas)} icon={<TrendingUp size={16} />} />
-        <KpiCard label="Cobros (mes)" value={formatMoney(kpis.cobros)} icon={<Wallet size={16} />} />
-        <KpiCard label="Gastos (mes)" value={formatMoney(kpis.gastos)} icon={<CreditCard size={16} />} />
-        <KpiCard label="Pagos (mes)" value={formatMoney(kpis.pagos)} icon={<Banknote size={16} />} />
-        <KpiCard
-          label="Cuentas por cobrar"
-          value={formatMoney(kpis.cuentasPorCobrar)}
-          icon={<ArrowDownCircle size={16} />}
-        />
-        <KpiCard
-          label="Cuentas por pagar"
-          value={formatMoney(kpis.cuentasPorPagar)}
-          icon={<ArrowUpCircle size={16} />}
-        />
-        <KpiCard
-          label="Utilidad (mes)"
-          value={formatMoney(kpis.utilidad)}
-          danger={kpis.utilidad < 0}
-          icon={<PiggyBank size={16} />}
-        />
-        <KpiCard label="Margen (mes)" value={formatPercent(kpis.margen)} icon={<Percent size={16} />} />
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Link href="/projects">
-          <KpiCard
-            label="Proyectos activos"
-            value={String(kpis.proyectosActivos)}
-            icon={<FolderKanban size={16} />}
-          />
-        </Link>
-        <Link href="/quotations">
-          <KpiCard
-            label="Cotizaciones pendientes"
-            value={String(kpis.cotizacionesPendientes)}
-            icon={<FileClock size={16} />}
-          />
-        </Link>
-        <Link href="/quotations">
-          <KpiCard
-            label="Cotizaciones aprobadas"
-            value={String(kpis.cotizacionesAprobadas)}
-            icon={<FileCheck2 size={16} />}
-          />
-        </Link>
-      </section>
-
-      <section>
-        <h2 className="mb-3 text-sm font-medium text-brand-text">
-          Flujo financiero (últimos 6 meses)
-        </h2>
-        <FinancialFlowChart data={flow} />
-      </section>
+      {visibleWidgets.length === 0 ? (
+        <p className="text-sm text-brand-muted">
+          No tienes widgets visibles.{" "}
+          <Link href="/dashboard/customize" className="text-brand-accent hover:underline">
+            Personaliza tu Dashboard
+          </Link>{" "}
+          para agregar algunos.
+        </p>
+      ) : (
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {visibleWidgets.map((w, i) => (
+            <div key={`${w.type}-${i}`} className={SIZE_COLS[w.size]}>
+              {renderWidget(w.type, bundle)}
+            </div>
+          ))}
+        </section>
+      )}
     </main>
   );
 }
