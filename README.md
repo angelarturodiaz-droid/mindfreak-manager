@@ -23,13 +23,19 @@ npm install
 
 ## Variables de entorno
 
-Se agregan en F2 (conexión a Supabase). Archivo esperado: `.env.local`
-(no versionado) con, como mínimo:
+Archivo esperado: `.env.local` (no versionado). Ver `.env.example` para la
+lista completa y de dónde sacar cada valor (Dashboard de Supabase >
+Settings > API Keys):
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SECRET_KEY=
 ```
+
+`SUPABASE_SECRET_KEY` solo es necesaria para crear/gestionar usuarios desde
+Configuración → Usuarios (API de administración de Auth) — el resto del
+sistema funciona sin ella. Nunca se expone al cliente, nunca se sube a git.
 
 ## Desarrollo
 
@@ -95,14 +101,22 @@ rara, plan gratuito de sobra para este proyecto).
    lista (ya existe, no hay que importar nada nuevo) y dale **Import**.
    Vercel detecta automáticamente que es Next.js — no toca configurar
    build command ni output directory.
-3. Antes de darle deploy, en **Environment Variables** agrega las mismas
-   dos que tienes en tu `.env.local`:
+3. Antes de darle deploy, en **Environment Variables** agrega las **tres**
+   que tienes en tu `.env.local`:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+   - `SUPABASE_SECRET_KEY` (si ya la configuraste — sin ella, todo
+     funciona excepto crear/gestionar usuarios desde Configuración)
 4. Dale **Deploy**. Vercel corre el mismo `npm run build` que usamos aquí
    y te da una URL pública (`mindfreak-manager.vercel.app` o similar).
 5. **A partir de ahí, cada push a `main` en GitHub dispara un deploy
    automático** — no hay que hacer nada más.
+
+**Si el proyecto ya está desplegado y agregas una variable nueva después**
+(como `SUPABASE_SECRET_KEY` más adelante): agregarla en Vercel no alcanza
+sola — hay que ir a **Deployments** y darle **Redeploy** al último deploy
+(o hacer un push nuevo) para que la tome. Las variables de entorno no se
+aplican solas a un deploy que ya existe.
 
 ### Configuración pendiente en Supabase tras el primer deploy
 
