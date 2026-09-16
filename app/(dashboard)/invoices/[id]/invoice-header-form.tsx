@@ -13,16 +13,27 @@ export function InvoiceHeaderForm({
 }: {
   invoice: {
     id: string;
+    issue_date: string;
     due_date: string | null;
     payment_terms_id: string | null;
     ncf: string | null;
     ncf_type: string | null;
   };
-  paymentTerms: { id: string; name: string }[];
+  paymentTerms: { id: string; name: string; credit_days: number }[];
 }) {
   const updateWithId = updateInvoiceHeaderAction.bind(null, invoice.id);
   const [state, formAction, pending] = useActionState(updateWithId, initialState);
   const [paymentTermsId, setPaymentTermsId] = useState(invoice.payment_terms_id ?? "");
+  const [manualDueDate, setManualDueDate] = useState(invoice.due_date ?? "");
+
+  const selectedTerm = paymentTerms.find((t) => t.id === paymentTermsId);
+  const previewDueDate = (() => {
+    if (!selectedTerm) return "";
+    const d = new Date(`${invoice.issue_date}T00:00:00`);
+    d.setDate(d.getDate() + selectedTerm.credit_days);
+    return d.toISOString().slice(0, 10);
+  })();
+  const dueDateValue = paymentTermsId ? previewDueDate : manualDueDate;
 
   return (
     <form action={formAction} className="flex flex-wrap items-end gap-2">
@@ -44,9 +55,14 @@ export function InvoiceHeaderForm({
         label="Vencimiento"
         name="due_date"
         type="date"
-        defaultValue={invoice.due_date ?? ""}
+        value={dueDateValue}
+        onChange={(e) => setManualDueDate(e.target.value)}
         disabled={!!paymentTermsId}
-        hint={paymentTermsId ? "Se calcula solo" : undefined}
+        hint={
+          paymentTermsId
+            ? `Se calcula sola: ${invoice.issue_date} + ${selectedTerm?.credit_days ?? 0} días`
+            : undefined
+        }
       />
       <Input label="NCF" name="ncf" defaultValue={invoice.ncf ?? ""} />
       <Input label="Tipo NCF" name="ncf_type" defaultValue={invoice.ncf_type ?? ""} />

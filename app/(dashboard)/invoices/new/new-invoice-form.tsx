@@ -36,6 +36,17 @@ export function NewInvoiceForm({
   );
   const [useProject, setUseProject] = useState(false);
   const [paymentTermsId, setPaymentTermsId] = useState("");
+  const [issueDate, setIssueDate] = useState(today);
+  const [manualDueDate, setManualDueDate] = useState("");
+
+  const selectedTerm = paymentTerms.find((t) => t.id === paymentTermsId);
+  const previewDueDate = (() => {
+    if (!selectedTerm || !issueDate) return "";
+    const d = new Date(`${issueDate}T00:00:00`);
+    d.setDate(d.getDate() + selectedTerm.credit_days);
+    return d.toISOString().slice(0, 10);
+  })();
+  const dueDateValue = paymentTermsId ? previewDueDate : manualDueDate;
 
   return (
     <form action={formAction} className="max-w-md space-y-4">
@@ -85,7 +96,14 @@ export function NewInvoiceForm({
         </Select>
       )}
 
-      <Input label="Fecha de emisión" name="issue_date" type="date" required defaultValue={today} />
+      <Input
+        label="Fecha de emisión"
+        name="issue_date"
+        type="date"
+        required
+        defaultValue={today}
+        onChange={(e) => setIssueDate(e.target.value)}
+      />
 
       <Select
         label="Condición de pago"
@@ -111,7 +129,13 @@ export function NewInvoiceForm({
         name="due_date"
         type="date"
         disabled={!!paymentTermsId}
-        hint={paymentTermsId ? "Se calcula automáticamente según la condición de pago." : undefined}
+        value={dueDateValue}
+        onChange={(e) => setManualDueDate(e.target.value)}
+        hint={
+          paymentTermsId
+            ? `Se calcula sola: ${issueDate || "—"} + ${selectedTerm?.credit_days ?? 0} días`
+            : undefined
+        }
       />
 
       <CurrencyExchangeFields baseCurrency={baseCurrency} />

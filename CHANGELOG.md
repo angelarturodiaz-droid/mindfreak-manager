@@ -46,6 +46,28 @@ mezclarse con el fondo.
   la "M" negra ahora se ve completa sobre su propio fondo blanco.
 - Verificado también: `tsc`, `npm run build`, `eslint`, 17 tests unitarios.
 
+## Fix: la fecha de vencimiento se veía vacía al elegir una condición de pago
+
+El usuario mandó una captura: al elegir "Crédito 30 días" en Nueva Factura,
+el campo "Fecha de vencimiento" se veía completamente vacío
+("dd/mm/yyyy") — técnicamente no era un bug (el vencimiento real sí se
+calcula bien al crear la factura, ya que lo hace un trigger en la base de
+datos), pero visualmente parecía roto/sin funcionar.
+
+- **Nueva Factura** y **editar factura** (`InvoiceHeaderForm`): el campo
+  de vencimiento ahora muestra una **vista previa calculada en vivo**
+  (fecha de emisión + días de crédito de la condición elegida) mientras se
+  llena el formulario, en vez de quedar en blanco. Sigue deshabilitado
+  (no editable directo) porque el valor real lo pone el trigger al
+  guardar, pero ahora se ve la fecha esperada de una vez.
+- Corregido también un posible warning de React (mezclar input controlado/
+  no controlado) al implementar esto — quedó completamente controlado con
+  un solo estado.
+- Verificado: el cálculo en el navegador (JS) coincide exacto con el que
+  hace la base de datos (probado con la misma fecha de la captura del
+  usuario: 16/09/2026 + 30 días = 16/10/2026).
+- Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
+
 ## Fase 1 del módulo financiero avanzado: Condiciones de pago + vencimiento automático
 
 Pedido grande del usuario (14 secciones) — dividido en 5 fases. Esta es la
