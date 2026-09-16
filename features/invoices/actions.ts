@@ -338,7 +338,7 @@ export async function generateInvoiceShareLinkAction(
     await Promise.all([
       supabase
         .from("invoices")
-        .select("*, clients(name, tax_id, email, phone)")
+        .select("*, clients(name, tax_id, email, phone), payment_terms(name)")
         .eq("id", invoiceId)
         .single(),
       supabase
@@ -362,6 +362,9 @@ export async function generateInvoiceShareLinkAction(
     | null;
   const clientRecord = Array.isArray(clientData) ? clientData[0] : clientData;
 
+  const paymentTermsData = invoice.payment_terms as { name: string } | { name: string }[] | null;
+  const paymentTermsName = Array.isArray(paymentTermsData) ? paymentTermsData[0]?.name : paymentTermsData?.name;
+
   const buffer = await renderToBuffer(
     InvoicePdfDocument({
       company: company ?? {
@@ -372,7 +375,7 @@ export async function generateInvoiceShareLinkAction(
         brand_primary: "#0b0e14",
         brand_accent: "#17a6b8",
       },
-      invoice,
+      invoice: { ...invoice, payment_terms_name: paymentTermsName ?? null },
       client: {
         name: clientRecord?.name ?? "Cliente",
         tax_id: clientRecord?.tax_id ?? null,

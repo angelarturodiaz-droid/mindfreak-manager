@@ -47,6 +47,7 @@ export type InvoicePdfData = {
     paid_amount: number;
     balance: number;
     ncf: string | null;
+    payment_terms_name: string | null;
   };
   client: { name: string; tax_id: string | null; email: string | null; phone: string | null };
   items: {
@@ -168,8 +169,8 @@ export function InvoicePdfDocument({ company, invoice, client, items }: InvoiceP
       borderTopWidth: 0.5,
       borderTopColor: "#d1d5db",
     },
-    balanceLabel: { fontSize: 8.5, fontWeight: 700, color: "#b91c1c" },
-    balanceValue: { fontSize: 8.5, fontWeight: 700, color: "#b91c1c" },
+    balanceLabel: { fontSize: 8.5, fontWeight: 700, color: "#374151" },
+    balanceValue: { fontSize: 8.5, fontWeight: 700, color: "#374151" },
     footer: {
       position: "absolute",
       bottom: 24,
@@ -249,6 +250,12 @@ export function InvoicePdfDocument({ company, invoice, client, items }: InvoiceP
             </View>
             <View style={styles.col}>
               <Text style={styles.sectionTitle}>ESTADO DE PAGO</Text>
+              {invoice.payment_terms_name && (
+                <View style={styles.fieldRow}>
+                  <Text style={styles.fieldLabel}>Condición</Text>
+                  <Text style={styles.fieldValue}>{invoice.payment_terms_name}</Text>
+                </View>
+              )}
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Estado</Text>
                 <Text style={styles.fieldValue}>{INVOICE_STATUS_LABELS[invoice.status] ?? invoice.status}</Text>

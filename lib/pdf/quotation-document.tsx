@@ -43,6 +43,10 @@ export type QuotationPdfData = {
     tax: number;
     total: number;
     terms: string | null;
+    payment_terms_name: string | null;
+    credit_days: number | null;
+    advance_percent: number | null;
+    balance_percent: number | null;
   };
   client: { name: string; tax_id: string | null; email: string | null; phone: string | null };
   items: {
@@ -236,6 +240,17 @@ export function QuotationPdfDocument({
             </View>
             <View style={styles.col}>
               <Text style={styles.sectionTitle}>CONDICIONES</Text>
+              {quotation.payment_terms_name && (
+                <View style={styles.fieldRow}>
+                  <Text style={styles.fieldLabel}>Condición de pago</Text>
+                  <Text style={styles.fieldValue}>
+                    {quotation.payment_terms_name}
+                    {quotation.advance_percent != null && quotation.balance_percent != null
+                      ? ` (${quotation.advance_percent}% anticipo / ${quotation.balance_percent}% saldo)`
+                      : ""}
+                  </Text>
+                </View>
+              )}
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Condiciones</Text>
                 <Text style={styles.fieldValue}>{quotation.terms ?? ""}</Text>

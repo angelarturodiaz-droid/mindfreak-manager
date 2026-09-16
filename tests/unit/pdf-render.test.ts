@@ -29,6 +29,10 @@ describe("PDF render smoke test", () => {
           tax: 30240,
           total: 198240,
           terms: "50% anticipo, 50% al finalizar",
+        payment_terms_name: null,
+        credit_days: null,
+        advance_percent: null,
+        balance_percent: null,
         },
         client: { name: "Engel Rivas (We 2 Sec)", tax_id: null, email: null, phone: null },
         items: [
@@ -78,6 +82,7 @@ describe("PDF render smoke test", () => {
           paid_amount: 0,
           balance: 198240,
           ncf: null,
+          payment_terms_name: null,
         },
         client: { name: "Engel Rivas", tax_id: null, email: "engel@test.com", phone: "809-000-0000" },
         items: [

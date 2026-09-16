@@ -68,6 +68,33 @@ datos), pero visualmente parecía roto/sin funcionar.
   usuario: 16/09/2026 + 30 días = 16/10/2026).
 - Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
 
+## Fix: 3 pendientes del PDF y de líneas de factura (feedback real del usuario)
+
+El usuario mandó capturas reales tras probar el vencimiento automático (que
+funcionó perfecto: 16/09 + 30 días = 16/10) con tres observaciones:
+
+1. **El Impuesto (%) no salía en 18% solo al agregar una línea de
+   factura/cotización** — bug real de React: un `form.reset()` nativo NO
+   vuelve a aplicar el `defaultValue` de un campo si su `key` no cambia
+   entre renders (el `key` del campo de Impuesto se quedaba igual mientras
+   no se cambiara de servicio). Corregido con un contador `resetKey` que
+   se suma a la key en cada línea agregada, forzando un remount real con
+   el valor por defecto correcto. Aplicado en Facturas y Cotizaciones. De
+   paso, `getDefaultTaxRate()` ahora fuerza `Number()` sobre la tasa (Postgres
+   a veces la entrega como texto).
+2. **El PDF de factura no mostraba la condición de pago**, a diferencia
+   del de cotización. Se agregó la fila "Condición" en "ESTADO DE PAGO" —
+   mismo patrón que ya existía en el PDF de cotización — y se conectó el
+   nombre real de la condición en ambas acciones de generar PDF (antes
+   solo estaba el tipo declarado, sin el dato realmente conectado).
+3. **"Balance pendiente" en rojo** llamaba la atención de más, como si el
+   cliente estuviera atrasado en una factura recién creada. Cambiado a un
+   gris neutro (`#374151`), igual que el resto de los totales.
+- Verificado de verdad: rendericé el PDF con "Crédito 30 días" real y
+  confirmé visualmente (imagen) que aparece la condición y que el balance
+  ya no se ve en rojo.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
+
 ## Fase 1 del módulo financiero avanzado: Condiciones de pago + vencimiento automático
 
 Pedido grande del usuario (14 secciones) — dividido en 5 fases. Esta es la

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { addQuotationItemAction, type ActionState } from "@/features/quotations/actions";
 import { Input, Select } from "@/components/ui/field";
@@ -21,16 +21,35 @@ type Service = {
 export function NewItemForm({
   quotationId,
   services,
+  defaultTaxPercent,
 }: {
   quotationId: string;
   services: Service[];
+  defaultTaxPercent: number;
 }) {
   const addWithId = addQuotationItemAction.bind(null, quotationId);
   const [state, formAction, pending] = useActionState(addWithId, initialState);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [resetKey, setResetKey] = useState(0);
+  const formRef = useRef<HTMLFormElement>(null);
+  const wasPending = useRef(false);
+
+  // Al agregar una línea con éxito, se reinicia el formulario — un
+  // form.reset() nativo NO vuelve a aplicar el defaultValue de React si el
+  // `key` del campo no cambia (solo se usa al montar) — por eso resetKey
+  // se suma a cada key, forzando un remount real con el Impuesto (%) por
+  // defecto correcto (el de Configuración → Impuestos) en cada línea nueva.
+  useEffect(() => {
+    if (wasPending.current && !pending && !state.error) {
+      formRef.current?.reset();
+      setSelectedService(null);
+      setResetKey((k) => k + 1);
+    }
+    wasPending.current = pending;
+  }, [pending, state.error]);
 
   return (
-    <form action={formAction} className="flex flex-wrap items-end gap-2">
+    <form ref={formRef} action={formAction} className="flex flex-wrap items-end gap-2">
       <Select
         label="Servicio"
         name="service_id"
@@ -71,8 +90,8 @@ export function NewItemForm({
         type="number"
         step="0.01"
         min="0"
-        defaultValue={selectedService?.default_tax_percent ?? 18}
-        key={`tax-${selectedService?.id ?? "custom"}`}
+        defaultValue={selectedService?.default_tax_percent ?? defaultTaxPercent}
+        key={`tax-${selectedService?.id ?? "custom"}-${resetKey}`}
         className="w-20"
       />
       <MoneyInput

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { addInvoiceItemAction, type ActionState } from "@/features/invoices/actions";
 import { Input, Select } from "@/components/ui/field";
@@ -22,10 +22,12 @@ export function NewInvoiceItemForm({
   invoiceId,
   services,
   projectItems,
+  defaultTaxPercent,
 }: {
   invoiceId: string;
   services: Service[];
   projectItems: ProjectItem[];
+  defaultTaxPercent: number;
 }) {
   const addWithId = addInvoiceItemAction.bind(null, invoiceId);
   const [state, formAction, pending] = useActionState(addWithId, initialState);
@@ -35,9 +37,28 @@ export function NewInvoiceItemForm({
     quantity: number;
   } | null>(null);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [resetKey, setResetKey] = useState(0);
+  const formRef = useRef<HTMLFormElement>(null);
+  const wasPending = useRef(false);
+
+  // Al agregar una línea con éxito, se reinicia todo el formulario —
+  // incluyendo el Impuesto (%). Un form.reset() nativo por sí solo NO
+  // vuelve a aplicar el defaultValue de React si el `key` del campo no
+  // cambia (defaultValue solo se usa al montar) — por eso resetKey se
+  // suma a cada key, forzando un remount real con el valor por defecto
+  // correcto (el de Configuración → Impuestos) en cada línea nueva.
+  useEffect(() => {
+    if (wasPending.current && !pending && !state.error) {
+      formRef.current?.reset();
+      setPrefill(null);
+      setSelectedService(null);
+      setResetKey((k) => k + 1);
+    }
+    wasPending.current = pending;
+  }, [pending, state.error]);
 
   return (
-    <form action={formAction} className="flex flex-wrap items-end gap-2">
+    <form ref={formRef} action={formAction} className="flex flex-wrap items-end gap-2">
       {projectItems.length > 0 && (
         <Select
           label="Copiar del proyecto"
@@ -112,8 +133,8 @@ export function NewInvoiceItemForm({
         type="number"
         step="0.01"
         min="0"
-        defaultValue={selectedService?.default_tax_percent ?? 18}
-        key={`tax-${selectedService?.id ?? "custom"}`}
+        defaultValue={selectedService?.default_tax_percent ?? defaultTaxPercent}
+        key={`tax-${selectedService?.id ?? "custom"}-${resetKey}`}
         className="w-20"
       />
       <Button type="submit" loading={pending} icon={<Plus size={14} />}>

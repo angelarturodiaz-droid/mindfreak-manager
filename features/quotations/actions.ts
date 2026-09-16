@@ -321,7 +321,7 @@ export async function generateQuotationShareLinkAction(
     await Promise.all([
       supabase
         .from("quotations")
-        .select("*, clients(name, tax_id, email, phone)")
+        .select("*, clients(name, tax_id, email, phone), payment_terms(name)")
         .eq("id", quotationId)
         .single(),
       supabase
@@ -345,6 +345,9 @@ export async function generateQuotationShareLinkAction(
     | null;
   const clientRecord = Array.isArray(clientData) ? clientData[0] : clientData;
 
+  const paymentTermsData = quotation.payment_terms as { name: string } | { name: string }[] | null;
+  const paymentTermsName = Array.isArray(paymentTermsData) ? paymentTermsData[0]?.name : paymentTermsData?.name;
+
   const buffer = await renderToBuffer(
     QuotationPdfDocument({
       company: company ?? {
@@ -355,7 +358,7 @@ export async function generateQuotationShareLinkAction(
         brand_primary: "#0b0e14",
         brand_accent: "#17a6b8",
       },
-      quotation,
+      quotation: { ...quotation, payment_terms_name: paymentTermsName ?? null },
       client: {
         name: clientRecord?.name ?? "Cliente",
         tax_id: clientRecord?.tax_id ?? null,

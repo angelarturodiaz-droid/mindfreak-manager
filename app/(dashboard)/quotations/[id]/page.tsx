@@ -14,6 +14,7 @@ import {
   cancelQuotationAction,
 } from "@/features/quotations/actions";
 import { hasPermission } from "@/lib/auth/permissions";
+import { getDefaultTaxRate } from "@/features/tax-rates/queries";
 import { NewItemForm } from "./new-item-form";
 import { ShareLinkButton } from "./share-link-button";
 import { DuplicateQuotationButton } from "./duplicate-quotation-button";
@@ -58,11 +59,12 @@ export default async function QuotationDetailPage({
   }
   if (!quotation) notFound();
 
-  const [items, services, canUpdate, canApprove] = await Promise.all([
+  const [items, services, canUpdate, canApprove, defaultTaxPercent] = await Promise.all([
     listQuotationItems(id),
     listActiveServices(),
     hasPermission("quotations.update"),
     hasPermission("quotations.approve"),
+    getDefaultTaxRate(),
   ]);
 
   const clientData = quotation.clients as { name: string } | { name: string }[] | null;
@@ -181,7 +183,7 @@ export default async function QuotationDetailPage({
 
         {isEditable && canUpdate && (
           <div className="mt-4">
-            <NewItemForm quotationId={quotation.id} services={services} />
+            <NewItemForm quotationId={quotation.id} services={services} defaultTaxPercent={defaultTaxPercent} />
           </div>
         )}
 
