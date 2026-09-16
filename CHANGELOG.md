@@ -95,6 +95,24 @@ funcionó perfecto: 16/09 + 30 días = 16/10) con tres observaciones:
   ya no se ve en rojo.
 - Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
 
+## Fix: columna "Impuesto" visible en las líneas de Cotización/Factura
+
+Complemento al fix anterior (el ITBIS sí se aplicaba, confirmado en la
+base de datos: la línea tenía `tax: 360.00` sobre `unit_price: 2000.00`,
+18% exacto) — pero la tabla de líneas no tenía ninguna columna que lo
+mostrara, solo Descripción/Cant./Precio/Descuento/Subtotal, así que
+parecía que no se había aplicado.
+
+- Nueva columna "Impuesto" en la tabla de líneas, tanto en Facturas como
+  en Cotizaciones. La columna que antes decía "Subtotal" (que en realidad
+  ya incluye el impuesto de esa línea) se renombró a "Total" para no
+  confundir con el Subtotal general de la factura/cotización (que si es
+  antes de impuestos).
+- Verificado con datos reales: confirmada la línea de la factura del
+  usuario en la base de datos (INV-0005, "Capacitacion": unit_price 2000,
+  tax 360, subtotal 2360 — 18% correcto).
+- Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
+
 ## Fase 1 del módulo financiero avanzado: Condiciones de pago + vencimiento automático
 
 Pedido grande del usuario (14 secciones) — dividido en 5 fases. Esta es la

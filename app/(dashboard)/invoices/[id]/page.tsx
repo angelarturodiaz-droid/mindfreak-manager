@@ -92,8 +92,9 @@ export default async function InvoiceDetailPage({
     { header: "Cant.", accessor: (item) => item.quantity },
     { header: "Precio", accessor: (item) => formatMoney(item.unit_price, invoice.currency) },
     { header: "Descuento", accessor: (item) => formatMoney(item.discount, invoice.currency) },
+    { header: "Impuesto", accessor: (item) => formatMoney(item.tax, invoice.currency) },
     {
-      header: "Subtotal",
+      header: "Total",
       accessor: (item) => <span className="font-medium">{formatMoney(item.subtotal, invoice.currency)}</span>,
     },
     {

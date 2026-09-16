@@ -77,8 +77,9 @@ export default async function QuotationDetailPage({
     { header: "Cant.", accessor: (item) => item.quantity },
     { header: "Precio", accessor: (item) => formatMoney(item.unit_price, quotation.currency) },
     { header: "Descuento", accessor: (item) => formatMoney(item.discount, quotation.currency) },
+    { header: "Impuesto", accessor: (item) => formatMoney(item.tax, quotation.currency) },
     {
-      header: "Subtotal",
+      header: "Total",
       accessor: (item) => (
         <span className="font-medium">{formatMoney(item.subtotal, quotation.currency)}</span>
       ),
