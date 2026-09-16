@@ -11,11 +11,9 @@ import {
   FolderKanban,
   FileClock,
   FileCheck2,
-  LogOut,
   Plus,
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/permissions";
-import { signOut } from "@/features/auth/actions";
 import { getDashboardKPIs, getFinancialFlowSeries } from "@/features/dashboard/queries";
 import { FinancialFlowChart } from "./financial-flow-chart";
 import { KpiCard } from "@/components/ui/card";
@@ -48,18 +46,11 @@ export default async function DashboardPage() {
 
   return (
     <main className="flex flex-1 flex-col gap-8 p-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-brand-primary">Dashboard</h1>
-          <p className="text-sm text-brand-muted">
-            Sesión activa: {user?.email ?? "—"}
-          </p>
-        </div>
-        <form action={signOut}>
-          <Button type="submit" variant="outline" size="sm" icon={<LogOut size={14} />}>
-            Cerrar sesión
-          </Button>
-        </form>
+      <div>
+        <h1 className="text-xl font-semibold text-brand-primary">Dashboard</h1>
+        <p className="text-sm text-brand-muted">
+          Sesión activa: {user?.email ?? "—"}
+        </p>
       </div>
 
       <section className="flex flex-wrap gap-2">

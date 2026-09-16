@@ -1,6 +1,7 @@
 import { getCompanyUsersWithRoleIds, listRoles } from "@/features/users/queries";
 import { NewUserForm } from "./new-user-form";
 import { UserRoleEditor } from "./user-role-editor";
+import { EditableUserName } from "./editable-user-name";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
 
@@ -10,7 +11,7 @@ export default async function UsersSettingsPage() {
   const [users, roles] = await Promise.all([getCompanyUsersWithRoleIds(), listRoles()]);
 
   const columns: Column<UserRow>[] = [
-    { header: "Nombre", accessor: (u) => u.full_name ?? "—" },
+    { header: "Nombre", accessor: (u) => <EditableUserName userId={u.id} fullName={u.full_name} /> },
     { header: "Correo", accessor: (u) => <span className="text-brand-muted">{u.email}</span> },
     {
       header: "Estado",

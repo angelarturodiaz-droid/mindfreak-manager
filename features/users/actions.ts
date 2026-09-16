@@ -92,6 +92,29 @@ export async function createUserAction(
   return { error: null };
 }
 
+export async function updateUserNameAction(userId: string, fullName: string): Promise<void> {
+  await requirePermission("users.manage");
+  if (!fullName.trim()) throw new Error("El nombre no puede quedar vacío.");
+
+  const supabase = await createSupabaseClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ full_name: fullName.trim() })
+    .eq("id", userId);
+  if (error) throw new Error(error.message);
+
+  const companyId = await getPrimaryCompanyId();
+  await logAudit({
+    companyId,
+    action: "UPDATE",
+    entityType: "user",
+    entityId: userId,
+    newValues: { full_name: fullName.trim() },
+  });
+
+  revalidatePath("/settings/users");
+}
+
 export async function toggleUserActiveAction(userId: string, currentlyActive: boolean): Promise<void> {
   await requirePermission("users.manage");
   const supabase = await createSupabaseClient();

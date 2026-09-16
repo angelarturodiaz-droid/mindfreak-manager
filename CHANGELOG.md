@@ -46,6 +46,44 @@ mezclarse con el fondo.
   la "M" negra ahora se ve completa sobre su propio fondo blanco.
 - Verificado también: `tsc`, `npm run build`, `eslint`, 17 tests unitarios.
 
+## Fix: menú de usuario persistente + acceso restringido a "Mi perfil"
+
+Feedback real tras probar la creación de usuarios (que sí funcionó — el
+Service Role Key quedó bien configurada):
+
+1. No había forma de editar el nombre de un usuario ya creado.
+2. "Cerrar sesión" solo existía en el Dashboard — si el usuario estaba en
+   cualquier otra pantalla, no podía salir.
+3. Un usuario no-admin, al hacer clic en el ícono de Configuración, "no
+   pasaba nada" (en realidad sí pasaba: el guard de permisos lo regresaba
+   al Dashboard en silencio, confuso).
+4. Un usuario no-admin no tenía forma de cambiar su propio nombre ni su
+   contraseña — Configuración está bloqueada para él a propósito (es
+   configuración de la EMPRESA), pero su propio perfil no debería estarlo.
+
+Cambios:
+
+- **Nuevo `UserMenu`** (avatar circular con iniciales, esquina superior
+  derecha, en el layout compartido — visible en TODA la app, no solo en
+  Dashboard): nombre, correo, link a "Mi perfil", "Cerrar sesión". El botón
+  de cerrar sesión duplicado en el Dashboard se quitó.
+- **Ícono de Configuración ahora se oculta por completo** si el usuario no
+  tiene `settings.manage` — en vez de dejarlo hacer clic y devolverlo en
+  silencio.
+- **Nueva página `/profile`** ("Mi perfil"), disponible para **cualquier**
+  usuario autenticado (no requiere `settings.manage` — es su propia
+  cuenta, no configuración de empresa): editar su nombre/teléfono, y
+  cambiar su contraseña (pide la contraseña actual primero, re-autentica
+  antes de aplicar el cambio, para que una sesión abierta y desatendida no
+  baste).
+- **Configuración → Usuarios**: nombre de cada usuario ahora editable
+  inline por un admin (antes solo texto fijo).
+- Verificado con datos reales: update de `phone` en el propio perfil bajo
+  RLS — funciona (y de paso confirmé que el nombre del admin estaba vacío
+  desde siempre, ahora se puede completar desde "Mi perfil"). Dato de
+  prueba revertido.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
+
 ## Feat: módulo de Usuarios, Roles y Permisos (crear usuarios directo, sin invitación)
 
 Pedido del usuario: poder crear usuarios directo desde la app (sin correo
