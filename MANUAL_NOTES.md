@@ -65,4 +65,41 @@ propia cuenta.
 
 ---
 
+## Módulo: Cotizaciones y Facturas → Condiciones de pago
+
+### ¿Con qué condición de pago sale una factura nueva?
+
+Depende de cómo se crea la factura:
+
+- **Factura creada desde cero** (sin proyecto de por medio, "Cliente
+  directo"): el selector de Condición de pago sale en **"Sin
+  especificar"** por defecto — el usuario elige cuál quiere. Si no elige
+  ninguna, la factura funciona igual que antes de este módulo (el
+  vencimiento se escribe a mano).
+- **Factura creada desde un Proyecto que viene de una Cotización
+  aprobada**: se coloca sola **la misma condición que tenía esa
+  cotización** (la que se "congeló" cuando se creó la cotización, no una
+  condición por defecto inventada). Ejemplo: si la cotización se hizo con
+  "Crédito 30 días", la factura sale con esa misma condición ya
+  seleccionada y el vencimiento ya calculado. **Se puede cambiar** en el
+  mismo formulario si esa factura en particular necesita una condición
+  distinta a la de la cotización original.
+
+### ¿Cómo se calcula el vencimiento?
+
+`Fecha de vencimiento = Fecha de emisión + Días de crédito de la condición
+elegida`. Se recalcula solo si se cambia la fecha de emisión. Si no hay
+ninguna condición de pago seleccionada, el vencimiento se sigue escribiendo
+a mano, como siempre.
+
+### ¿Los valores del catálogo cambian facturas/cotizaciones ya hechas?
+
+No. Al elegir una condición de pago, sus valores (días de crédito, %
+anticipo/saldo, forma de pago) quedan "congelados" en esa cotización o
+factura específica — igual que ya pasa con la tasa de cambio. Si después
+se edita o desactiva esa condición en el catálogo (Configuración →
+Condiciones de pago), los documentos ya creados no se alteran.
+
+---
+
 <!-- Agregar aquí nuevas notas a medida que surjan, con su propio ## encabezado de módulo -->
