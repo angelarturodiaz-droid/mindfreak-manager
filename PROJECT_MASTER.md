@@ -244,13 +244,15 @@ rondas del cambio de lógica financiera.** Ver CHANGELOG para el detalle.
 | Módulo de Configuración — **primera etapa construida** (ver sección
   dedicada más abajo): Organización, Impuestos, Categorías de gastos,
   Sistema. Acceso vía ícono de engranaje en la esquina superior derecha,
-  como se pidió. **Pendiente para una ronda aparte**: Usuarios/Roles reales
-  (invitar/gestionar — sensible, toca autenticación), Notificaciones reales
+  como se pidió. **✅ Usuarios/Roles reales construido** (crear directo sin
+  invitación, activar/desactivar, editar roles, matriz de permisos por
+  rol — ver CHANGELOG, requiere `SUPABASE_SECRET_KEY`). **Sigue pendiente**:
+  MFA (opciones evaluadas en `MANUAL_NOTES.md`), Notificaciones reales
   (sigue V2), Campos personalizados y Mantenimiento (fuera de alcance V1).
   NCF/ITBIS como activación fiscal completa sigue V2. Documentos con
   tipos/plantillas/numeración no aplica al diseño actual del sistema. |
-  Configuración | Media-Alta | Primera etapa completada; Usuarios queda
-  pendiente por su sensibilidad |
+  Configuración | Media-Alta | Primera etapa + Usuarios/Roles completados;
+  MFA queda para una ronda aparte |
 | Campana de notificaciones en la barra superior (contador de no leídas + panel desplegable + marcar como leída). La tabla `notifications` ya existe desde F3/F4 con RLS (cada quien ve solo las suyas) — falta la UI y quién dispara cada notificación (ej. factura por vencer, tarea asignada, alerta de presupuesto ya listada arriba, cotización por expirar) | Notificaciones | Media | Sin número de fase propio en el plan F1-F23 (módulo 21 de la sección 10) — se agenda cuando se aborde, probablemente junto a F16 (Dashboard) |
 | **Manual de usuario del sistema**: documento explicando cómo funciona cada módulo (Clientes, Cotizaciones, Proyectos, Facturas, Cobros, Gastos, Pagos, Bancos, etc.) y el flujo completo del proceso de negocio de punta a punta (Cliente → Cotización → Proyecto → Factura → Cobro, y en paralelo Proyecto → Gastos → Proveedores → Pagos → Banco). Es un documento para el USUARIO final (equipo de Mindfreak Events), distinto de `README.md` (que es técnico, para desarrolladores). **Ver `MANUAL_NOTES.md`** — ahí se van acumulando explicaciones/aclaraciones de producto (ej. para qué sirve el Recibo de Cobro) a medida que surgen, para no perderlas antes de escribir el manual final | Documentación | Media | Pedido explícitamente para el cierre del proyecto, después de F23 (Deployment) — cuando todos los módulos estén construidos y el flujo sea el definitivo |
 

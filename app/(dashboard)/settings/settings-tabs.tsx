@@ -13,6 +13,7 @@ const TABS = [
   { href: "/settings/documents", label: "Documentos" },
   { href: "/settings/security", label: "Seguridad" },
   { href: "/settings/users", label: "Usuarios" },
+  { href: "/settings/roles", label: "Roles y permisos" },
 ];
 
 export function SettingsTabs() {

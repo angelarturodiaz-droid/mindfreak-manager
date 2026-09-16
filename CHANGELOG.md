@@ -46,6 +46,53 @@ mezclarse con el fondo.
   la "M" negra ahora se ve completa sobre su propio fondo blanco.
 - Verificado también: `tsc`, `npm run build`, `eslint`, 17 tests unitarios.
 
+## Feat: módulo de Usuarios, Roles y Permisos (crear usuarios directo, sin invitación)
+
+Pedido del usuario: poder crear usuarios directo desde la app (sin correo
+de invitación, con contraseña temporal), asignar/editar sus roles, y una
+matriz para editar qué permisos tiene cada rol. MFA queda documentado en
+`MANUAL_NOTES.md` para una ronda futura (Supabase soporta TOTP y SMS/
+WhatsApp nativos; se recomienda TOTP como método principal).
+
+- **Nueva variable de entorno `SUPABASE_SECRET_KEY`** (antes "service_role",
+  Supabase renombró sus llaves) — documentada en `.env.example`, nunca
+  expuesta al cliente. `lib/supabase/admin.ts`: cliente dedicado, solo para
+  la API de administración de Auth (crear usuarios) — nunca para leer/
+  escribir datos de negocio (eso sigue siempre respetando RLS).
+- **`createUserAction`**: crea el usuario directo vía
+  `admin.createUser({email, password, email_confirm: true})` — sin correo
+  de invitación, activo de inmediato. Actualiza el nombre en `profiles`
+  (el trigger de F1 ya crea la fila automáticamente) y asigna los roles
+  elegidos.
+- **Gestión de usuarios existentes**: activar/desactivar, y cambiar sus
+  roles (chips seleccionables) — `/settings/users`.
+- **Nueva pantalla `/settings/roles`**: matriz de permisos por rol,
+  agrupada por módulo. El rol Administrador siempre aparece con todo
+  activado y no es editable (evita quedarse sin acceso a Configuración por
+  accidente).
+- **Dos bugs de RLS reales encontrados y corregidos** (migración
+  `042_fix_users_roles_rls.sql`) antes de que llegaran a producción:
+  1. `profiles_update` solo dejaba editar el propio perfil — no servía
+     para activar/desactivar a otro usuario. Se agregó: también se puede
+     si se tiene `users.manage` y el perfil objetivo es de la misma
+     compañía.
+  2. `role_permissions_insert`/`delete` exigían que el rol tuviera
+     `company_id` propio, pero los 5 roles base son plantillas globales
+     (`company_id = null`) — la condición nunca se cumplía y la política
+     rechazaba todo. Se agregó la excepción para roles con `company_id
+     is null`. Nota documentada: en un futuro con más de una compañía en
+     la misma instancia, editar una plantilla global las afectaría a
+     todas — no es un problema hoy (V1 tiene una sola compañía).
+- **Verificado con datos reales**: insert/delete en `role_permissions`
+  para un rol del sistema (antes fallaba con error de RLS, ahora
+  funciona) — probado y revertido sin dejar residuos. Lógica de la
+  política de `profiles` verificada con una consulta directa.
+- **No pude probar `createUserAction` end-to-end** (crear un usuario real
+  de Auth) — este entorno no tiene acceso de red a la API de Supabase,
+  solo a la base de datos vía SQL. Pendiente que el usuario lo pruebe en
+  la app real una vez tenga `SUPABASE_SECRET_KEY` configurada.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
+
 ## Fix: "new row violates row-level security policy" al subir el logo
 
 El usuario reportó este error real al intentar subir el logo en

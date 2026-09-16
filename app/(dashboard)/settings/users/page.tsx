@@ -1,37 +1,45 @@
-import { getCompanyUsersWithRoles } from "@/features/settings/queries";
+import { getCompanyUsersWithRoleIds, listRoles } from "@/features/users/queries";
+import { NewUserForm } from "./new-user-form";
+import { UserRoleEditor } from "./user-role-editor";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
 
-type UserRow = Awaited<ReturnType<typeof getCompanyUsersWithRoles>>[number];
+type UserRow = Awaited<ReturnType<typeof getCompanyUsersWithRoleIds>>[number];
 
 export default async function UsersSettingsPage() {
-  const users = await getCompanyUsersWithRoles();
+  const [users, roles] = await Promise.all([getCompanyUsersWithRoleIds(), listRoles()]);
 
   const columns: Column<UserRow>[] = [
     { header: "Nombre", accessor: (u) => u.full_name ?? "—" },
     { header: "Correo", accessor: (u) => <span className="text-brand-muted">{u.email}</span> },
     {
-      header: "Roles",
-      accessor: (u) => <span className="text-brand-muted">{u.roles.length > 0 ? u.roles.join(", ") : "—"}</span>,
-    },
-    {
       header: "Estado",
       accessor: (u) => <Badge tone={u.is_active ? "success" : "danger"}>{u.is_active ? "Activo" : "Inactivo"}</Badge>,
+    },
+    {
+      header: "Roles",
+      accessor: (u) => (
+        <UserRoleEditor userId={u.id} isActive={u.is_active} currentRoleIds={u.roleIds} allRoles={roles} />
+      ),
     },
   ];
 
   return (
-    <div>
-      <h2 className="mb-1 text-lg font-semibold text-brand-primary">Usuarios</h2>
-      <p className="mb-4 text-sm text-brand-muted">
-        Solo lectura por ahora. Invitar y gestionar usuarios desde aquí queda
-        para una ronda dedicada aparte — toca autenticación directamente y
-        merece más cuidado (ya tuvimos un incidente real creando el primer
-        usuario a mano). Por ahora, nuevos usuarios se crean por SQL,
-        documentado en <code>PROJECT_MASTER.md</code>.
-      </p>
+    <div className="flex flex-col gap-8">
+      <div>
+        <h2 className="mb-1 text-lg font-semibold text-brand-primary">Usuarios</h2>
+        <p className="mb-4 text-sm text-brand-muted">
+          Se crean directo desde aquí, con una contraseña temporal — sin
+          correo de invitación. Comparte la contraseña con la persona por un
+          canal seguro; puede cambiarla luego desde su propia cuenta.
+        </p>
+        <DataTable columns={columns} rows={users} keyFor={(u) => u.id} maxWidth="max-w-4xl" emptyMessage="Sin usuarios registrados." />
+      </div>
 
-      <DataTable columns={columns} rows={users} keyFor={(u) => u.id} maxWidth="max-w-2xl" emptyMessage="Sin usuarios registrados." />
+      <section className="max-w-md">
+        <h2 className="mb-3 text-sm font-medium text-brand-text">Crear usuario</h2>
+        <NewUserForm roles={roles} />
+      </section>
     </div>
   );
 }

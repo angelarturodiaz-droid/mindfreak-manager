@@ -39,4 +39,30 @@ parciales — la factura no cambia, pero cada abono genera su propio recibo.
 
 ---
 
+## Módulo: Configuración → Usuarios
+
+### MFA (autenticación de dos factores) — pendiente, opciones evaluadas
+
+Supabase Auth soporta MFA nativo con dos métodos:
+- **TOTP (app autenticadora — Google Authenticator, Authy, etc.)**:
+  gratis, no depende de que llegue un SMS. **Recomendado como método
+  principal.**
+- **SMS/WhatsApp**: tiene costo por mensaje y depende del operador.
+
+Cuando se construya, lo ideal es TOTP obligatorio para roles sensibles
+(Administrador, Finanzas) y opcional para el resto, con SMS como
+alternativa si el negocio lo pide.
+
+### Crear usuarios: directo, sin invitación por correo
+
+A diferencia de otros sistemas que mandan un correo de invitación, aquí el
+administrador crea la cuenta directo desde Configuración → Usuarios, con
+una contraseña temporal que él mismo define o genera — la cuenta queda
+activa al instante, sin esperar a que el usuario confirme un correo. La
+contraseña temporal se comparte con la persona por un canal seguro
+(WhatsApp, en persona, etc.) y ella puede cambiarla después desde su
+propia cuenta.
+
+---
+
 <!-- Agregar aquí nuevas notas a medida que surjan, con su propio ## encabezado de módulo -->
