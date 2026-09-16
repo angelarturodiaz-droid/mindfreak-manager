@@ -13,10 +13,12 @@ export default async function DashboardLayout({
 }) {
   let platformName = "Mindfreak Manager";
   let logoUrl: string | null = null;
+  let brandAccent = "#17a6b8";
   try {
     const company = await getCompany();
     platformName = company.platform_name || platformName;
     logoUrl = company.logo_url;
+    brandAccent = company.brand_accent || brandAccent;
   } catch {
     // si falla (ej. sin compañía asignada todavía), se usa el nombre por defecto
   }
@@ -52,7 +54,7 @@ export default async function DashboardLayout({
               <Settings size={18} />
             </Link>
           )}
-          {user && <UserMenu fullName={fullName} email={user.email ?? ""} />}
+          {user && <UserMenu fullName={fullName} email={user.email ?? ""} brandAccent={brandAccent} />}
         </header>
         <div className="flex flex-1 flex-col bg-brand-background">{children}</div>
       </div>

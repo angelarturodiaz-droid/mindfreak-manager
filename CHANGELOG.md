@@ -46,6 +46,23 @@ mezclarse con el fondo.
   la "M" negra ahora se ve completa sobre su propio fondo blanco.
 - Verificado también: `tsc`, `npm run build`, `eslint`, 17 tests unitarios.
 
+## Fix: el círculo del avatar usaba el azul de la interfaz, no el teal real de la marca
+
+El usuario notó que el círculo seguía azul en vez del teal de la "E" del
+logo (`#17a6b8`). Causa real: había dos conceptos de "acento" mezclados —
+el `brand-accent` de la interfaz general (azul, del rediseño ERP) y el
+`brand_accent` real de la empresa guardado en Configuración → Sistema
+(teal). El avatar usaba la clase de Tailwind del primero por error.
+
+- `UserMenu` ahora recibe `brandAccent` como prop (el valor real de
+  `companies.brand_accent`) y lo aplica con `style` inline (es un color
+  dinámico, no una clase fija) — tanto en el círculo chico del header como
+  en el grande del menú desplegable.
+- El resto de la interfaz (links, botones) se queda con el azul del
+  Design System general a propósito — el avatar es el único elemento
+  pensado para reflejar la identidad de marca real de la empresa.
+- Verificado: `tsc`, `npm run build`, `eslint`, 19 tests unitarios limpios.
+
 ## Feat: "Inicio de sesión y seguridad" en formato de lista (estilo cuenta de Google)
 
 Ajuste sobre la pestaña de seguridad de "Mi perfil", con una captura de

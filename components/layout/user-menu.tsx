@@ -15,9 +15,11 @@ function initials(name: string | null, email: string) {
 export function UserMenu({
   fullName,
   email,
+  brandAccent,
 }: {
   fullName: string | null;
   email: string;
+  brandAccent: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -36,14 +38,18 @@ export function UserMenu({
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-label="Cuenta"
-        className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-accent text-xs font-semibold text-white transition-opacity hover:opacity-90"
+        style={{ backgroundColor: brandAccent }}
+        className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white transition-opacity hover:opacity-90"
       >
         {initials(fullName, email)}
       </button>
 
       {open && (
         <div className="absolute right-0 top-10 z-50 w-64 rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface p-4 text-center shadow-[var(--shadow-lg)]">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-brand-accent text-base font-semibold text-white">
+          <div
+            style={{ backgroundColor: brandAccent }}
+            className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full text-base font-semibold text-white"
+          >
             {initials(fullName, email)}
           </div>
           <p className="text-sm font-medium text-brand-text">{fullName || "Sin nombre"}</p>
