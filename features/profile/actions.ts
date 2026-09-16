@@ -18,6 +18,7 @@ export async function updateOwnProfileAction(
 
   const parsed = updateProfileSchema.safeParse({
     full_name: String(formData.get("full_name") ?? ""),
+    position: String(formData.get("position") ?? ""),
     phone: String(formData.get("phone") ?? ""),
   });
   if (!parsed.success) {
@@ -26,7 +27,11 @@ export async function updateOwnProfileAction(
 
   const { error } = await supabase
     .from("profiles")
-    .update({ full_name: parsed.data.full_name, phone: parsed.data.phone || null })
+    .update({
+      full_name: parsed.data.full_name,
+      position: parsed.data.position || null,
+      phone: parsed.data.phone || null,
+    })
     .eq("id", user.id);
   if (error) return { error: error.message };
 

@@ -46,6 +46,20 @@ mezclarse con el fondo.
   la "M" negra ahora se ve completa sobre su propio fondo blanco.
 - Verificado también: `tsc`, `npm run build`, `eslint`, 17 tests unitarios.
 
+## Feat: "Mi perfil" separado en Perfil / Inicio de sesión y seguridad
+
+Pedido del usuario (basado en un patrón común tipo Google/Slack): separar
+"Mi perfil" en dos pestañas.
+
+- Nueva columna `profiles.position` (ocupación/cargo) — migración
+  `043_profile_position.sql`.
+- **Pestaña "Perfil"**: nombre, ocupación/cargo, teléfono.
+- **Pestaña "Inicio de sesión y seguridad"**: correo (de solo lectura, con
+  nota de contactar a un admin para cambiarlo) y cambiar contraseña.
+- Verificado con datos reales: update de `position` bajo RLS funciona,
+  dato de prueba revertido.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
+
 ## Fix: menú de usuario persistente + acceso restringido a "Mi perfil"
 
 Feedback real tras probar la creación de usuarios (que sí funcionó — el

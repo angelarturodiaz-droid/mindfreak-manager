@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const updateProfileSchema = z.object({
   full_name: z.string().trim().min(1, "El nombre es requerido"),
+  position: z.string().trim().optional().or(z.literal("")),
   phone: z.string().trim().optional().or(z.literal("")),
 });
 

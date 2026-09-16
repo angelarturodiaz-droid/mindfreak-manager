@@ -10,9 +10,11 @@ const initialState: ActionState = { error: null };
 
 export function EditProfileForm({
   fullName,
+  position,
   phone,
 }: {
   fullName: string | null;
+  position: string | null;
   phone: string | null;
 }) {
   const [state, formAction, pending] = useActionState(updateOwnProfileAction, initialState);
@@ -24,6 +26,7 @@ export function EditProfileForm({
   return (
     <form action={formAction} className="space-y-4">
       <Input label="Nombre completo" name="full_name" defaultValue={fullName ?? ""} required />
+      <Input label="Ocupación / Cargo" name="position" defaultValue={position ?? ""} placeholder="Ej. Gerente de Ventas" />
       <Input label="Teléfono" name="phone" defaultValue={phone ?? ""} />
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
