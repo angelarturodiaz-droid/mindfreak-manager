@@ -247,9 +247,11 @@ vía trigger) y herencia automática cotización→proyecto→factura. Verificad
 end-to-end con datos reales (cadena completa Cliente→Cotización→Proyecto→
 Factura). Ver CHANGELOG para el detalle completo.
 
-**⬜ Fase 2**: Dashboard de Cuentas por Cobrar y Vencimientos (total por
-cobrar, total vencido, vence hoy/7/15/30 días, facturas vencidas/próximas,
-cotizaciones pendientes/aceptadas sin facturar, vista calendario/timeline).
+**✅ Fase 2 (completada)**: Dashboard de Cuentas por Cobrar y Vencimientos —
+nuevo reporte en Reportes (ahora el que sale por defecto): 6 KPIs, línea de
+tiempo de vencimientos, facturas vencidas/próximas, cotizaciones
+pendientes/aceptadas sin facturar. Verificado con datos reales (4 facturas
+con vencimientos exactos, buckets correctos). Ver CHANGELOG.
 
 **⬜ Fase 3**: Dashboard configurable por usuario — widgets independientes
 y reutilizables, agregar/quitar/reordenar/redimensionar, drag & drop,

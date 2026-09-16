@@ -7,6 +7,7 @@ import {
   getAccountsPayableReport,
   getSalesByClientReport,
   getExpensesByCategoryReport,
+  getReceivablesDashboard,
   listClientsForFilter,
   listSuppliersForFilter,
   listProjectsForFilter,
@@ -16,6 +17,7 @@ import {
 import { Select } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { KpiCard } from "@/components/ui/card";
 import { DataTable, type Column } from "@/components/ui/data-table";
 
 function formatMoney(amount: number, currency = "DOP") {
@@ -53,13 +55,19 @@ const EXPENSE_STATUS_LABELS: Record<string, string> = {
 
 const REPORT_CATALOG: { category: string; reports: { key: string; label: string }[] }[] = [
   { category: "Proyectos", reports: [{ key: "rentabilidad", label: "Rentabilidad por proyecto" }] },
-  { category: "Cobros", reports: [{ key: "cxc", label: "Cuentas por cobrar" }] },
+  {
+    category: "Cobros",
+    reports: [
+      { key: "vencimientos", label: "Cuentas por Cobrar y Vencimientos" },
+      { key: "cxc", label: "Cuentas por cobrar (detalle)" },
+    ],
+  },
   { category: "Pagos", reports: [{ key: "cxp", label: "Cuentas por pagar" }] },
   { category: "Ventas", reports: [{ key: "ventas-cliente", label: "Ventas por cliente" }] },
   { category: "Gastos", reports: [{ key: "gastos-categoria", label: "Gastos por categoría" }] },
 ];
 
-const DEFAULT_REPORT = "rentabilidad";
+const DEFAULT_REPORT = "vencimientos";
 
 type Params = {
   report?: string;
@@ -121,6 +129,7 @@ export default async function ReportsPage({
 
       <section className="min-w-0 flex-1">
         {activeReport === "rentabilidad" && <ProfitabilityReport params={params} />}
+        {activeReport === "vencimientos" && <ReceivablesDashboardReport />}
         {activeReport === "cxc" && <ReceivableReport params={params} />}
         {activeReport === "cxp" && <PayableReport params={params} />}
         {activeReport === "ventas-cliente" && <SalesByClientReport params={params} />}
@@ -258,6 +267,195 @@ async function ProfitabilityReport({ params }: { params: Params }) {
         emptyMessage="Sin proyectos que coincidan con el filtro."
         maxWidth="max-w-none"
       />
+    </div>
+  );
+}
+
+async function ReceivablesDashboardReport() {
+  const data = await getReceivablesDashboard();
+
+  const overdueColumns: Column<(typeof data.facturasVencidas)[number]>[] = [
+    { header: "Factura", accessor: (inv) => inv.number },
+    {
+      header: "Cliente",
+      accessor: (inv) => {
+        const clientData = inv.clients as { name: string }[] | { name: string } | null;
+        const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
+        return <span className="text-brand-muted">{clientName ?? "—"}</span>;
+      },
+    },
+    { header: "Vencimiento", accessor: (inv) => inv.due_date },
+    { header: "Días vencida", accessor: (inv) => <Badge tone="danger">{inv.daysOverdue} días</Badge> },
+    { header: "Balance", accessor: (inv) => <span className="font-medium">{formatMoney(inv.balance, inv.currency)}</span> },
+  ];
+
+  const upcomingColumns: Column<(typeof data.facturasProximasAVencer)[number]>[] = [
+    { header: "Factura", accessor: (inv) => inv.number },
+    {
+      header: "Cliente",
+      accessor: (inv) => {
+        const clientData = inv.clients as { name: string }[] | { name: string } | null;
+        const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
+        return <span className="text-brand-muted">{clientName ?? "—"}</span>;
+      },
+    },
+    { header: "Vencimiento", accessor: (inv) => inv.due_date },
+    {
+      header: "En",
+      accessor: (inv) =>
+        inv.daysUntilDue === 0 ? (
+          <Badge tone="warning">Hoy</Badge>
+        ) : (
+          <span className="text-brand-muted">{inv.daysUntilDue} días</span>
+        ),
+    },
+    { header: "Balance", accessor: (inv) => <span className="font-medium">{formatMoney(inv.balance, inv.currency)}</span> },
+  ];
+
+  const pendingQuoteColumns: Column<(typeof data.cotizacionesPendientes)[number]>[] = [
+    { header: "Cotización", accessor: (q) => q.number },
+    {
+      header: "Cliente",
+      accessor: (q) => {
+        const clientData = q.clients as { name: string }[] | { name: string } | null;
+        const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
+        return <span className="text-brand-muted">{clientName ?? "—"}</span>;
+      },
+    },
+    { header: "Válida hasta", accessor: (q) => <span className="text-brand-muted">{q.valid_until ?? "—"}</span> },
+    { header: "Total", accessor: (q) => formatMoney(q.total, q.currency) },
+  ];
+
+  const acceptedColumns: Column<(typeof data.cotizacionesAceptadasSinFacturar)[number]>[] = [
+    { header: "Cotización", accessor: (q) => q.number },
+    {
+      header: "Cliente",
+      accessor: (q) => {
+        const clientData = q.clients as { name: string }[] | { name: string } | null;
+        const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
+        return <span className="text-brand-muted">{clientName ?? "—"}</span>;
+      },
+    },
+    { header: "Total", accessor: (q) => formatMoney(q.total, q.currency) },
+  ];
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h2 className="text-lg font-semibold text-brand-primary">
+          Cuentas por Cobrar y Vencimientos
+        </h2>
+        <p className="text-sm text-brand-muted">
+          Consolidado en la moneda base, en vivo — no es un corte histórico.
+        </p>
+      </div>
+
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+        <KpiCard label="Total por cobrar" value={formatMoney(data.totalPorCobrar)} />
+        <KpiCard label="Total vencido" value={formatMoney(data.totalVencido)} danger />
+        <KpiCard label="Vence hoy" value={formatMoney(data.totalVenceHoy)} danger />
+        <KpiCard label="Próximos 7 días" value={formatMoney(data.totalProximos7)} />
+        <KpiCard label="Próximos 15 días" value={formatMoney(data.totalProximos15)} />
+        <KpiCard label="Próximos 30 días" value={formatMoney(data.totalProximos30)} />
+      </section>
+
+      <section>
+        <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-brand-text">
+          Línea de tiempo de vencimientos (próximos 30 días)
+        </h3>
+        <ReceivablesTimeline invoices={data.facturasProximasAVencer} />
+      </section>
+
+      <section>
+        <h3 className="mb-2 text-sm font-medium text-brand-text">
+          Facturas vencidas ({data.facturasVencidas.length})
+        </h3>
+        <DataTable
+          columns={overdueColumns}
+          rows={data.facturasVencidas}
+          keyFor={(inv) => inv.id}
+          maxWidth="max-w-4xl"
+          emptyMessage="Sin facturas vencidas. 🎉"
+        />
+      </section>
+
+      <section>
+        <h3 className="mb-2 text-sm font-medium text-brand-text">
+          Facturas próximas a vencer (30 días)
+        </h3>
+        <DataTable
+          columns={upcomingColumns}
+          rows={data.facturasProximasAVencer}
+          keyFor={(inv) => inv.id}
+          maxWidth="max-w-4xl"
+          emptyMessage="Sin facturas próximas a vencer."
+        />
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section>
+          <h3 className="mb-2 text-sm font-medium text-brand-text">
+            Cotizaciones pendientes de aceptación ({data.cotizacionesPendientes.length})
+          </h3>
+          <DataTable
+            columns={pendingQuoteColumns}
+            rows={data.cotizacionesPendientes}
+            keyFor={(q) => q.id}
+            emptyMessage="Sin cotizaciones pendientes."
+          />
+        </section>
+        <section>
+          <h3 className="mb-2 text-sm font-medium text-brand-text">
+            Aceptadas, pendientes de facturar ({data.cotizacionesAceptadasSinFacturar.length})
+          </h3>
+          <DataTable
+            columns={acceptedColumns}
+            rows={data.cotizacionesAceptadasSinFacturar}
+            keyFor={(q) => q.id}
+            emptyMessage="Sin pendientes."
+          />
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function ReceivablesTimeline({
+  invoices,
+}: {
+  invoices: { id: string; number: string; due_date: string | null; balance: number; currency: string; daysUntilDue: number | null }[];
+}) {
+  if (invoices.length === 0) {
+    return <p className="text-sm text-brand-muted">Sin vencimientos en los próximos 30 días.</p>;
+  }
+
+  const byDate = new Map<string, typeof invoices>();
+  for (const inv of invoices) {
+    const key = inv.due_date ?? "—";
+    const list = byDate.get(key) ?? [];
+    list.push(inv);
+    byDate.set(key, list);
+  }
+  const sortedDates = Array.from(byDate.keys()).sort();
+
+  return (
+    <div className="flex gap-4 overflow-x-auto rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface p-4">
+      {sortedDates.map((date) => {
+        const dayInvoices = byDate.get(date) ?? [];
+        const dayTotal = dayInvoices.reduce((acc, i) => acc + i.balance, 0);
+        const isToday = dayInvoices[0]?.daysUntilDue === 0;
+        return (
+          <div key={date} className="flex w-40 shrink-0 flex-col gap-1 border-l-2 border-brand-accent pl-3">
+            <p className={`text-xs font-semibold ${isToday ? "text-brand-danger" : "text-brand-text"}`}>
+              {date} {isToday && "· Hoy"}
+            </p>
+            <p className="text-sm font-medium">{formatMoney(dayTotal, dayInvoices[0]?.currency)}</p>
+            <p className="text-xs text-brand-muted">
+              {dayInvoices.length} factura{dayInvoices.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+        );
+      })}
     </div>
   );
 }

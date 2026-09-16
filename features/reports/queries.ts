@@ -314,3 +314,78 @@ export async function getExpensesByCategoryReport(filters: ExpensesByCategoryFil
     .map(([categoryId, v]) => ({ categoryId, ...v }))
     .sort((a, b) => b.total - a.total);
 }
+
+/**
+ * Dashboard de Cuentas por Cobrar y Vencimientos (Fase 2 del módulo
+ * financiero avanzado). Reutiliza el mismo set base de facturas
+ * pendientes que getAccountsReceivableReport, agregado en cubos de
+ * vencimiento, más el estado de las cotizaciones (pendientes de
+ * aceptación / aceptadas sin facturar todavía).
+ */
+export async function getReceivablesDashboard() {
+  const supabase = await createClient();
+
+  const [{ data: invoices, error: invError }, { data: pendingQuotes, error: pqError }, { data: approvedQuotes, error: aqError }] =
+    await Promise.all([
+      supabase
+        .from("invoices")
+        .select("id, number, due_date, balance, currency, exchange_rate, status, clients(name)")
+        .in("status", PENDING_INVOICE_STATUSES)
+        .gt("balance", 0)
+        .order("due_date", { ascending: true, nullsFirst: false }),
+      supabase
+        .from("quotations")
+        .select("id, number, total, currency, exchange_rate, status, valid_until, clients(name)")
+        .in("status", ["SENT", "VIEWED", "NEGOTIATING"])
+        .order("valid_until", { ascending: true, nullsFirst: false }),
+      supabase
+        .from("quotations")
+        .select("id, number, total, currency, exchange_rate, clients(name), invoices(id)")
+        .eq("status", "APPROVED"),
+    ]);
+
+  if (invError) throw new Error(invError.message);
+  if (pqError) throw new Error(pqError.message);
+  if (aqError) throw new Error(aqError.message);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const withDaysUntilDue = (invoices ?? []).map((inv) => {
+    const daysUntilDue = inv.due_date
+      ? Math.round((new Date(inv.due_date).getTime() - today.getTime()) / 86400000)
+      : null;
+    return { ...inv, daysUntilDue };
+  });
+
+  const convertedSum = (rows: { balance: number; exchange_rate: number }[]) =>
+    rows.reduce((acc, r) => acc + r.balance * r.exchange_rate, 0);
+
+  const vencidas = withDaysUntilDue.filter((i) => i.daysUntilDue !== null && i.daysUntilDue < 0);
+  const venceHoy = withDaysUntilDue.filter((i) => i.daysUntilDue === 0);
+  const proximas7 = withDaysUntilDue.filter((i) => i.daysUntilDue !== null && i.daysUntilDue > 0 && i.daysUntilDue <= 7);
+  const proximas15 = withDaysUntilDue.filter((i) => i.daysUntilDue !== null && i.daysUntilDue > 0 && i.daysUntilDue <= 15);
+  const proximas30 = withDaysUntilDue.filter((i) => i.daysUntilDue !== null && i.daysUntilDue > 0 && i.daysUntilDue <= 30);
+
+  // Cotizaciones aprobadas que todavía no generaron ninguna factura.
+  const acceptedNotInvoiced = (approvedQuotes ?? []).filter((q) => {
+    const invoicesData = q.invoices as { id: string }[] | { id: string } | null;
+    const list = Array.isArray(invoicesData) ? invoicesData : invoicesData ? [invoicesData] : [];
+    return list.length === 0;
+  });
+
+  return {
+    totalPorCobrar: convertedSum(withDaysUntilDue),
+    totalVencido: convertedSum(vencidas),
+    totalVenceHoy: convertedSum(venceHoy),
+    totalProximos7: convertedSum(proximas7),
+    totalProximos15: convertedSum(proximas15),
+    totalProximos30: convertedSum(proximas30),
+    facturasVencidas: vencidas.map((i) => ({ ...i, daysOverdue: Math.abs(i.daysUntilDue ?? 0) })),
+    facturasProximasAVencer: withDaysUntilDue.filter(
+      (i) => i.daysUntilDue !== null && i.daysUntilDue >= 0 && i.daysUntilDue <= 30,
+    ),
+    cotizacionesPendientes: pendingQuotes ?? [],
+    cotizacionesAceptadasSinFacturar: acceptedNotInvoiced,
+  };
+}

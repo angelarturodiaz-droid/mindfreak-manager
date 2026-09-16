@@ -68,6 +68,36 @@ datos), pero visualmente parecía roto/sin funcionar.
   usuario: 16/09/2026 + 30 días = 16/10/2026).
 - Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
 
+## Fase 2 del módulo financiero avanzado: Dashboard de Cuentas por Cobrar y Vencimientos
+
+- **Nuevo reporte "Cuentas por Cobrar y Vencimientos"** dentro de Reportes
+  (ahora el reporte por defecto al entrar): 6 KPIs (total por cobrar,
+  vencido, vence hoy, próximos 7/15/30 días — acumulativos, consolidados
+  en la moneda base), línea de tiempo horizontal de vencimientos por día
+  (próximos 30 días), tabla de facturas vencidas, tabla de facturas
+  próximas a vencer, y dos tablas de cotizaciones: pendientes de
+  aceptación (SENT/VIEWED/NEGOTIATING) y aceptadas sin facturar todavía
+  (APPROVED sin ninguna factura vinculada).
+- Nueva query `getReceivablesDashboard()` en `features/reports/queries.ts`
+  — reutiliza el mismo set base de facturas pendientes que ya usaba el
+  reporte de Cuentas por Cobrar existente (ahora renombrado "(detalle)"
+  para distinguirlo de este dashboard nuevo), sin duplicar lógica.
+- **Verificado con datos reales, no solo por partes**: creé 4 facturas con
+  vencimientos exactos (vencida hace 32 días, vence hoy, en 5 días, en 20
+  días) y confirmé que el cálculo de días (`due_date - current_date` en la
+  base de datos) coincide exacto con la lógica en JS — y por lo tanto los
+  6 totales cayeron en los cubos correctos (vencido=1000, hoy=2000,
+  7 días=3000, 15 días=3000, 30 días=7000, total=10000). También creé una
+  cotización pendiente y una aprobada sin facturar, y confirmé que esta
+  última no tiene ninguna factura vinculada (se clasifica correctamente).
+  Todos los datos de prueba limpiados sin residuos.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
+- **Pendiente**: vista visual de calendario tipo grid (hoy es una línea de
+  tiempo horizontal por fecha, funcional pero más simple que un calendario
+  completo) — se puede mejorar en una pasada de diseño aparte si se
+  quiere. Las Fases 3-5 (dashboard configurable, alertas/responsable/
+  historial, arquitectura de automatizaciones) siguen pendientes.
+
 ## Fix: 3 pendientes del PDF y de líneas de factura (feedback real del usuario)
 
 El usuario mandó capturas reales tras probar el vencimiento automático (que
