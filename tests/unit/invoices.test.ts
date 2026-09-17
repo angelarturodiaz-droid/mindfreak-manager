@@ -32,6 +32,6 @@ describe("calculateInvoiceTotals", () => {
 
   it("sin líneas, todos los totales son 0", () => {
     const totals = calculateInvoiceTotals([]);
-    expect(totals).toEqual({ subtotal: 0, discount: 0, tax: 0, total: 0 });
+    expect(totals).toEqual({ subtotal: 0, commission_amount: 0, discount: 0, tax: 0, total: 0 });
   });
 });

@@ -20,6 +20,7 @@ export const quotationHeaderSchema = z.object({
   exchange_rate: z.coerce.number().positive().default(1),
   terms: z.string().trim().optional().or(z.literal("")),
   payment_terms_id: z.string().uuid().optional().or(z.literal("")),
+  commission_percent: z.coerce.number().min(0).max(100).default(0),
 });
 
 export type QuotationHeaderInput = z.infer<typeof quotationHeaderSchema>;
@@ -60,7 +61,13 @@ export function calculateItemEstimatedCost(item: {
   return item.quantity * item.estimated_unit_cost;
 }
 
-/** Agrega los totales de la cotización a partir de sus líneas. */
+/**
+ * Agrega los totales de la cotización a partir de sus líneas.
+ * Comisión de la empresa (% sobre el subtotal): se suma ANTES del
+ * descuento y ANTES del impuesto — participa en la base sobre la que se
+ * calcula el ITBIS (con la tasa efectiva del documento). Orden: Subtotal
+ * + Comisión − Descuento + ITBIS = Total.
+ */
 export function calculateQuotationTotals(
   items: {
     quantity: number;
@@ -69,24 +76,31 @@ export function calculateQuotationTotals(
     tax: number;
     estimated_unit_cost: number;
   }[],
+  commissionPercent = 0,
 ) {
   let subtotal = 0;
   let discount = 0;
-  let tax = 0;
+  let lineTax = 0;
   let estimatedCost = 0;
 
   for (const item of items) {
     subtotal += item.quantity * item.unit_price;
     discount += item.discount;
-    tax += item.tax;
+    lineTax += item.tax;
     estimatedCost += calculateItemEstimatedCost(item);
   }
 
-  const total = Math.max(0, subtotal - discount + tax);
+  const commissionAmount = subtotal * (commissionPercent / 100);
+  const effectiveTaxRate = subtotal > 0 ? lineTax / subtotal : 0;
+  const commissionTax = commissionAmount * effectiveTaxRate;
+  const tax = lineTax + commissionTax;
+
+  const total = Math.max(0, subtotal + commissionAmount - discount + tax);
   const estimatedMargin = total > 0 ? ((total - estimatedCost) / total) * 100 : 0;
 
   return {
     subtotal,
+    commission_amount: commissionAmount,
     discount,
     tax,
     total,

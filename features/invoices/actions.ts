@@ -42,18 +42,16 @@ async function generateInvoiceNumber(companyId: string): Promise<string> {
 
 async function recalculateInvoiceTotals(invoiceId: string) {
   const supabase = await createSupabaseClient();
-  const { data: items, error } = await supabase
-    .from("invoice_items")
-    .select("quantity, unit_price, discount, tax")
-    .eq("invoice_id", invoiceId);
+  const [{ data: items, error }, { data: invoice }] = await Promise.all([
+    supabase
+      .from("invoice_items")
+      .select("quantity, unit_price, discount, tax")
+      .eq("invoice_id", invoiceId),
+    supabase.from("invoices").select("paid_amount, commission_percent").eq("id", invoiceId).single(),
+  ]);
   if (error) throw new Error(error.message);
 
-  const totals = calculateInvoiceTotals(items ?? []);
-  const { data: invoice } = await supabase
-    .from("invoices")
-    .select("paid_amount")
-    .eq("id", invoiceId)
-    .single();
+  const totals = calculateInvoiceTotals(items ?? [], invoice?.commission_percent ?? 0);
   const paidAmount = invoice?.paid_amount ?? 0;
 
   const { error: updateError } = await supabase
@@ -75,6 +73,7 @@ export async function createInvoiceAction(
     issue_date: String(formData.get("issue_date") ?? ""),
     due_date: String(formData.get("due_date") ?? ""),
     payment_terms_id: String(formData.get("payment_terms_id") ?? ""),
+    commission_percent: String(formData.get("commission_percent") ?? "0"),
     currency: String(formData.get("currency") ?? "DOP"),
     exchange_rate: String(formData.get("exchange_rate") ?? "1"),
     ncf: String(formData.get("ncf") ?? ""),
@@ -149,6 +148,7 @@ export async function createInvoiceAction(
       due_date: parsed.data.due_date || null,
       payment_terms_id: effectivePaymentTermsId || null,
       credit_days: creditDays,
+      commission_percent: parsed.data.commission_percent,
       currency: parsed.data.currency,
       exchange_rate: parsed.data.exchange_rate,
       ncf: parsed.data.ncf || null,

@@ -45,13 +45,16 @@ async function generateQuotationNumber(companyId: string): Promise<string> {
 /** Recalcula y guarda los totales de la cotización a partir de sus líneas actuales. */
 async function recalculateQuotationTotals(quotationId: string) {
   const supabase = await createSupabaseClient();
-  const { data: items, error } = await supabase
-    .from("quotation_items")
-    .select("quantity, unit_price, discount, tax, estimated_unit_cost")
-    .eq("quotation_id", quotationId);
+  const [{ data: items, error }, { data: quotation }] = await Promise.all([
+    supabase
+      .from("quotation_items")
+      .select("quantity, unit_price, discount, tax, estimated_unit_cost")
+      .eq("quotation_id", quotationId),
+    supabase.from("quotations").select("commission_percent").eq("id", quotationId).single(),
+  ]);
   if (error) throw new Error(error.message);
 
-  const totals = calculateQuotationTotals(items ?? []);
+  const totals = calculateQuotationTotals(items ?? [], quotation?.commission_percent ?? 0);
   const { error: updateError } = await supabase
     .from("quotations")
     .update(totals)
@@ -74,6 +77,7 @@ export async function createQuotationAction(
     exchange_rate: String(formData.get("exchange_rate") ?? "1"),
     terms: String(formData.get("terms") ?? ""),
     payment_terms_id: String(formData.get("payment_terms_id") ?? ""),
+    commission_percent: String(formData.get("commission_percent") ?? "0"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -130,6 +134,7 @@ export async function createQuotationAction(
       currency: parsed.data.currency,
       exchange_rate: parsed.data.exchange_rate,
       terms: parsed.data.terms || null,
+      commission_percent: parsed.data.commission_percent,
       status: "DRAFT",
       created_by: user?.id,
       ...paymentTermsFields,

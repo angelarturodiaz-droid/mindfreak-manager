@@ -41,6 +41,8 @@ export type InvoicePdfData = {
     status: string;
     currency: string;
     subtotal: number;
+    commission_percent: number;
+    commission_amount: number;
     discount: number;
     tax: number;
     total: number;
@@ -298,6 +300,14 @@ export function InvoicePdfDocument({ company, invoice, client, items }: InvoiceP
               <Text style={styles.totalsLabel}>SUBTOTAL (NETO)</Text>
               <Text style={styles.totalsValue}>{money(invoice.subtotal, invoice.currency)}</Text>
             </View>
+            {invoice.commission_percent > 0 && (
+              <View style={styles.totalsRow}>
+                <Text style={styles.totalsLabel}>COMISIÓN ({invoice.commission_percent}%)</Text>
+                <Text style={styles.totalsValue}>
+                  {money(invoice.commission_amount, invoice.currency)}
+                </Text>
+              </View>
+            )}
             {invoice.discount > 0 && (
               <View style={styles.totalsRow}>
                 <Text style={styles.totalsLabel}>DESCUENTO</Text>

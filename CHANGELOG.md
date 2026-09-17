@@ -383,6 +383,36 @@ Cambios:
   funcionando por el usuario en la app real.
 - Verificado: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
 
+## Feat: Comisión de la empresa en Cotizaciones y Facturas
+
+Pedido del usuario, con dos decisiones de negocio confirmadas antes de
+construir: (1) el cliente SÍ ve esta comisión, es un cargo más en su
+factura/cotización; (2) el ITBIS SÍ se calcula también sobre el monto de
+la comisión.
+
+- **Nuevas columnas** `commission_percent`/`commission_amount` en
+  `quotations` e `invoices`. Migración `047_commission.sql`.
+- **Fórmula**: `Subtotal + Comisión − Descuento + ITBIS = Total`. El ITBIS
+  de la comisión usa la **tasa efectiva del documento**
+  (`impuesto_de_las_líneas / subtotal`), para quedar consistente aunque
+  haya líneas con tasas distintas o exentas — no se asume 18% fijo.
+- Campo **"Comisión de la empresa (%)"** en Nueva Cotización y Nueva
+  Factura. Se recalcula solo al agregar/quitar líneas (igual que el resto
+  de los totales).
+- Se muestra en el detalle de ambos documentos y en sus PDF (fila
+  "COMISIÓN (%)" entre Subtotal y Descuento) — solo aparece si es mayor a
+  0%, para no ensuciar los documentos que no la usan.
+- **Verificado de verdad con datos reales, no solo el cálculo aislado**:
+  armé una cotización con 2 líneas (RD$1,000 + RD$500, 18% ITBIS cada una)
+  y 10% de comisión — confirmé que la base de datos guardó exactamente
+  Subtotal 1,500 → Comisión 150 → ITBIS 297 → Total 1,947 (coincide con el
+  cálculo esperado a mano). Generé el PDF con esos mismos datos, lo
+  convertí a imagen, y confirmé visualmente que la fila "COMISIÓN (10%)"
+  aparece en el lugar correcto con el monto correcto. Datos de prueba
+  limpiados sin residuos.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios
+  (2 ajustados por la nueva forma del resultado).
+
 ## Fix: "duplicate key value violates unique constraint" al crear Cotización/Factura/Proyecto
 
 El usuario reportó este error real al crear una cotización. Causa

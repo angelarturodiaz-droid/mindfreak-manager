@@ -240,6 +240,14 @@ export default async function InvoiceDetailPage({
               {formatMoney(invoice.subtotal, invoice.currency)}
             </span>
           </div>
+          {invoice.commission_percent > 0 && (
+            <div className="mt-1 flex items-center justify-between">
+              <span className="text-brand-muted">Comisión ({invoice.commission_percent}%)</span>
+              <span className="font-medium">
+                {formatMoney(invoice.commission_amount, invoice.currency)}
+              </span>
+            </div>
+          )}
           <div className="mt-1 flex items-center justify-between">
             <span className="text-brand-muted">Descuento</span>
             <span className="font-medium">

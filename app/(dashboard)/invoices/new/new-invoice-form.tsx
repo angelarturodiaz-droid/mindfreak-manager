@@ -138,6 +138,17 @@ export function NewInvoiceForm({
         }
       />
 
+      <Input
+        label="Comisión de la empresa (%)"
+        name="commission_percent"
+        type="number"
+        step="0.01"
+        min="0"
+        max="100"
+        defaultValue="0"
+        hint="Se suma antes del descuento y del ITBIS."
+      />
+
       <CurrencyExchangeFields baseCurrency={baseCurrency} />
 
       <p className="text-xs text-brand-muted">

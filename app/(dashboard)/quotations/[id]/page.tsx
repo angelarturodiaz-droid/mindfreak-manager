@@ -195,6 +195,14 @@ export default async function QuotationDetailPage({
               {formatMoney(quotation.subtotal, quotation.currency)}
             </span>
           </div>
+          {quotation.commission_percent > 0 && (
+            <div className="mt-1 flex items-center justify-between">
+              <span className="text-brand-muted">Comisión ({quotation.commission_percent}%)</span>
+              <span className="font-medium">
+                {formatMoney(quotation.commission_amount, quotation.currency)}
+              </span>
+            </div>
+          )}
           <div className="mt-1 flex items-center justify-between">
             <span className="text-brand-muted">Descuento</span>
             <span className="font-medium">

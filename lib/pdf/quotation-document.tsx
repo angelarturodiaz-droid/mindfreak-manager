@@ -39,6 +39,8 @@ export type QuotationPdfData = {
     status: string;
     currency: string;
     subtotal: number;
+    commission_percent: number;
+    commission_amount: number;
     discount: number;
     tax: number;
     total: number;
@@ -297,6 +299,14 @@ export function QuotationPdfDocument({
                 {money(quotation.subtotal, quotation.currency)}
               </Text>
             </View>
+            {quotation.commission_percent > 0 && (
+              <View style={styles.totalsRow}>
+                <Text style={styles.totalsLabel}>COMISIÓN ({quotation.commission_percent}%)</Text>
+                <Text style={styles.totalsValue}>
+                  {money(quotation.commission_amount, quotation.currency)}
+                </Text>
+              </View>
+            )}
             {quotation.discount > 0 && (
               <View style={styles.totalsRow}>
                 <Text style={styles.totalsLabel}>DESCUENTO</Text>
