@@ -18,8 +18,12 @@ export const invoiceHeaderSchema = z.object({
   commission_percent: z.coerce.number().min(0).max(100).default(0),
   currency: z.enum(["DOP", "USD"]).default("DOP"),
   exchange_rate: z.coerce.number().positive().default(1),
+  billing_type: z.enum(["REGULAR", "ELECTRONIC"]).default("REGULAR"),
   ncf: z.string().trim().optional().or(z.literal("")),
   ncf_type: z.string().trim().optional().or(z.literal("")),
+  e_ncf: z.string().trim().optional().or(z.literal("")),
+  e_ncf_valid_until: z.string().optional().or(z.literal("")),
+  payment_type_code: z.enum(["1", "2"]).optional().or(z.literal("")),
 });
 
 export type InvoiceHeaderInput = z.infer<typeof invoiceHeaderSchema>;

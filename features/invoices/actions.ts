@@ -13,6 +13,7 @@ import {
   calculateInvoiceTotals,
 } from "./schema";
 import { InvoicePdfDocument } from "@/lib/pdf/invoice-document";
+import { InvoiceElectronicPdfDocument } from "@/lib/pdf/invoice-electronic-document";
 
 export type ActionState = { error: string | null };
 
@@ -76,8 +77,12 @@ export async function createInvoiceAction(
     commission_percent: String(formData.get("commission_percent") ?? "0"),
     currency: String(formData.get("currency") ?? "DOP"),
     exchange_rate: String(formData.get("exchange_rate") ?? "1"),
+    billing_type: String(formData.get("billing_type") ?? "REGULAR"),
     ncf: String(formData.get("ncf") ?? ""),
     ncf_type: String(formData.get("ncf_type") ?? ""),
+    e_ncf: String(formData.get("e_ncf") ?? ""),
+    e_ncf_valid_until: String(formData.get("e_ncf_valid_until") ?? ""),
+    payment_type_code: String(formData.get("payment_type_code") ?? ""),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -151,8 +156,12 @@ export async function createInvoiceAction(
       commission_percent: parsed.data.commission_percent,
       currency: parsed.data.currency,
       exchange_rate: parsed.data.exchange_rate,
+      billing_type: parsed.data.billing_type,
       ncf: parsed.data.ncf || null,
       ncf_type: parsed.data.ncf_type || null,
+      e_ncf: parsed.data.e_ncf || null,
+      e_ncf_valid_until: parsed.data.e_ncf_valid_until || null,
+      payment_type_code: parsed.data.payment_type_code || null,
       status: "DRAFT",
       created_by: user?.id,
     })
@@ -182,8 +191,12 @@ export async function updateInvoiceHeaderAction(
 
   const dueDate = String(formData.get("due_date") ?? "");
   const paymentTermsId = String(formData.get("payment_terms_id") ?? "");
+  const billingType = String(formData.get("billing_type") ?? "REGULAR");
   const ncf = String(formData.get("ncf") ?? "");
   const ncfType = String(formData.get("ncf_type") ?? "");
+  const eNcf = String(formData.get("e_ncf") ?? "");
+  const eNcfValidUntil = String(formData.get("e_ncf_valid_until") ?? "");
+  const paymentTypeCode = String(formData.get("payment_type_code") ?? "");
 
   const supabase = await createSupabaseClient();
 
@@ -207,8 +220,12 @@ export async function updateInvoiceHeaderAction(
       due_date: dueDate || null,
       payment_terms_id: paymentTermsId || null,
       credit_days: creditDays,
+      billing_type: billingType,
       ncf: ncf || null,
       ncf_type: ncfType || null,
+      e_ncf: eNcf || null,
+      e_ncf_valid_until: eNcfValidUntil || null,
+      payment_type_code: paymentTypeCode || null,
     })
     .eq("id", invoiceId);
 
@@ -345,7 +362,7 @@ export async function generateInvoiceShareLinkAction(
     await Promise.all([
       supabase
         .from("invoices")
-        .select("*, clients(name, tax_id, email, phone), payment_terms(name)")
+        .select("*, clients(name, tax_id, email, phone), payment_terms(name), projects(number, name)")
         .eq("id", invoiceId)
         .single(),
       supabase
@@ -355,7 +372,7 @@ export async function generateInvoiceShareLinkAction(
         .order("sort_order"),
       supabase
         .from("companies")
-        .select("name, legal_name, tax_id, logo_url, brand_primary, brand_accent")
+        .select("name, legal_name, tax_id, address, phone, logo_url, brand_primary, brand_accent")
         .eq("id", companyId)
         .single(),
     ]);
@@ -372,26 +389,48 @@ export async function generateInvoiceShareLinkAction(
   const paymentTermsData = invoice.payment_terms as { name: string } | { name: string }[] | null;
   const paymentTermsName = Array.isArray(paymentTermsData) ? paymentTermsData[0]?.name : paymentTermsData?.name;
 
-  const buffer = await renderToBuffer(
-    InvoicePdfDocument({
-      company: company ?? {
-        name: "Mindfreak Manager",
-        legal_name: null,
-        tax_id: null,
-        logo_url: null,
-        brand_primary: "#0b0e14",
-        brand_accent: "#17a6b8",
-      },
-      invoice: { ...invoice, payment_terms_name: paymentTermsName ?? null },
-      client: {
-        name: clientRecord?.name ?? "Cliente",
-        tax_id: clientRecord?.tax_id ?? null,
-        email: clientRecord?.email ?? null,
-        phone: clientRecord?.phone ?? null,
-      },
-      items: items ?? [],
-    }),
-  );
+  const projectData = invoice.projects as
+    | { number: string; name: string }
+    | { number: string; name: string }[]
+    | null;
+  const projectRecord = Array.isArray(projectData) ? projectData[0] : projectData;
+
+  const commonCompany = company ?? {
+    name: "Mindfreak Manager",
+    legal_name: null,
+    tax_id: null,
+    address: null,
+    phone: null,
+    logo_url: null,
+    brand_primary: "#0b0e14",
+    brand_accent: "#17a6b8",
+  };
+  const commonClient = {
+    name: clientRecord?.name ?? "Cliente",
+    tax_id: clientRecord?.tax_id ?? null,
+    email: clientRecord?.email ?? null,
+    phone: clientRecord?.phone ?? null,
+  };
+
+  const buffer =
+    invoice.billing_type === "ELECTRONIC"
+      ? await renderToBuffer(
+          InvoiceElectronicPdfDocument({
+            company: commonCompany,
+            invoice,
+            client: commonClient,
+            project: projectRecord ?? null,
+            items: items ?? [],
+          }),
+        )
+      : await renderToBuffer(
+          InvoicePdfDocument({
+            company: commonCompany,
+            invoice: { ...invoice, payment_terms_name: paymentTermsName ?? null },
+            client: commonClient,
+            items: items ?? [],
+          }),
+        );
 
   const path = `${companyId}/invoices/${invoiceId}.pdf`;
   const { error: uploadError } = await supabase.storage

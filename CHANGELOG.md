@@ -1,5 +1,42 @@
 # CHANGELOG — Mindfreak Manager
 
+## Feat: Facturación Electrónica (e-CF) preparada — Tradicional o Electrónica, elegible por factura
+
+Pedido del usuario, con una captura real de referencia (factura e-CF de
+otro negocio) para adaptar al diseño de Mindfreak. **Importante, aclarado
+antes de construir**: esto deja la arquitectura y el diseño LISTOS — no es
+una integración real con la DGII (eso requiere certificación real del
+negocio, que el usuario mismo dijo que todavía no tiene). Nunca se generan
+e-NCF, código de seguridad o QR falsos — eso sería un problema legal, no
+solo técnico.
+
+- **Nuevos campos en `invoices`**: `billing_type` ('REGULAR'/'ELECTRONIC'),
+  `e_ncf`, `e_ncf_valid_until`, `payment_type_code` (1-Contado/2-Crédito),
+  `security_code`, `digital_signature_at`. Migración
+  `048_electronic_billing.sql`, con comentarios en las columnas dejando
+  explícito que `e_ncf`/`security_code` solo los puede emitir la DGII o un
+  proveedor certificado.
+- **Selector "Tipo de facturación"** en Nueva Factura y en el detalle
+  (editable después) — Tradicional (NCF, como ya existía) o Electrónica
+  (e-CF). Al elegir Electrónica aparecen los campos propios del e-CF.
+- **Nuevo PDF** (`invoice-electronic-document.tsx`): mismo layout que la
+  referencia del usuario (e-NCF y su vigencia arriba a la derecha, cajas
+  de Facturado A / Factura No.-Fecha, tabla de ítems, Subtotal/Comisión/
+  Descuento Global/ITBIS/Balance, recuadros de firma) pero con la
+  identidad visual de Mindfreak (no una copia literal del formato ajeno).
+  Mientras no haya `e_ncf` real, muestra una insignia clara **"PENDIENTE
+  DE CERTIFICACIÓN DGII"** en vez de inventar un código de seguridad o QR
+  — cuando sí exista (por una integración real futura), se muestran esos
+  datos automáticamente.
+- La acción de generar PDF ahora elige la plantilla correcta según
+  `billing_type` de la factura.
+- **Verificado de verdad, ambos estados**: generé el PDF con datos
+  reales sin certificar (muestra "Pendiente de certificación DGII") y con
+  datos de certificación simulados para PROBAR el layout (no para usarlos
+  de verdad) — confirmé visualmente en ambos casos que el diseño coincide
+  con la referencia, adaptado a la marca.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
+
 ## Feat: PDF de Recibo de Cobro y Comprobante de Pago a Proveedor (nuevos)
 
 Pedido del usuario: aplicar el mismo diseño de Cotización/Factura a otros

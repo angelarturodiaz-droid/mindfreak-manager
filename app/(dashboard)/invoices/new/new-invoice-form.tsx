@@ -38,6 +38,7 @@ export function NewInvoiceForm({
   const [paymentTermsId, setPaymentTermsId] = useState("");
   const [issueDate, setIssueDate] = useState(today);
   const [manualDueDate, setManualDueDate] = useState("");
+  const [billingType, setBillingType] = useState("REGULAR");
 
   const selectedTerm = paymentTerms.find((t) => t.id === paymentTermsId);
   const previewDueDate = (() => {
@@ -150,6 +151,33 @@ export function NewInvoiceForm({
       />
 
       <CurrencyExchangeFields baseCurrency={baseCurrency} />
+
+      <Select
+        label="Tipo de facturación"
+        name="billing_type"
+        defaultValue="REGULAR"
+        onChange={(e) => setBillingType(e.target.value)}
+      >
+        <option value="REGULAR">Tradicional (NCF)</option>
+        <option value="ELECTRONIC">Electrónica (e-CF)</option>
+      </Select>
+
+      {billingType === "ELECTRONIC" && (
+        <div className="space-y-4 rounded-[var(--radius-md)] border border-brand-border bg-brand-background p-3">
+          <p className="text-xs text-brand-muted">
+            Estos datos los emite la DGII (o un proveedor certificado) al
+            certificarte para e-CF — mientras tanto se pueden dejar en
+            blanco o llenar a mano si ya los tienes de otra forma.
+          </p>
+          <Input label="e-NCF" name="e_ncf" placeholder="Ej. E310000000371" />
+          <Input label="e-NCF válido hasta" name="e_ncf_valid_until" type="date" />
+          <Select label="Tipo de pago" name="payment_type_code" defaultValue="">
+            <option value="">Sin especificar</option>
+            <option value="1">1 - Contado</option>
+            <option value="2">2 - Crédito</option>
+          </Select>
+        </div>
+      )}
 
       <p className="text-xs text-brand-muted">
         NCF/ITBIS: campos preparados, no activos en producción todavía (F0,
