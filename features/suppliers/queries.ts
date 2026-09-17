@@ -37,3 +37,15 @@ export async function listSupplierContacts(supplierId: string) {
   if (error) throw new Error(error.message);
   return data;
 }
+
+export async function listImportBatches() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("import_batches")
+    .select("*")
+    .eq("entity_type", "suppliers")
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error) throw new Error(error.message);
+  return data;
+}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Truck, Plus } from "lucide-react";
+import { Truck, Plus, Upload } from "lucide-react";
 import { listSuppliers } from "@/features/suppliers/queries";
 import { deactivateSupplierAction } from "@/features/suppliers/actions";
 import { Button } from "@/components/ui/button";
@@ -56,11 +56,18 @@ export default async function SuppliersPage({
             Empresas y personas que le proveen servicios a Mindfreak Events.
           </p>
         </div>
-        <Link href="/suppliers/new">
-          <Button size="sm" icon={<Plus size={14} />}>
-            Nuevo proveedor
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/suppliers/import">
+            <Button variant="outline" size="sm" icon={<Upload size={14} />}>
+              Importar CSV
+            </Button>
+          </Link>
+          <Link href="/suppliers/new">
+            <Button size="sm" icon={<Plus size={14} />}>
+              Nuevo proveedor
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <form className="flex flex-wrap items-end gap-2" action="/suppliers" method="get">

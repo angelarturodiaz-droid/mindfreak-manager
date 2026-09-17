@@ -355,6 +355,19 @@ Cambios:
   prueba revertido.
 - Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
 
+## Feat: importar proveedores masivamente por CSV (mismo patrón que Clientes)
+
+- `importSuppliersCsvAction`: mismo mecanismo exacto que la importación de
+  Clientes ya existente (`papaparse`, registro en `import_batches`,
+  reporte de éxitos/errores por fila). Columnas esperadas: `name, tax_id,
+  category, email, phone, address` (solo `name` obligatorio).
+- Nueva pantalla `/suppliers/import`, con historial de importaciones
+  recientes — botón "Importar CSV" agregado en la lista de Proveedores.
+- Verificado con datos reales: insert de un proveedor de prueba y de un
+  registro de `import_batches` bajo los permisos reales — ambos
+  funcionan. Datos de prueba limpiados sin residuos.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
+
 ## Feat: admin puede restablecer la contraseña de otros usuarios
 
 - `resetUserPasswordAction`: usa el mismo cliente de administración

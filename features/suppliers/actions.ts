@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import Papa from "papaparse";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
@@ -194,4 +195,106 @@ export async function deleteSupplierContactAction(
     .eq("id", contactId);
   if (error) throw new Error(error.message);
   revalidatePath(`/suppliers/${supplierId}`);
+}
+
+export type ImportActionState = {
+  error: string | null;
+  result?: { total: number; success: number; errors: number };
+};
+
+/** Importación masiva de proveedores vía CSV — mismo patrón que Clientes. */
+export async function importSuppliersCsvAction(
+  _prevState: ImportActionState,
+  formData: FormData,
+): Promise<ImportActionState> {
+  await requirePermission("suppliers.create");
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Selecciona un archivo CSV." };
+  }
+
+  const text = await file.text();
+  const parsed = Papa.parse<Record<string, string>>(text, {
+    header: true,
+    skipEmptyLines: true,
+  });
+
+  if (parsed.errors.length > 0) {
+    return { error: `Error leyendo el CSV: ${parsed.errors[0].message}` };
+  }
+
+  const rows = parsed.data;
+  const companyId = await getPrimaryCompanyId();
+  const supabase = await createSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const errorDetails: { row: number; error: string }[] = [];
+  let successCount = 0;
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const candidate = supplierSchema.safeParse({
+      name: row.name ?? "",
+      tax_id: row.tax_id ?? "",
+      category: row.category ?? "",
+      email: row.email ?? "",
+      phone: row.phone ?? "",
+      address: row.address ?? "",
+    });
+
+    if (!candidate.success) {
+      errorDetails.push({
+        row: i + 2, // +2: encabezado + índice base 1
+        error: candidate.error.issues[0]?.message ?? "Datos inválidos",
+      });
+      continue;
+    }
+
+    const { error } = await supabase.from("suppliers").insert({
+      company_id: companyId,
+      name: candidate.data.name,
+      tax_id: candidate.data.tax_id || null,
+      category: candidate.data.category || null,
+      email: candidate.data.email || null,
+      phone: candidate.data.phone || null,
+      address: candidate.data.address || null,
+      created_by: user?.id,
+    });
+
+    if (error) {
+      errorDetails.push({ row: i + 2, error: error.message });
+    } else {
+      successCount++;
+    }
+  }
+
+  const status =
+    errorDetails.length === 0
+      ? "COMPLETED"
+      : successCount === 0
+        ? "FAILED"
+        : "COMPLETED_WITH_ERRORS";
+
+  await supabase.from("import_batches").insert({
+    company_id: companyId,
+    entity_type: "suppliers",
+    file_name: file.name,
+    total_rows: rows.length,
+    success_count: successCount,
+    error_count: errorDetails.length,
+    error_details: errorDetails.length > 0 ? errorDetails : null,
+    status,
+    created_by: user?.id,
+  });
+
+  revalidatePath("/suppliers");
+  revalidatePath("/suppliers/import");
+
+  return {
+    error: null,
+    result: { total: rows.length, success: successCount, errors: errorDetails.length },
+  };
 }
