@@ -383,6 +383,27 @@ Cambios:
   funcionando por el usuario en la app real.
 - Verificado: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
 
+## Fix: "duplicate key value violates unique constraint" al crear Cotización/Factura/Proyecto
+
+El usuario reportó este error real al crear una cotización. Causa
+confirmada con datos reales: la numeración usaba `count(*) + 1` — se
+rompe apenas hay un **hueco** en la secuencia (una cotización/factura/
+proyecto borrada en algún momento). Confirmé el hueco real: existían
+COT-0001, 0002, 0003, 0006 (**sin el 0004**) — `count(*)` daba 4, así que
+el siguiente número calculado era COT-0005, que ya existía → colisión.
+El mismo patrón exacto estaba también en Facturas y Proyectos (sin hueco
+todavía, pero con la misma falla latente).
+
+- Las 3 funciones de numeración (`generateQuotationNumber`,
+  `generateInvoiceNumber`, `generateProjectNumber`) ahora calculan el
+  **máximo real** de los números ya usados (parseado en JS, no depende
+  del orden lexicográfico del texto, que además falla solo con números
+  de más de 4 dígitos) — tolera huecos sin colisionar.
+- Verificado con los números reales actuales de cotizaciones (con el
+  hueco real incluido): el cálculo da COT-0007, sin chocar con ninguno de
+  los existentes.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
+
 ## Fix: servicio "Capacitacion" tenía 0% de impuesto guardado (dato, no bug de código)
 
 El usuario reportó que al agregar el servicio "Capacitacion" a una

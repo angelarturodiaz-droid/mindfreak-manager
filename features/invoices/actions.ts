@@ -24,13 +24,20 @@ async function getPrimaryCompanyId(): Promise<string> {
   return companyIds[0];
 }
 
+/**
+ * Antes usaba count(*)+1 — se rompía apenas había un hueco en la
+ * numeración (ej. una factura borrada). Ahora toma el máximo real de los
+ * números existentes (parseado en JS, no depende del orden lexicográfico
+ * del texto).
+ */
 async function generateInvoiceNumber(companyId: string): Promise<string> {
   const supabase = await createSupabaseClient();
-  const { count } = await supabase
-    .from("invoices")
-    .select("id", { count: "exact", head: true })
-    .eq("company_id", companyId);
-  return `INV-${String((count ?? 0) + 1).padStart(4, "0")}`;
+  const { data } = await supabase.from("invoices").select("number").eq("company_id", companyId);
+  const maxNum = (data ?? []).reduce((max, row) => {
+    const n = parseInt(row.number.replace(/\D/g, ""), 10);
+    return Number.isFinite(n) && n > max ? n : max;
+  }, 0);
+  return `INV-${String(maxNum + 1).padStart(4, "0")}`;
 }
 
 async function recalculateInvoiceTotals(invoiceId: string) {

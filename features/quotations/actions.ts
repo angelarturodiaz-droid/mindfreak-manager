@@ -24,13 +24,22 @@ async function getPrimaryCompanyId(): Promise<string> {
   return companyIds[0];
 }
 
+/**
+ * Genera el siguiente número correlativo. Antes usaba count(*)+1 — se
+ * rompía en cuanto había un hueco en la numeración (ej. una cotización
+ * borrada), porque el conteo de filas ya no coincidía con el número más
+ * alto usado. Ahora toma el máximo real de los números existentes
+ * (parseado en JS para no depender del orden lexicográfico del texto,
+ * que falla apenas hay más de 9999).
+ */
 async function generateQuotationNumber(companyId: string): Promise<string> {
   const supabase = await createSupabaseClient();
-  const { count } = await supabase
-    .from("quotations")
-    .select("id", { count: "exact", head: true })
-    .eq("company_id", companyId);
-  return `COT-${String((count ?? 0) + 1).padStart(4, "0")}`;
+  const { data } = await supabase.from("quotations").select("number").eq("company_id", companyId);
+  const maxNum = (data ?? []).reduce((max, row) => {
+    const n = parseInt(row.number.replace(/\D/g, ""), 10);
+    return Number.isFinite(n) && n > max ? n : max;
+  }, 0);
+  return `COT-${String(maxNum + 1).padStart(4, "0")}`;
 }
 
 /** Recalcula y guarda los totales de la cotización a partir de sus líneas actuales. */
