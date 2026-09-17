@@ -302,7 +302,7 @@ export function InvoicePdfDocument({ company, invoice, client, items }: InvoiceP
             </View>
             {invoice.commission_percent > 0 && (
               <View style={styles.totalsRow}>
-                <Text style={styles.totalsLabel}>COMISIÓN ({invoice.commission_percent}%)</Text>
+                <Text style={styles.totalsLabel}>COMISIÓN</Text>
                 <Text style={styles.totalsValue}>
                   {money(invoice.commission_amount, invoice.currency)}
                 </Text>

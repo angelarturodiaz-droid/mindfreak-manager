@@ -301,7 +301,7 @@ export function QuotationPdfDocument({
             </View>
             {quotation.commission_percent > 0 && (
               <View style={styles.totalsRow}>
-                <Text style={styles.totalsLabel}>COMISIÓN ({quotation.commission_percent}%)</Text>
+                <Text style={styles.totalsLabel}>COMISIÓN</Text>
                 <Text style={styles.totalsValue}>
                   {money(quotation.commission_amount, quotation.currency)}
                 </Text>

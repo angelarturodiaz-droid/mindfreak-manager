@@ -383,6 +383,21 @@ Cambios:
   funcionando por el usuario en la app real.
 - Verificado: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
 
+## Fix: el PDF mostraba el % de la comisión, ahora solo "COMISIÓN" + el monto
+
+El usuario pidió que en el documento impreso no se vea el porcentaje
+("Comisión (20%)"), solo la etiqueta "COMISIÓN" y el monto — el cálculo
+interno sigue usando el % igual, solo cambió lo que se muestra.
+
+- Quitado el `({commission_percent}%)` de la fila de comisión en ambos
+  PDF (Factura y Cotización, por consistencia — el usuario mencionó
+  Factura, se aplicó igual a Cotización ya que se imprimen con el mismo
+  formato).
+- La vista en pantalla (detalle de factura/cotización dentro de la app)
+  sigue mostrando el % — es información de referencia interna, no el
+  documento que recibe el cliente.
+- Verificado: `tsc`, `eslint`, 19 tests unitarios limpios.
+
 ## Feat: Comisión de la empresa en Cotizaciones y Facturas
 
 Pedido del usuario, con dos decisiones de negocio confirmadas antes de
