@@ -278,7 +278,22 @@ aprobación manual, máximo de reenvíos), canales externos (email, WhatsApp)
 — dejar la base de datos y la arquitectura preparadas, sin conectar canales
 reales todavía.
 
-## Facturación Electrónica DGII (e-CF) — propuesta técnica lista, ejecución pendiente
+## Facturación Electrónica DGII (e-CF) — decidido: Facturador Gratuito para el volumen actual
+
+**Ver `OPCION-FACTURACION-ELECTRONICA-BAJO-VOLUMEN.md`** — decisión
+tomada dado el volumen actual de Mindfreak Events (menos de 10 facturas/
+mes): usar el **Facturador Gratuito de la DGII** (portal aparte, sin
+costo, sin API) en paralelo a Mindfreak Manager, con doble captura manual
+— sin necesidad de construir ninguna integración técnica por ahora.
+
+**Ver `FASE-FACTURACION-ELECTRONICA-DGII.md`** — la propuesta técnica
+completa (integración por API, directo con la DGII o vía proveedor
+certificado) queda **en espera**, no cancelada, para cuando el volumen de
+facturación crezca lo suficiente.
+
+Pendiente no técnico: confirmar con el contador la categoría de
+contribuyente y la fecha límite real (la DGII dio prórroga hasta el
+15/nov/2026 para pequeños/micro/no clasificados, Aviso 06-26).
 
 **Ver `FASE-FACTURACION-ELECTRONICA-DGII.md`** — documento completo con
 diagnóstico, arquitectura (módulo desacoplado `ecf_documents`, no columnas
