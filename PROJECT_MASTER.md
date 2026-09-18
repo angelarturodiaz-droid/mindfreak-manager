@@ -311,6 +311,23 @@ Existe un borrador previo (columnas en `invoices` + PDF
 referencia visual del PDF, pero el modelo de datos de la propuesta técnica
 lo reemplaza cuando se ejecute esta fase.
 
+## Auditoría de arquitectura para Contabilidad de Partida Doble (futuro) — diagnóstico completado, escenario B
+
+Auditoría real del código y la base de datos (37 tablas, 5 funciones de
+negocio, 118 políticas RLS) pedida explícitamente por el usuario, sin
+modificar nada durante el análisis. Conclusión: **Escenario B —
+parcialmente preparada, requiere algunos ajustes** (no A, no C, no D).
+Hallazgo clave: toda la lógica de movimiento de dinero pasa por solo 5
+funciones de Postgres, lo cual hace viable agregar generación automática
+de asientos contables sin reconstruir módulos existentes.
+
+Tras el diagnóstico, se ejecutaron 3 tareas de preparación (ver
+CHANGELOG y `BACKUP-pre-contabilidad-v1.md` / `ESTADO-ACTUAL-ERP.md`):
+punto de recuperación (`pre-contabilidad-v1`), corrección del campo
+vestigial `tax_rate_id`, y documentación del estado actual. La
+construcción real de `chart_of_accounts`/`journal_entries` queda
+pendiente, para cuando se decida avanzar con esa fase.
+
 ## Backlog
 
 | Idea | Módulo | Prioridad | Alcance |

@@ -1,5 +1,36 @@
 # CHANGELOG — Mindfreak Manager
 
+## Chore: punto de recuperación pre-contabilidad-v1 + corrección de tax_rate_id vestigial + documentación de estado
+
+Tres tareas ejecutadas tras una auditoría completa de arquitectura (leer/
+analizar, sin modificar nada, para el diagnóstico de evolución hacia
+contabilidad de partida doble):
+
+1. **Punto de recuperación**: commit + tag anotado `pre-contabilidad-v1`,
+   con `BACKUP-pre-contabilidad-v1.md` documentando el esquema completo
+   (37 tablas), las 5 funciones de negocio, el conteo de 118 políticas
+   RLS, y un snapshot de conteos/totales financieros para poder comparar
+   después. Aclarado explícitamente qué NO es este respaldo (no es un
+   `pg_dump` real de los datos — depende de los backups automáticos de
+   Supabase, que el usuario debe confirmar en su Dashboard).
+2. **Corrección de `tax_rate_id`** en `invoice_items`/`quotation_items`:
+   era un campo vestigial (nunca se poblaba al crear una línea nueva,
+   solo se copiaba al duplicar un documento — confirmado con datos
+   reales: 0 de 8 líneas existentes lo tenían poblado). Corregido de
+   forma puramente aditiva: ahora se busca una tasa activa del catálogo
+   que coincida con el % elegido y se vincula si existe — **el cálculo
+   del ITBIS no cambió en absoluto** (`tax_percent` sigue siendo la única
+   fuente de verdad). Verificado con datos reales: inserté una línea con
+   18% (vinculó correctamente a "ITBIS 18%") y otra con 5% personalizado
+   (correctamente no vinculó nada), confirmé que el snapshot financiero
+   completo (facturas, totales, ITBIS) siguió idéntico antes/después, y
+   que las 8 líneas históricas siguen con `tax_rate_id` en null, sin
+   tocar. Datos de prueba limpiados sin residuos.
+3. **`ESTADO-ACTUAL-ERP.md`**: documento de referencia rápida de qué
+   maneja y qué no maneja el sistema hoy, enlazando el diagnóstico
+   completo y el punto de recuperación.
+- Verificado: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
+
 ## Feat: Facturación Electrónica (e-CF) preparada — Tradicional o Electrónica, elegible por factura
 
 Pedido del usuario, con una captura real de referencia (factura e-CF de

@@ -232,6 +232,21 @@ export async function addQuotationItemAction(
   const base = parsed.data.quantity * parsed.data.unit_price - parsed.data.discount;
   const tax = Math.round(Math.max(0, base) * (parsed.data.tax_percent / 100) * 100) / 100;
 
+  // tax_rate_id: referencia de mejor esfuerzo al catálogo de Impuestos —
+  // NO participa en el cálculo del ITBIS (eso sigue siendo tax_percent,
+  // sin cambios). Si el % elegido coincide con una tasa activa del
+  // catálogo, se deja la referencia; si no, se deja en null en vez de
+  // inventar un vínculo falso.
+  const companyId = await getPrimaryCompanyId();
+  const { data: matchingTaxRate } = await supabase
+    .from("tax_rates")
+    .select("id")
+    .eq("company_id", companyId)
+    .eq("rate", parsed.data.tax_percent)
+    .eq("is_active", true)
+    .limit(1)
+    .maybeSingle();
+
   const subtotal = calculateItemSubtotal({ ...parsed.data, tax });
   const { error } = await supabase.from("quotation_items").insert({
     quotation_id: quotationId,
@@ -243,6 +258,7 @@ export async function addQuotationItemAction(
     tax,
     estimated_unit_cost: parsed.data.estimated_unit_cost,
     subtotal,
+    tax_rate_id: matchingTaxRate?.id ?? null,
   });
 
   if (error) return { error: error.message };
