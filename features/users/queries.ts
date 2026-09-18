@@ -53,3 +53,26 @@ export async function getCompanyUsersWithRoleIds() {
   }
   return Array.from(byUser.values());
 }
+
+/**
+ * Estado real de verificación de correo (email_confirmed_at vive en
+ * auth.users, no en profiles — requiere el cliente de administración).
+ * Devuelve un mapa userId -> confirmado (true/false). Si el cliente admin
+ * no está configurado (SUPABASE_SECRET_KEY ausente), devuelve un mapa
+ * vacío en vez de romper la pantalla de usuarios.
+ */
+export async function getUsersEmailConfirmationStatus(): Promise<Record<string, boolean>> {
+  try {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const adminClient = createAdminClient();
+    const { data, error } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+    if (error) return {};
+    const map: Record<string, boolean> = {};
+    for (const u of data.users) {
+      map[u.id] = u.email_confirmed_at != null;
+    }
+    return map;
+  } catch {
+    return {};
+  }
+}

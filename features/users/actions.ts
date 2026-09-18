@@ -49,10 +49,15 @@ export async function createUserAction(
     return { error: e instanceof Error ? e.message : "No se pudo inicializar el cliente admin." };
   }
 
+  // email_confirm: false — el usuario debe hacer clic en el correo de
+  // confirmación antes de poder entrar. Antes se creaba con true (activo
+  // de inmediato); se cambió a pedido explícito del usuario para poder
+  // confirmar que el correo existe de verdad, no solo que tiene formato
+  // válido.
   const { data: created, error: createError } = await adminClient.auth.admin.createUser({
     email: parsed.data.email,
     password: parsed.data.password,
-    email_confirm: true,
+    email_confirm: false,
     user_metadata: { full_name: parsed.data.full_name },
   });
   if (createError || !created.user) {
@@ -61,6 +66,13 @@ export async function createUserAction(
 
   const newUserId = created.user.id;
   const supabase = await createSupabaseClient();
+
+  // Envía el correo de confirmación real — es lo que prueba que el
+  // correo existe de verdad (si no llega, el usuario simplemente nunca
+  // puede confirmar su cuenta). No se bloquea la creación del usuario si
+  // esto falla (ej. rate limit) — se puede reenviar después desde la
+  // pantalla de usuarios.
+  await supabase.auth.resend({ type: "signup", email: parsed.data.email });
 
   // El trigger de F1 crea la fila en profiles automáticamente al crearse el
   // auth.users — solo hace falta completar el nombre (el trigger solo
@@ -233,4 +245,55 @@ export async function toggleRolePermissionAction(
   });
 
   revalidatePath("/settings/roles");
+}
+
+export async function updateUserEmailAction(userId: string, newEmail: string): Promise<void> {
+  await requirePermission("users.manage");
+
+  const trimmed = newEmail.trim().toLowerCase();
+  if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    throw new Error("Correo inválido.");
+  }
+
+  const adminClient = createAdminClient();
+
+  // email_confirm: false — Supabase aplica el cambio de inmediato (no hay
+  // forma de "pedirle confirmación antes de aplicar" vía la API de
+  // administración), pero lo deja marcado como no verificado. El paso
+  // siguiente (resendEmailVerificationAction) es lo que realmente
+  // comprueba que el correo corregido existe de verdad.
+  const { error: authError } = await adminClient.auth.admin.updateUserById(userId, {
+    email: trimmed,
+    email_confirm: false,
+  });
+  if (authError) throw new Error(authError.message);
+
+  const supabase = await createSupabaseClient();
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update({ email: trimmed })
+    .eq("id", userId);
+  if (profileError) throw new Error(profileError.message);
+
+  const companyId = await getPrimaryCompanyId();
+  await logAudit({
+    companyId,
+    action: "UPDATE",
+    entityType: "user",
+    entityId: userId,
+    newValues: { email: trimmed },
+  });
+
+  // Dispara de inmediato el correo de verificación a la dirección
+  // corregida — así el admin no tiene que dar un paso extra aparte.
+  await supabase.auth.resend({ type: "signup", email: trimmed });
+
+  revalidatePath("/settings/users");
+}
+
+export async function resendEmailVerificationAction(email: string): Promise<void> {
+  await requirePermission("users.manage");
+  const supabase = await createSupabaseClient();
+  const { error } = await supabase.auth.resend({ type: "signup", email });
+  if (error) throw new Error(error.message);
 }

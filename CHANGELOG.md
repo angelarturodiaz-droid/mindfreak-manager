@@ -1,5 +1,38 @@
 # CHANGELOG — Mindfreak Manager
 
+## Feat: corregir el correo de un usuario + verificación real de que el correo existe
+
+Pedido del usuario: poder corregir el correo de un usuario si se
+equivocó al escribirlo, y confirmar que el correo existe de verdad (no
+solo que tiene formato válido) — para usuarios existentes y para
+cualquiera que se agregue de aquí en adelante.
+
+**Investigado antes de construir** (comportamiento real de Supabase, con
+documentación oficial inconsistente entre versiones): la API de
+administración (`admin.updateUserById`) aplica el cambio de correo **de
+inmediato, sin flujo de confirmación** — eso confirma la corrección pero
+no prueba que el correo sea real. Lo que sí prueba que existe es un
+correo de confirmación real que la persona tenga que abrir
+(`auth.resend({type: "signup"})`).
+
+- **Cambio de comportamiento real para usuarios nuevos**: antes se creaban
+  con `email_confirm: true` (activos de inmediato). Ahora se crean con
+  `email_confirm: false` y se envía automáticamente un correo de
+  confirmación — el usuario debe hacer clic antes de poder entrar. Es el
+  trade-off necesario para que la verificación sea real.
+- **Corregir correo de un usuario existente**: clic sobre el correo en
+  Configuración → Usuarios, se actualiza vía la API de administración
+  (`email_confirm: false`) y se reenvía automáticamente el correo de
+  confirmación a la dirección corregida.
+- **Insignia de estado** por usuario: ✅ verificado o ⚠️ "Reenviar" (clic
+  para volver a mandar el correo de confirmación) — el estado real viene
+  de `auth.users.email_confirmed_at` (leído con el cliente de
+  administración, ya que no es un campo expuesto por RLS normal).
+- **No se pudo probar end-to-end** (misma limitación de red que crear
+  usuarios y resetear contraseñas) — reutiliza exactamente los mismos
+  métodos ya confirmados funcionando en producción.
+- Verificado: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
+
 ## Docs: README neutral entre plataformas de despliegue (Vercel, Cloudflare Pages, Azure)
 
 Pedido del usuario: mantener el proyecto preparado para desplegarse en el
