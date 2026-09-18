@@ -1,5 +1,35 @@
 # CHANGELOG — Mindfreak Manager
 
+## Feat: MFA con Google Authenticator (TOTP) — activación y reto al iniciar sesión
+
+Pedido del usuario: activar verificación en dos pasos con Google
+Authenticator. Usa el soporte nativo de MFA de Supabase Auth (TOTP) — no
+requiere ningún servicio ni costo externo, funciona con Google
+Authenticator, Authy, 1Password o cualquier app compatible con el
+estándar.
+
+- **Activación** (Mi Perfil → Inicio de sesión y seguridad →
+  Autenticador): genera un QR real (vía `supabase.auth.mfa.enroll`), la
+  persona lo escanea y confirma con el código de 6 dígitos
+  (`mfa.challenge` + `mfa.verify`). También clave manual como respaldo
+  por si no puede escanear.
+- **Quitar autenticador**: disponible una vez activo.
+- **Reto al iniciar sesión**: si el usuario tiene el autenticador activo,
+  después de la contraseña se le pide el código de 6 dígitos
+  (`/mfa-challenge`, fuera del layout del dashboard) antes de dejarlo
+  entrar — se verifica el nivel de autenticación (aal1→aal2) tanto en el
+  login como en el layout del dashboard (por si alguien entra directo a
+  una URL sin pasar por el reto).
+- "Verificación en dos pasos" en Mi Perfil ahora refleja el estado real
+  (Activada/pendiente) en vez de "Próximamente".
+- **No se pudo probar end-to-end**: confirmé con evidencia (no solo
+  supuesto) que este entorno bloquea la conexión a `*.supabase.co`
+  (`curl` devuelve `x-deny-reason: host_not_allowed` del proxy de red,
+  antes de siquiera llegar a Supabase) — misma limitación que ya aplicaba
+  a crear usuarios y resetear contraseñas, ahora confirmada con prueba
+  directa en vez de asumida.
+- Verificado: `tsc`, `npm run build`, `eslint`, 19 tests unitarios.
+
 ## Feat: corregir el correo de un usuario + verificación real de que el correo existe
 
 Pedido del usuario: poder corregir el correo de un usuario si se

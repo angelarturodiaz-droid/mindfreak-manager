@@ -88,3 +88,50 @@ export async function changeOwnPasswordAction(
 
   return { error: null, success: true };
 }
+
+export type MfaEnrollResult = { factorId: string; qrCode: string; secret: string };
+
+/** Inicia la activación del autenticador — genera el QR y la clave manual. */
+export async function enrollMfaAction(): Promise<MfaEnrollResult> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp" });
+  if (error) throw new Error(error.message);
+  return { factorId: data.id, qrCode: data.totp.qr_code, secret: data.totp.secret };
+}
+
+/** Confirma la activación con el código de 6 dígitos que generó la app. */
+export async function verifyMfaEnrollmentAction(factorId: string, code: string): Promise<void> {
+  const supabase = await createClient();
+  const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({ factorId });
+  if (challengeError) throw new Error(challengeError.message);
+
+  const { error: verifyError } = await supabase.auth.mfa.verify({
+    factorId,
+    challengeId: challenge.id,
+    code: code.trim(),
+  });
+  if (verifyError) throw new Error("Código incorrecto. Verifica la hora de tu teléfono e intenta de nuevo.");
+
+  revalidatePath("/profile");
+}
+
+/** Cancela una activación a medias (el usuario cerró antes de confirmar el código). */
+export async function cancelMfaEnrollmentAction(factorId: string): Promise<void> {
+  const supabase = await createClient();
+  await supabase.auth.mfa.unenroll({ factorId });
+}
+
+/** Quita el autenticador ya activo. */
+export async function unenrollMfaAction(factorId: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.mfa.unenroll({ factorId });
+  if (error) throw new Error(error.message);
+  revalidatePath("/profile");
+}
+
+export async function getMfaFactorsAction() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.mfa.listFactors();
+  if (error) throw new Error(error.message);
+  return data.totp;
+}

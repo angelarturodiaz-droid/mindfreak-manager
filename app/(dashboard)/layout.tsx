@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Settings } from "lucide-react";
 import { getCompany } from "@/features/settings/queries";
 import { getCurrentUser, hasPermission } from "@/lib/auth/permissions";
@@ -35,6 +36,15 @@ export default async function DashboardLayout({
   let fullName: string | null = null;
   if (user) {
     const supabase = await createClient();
+
+    // Si el usuario tiene el autenticador activado pero todavía no
+    // completó el código de esta sesión (ej. entró directo a una URL sin
+    // pasar por /mfa-challenge), no se le deja ver nada del dashboard.
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== aal.nextLevel) {
+      redirect("/mfa-challenge");
+    }
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("full_name")

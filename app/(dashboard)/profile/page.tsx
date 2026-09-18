@@ -4,7 +4,9 @@ import { EditProfileForm } from "./edit-profile-form";
 import { ProfileTabs } from "./profile-tabs";
 import { PasswordRow } from "./password-row";
 import { PhoneRow } from "./phone-row";
+import { AuthenticatorSetup } from "./authenticator-setup";
 import { SecurityRow, ComingSoonBadge } from "./security-row";
+import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
 export default async function ProfilePage() {
@@ -19,6 +21,9 @@ export default async function ProfilePage() {
     .select("full_name, position, phone")
     .eq("id", user.id)
     .single();
+
+  const { data: mfaFactors } = await supabase.auth.mfa.listFactors();
+  const verifiedFactor = mfaFactors?.totp.find((f) => f.status === "verified") ?? null;
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-8">
@@ -70,15 +75,16 @@ export default async function ProfilePage() {
                 <PhoneRow phone={profile?.phone ?? null} />
               </SecurityRow>
               <SecurityRow label="Autenticador">
-                <div className="flex items-center justify-between">
-                  <span className="text-brand-muted">App autenticadora (TOTP)</span>
-                  <ComingSoonBadge />
-                </div>
+                <AuthenticatorSetup initialFactor={verifiedFactor} />
               </SecurityRow>
               <SecurityRow label="Verificación en dos pasos">
                 <div className="flex items-center justify-between">
                   <span className="text-brand-muted">Capa extra de seguridad al iniciar sesión</span>
-                  <ComingSoonBadge />
+                  {verifiedFactor ? (
+                    <Badge tone="success">Activada</Badge>
+                  ) : (
+                    <span className="text-xs text-brand-muted">Activa el autenticador arriba</span>
+                  )}
                 </div>
               </SecurityRow>
               <SecurityRow label="Claves de acceso">
