@@ -92,8 +92,23 @@ con datos de prueba reales antes de dar por buena cada fase (ver
 
 ## Deployment
 
-Se recomienda **Vercel** (misma empresa que Next.js — cero configuración
-rara, plan gratuito de sobra para este proyecto).
+El proyecto es un Next.js estándar — no depende de ninguna plataforma en
+particular. `npm run build && npm start` funciona igual en Vercel,
+Cloudflare Pages, Azure (App Service o Container Apps), o cualquier host
+que corra Node.js 20+. Las únicas variables que necesita cualquier
+plataforma son las 3 de la sección "Variables de entorno" arriba.
+
+**Nota de portabilidad**: la generación de PDFs (`@react-pdf/renderer`,
+usado en Cotizaciones/Facturas) necesita runtime de Node.js completo, no
+el runtime "Edge/Workers" — en Azure esto no requiere nada especial (corre
+Node completo por defecto); en Cloudflare Pages hay que habilitar
+compatibilidad Node.js (`nodejs_compat`) o usar el adaptador
+`@cloudflare/next-on-pages`. No afecta a Vercel.
+
+### Opción actual: Vercel
+
+Es donde está desplegado el proyecto hoy — cero configuración rara, plan
+gratuito de sobra para este tamaño de proyecto.
 
 1. Entra a [vercel.com](https://vercel.com) e inicia sesión con tu cuenta
    de GitHub.
@@ -118,12 +133,19 @@ sola — hay que ir a **Deployments** y darle **Redeploy** al último deploy
 (o hacer un push nuevo) para que la tome. Las variables de entorno no se
 aplican solas a un deploy que ya existe.
 
-### Configuración pendiente en Supabase tras el primer deploy
+### Otras plataformas (cuando se decida)
+
+Cloudflare Pages y Azure quedan como opciones abiertas para más adelante
+— el código no tiene que cambiar para ninguna de las dos, solo la
+configuración de despliegue (variables de entorno + la nota de
+`nodejs_compat` de arriba si se elige Cloudflare Pages).
+
+### Configuración pendiente en Supabase tras el primer deploy (cualquier plataforma)
 
 La recuperación de contraseña (`resetPasswordForEmail`) usa la **Site URL**
 configurada en el dashboard de Supabase (Authentication → URL
 Configuration), no una URL fija en el código. Una vez tengas tu dominio de
-Vercel:
+producción (sea de Vercel, Cloudflare, Azure o uno propio):
 
 1. Ve a tu proyecto en Supabase → **Authentication → URL Configuration**.
 2. Cambia **Site URL** de `http://localhost:3000` a tu dominio real de
@@ -136,7 +158,7 @@ apuntando a `localhost` en producción.
 
 ### Dominio propio (opcional)
 
-Si más adelante quieres algo como `manager.mindfreakevents.com` en vez del
-subdominio de Vercel, se agrega en **Settings → Domains** del proyecto en
-Vercel, y luego se actualiza la Site URL de Supabase (paso anterior) con
-ese dominio.
+Se agrega en la configuración de dominios de la plataforma elegida (en
+Vercel: **Settings → Domains**), y luego se actualiza la Site URL de
+Supabase (paso anterior) con ese dominio.
+

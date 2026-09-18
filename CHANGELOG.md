@@ -1,5 +1,28 @@
 # CHANGELOG — Mindfreak Manager
 
+## Docs: README neutral entre plataformas de despliegue (Vercel, Cloudflare Pages, Azure)
+
+Pedido del usuario: mantener el proyecto preparado para desplegarse en el
+futuro en Cloudflare Pages, Azure u otra plataforma, sin depender
+innecesariamente de Vercel. Auditoría real del código antes de proponer
+cualquier cambio:
+
+- **Confirmado, sin cambios necesarios**: cero dependencias `@vercel/*`,
+  sin `vercel.json`, sin secretos hardcodeados (solo 3 variables de
+  entorno, todas de Supabase), sin uso de `next/image` (uno de los
+  mayores candados típicos a Vercel), sin `middleware.ts` ni rutas con
+  `runtime = "edge"`, cron jobs ya corriendo en Supabase (`pg_cron`), no
+  en Vercel Cron, storage ya en Supabase Storage, no Vercel Blob.
+- **Único punto real a tener en cuenta** (no es un problema, es una nota
+  para cuando se elija plataforma): `@react-pdf/renderer` necesita
+  runtime de Node.js completo — sin fricción en Azure, requiere
+  `nodejs_compat` en Cloudflare Pages.
+- **Único cambio hecho**: reescrita la sección "Deployment" del
+  `README.md` para ser neutral entre plataformas (Vercel queda como "la
+  opción actual", no como "la recomendación"), con la nota de
+  portabilidad de arriba. Sin tocar código, sin tocar la base de datos,
+  sin tocar nada que ya funcione — tal como se pidió explícitamente.
+
 ## Fix: Factura y Cotización tradicionales con el mismo formato limpio de la Electrónica
 
 El usuario pidió aplicarle a los PDF de Cotización y Factura tradicionales
