@@ -73,10 +73,10 @@ export function AuthenticatorSetup({ initialFactor }: { initialFactor: Factor | 
           Escanea este código con Google Authenticator (o cualquier app
           compatible) y escribe el código de 6 dígitos que te muestre.
         </p>
-        <div
+        <img
+          src={enrolling.qrCode}
+          alt="Código QR para el autenticador"
           className="h-40 w-40 self-center"
-          // El QR viene como SVG ya armado desde Supabase — no es HTML del usuario.
-          dangerouslySetInnerHTML={{ __html: enrolling.qrCode }}
         />
         <p className="text-center text-xs text-brand-muted">
           ¿No puedes escanear? Escribe esta clave manualmente:{" "}

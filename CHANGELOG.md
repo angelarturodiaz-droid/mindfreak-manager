@@ -1,5 +1,23 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: el QR del autenticador mostraba el texto "data:image/svg+xml;utf-8," encima
+
+El usuario mandó una captura real: al activar el autenticador, arriba del
+QR aparecía literalmente el texto `data:image/svg+xml;utf-8,` — el campo
+`qr_code` que devuelve Supabase en realidad es un **data URI completo**
+(`data:image/svg+xml;utf-8,<svg>...`), no el SVG suelto como asumí al
+construirlo. Usarlo con `dangerouslySetInnerHTML` hacía que el navegador
+mostrara el prefijo del data URI como texto plano antes de interpretar el
+SVG.
+
+- Corregido: ahora se usa `<img src={qrCode} />` — un data URI es
+  perfectamente válido como `src` de una imagen, y así el navegador lo
+  interpreta completo en vez de mezclarlo con texto.
+- Verificado: `tsc`, `npm run build`, `eslint` (una advertencia esperada
+  por usar `<img>` en vez de `next/image` — correcto en este caso, ya
+  documentado que `next/image` se evita a propósito por portabilidad), 19
+  tests unitarios.
+
 ## Feat: MFA con Google Authenticator (TOTP) — activación y reto al iniciar sesión
 
 Pedido del usuario: activar verificación en dos pasos con Google
