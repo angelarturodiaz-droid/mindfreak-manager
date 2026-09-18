@@ -278,6 +278,24 @@ aprobación manual, máximo de reenvíos), canales externos (email, WhatsApp)
 — dejar la base de datos y la arquitectura preparadas, sin conectar canales
 reales todavía.
 
+## Facturación Electrónica DGII (e-CF) — propuesta técnica lista, ejecución pendiente
+
+**Ver `FASE-FACTURACION-ELECTRONICA-DGII.md`** — documento completo con
+diagnóstico, arquitectura (módulo desacoplado `ecf_documents`, no columnas
+sueltas en `invoices`), modelo de base de datos, reglas de negocio, plan de
+pruebas/despliegue, y matriz de riesgos. Pedido explícitamente por el
+usuario siguiendo un proceso formal de arquitecto (diagnóstico → propuesta
+→ aprobación → código, sin saltarse pasos).
+
+**No ejecutar sin antes confirmar con el usuario**:
+1. ¿Certificación propia ante la DGII, o un proveedor certificado?
+2. ¿Qué tipos de e-CF necesita emitir (31, 32, ¿otros?)?
+
+Existe un borrador previo (columnas en `invoices` + PDF
+`invoice-electronic-document.tsx`) hecho sin este proceso — sirve como
+referencia visual del PDF, pero el modelo de datos de la propuesta técnica
+lo reemplaza cuando se ejecute esta fase.
+
 ## Backlog
 
 | Idea | Módulo | Prioridad | Alcance |
