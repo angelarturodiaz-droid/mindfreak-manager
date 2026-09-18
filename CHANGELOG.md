@@ -1,5 +1,30 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: Factura y Cotización tradicionales con el mismo formato limpio de la Electrónica
+
+El usuario pidió aplicarle a los PDF de Cotización y Factura tradicionales
+el mismo formato visual (recuadros, sin barra oscura) que ya tenía la
+Factura Electrónica — "se ve más limpia" — sin cambiar la información que
+ya mostraban, y sin agregar los recuadros de "Autorizado Por / Recibido
+Por" en ninguno de los dos.
+
+- Rediseñados `invoice-document.tsx` y `quotation-document.tsx`: header
+  con nombre/dirección/teléfono/RNC de la empresa a la izquierda (sin
+  barra oscura), título del documento + metadatos a la derecha, dos
+  recuadros bordeados (Datos del cliente / Factura-Cotización No. y
+  Fecha) — mismo patrón que ya usaba `invoice-electronic-document.tsx`.
+- Toda la información que ya existía se conserva igual: NCF, condición de
+  pago, estado, pagado (factura); válida hasta, condición de pago,
+  condiciones/términos (cotización); comisión, descuento, ITBIS, balance
+  pendiente en ambos.
+- Sin recuadros de firma en ninguno de los dos (nunca los tuvieron, no se
+  agregaron).
+- Verificado visualmente: generé ambos PDF con datos reales, los convertí
+  a imagen y confirmé que coinciden con el estilo limpio de la
+  Electrónica, con toda la información intacta.
+- Verificado también: `tsc`, `npm run build`, `eslint`, 19 tests
+  unitarios.
+
 ## Chore: punto de recuperación pre-contabilidad-v1 + corrección de tax_rate_id vestigial + documentación de estado
 
 Tres tareas ejecutadas tras una auditoría completa de arquitectura (leer/

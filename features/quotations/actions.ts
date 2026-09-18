@@ -361,7 +361,7 @@ export async function generateQuotationShareLinkAction(
         .order("sort_order"),
       supabase
         .from("companies")
-        .select("name, legal_name, tax_id, logo_url, brand_primary, brand_accent")
+        .select("name, legal_name, tax_id, address, phone, logo_url, brand_primary, brand_accent")
         .eq("id", companyId)
         .single(),
     ]);
