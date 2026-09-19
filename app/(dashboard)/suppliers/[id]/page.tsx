@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { getSupplier, listSupplierContacts } from "@/features/suppliers/queries";
+import { listBankCatalog } from "@/features/bank-catalog/queries";
 import {
   deactivateSupplierAction,
   deleteSupplierContactAction,
@@ -31,10 +32,11 @@ export default async function SupplierDetailPage({
   }
   if (!supplier) notFound();
 
-  const [contacts, documents, canManageDocs] = await Promise.all([
+  const [contacts, documents, canManageDocs, bankCatalog] = await Promise.all([
     listSupplierContacts(id),
     listDocuments("supplier", id),
     hasPermission("documents.upload"),
+    listBankCatalog(),
   ]);
 
   return (
@@ -68,7 +70,7 @@ export default async function SupplierDetailPage({
           Información general
         </h2>
         <Card>
-          <SupplierEditForm supplier={supplier} />
+          <SupplierEditForm supplier={supplier} bankCatalog={bankCatalog} />
         </Card>
       </section>
 

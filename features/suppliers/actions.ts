@@ -26,6 +26,9 @@ function parseFormFields(formData: FormData) {
     email: String(formData.get("email") ?? ""),
     phone: String(formData.get("phone") ?? ""),
     address: String(formData.get("address") ?? ""),
+    bank_name: String(formData.get("bank_name") ?? ""),
+    bank_account_number: String(formData.get("bank_account_number") ?? ""),
+    service_type: String(formData.get("service_type") ?? ""),
   };
 }
 
@@ -56,6 +59,9 @@ export async function createSupplierAction(
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
       address: parsed.data.address || null,
+      bank_name: parsed.data.bank_name || null,
+      bank_account_number: parsed.data.bank_account_number || null,
+      service_type: parsed.data.service_type || null,
       created_by: user?.id,
     })
     .select("id")
@@ -90,7 +96,7 @@ export async function updateSupplierAction(
   const supabase = await createSupabaseClient();
   const { data: before } = await supabase
     .from("suppliers")
-    .select("name, tax_id, category, email, phone, address")
+    .select("name, tax_id, category, email, phone, address, bank_name, bank_account_number, service_type")
     .eq("id", supplierId)
     .single();
 
@@ -103,6 +109,9 @@ export async function updateSupplierAction(
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
       address: parsed.data.address || null,
+      bank_name: parsed.data.bank_name || null,
+      bank_account_number: parsed.data.bank_account_number || null,
+      service_type: parsed.data.service_type || null,
     })
     .eq("id", supplierId);
 
@@ -243,6 +252,9 @@ export async function importSuppliersCsvAction(
       email: row.email ?? "",
       phone: row.phone ?? "",
       address: row.address ?? "",
+      bank_name: row.bank_name ?? "",
+      bank_account_number: row.bank_account_number ?? "",
+      service_type: row.service_type ?? "",
     });
 
     if (!candidate.success) {
@@ -261,6 +273,9 @@ export async function importSuppliersCsvAction(
       email: candidate.data.email || null,
       phone: candidate.data.phone || null,
       address: candidate.data.address || null,
+      bank_name: candidate.data.bank_name || null,
+      bank_account_number: candidate.data.bank_account_number || null,
+      service_type: candidate.data.service_type || null,
       created_by: user?.id,
     });
 

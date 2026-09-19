@@ -38,7 +38,11 @@ export default async function ImportSuppliersPage() {
           Importar proveedores (CSV)
         </h1>
         <p className="text-sm text-brand-muted">
-          Columnas esperadas: <code>name, tax_id, category, email, phone, address</code>{" "}
+          Columnas esperadas:{" "}
+          <code>
+            name, tax_id, category, email, phone, address, bank_name,
+            bank_account_number, service_type
+          </code>{" "}
           (solo <code>name</code> es obligatorio).
         </p>
       </div>

@@ -1,5 +1,40 @@
 # CHANGELOG — Mindfreak Manager
 
+## Proveedores: Cuenta Banco + Tipo de servicio; Tareas: alertas de asignación
+
+**Proveedores**
+- Nuevos campos: `bank_name` (banco donde se le paga al proveedor —
+  select con el catálogo `bank_catalog` como sugerencia, mismo patrón que
+  `payee_bank_name` en gastos, con fallback de texto libre si el banco no
+  está en el catálogo), `bank_account_number` (número de cuenta) y
+  `service_type` (tipo de servicio, distinto de `category` que ya existía
+  como rubro libre).
+- Migración `049_suppliers_bank_service_type.sql` — solo agrega columnas
+  nuevas (`add column if not exists`), no toca datos existentes.
+- Formularios de creación y edición de proveedor actualizados; el listado
+  de proveedores ahora muestra la columna "Tipo de servicio"; la
+  importación CSV acepta las tres columnas nuevas como opcionales
+  (documentado en `/suppliers/import`).
+
+**Tareas — alertas de asignación**
+- Cuando se crea una tarea con `assigned_to`, o se reasigna a otro
+  usuario, se genera automáticamente una notificación interna (tabla
+  `notifications` ya existente, visible en la campanita `NotificationBell`)
+  para el usuario asignado. No se notifica si la tarea queda sin asignar
+  ni si alguien se la asigna a sí mismo.
+- Implementado como trigger de base de datos (`notify_task_assignment()`,
+  `SECURITY DEFINER`, sobre `AFTER INSERT OR UPDATE OF assigned_to` en
+  `tasks`) — mismo patrón que `generate_due_date_alerts()` de la Fase 4 de
+  cobros. Al vivir en la base de datos, cubre cualquier vía de asignación
+  presente o futura (formulario actual, una futura edición de tarea,
+  importaciones, etc.) sin depender de que cada Server Action recuerde
+  disparar la alerta.
+- Migración `050_task_assignment_notifications.sql`.
+- Verificado con datos reales: tarea asignada a otro usuario → notificación
+  creada; tarea auto-asignada → sin notificación; reasignación a un tercer
+  usuario → nueva notificación para el nuevo asignado. Todo limpiado
+  después (0 filas de prueba remanentes).
+
 ## Fix: el QR del autenticador mostraba el texto "data:image/svg+xml;utf-8," encima
 
 El usuario mandó una captura real: al activar el autenticador, arriba del

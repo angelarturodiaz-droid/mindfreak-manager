@@ -32,6 +32,7 @@ export default async function SuppliersPage({
       ),
     },
     { header: "Categoría", accessor: (s) => <span className="text-brand-muted">{s.category || "—"}</span> },
+    { header: "Tipo de servicio", accessor: (s) => <span className="text-brand-muted">{s.service_type || "—"}</span> },
     { header: "Contacto", accessor: (s) => <span className="text-brand-muted">{s.email || s.phone || "—"}</span> },
     {
       header: "",

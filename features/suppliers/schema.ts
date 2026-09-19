@@ -12,6 +12,9 @@ export const supplierSchema = z.object({
     .or(z.literal("")),
   phone: z.string().trim().optional().or(z.literal("")),
   address: z.string().trim().optional().or(z.literal("")),
+  bank_name: z.string().trim().optional().or(z.literal("")),
+  bank_account_number: z.string().trim().optional().or(z.literal("")),
+  service_type: z.string().trim().optional().or(z.literal("")),
 });
 
 export type SupplierInput = z.infer<typeof supplierSchema>;

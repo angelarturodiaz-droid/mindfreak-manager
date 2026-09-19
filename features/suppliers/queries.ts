@@ -4,7 +4,7 @@ export async function listSuppliers(search?: string) {
   const supabase = await createClient();
   let query = supabase
     .from("suppliers")
-    .select("id, name, category, email, phone, is_active, created_at")
+    .select("id, name, category, service_type, email, phone, is_active, created_at")
     .order("created_at", { ascending: false });
 
   if (search) {
