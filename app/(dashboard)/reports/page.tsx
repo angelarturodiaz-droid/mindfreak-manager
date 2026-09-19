@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ArrowDownCircle, AlertTriangle, Clock, CalendarClock, CalendarDays, CalendarRange } from "lucide-react";
 import { hasPermission } from "@/lib/auth/permissions";
 import {
   getProjectsProfitabilityReport,
@@ -14,7 +15,7 @@ import {
   listExpenseCategoriesForFilter,
   listManagersForFilter,
 } from "@/features/reports/queries";
-import { Select } from "@/components/ui/field";
+import { Select, FIELD_CLASSES } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { KpiCard } from "@/components/ui/card";
@@ -95,8 +96,8 @@ export default async function ReportsPage({
   const activeReport = params.report ?? DEFAULT_REPORT;
 
   return (
-    <main className="flex flex-1 gap-8 p-8">
-      <aside className="w-64 shrink-0">
+    <main className="flex flex-1 flex-col gap-6 p-4 md:flex-row md:gap-8 md:p-8">
+      <aside className="w-full shrink-0 md:w-64">
         <h1 className="mb-1 text-xl font-semibold text-brand-primary">Reportes</h1>
         <p className="mb-4 text-xs text-brand-muted">
           Vistas de solo lectura, consolidadas en la moneda base.
@@ -142,23 +143,13 @@ export default async function ReportsPage({
 function DateRangeFields({ from, to }: { from?: string; to?: string }) {
   return (
     <>
-      <div>
-        <label className="block text-xs text-brand-muted">Desde</label>
-        <input
-          type="date"
-          name="from"
-          defaultValue={from ?? ""}
-          className="rounded-[var(--radius-md)] border border-brand-border bg-brand-surface px-2 py-1.5 text-sm outline-none focus:border-brand-accent"
-        />
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-medium text-brand-text">Desde</label>
+        <input type="date" name="from" defaultValue={from ?? ""} className={FIELD_CLASSES} />
       </div>
-      <div>
-        <label className="block text-xs text-brand-muted">Hasta</label>
-        <input
-          type="date"
-          name="to"
-          defaultValue={to ?? ""}
-          className="rounded-[var(--radius-md)] border border-brand-border bg-brand-surface px-2 py-1.5 text-sm outline-none focus:border-brand-accent"
-        />
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-medium text-brand-text">Hasta</label>
+        <input type="date" name="to" defaultValue={to ?? ""} className={FIELD_CLASSES} />
       </div>
     </>
   );
@@ -351,12 +342,38 @@ async function ReceivablesDashboardReport() {
       </div>
 
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <KpiCard label="Total por cobrar" value={formatMoney(data.totalPorCobrar)} />
-        <KpiCard label="Total vencido" value={formatMoney(data.totalVencido)} danger />
-        <KpiCard label="Vence hoy" value={formatMoney(data.totalVenceHoy)} danger />
-        <KpiCard label="Próximos 7 días" value={formatMoney(data.totalProximos7)} />
-        <KpiCard label="Próximos 15 días" value={formatMoney(data.totalProximos15)} />
-        <KpiCard label="Próximos 30 días" value={formatMoney(data.totalProximos30)} />
+        <KpiCard
+          label="Total por cobrar"
+          value={formatMoney(data.totalPorCobrar)}
+          icon={<ArrowDownCircle size={16} />}
+        />
+        <KpiCard
+          label="Total vencido"
+          value={formatMoney(data.totalVencido)}
+          danger
+          icon={<AlertTriangle size={16} />}
+        />
+        <KpiCard
+          label="Vence hoy"
+          value={formatMoney(data.totalVenceHoy)}
+          danger
+          icon={<Clock size={16} />}
+        />
+        <KpiCard
+          label="Próximos 7 días"
+          value={formatMoney(data.totalProximos7)}
+          icon={<CalendarClock size={16} />}
+        />
+        <KpiCard
+          label="Próximos 15 días"
+          value={formatMoney(data.totalProximos15)}
+          icon={<CalendarDays size={16} />}
+        />
+        <KpiCard
+          label="Próximos 30 días"
+          value={formatMoney(data.totalProximos30)}
+          icon={<CalendarRange size={16} />}
+        />
       </section>
 
       <section>

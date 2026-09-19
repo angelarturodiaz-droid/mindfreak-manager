@@ -10,6 +10,7 @@ import {
   FileClock,
   AlertTriangle,
   Clock,
+  ListChecks,
 } from "lucide-react";
 import { KpiCard, Card } from "@/components/ui/card";
 import { FinancialFlowChart } from "@/app/(dashboard)/dashboard/financial-flow-chart";
@@ -36,9 +37,12 @@ function MiniList({
 }) {
   if (rows.length === 0) return <p className="text-sm text-brand-muted">{empty}</p>;
   return (
-    <ul className="flex flex-col gap-2">
+    <ul className="flex flex-col divide-y divide-brand-border">
       {rows.map((r) => (
-        <li key={r.key} className="flex items-center justify-between gap-3 text-sm">
+        <li
+          key={r.key}
+          className="flex items-center justify-between gap-3 py-2 text-sm first:pt-0 last:pb-0"
+        >
           <div className="min-w-0">
             <p className="truncate text-brand-text">{r.left}</p>
             {r.sub && <p className="truncate text-xs text-brand-muted">{r.sub}</p>}
@@ -51,10 +55,21 @@ function MiniList({
 }
 
 /** Título + contenido, para los widgets que no son un KpiCard suelto. */
-function WidgetCard({ title, children }: { title: string; children: React.ReactNode }) {
+function WidgetCard({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <Card className="flex h-full flex-col gap-3">
-      <h3 className="text-sm font-medium text-brand-text">{title}</h3>
+      <h3 className="flex items-center gap-2 text-sm font-medium text-brand-text">
+        {icon && <span className="text-brand-accent">{icon}</span>}
+        {title}
+      </h3>
       {children}
     </Card>
   );
@@ -94,13 +109,16 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
       );
     case "flujo_financiero":
       return (
-        <WidgetCard title="Flujo financiero (últimos 6 meses)">
+        <WidgetCard title="Flujo financiero (últimos 6 meses)" icon={<TrendingUp size={15} />}>
           <FinancialFlowChart data={flow} />
         </WidgetCard>
       );
     case "facturas_vencidas":
       return (
-        <WidgetCard title={`Facturas vencidas (${receivables.facturasVencidas.length})`}>
+        <WidgetCard
+          title={`Facturas vencidas (${receivables.facturasVencidas.length})`}
+          icon={<AlertTriangle size={15} />}
+        >
           <MiniList
             empty="Sin facturas vencidas. 🎉"
             rows={receivables.facturasVencidas.slice(0, 6).map((inv) => ({
@@ -114,7 +132,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
       );
     case "facturas_proximas":
       return (
-        <WidgetCard title="Facturas próximas a vencer">
+        <WidgetCard title="Facturas próximas a vencer" icon={<Clock size={15} />}>
           <MiniList
             empty="Sin facturas próximas."
             rows={receivables.facturasProximasAVencer.slice(0, 6).map((inv) => ({
@@ -128,7 +146,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
       );
     case "ultimos_cobros":
       return (
-        <WidgetCard title="Últimos cobros">
+        <WidgetCard title="Últimos cobros" icon={<ArrowDownCircle size={15} />}>
           <MiniList
             empty="Sin cobros registrados."
             rows={recentPayments.map((p) => ({
@@ -142,7 +160,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
       );
     case "ultimos_pagos":
       return (
-        <WidgetCard title="Últimos pagos">
+        <WidgetCard title="Últimos pagos" icon={<ArrowUpCircle size={15} />}>
           <MiniList
             empty="Sin pagos registrados."
             rows={recentSupplierPayments.map((p) => ({
@@ -156,7 +174,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
       );
     case "tareas_pendientes":
       return (
-        <WidgetCard title="Tareas pendientes">
+        <WidgetCard title="Tareas pendientes" icon={<ListChecks size={15} />}>
           <MiniList
             empty="Sin tareas pendientes."
             rows={pendingTasks.map((t) => ({
@@ -170,7 +188,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
       );
     case "rentabilidad_proyectos":
       return (
-        <WidgetCard title="Rentabilidad por proyecto (top 5)">
+        <WidgetCard title="Rentabilidad por proyecto (top 5)" icon={<FolderKanban size={15} />}>
           <MiniList
             empty="Sin proyectos facturados todavía."
             rows={topProjects.map((p) => ({

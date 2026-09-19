@@ -1,5 +1,49 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño UI/UX — Fase 3: Reportes y widgets del Dashboard
+
+Tercera fase del rediseño, enfocada en los dos puntos explícitamente priorizados
+por el usuario que aún no se habían tocado: el módulo de **Reportes** y los
+widgets con listas (`WidgetCard`/`MiniList`) del Dashboard. Sin cambios de
+lógica, datos, cálculos, permisos ni consultas — solo presentación.
+
+**`app/(dashboard)/reports/page.tsx`**
+- Layout responsive: el contenedor principal pasa de `flex gap-8 p-8` fijo a
+  `flex flex-col gap-6 p-4 md:flex-row md:gap-8 md:p-8`, de modo que en
+  móvil/tablet el panel de navegación de reportes se apila arriba del
+  contenido en vez de comprimirlo en una columna angosta de 256px.
+- El panel de navegación (`aside`) pasa de `w-64` fijo a `w-full md:w-64`.
+- Los inputs de fecha (`DateRangeFields`, usados en los 5 reportes con
+  filtros) ahora usan `FIELD_CLASSES` de `components/ui/field.tsx` en vez de
+  una clase suelta hardcodeada, quedando visualmente consistentes con los
+  `<Select>` que los acompañan en la misma barra de filtros.
+- Las 6 tarjetas KPI del reporte "Cuentas por Cobrar y Vencimientos" (Total
+  por cobrar, Total vencido, Vence hoy, Próximos 7/15/30 días) ahora pasan un
+  ícono (`lucide-react`) a `KpiCard`, igual que las tarjetas KPI del
+  Dashboard desde la Fase 2.
+
+**`components/dashboard-widgets/render-widget.tsx`**
+- `WidgetCard` ahora acepta un ícono opcional junto al título; se agregó a
+  los 8 widgets de tipo lista/gráfico (Flujo financiero, Facturas vencidas,
+  Facturas próximas, Últimos cobros, Últimos pagos, Tareas pendientes,
+  Rentabilidad por proyecto), reforzando la iconografía consistente ya
+  aplicada a las tarjetas KPI sueltas en la Fase 2.
+- `MiniList` (usado por esos mismos widgets) pasa de una lista con `gap-2`
+  suelto a `divide-y divide-brand-border` con padding vertical por fila, dando
+  una separación más clara entre elementos sin cambiar los datos mostrados.
+
+**Verificación:** `npx tsc --noEmit`, `npm run build`, `npx eslint .` (0
+errores) y `npx vitest run` (19/19) — todos en verde. Sin cambios de
+esquema, por lo que no aplica verificación con datos reales en Supabase.
+Verificación visual en navegador no disponible en este entorno (bloqueo de
+red documentado hacia `*.supabase.co`).
+
+**Pendiente para próximas fases:** revisión de formularios de creación/edición
+por módulo (Clientes, Proveedores, Cotizaciones, Facturas, Proyectos, Gastos,
+Bancos) para confirmar que todos usan `Input`/`Select`/`Textarea` compartidos;
+pulido de `data-table.tsx` en pantallas muy angostas si se detectan casos
+puntuales de uso fuera del wrapper `overflow-x-auto` existente.
+
 ## Rediseño UI/UX — Fase 2: componentes base (botones, campos, tarjetas KPI)
 
 Segunda fase del rediseño. Estrategia deliberada: en vez de tocar cada
