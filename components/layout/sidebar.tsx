@@ -19,7 +19,9 @@ import {
   History,
   ChevronsLeft,
   ChevronsRight,
+  X,
 } from "lucide-react";
+import { useSidebar } from "./sidebar-context";
 
 type NavItem = { href: string; label: string; icon: React.ComponentType<{ size?: number }> };
 type NavGroup = { label: string; items: NavItem[] };
@@ -69,13 +71,24 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const { mobileOpen, setMobileOpen } = useSidebar();
 
   return (
-    <aside
-      className={`flex flex-col border-r border-brand-border bg-brand-surface transition-all ${
-        collapsed ? "w-16" : "w-60"
-      }`}
-    >
+    <>
+      {/* Overlay oscuro detrás del drawer en móvil/tablet */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-brand-border bg-brand-surface shadow-[var(--shadow-lg)] transition-transform duration-200 md:static md:z-auto md:shadow-none md:transition-[width] ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0 ${collapsed ? "md:w-16" : "md:w-60"} w-64`}
+      >
       <div className="flex items-center gap-2 border-b border-brand-border px-4 py-4">
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -86,8 +99,16 @@ export function Sidebar({
           </div>
         )}
         {!collapsed && (
-          <p className="truncate text-sm font-semibold text-brand-primary">{platformName}</p>
+          <p className="flex-1 truncate text-sm font-semibold text-brand-primary">{platformName}</p>
         )}
+        <button
+          type="button"
+          onClick={() => setMobileOpen(false)}
+          aria-label="Cerrar menú"
+          className="text-brand-muted hover:text-brand-text md:hidden"
+        >
+          <X size={18} />
+        </button>
       </div>
 
       <nav className="flex flex-1 flex-col gap-4 overflow-y-auto px-2 py-4">
@@ -126,11 +147,12 @@ export function Sidebar({
       <button
         type="button"
         onClick={() => setCollapsed((c) => !c)}
-        className="flex items-center gap-2 border-t border-brand-border px-4 py-3 text-xs text-brand-muted hover:bg-brand-surface-hover hover:text-brand-text"
+        className="hidden items-center gap-2 border-t border-brand-border px-4 py-3 text-xs text-brand-muted hover:bg-brand-surface-hover hover:text-brand-text md:flex"
       >
         {collapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
         {!collapsed && "Colapsar"}
       </button>
-    </aside>
+      </aside>
+    </>
   );
 }

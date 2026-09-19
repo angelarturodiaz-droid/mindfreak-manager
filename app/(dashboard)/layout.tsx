@@ -8,6 +8,8 @@ import { listMyNotifications, countUnreadNotifications } from "@/features/notifi
 import { Sidebar } from "@/components/layout/sidebar";
 import { UserMenu } from "@/components/layout/user-menu";
 import { NotificationBell } from "@/components/layout/notification-bell";
+import { SidebarProvider } from "@/components/layout/sidebar-context";
+import { MobileMenuButton } from "@/components/layout/mobile-menu-button";
 
 export default async function DashboardLayout({
   children,
@@ -54,11 +56,14 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-full flex-1">
-      <Sidebar platformName={platformName} logoUrl={logoUrl} />
-      <div className="flex flex-1 flex-col">
-        <header className="flex items-center justify-end gap-2 border-b border-brand-border bg-brand-surface px-6 py-3">
-          {user && <NotificationBell notifications={notifications} unreadCount={unreadCount} />}
+    <SidebarProvider>
+      <div className="flex min-h-full flex-1">
+        <Sidebar platformName={platformName} logoUrl={logoUrl} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="flex items-center gap-2 border-b border-brand-border bg-brand-surface px-4 py-3 md:px-6">
+            <MobileMenuButton />
+            <div className="flex-1" />
+            {user && <NotificationBell notifications={notifications} unreadCount={unreadCount} />}
           {canManageSettings && (
             <Link
               href="/settings"
@@ -69,10 +74,11 @@ export default async function DashboardLayout({
               <Settings size={18} />
             </Link>
           )}
-          {user && <UserMenu fullName={fullName} email={user.email ?? ""} brandAccent={brandAccent} />}
-        </header>
-        <div className="flex flex-1 flex-col bg-brand-background">{children}</div>
+            {user && <UserMenu fullName={fullName} email={user.email ?? ""} brandAccent={brandAccent} />}
+          </header>
+          <div className="flex flex-1 flex-col overflow-x-hidden bg-brand-background">{children}</div>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }

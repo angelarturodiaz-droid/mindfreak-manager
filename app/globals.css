@@ -48,6 +48,19 @@
   --shadow-md: 0 4px 8px -2px rgb(16 24 40 / 0.08), 0 2px 4px -2px rgb(16 24 40 / 0.06);
   --shadow-lg: 0 12px 16px -4px rgb(16 24 40 / 0.08), 0 4px 6px -2px rgb(16 24 40 / 0.03);
 
+  /* Paleta complementaria para gráficos e indicadores (dashboard, reportes).
+     Distinta de los semánticos de estado (success/warning/danger/info) —
+     esta es para series de datos (barras, líneas, donas) donde se
+     necesitan varios tonos diferenciables a la vez, no un solo significado
+     fijo. Coherente con la identidad Mindfreak (azul como tono ancla). */
+  --chart-1: #2e90fa; /* azul — misma familia que brand-accent */
+  --chart-2: #12b76a; /* verde */
+  --chart-3: #f79009; /* ámbar */
+  --chart-4: #f04438; /* rojo */
+  --chart-5: #7a5af8; /* violeta */
+  --chart-6: #0e7490; /* teal oscuro */
+  --chart-grid: #eef2f6;
+
   --background: var(--brand-background);
   --foreground: var(--brand-text);
 }
@@ -86,6 +99,14 @@
   --shadow-sm: var(--shadow-sm);
   --shadow-md: var(--shadow-md);
   --shadow-lg: var(--shadow-lg);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-grid: var(--chart-grid);
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, monospace;

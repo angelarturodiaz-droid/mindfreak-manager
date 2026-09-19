@@ -23,18 +23,53 @@ function formatMoney(amount: number) {
 
 export function FinancialFlowChart({ data }: { data: Point[] }) {
   return (
-    <div className="h-64 w-full max-w-3xl">
+    <div className="h-64 w-full sm:h-72">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis dataKey="month" fontSize={12} />
-          <YAxis fontSize={12} tickFormatter={(v) => formatMoney(v)} width={80} />
+        <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
+          <XAxis
+            dataKey="month"
+            fontSize={12}
+            tickLine={false}
+            axisLine={{ stroke: "var(--brand-border)" }}
+            stroke="var(--brand-muted)"
+          />
+          <YAxis
+            fontSize={12}
+            tickFormatter={(v) => formatMoney(v)}
+            width={84}
+            tickLine={false}
+            axisLine={false}
+            stroke="var(--brand-muted)"
+          />
           <Tooltip
             formatter={(value) => formatMoney(Number(Array.isArray(value) ? value[0] : value))}
+            contentStyle={{
+              borderRadius: "var(--radius-md)",
+              border: "1px solid var(--brand-border)",
+              boxShadow: "var(--shadow-md)",
+              fontSize: 13,
+            }}
           />
-          <Legend />
-          <Line type="monotone" dataKey="cobros" name="Cobros" stroke="#17a6b8" strokeWidth={2} />
-          <Line type="monotone" dataKey="pagos" name="Pagos" stroke="#dc2626" strokeWidth={2} />
+          <Legend wrapperStyle={{ fontSize: 13 }} />
+          <Line
+            type="monotone"
+            dataKey="cobros"
+            name="Cobros"
+            stroke="var(--chart-2)"
+            strokeWidth={2.5}
+            dot={{ r: 3, strokeWidth: 0, fill: "var(--chart-2)" }}
+            activeDot={{ r: 5 }}
+          />
+          <Line
+            type="monotone"
+            dataKey="pagos"
+            name="Pagos"
+            stroke="var(--chart-4)"
+            strokeWidth={2.5}
+            dot={{ r: 3, strokeWidth: 0, fill: "var(--chart-4)" }}
+            activeDot={{ r: 5 }}
+          />
         </LineChart>
       </ResponsiveContainer>
     </div>

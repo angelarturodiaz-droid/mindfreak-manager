@@ -1,5 +1,40 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño UI/UX — Fase 1: paleta de gráficos + navegación responsive
+
+Primera fase del rediseño moderno del ERP pedido por el usuario ("dashboard
+tipo SaaS profesional, responsive, sin tocar lógica ni base de datos").
+El sistema de diseño base (tokens en `app/globals.css`, componentes
+`Card`/`Badge`/`Button`/`DataTable`/`Modal`) ya venía de un rediseño
+anterior en este mismo proyecto — esta fase construye sobre eso, no lo
+reemplaza. Ningún cambio toca lógica de negocio, queries, acciones ni base
+de datos.
+
+- **Paleta de gráficos e indicadores**: nuevos tokens `--chart-1`…`--chart-6`
+  y `--chart-grid` en `app/globals.css`, pensados para series de datos
+  (gráficos de líneas/barras) — distintos de los tonos semánticos de
+  estado (success/warning/danger/info) que ya existían para badges.
+- **Gráfico de flujo financiero del Dashboard** (`financial-flow-chart.tsx`):
+  actualizado para usar los tokens del sistema de diseño en vez de colores
+  sueltos (`#17a6b8`, `#dc2626` de un esquema anterior), con grid, ejes y
+  tooltip más pulidos.
+- **Sidebar y navegación responsive**: el sidebar no tenía ningún
+  comportamiento en móvil/tablet (aparecía fijo y angosto). Ahora:
+  - En desktop (`md+`) se comporta exactamente igual que antes (colapsable).
+  - En móvil/tablet se convierte en un drawer deslizante con overlay,
+    controlado por un botón de menú (hamburguesa) nuevo en la barra
+    superior, y se cierra automáticamente al navegar.
+  - Nuevo `components/layout/sidebar-context.tsx` (estado del drawer) y
+    `components/layout/mobile-menu-button.tsx`.
+- Verificado: `tsc`, `next build`, `eslint` y `vitest` (19 pruebas) pasan
+  limpios.
+
+Pendiente para las siguientes fases (según lo priorizado por el usuario):
+tablas y formularios con mejoras de jerarquía visual/espaciado, tarjetas de
+KPI con iconografía por módulo, y una pasada de consistencia visual sobre
+Clientes, Proveedores, Cotizaciones, Facturas, Cobros/Pagos, Bancos,
+Proyectos, Gastos, Reportes, Configuración y Usuarios.
+
 ## Proveedores: Cuenta Banco + Tipo de servicio; Tareas: alertas de asignación
 
 **Proveedores**
