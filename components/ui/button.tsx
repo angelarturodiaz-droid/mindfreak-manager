@@ -6,15 +6,15 @@ type Size = "sm" | "md" | "icon";
 
 const VARIANT_CLASSES: Record<Variant, string> = {
   primary:
-    "bg-brand-primary text-white hover:bg-brand-primary-hover disabled:bg-brand-disabled",
+    "bg-brand-primary text-white shadow-[var(--shadow-sm)] hover:bg-brand-primary-hover disabled:bg-brand-disabled disabled:shadow-none",
   secondary:
-    "bg-brand-accent text-white hover:bg-brand-accent-hover disabled:bg-brand-disabled",
+    "bg-brand-accent text-white shadow-[var(--shadow-sm)] hover:bg-brand-accent-hover disabled:bg-brand-disabled disabled:shadow-none",
   outline:
-    "border border-brand-border bg-brand-surface text-brand-text hover:bg-brand-surface-hover disabled:text-brand-disabled",
+    "border border-brand-border bg-brand-surface text-brand-text hover:border-brand-muted hover:bg-brand-surface-hover disabled:text-brand-disabled",
   ghost:
     "text-brand-muted hover:bg-brand-surface-hover hover:text-brand-text disabled:text-brand-disabled",
   danger:
-    "bg-brand-danger text-white hover:opacity-90 disabled:bg-brand-disabled",
+    "bg-brand-danger text-white shadow-[var(--shadow-sm)] hover:opacity-90 disabled:bg-brand-disabled disabled:shadow-none",
 };
 
 const SIZE_CLASSES: Record<Size, string> = {
@@ -38,7 +38,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     <button
       ref={ref}
       disabled={disabled || loading}
-      className={`inline-flex items-center rounded-[var(--radius-md)] font-medium shadow-[var(--shadow-sm)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:shadow-none ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`}
+      className={`inline-flex items-center justify-center rounded-[var(--radius-md)] font-medium transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:active:scale-100 ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`}
       {...props}
     >
       {loading ? (

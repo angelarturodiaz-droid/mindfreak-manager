@@ -1,5 +1,35 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño UI/UX — Fase 2: componentes base (botones, campos, tarjetas KPI)
+
+Segunda fase del rediseño. Estrategia deliberada: en vez de tocar cada
+pantalla de cada módulo una por una, se elevan los componentes
+COMPARTIDOS que ya usan los 12 módulos (`Button`, `Input`/`Select`/
+`Textarea`, `KpiCard`) — así el rediseño se propaga automáticamente a
+Clientes, Proveedores, Cotizaciones, Facturas, Cobros/Pagos, Bancos,
+Proyectos, Gastos, Reportes, Configuración y Usuarios sin reescribir cada
+página ni arriesgar romper su lógica. Sin cambios de negocio, queries ni
+base de datos.
+
+- **`Button`**: sombra retirada de las variantes planas (`outline`/`ghost`,
+  que antes tenían una sombra igual que los botones sólidos), estado
+  `active:scale-[0.98]` para dar feedback táctil real al pulsar, borde con
+  más contraste en hover para `outline`.
+- **`Input`/`Select`/`Textarea`**: borde con hover visible (antes solo
+  reaccionaban al focus), más alto (`py-2.5`) para mejor objetivo táctil
+  en móvil.
+- **`KpiCard`** (usado en las 10 tarjetas del Dashboard: Total por cobrar,
+  Vencido, Ventas, Gastos, Utilidad, Margen, Proyectos activos, etc.):
+  el ícono ahora vive en un chip de color (azul o rojo según `danger`) en
+  vez de un ícono suelto gris — jerarquía visual mucho más clara, efecto
+  "hover" sutil en la tarjeta completa.
+- Verificado: `tsc`, `next build`, `eslint` y `vitest` (19 pruebas) pasan
+  limpios. La verificación visual en navegador no es posible desde este
+  entorno (bloqueo de red hacia Supabase ya documentado en este proyecto).
+
+Pendiente: revisión módulo por módulo de casos particulares que no pasan
+por estos componentes compartidos (si los hay), y pulido de Reportes.
+
 ## Rediseño UI/UX — Fase 1: paleta de gráficos + navegación responsive
 
 Primera fase del rediseño moderno del ERP pedido por el usuario ("dashboard

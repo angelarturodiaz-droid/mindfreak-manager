@@ -36,13 +36,23 @@ export function KpiCard({
 }) {
   const trendPositive = trend?.startsWith("+");
   return (
-    <Card className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-brand-muted">{label}</p>
-        {icon && <span className="text-brand-muted">{icon}</span>}
+    <Card className="flex h-full flex-col gap-3 transition-shadow hover:shadow-[var(--shadow-md)]">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm font-medium text-brand-muted">{label}</p>
+        {icon && (
+          <span
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-md)] ${
+              danger
+                ? "bg-brand-danger-bg text-brand-danger"
+                : "bg-brand-accent-light text-brand-accent"
+            }`}
+          >
+            {icon}
+          </span>
+        )}
       </div>
       <p
-        className={`text-2xl font-semibold ${danger ? "text-brand-danger" : "text-brand-text"}`}
+        className={`text-2xl font-semibold tracking-tight ${danger ? "text-brand-danger" : "text-brand-text"}`}
       >
         {value}
       </p>
