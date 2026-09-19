@@ -53,7 +53,7 @@ export default async function ServicesPage() {
   ];
 
   return (
-    <main className="flex flex-1 flex-col gap-8 p-8">
+    <main className="flex flex-1 flex-col gap-8 p-4 md:p-8">
       <div>
         <h1 className="text-xl font-semibold text-brand-primary">
           Productos y Servicios

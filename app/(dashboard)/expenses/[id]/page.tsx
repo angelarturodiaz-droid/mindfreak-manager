@@ -112,7 +112,7 @@ export default async function ExpenseDetailPage({
   ];
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-8">
+    <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
       <div>
         <Link
           href="/expenses"

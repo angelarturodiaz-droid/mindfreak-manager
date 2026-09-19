@@ -111,7 +111,7 @@ export default async function AuditPage({
   ];
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-8">
+    <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
       <div>
         <h1 className="text-xl font-semibold text-brand-primary">Auditoría</h1>
         <p className="text-sm text-brand-muted">

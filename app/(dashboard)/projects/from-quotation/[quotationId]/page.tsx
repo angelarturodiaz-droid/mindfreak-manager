@@ -29,7 +29,7 @@ export default async function ConvertQuotationPage({
 
   if (quotation.status !== "APPROVED") {
     return (
-      <main className="p-8">
+      <main className="p-4 md:p-8">
         <p className="text-sm text-brand-danger">
           Esta cotización no está aprobada — no se puede convertir en proyecto.
         </p>
@@ -38,7 +38,7 @@ export default async function ConvertQuotationPage({
   }
   if (quotation.project_id) {
     return (
-      <main className="p-8">
+      <main className="p-4 md:p-8">
         <p className="text-sm text-brand-danger">
           Esta cotización ya fue convertida en un proyecto.
         </p>
@@ -55,7 +55,7 @@ export default async function ConvertQuotationPage({
   const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-8">
+    <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
       <div>
         <h1 className="text-xl font-semibold text-brand-primary">
           Convertir {quotation.number} en proyecto

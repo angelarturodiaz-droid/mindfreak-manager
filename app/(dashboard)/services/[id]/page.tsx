@@ -26,7 +26,7 @@ export default async function ServiceDetailPage({
   const categories = await listServiceCategories();
 
   return (
-    <main className="flex flex-1 flex-col gap-8 p-8">
+    <main className="flex flex-1 flex-col gap-8 p-4 md:p-8">
       <div>
         <Link
           href="/services"

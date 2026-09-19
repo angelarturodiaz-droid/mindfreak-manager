@@ -1,5 +1,40 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño UI/UX — Fase 4: consistencia responsive en todos los módulos
+
+Cuarta fase del rediseño: pasada mecánica y de bajo riesgo sobre **todas**
+las pantallas listadas por el usuario como prioridad (Clientes, Proveedores,
+Cotizaciones, Facturas, Cobros, Pagos, Bancos, Proyectos, Gastos, Servicios,
+Configuración, Usuarios, Tareas, Auditoría, Perfil, Dashboard) para que el
+espaciado responsive aplicado en Reportes (Fase 3) quede parejo en toda la
+app. Sin cambios de lógica, datos ni consultas — solo clases de Tailwind en
+los contenedores de página.
+
+- **Padding de página responsive**: los 33 archivos de página bajo
+  `app/(dashboard)/**` cuyo `<main>` usaba `p-8` fijo ahora usan
+  `p-4 md:p-8`, igual que el patrón ya establecido en Reportes y en el
+  layout del dashboard — en móvil el contenido usa el ancho completo en vez
+  de desperdiciar 32px de margen a cada lado.
+- **Encabezados de página sin desbordamiento en móvil**: los 8 encabezados
+  de listado (Cotizaciones, Proyectos, Facturas, Gastos, Bancos, Proveedores,
+  Clientes, Dashboard) que ponen título+descripción a la izquierda y botón(es)
+  de acción a la derecha con `justify-between` ahora incluyen
+  `flex-wrap gap-3`, así los botones bajan a una segunda línea en pantallas
+  angostas en vez de comprimirse o desbordar horizontalmente.
+- Se dejó sin tocar el padding interno de tarjetas/paneles (p. ej. el
+  recuadro punteado de adjuntos en el detalle de Proyecto) — solo se
+  modificó el contenedor de página de nivel superior.
+- Se revisó que los módulos de listado (Clientes, Proveedores, Cotizaciones,
+  Facturas, Proyectos, Gastos, Bancos) ya usan consistentemente
+  `Input`/`Select`/`Button`/`Badge`/`DataTable`/`EmptyState` compartidos —
+  no se encontraron pantallas con controles de formulario "sueltos" fuera
+  del sistema de componentes.
+
+**Verificación:** `npx tsc --noEmit`, `npm run build`, `npx eslint .` (0
+errores) y `npx vitest run` (19/19) — todos en verde. Sin cambios de
+esquema. Verificación visual en navegador no disponible en este entorno
+(bloqueo de red documentado hacia `*.supabase.co`).
+
 ## Rediseño UI/UX — Fase 3: Reportes y widgets del Dashboard
 
 Tercera fase del rediseño, enfocada en los dos puntos explícitamente priorizados
