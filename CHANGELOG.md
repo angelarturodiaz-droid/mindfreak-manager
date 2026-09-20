@@ -1,5 +1,35 @@
 # CHANGELOG — Mindfreak Manager
 
+## Nueva función: eliminar usuarios (con MFA del admin), y helper de re-verificación compartido
+
+A pedido explícito, para poder limpiar cuentas de prueba como la que se
+usó durante esta sesión ("Jeremy").
+
+- `deleteUserAction(userId, mfaCode)` — elimina la cuenta de Auth
+  (`profiles` se borra solo, vía `ON DELETE CASCADE` de `profiles.id` →
+  `auth.users.id`). Pide re-verificar el MFA del admin, igual que
+  cambiar el correo de otro usuario, y nunca deja que un admin se
+  elimine a sí mismo por aquí.
+- **Solo funciona si la cuenta nunca registró actividad real.** Se
+  revisaron las foreign keys de `profiles`: facturas, gastos,
+  cotizaciones, clientes, proveedores, documentos, aprobaciones y varias
+  tablas más referencian `profiles` con `NO ACTION` en el `DELETE` — a
+  propósito, así nunca se pierde ese rastro ni se arrastran esos
+  registros en silencio al borrar un usuario. Si la cuenta alguna vez
+  creó algo, el borrado falla con un error claro en vez de completarse a
+  medias, y la UI sugiere usar "Desactivar" en su lugar — que sigue
+  siendo la forma correcta de quitarle acceso a alguien con historial
+  real en el sistema.
+- Se extrajo la lógica de re-verificar el MFA del admin (antes solo en
+  `updateUserEmailAction`) a `lib/mfa/admin-reverify.ts` —
+  `reverifyAdminMfa(supabase, code)` — para no duplicarla entre esta
+  acción y la de cambiar correo, y para que cualquier acción sensible
+  futura sobre otro usuario la reuse igual.
+- UI: botón "Eliminar" junto a "Restablecer contraseña" en cada fila de
+  `/settings/users`, con el mismo patrón de dos pasos (código de 6
+  dígitos) que "editar correo", más una confirmación nativa del
+  navegador antes de mandar el código, por ser una acción irreversible.
+
 ## Cambio de proceso: crear usuarios ahora es por invitación, no con contraseña puesta por el admin
 
 A pedido explícito, tras revisar el proceso completo de creación de

@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
 import { sendMail } from "@/lib/mail/send";
+import { reverifyAdminMfa } from "@/lib/mfa/admin-reverify";
 import { createUserSchema } from "./schema";
 
 export type ActionState = { error: string | null };
@@ -169,6 +170,55 @@ export async function toggleUserActiveAction(userId: string, currentlyActive: bo
 }
 
 /**
+ * Elimina una cuenta por completo (auth.users + profiles, vía ON DELETE
+ * CASCADE de profiles.id → auth.users.id) — a diferencia de
+ * toggleUserActiveAction, esto no se puede deshacer. Pide re-verificar
+ * el MFA del admin, igual que updateUserEmailAction (ver
+ * lib/mfa/admin-reverify.ts), y nunca deja que un admin se elimine a sí
+ * mismo por aquí.
+ *
+ * OJO: muchas tablas de negocio (facturas, gastos, cotizaciones,
+ * clientes, proveedores, documentos, aprobaciones, etc.) referencian
+ * profiles vía created_by/approved_by/uploaded_by con NO ACTION en el
+ * DELETE — a propósito, para nunca perder ese rastro en silencio ni
+ * arrastrar esos registros al borrar un usuario. Si la cuenta alguna vez
+ * creó algo en el sistema, este borrado falla con un error de la base de
+ * datos en vez de completarse a medias — en ese caso hay que usar
+ * "Desactivar" en vez de eliminar.
+ */
+export async function deleteUserAction(userId: string, mfaCode: string): Promise<void> {
+  await requirePermission("users.manage");
+
+  const supabase = await createSupabaseClient();
+  const adminUser = await reverifyAdminMfa(supabase, mfaCode);
+
+  if (adminUser.id === userId) {
+    throw new Error("No puedes eliminar tu propia cuenta desde aquí.");
+  }
+
+  const adminClient = createAdminClient();
+  const { error } = await adminClient.auth.admin.deleteUser(userId);
+  if (error) {
+    if (/foreign key|violat/i.test(error.message)) {
+      throw new Error(
+        "No se puede eliminar: este usuario ya tiene actividad registrada en el sistema (facturas, gastos, clientes, etc.). Usa \"Desactivar\" en vez de eliminar.",
+      );
+    }
+    throw new Error(error.message);
+  }
+
+  const companyId = await getPrimaryCompanyId();
+  await logAudit({
+    companyId,
+    action: "DELETE",
+    entityType: "user",
+    entityId: userId,
+  });
+
+  revalidatePath("/settings/users");
+}
+
+/**
  * Reemplaza por completo los roles de un usuario (dentro de esta
  * compañía) por la lista dada.
  */
@@ -259,47 +309,14 @@ export async function updateUserEmailAction(
     throw new Error("Correo inválido.");
   }
 
-  const code = mfaCode.trim();
-  if (!/^\d{6}$/.test(code)) {
-    throw new Error("Escribe el código de 6 dígitos de tu autenticador.");
-  }
-
   // Paso extra de seguridad, a pedido explícito (no es lo que exige
   // Supabase por defecto): cambiar el correo de OTRO usuario equivale a
   // poder tomar el control de su cuenta (la próxima recuperación de
   // contraseña, por ejemplo, llegaría a la dirección nueva) — así que se
   // le exige al ADMIN que hace el cambio volver a verificar su propio
-  // autenticador justo antes de aplicarlo, aunque su sesión ya esté en
-  // aal2 desde el login. No basta con mirar getAuthenticatorAssuranceLevel()
-  // (eso solo confirma que se verificó AL INICIAR SESIÓN, no en este
-  // instante) — se hace un challenge+verify nuevo contra el factor TOTP
-  // del propio admin, con el código que mandó desde el formulario.
+  // autenticador justo antes de aplicarlo. Ver lib/mfa/admin-reverify.ts.
   const supabase = await createSupabaseClient();
-  const {
-    data: { user: adminUser },
-  } = await supabase.auth.getUser();
-  if (!adminUser) throw new Error("Tu sesión expiró. Vuelve a iniciar sesión.");
-
-  const { data: adminFactors, error: adminFactorsError } = await supabase.auth.mfa.listFactors();
-  if (adminFactorsError) throw new Error(adminFactorsError.message);
-  const adminFactor = adminFactors.totp.find((f) => f.status === "verified");
-  if (!adminFactor) {
-    throw new Error(
-      "Tu cuenta no tiene un autenticador activo — actívalo desde tu perfil antes de cambiar correos de otros usuarios.",
-    );
-  }
-
-  const { data: adminChallenge, error: adminChallengeError } = await supabase.auth.mfa.challenge({
-    factorId: adminFactor.id,
-  });
-  if (adminChallengeError) throw new Error(adminChallengeError.message);
-
-  const { error: adminVerifyError } = await supabase.auth.mfa.verify({
-    factorId: adminFactor.id,
-    challengeId: adminChallenge.id,
-    code,
-  });
-  if (adminVerifyError) throw new Error("Código incorrecto. Intenta de nuevo.");
+  const adminUser = await reverifyAdminMfa(supabase, mfaCode);
 
   const adminClient = createAdminClient();
 

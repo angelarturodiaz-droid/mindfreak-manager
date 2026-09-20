@@ -4,6 +4,7 @@ import { UserRoleEditor } from "./user-role-editor";
 import { EditableUserName } from "./editable-user-name";
 import { EditableUserEmail } from "./editable-user-email";
 import { ResetPasswordButton } from "./reset-password-button";
+import { DeleteUserButton } from "./delete-user-button";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
 
@@ -36,7 +37,12 @@ export default async function UsersSettingsPage() {
     },
     {
       header: "",
-      accessor: (u) => <ResetPasswordButton userId={u.id} userName={u.full_name ?? u.email} />,
+      accessor: (u) => (
+        <div className="flex flex-col items-start gap-1.5">
+          <ResetPasswordButton userId={u.id} userName={u.full_name ?? u.email} />
+          <DeleteUserButton userId={u.id} userName={u.full_name ?? u.email} />
+        </div>
+      ),
     },
   ];
 
@@ -45,11 +51,13 @@ export default async function UsersSettingsPage() {
       <div>
         <h2 className="mb-1 text-lg font-semibold text-brand-primary">Usuarios</h2>
         <p className="mb-4 text-sm text-brand-muted">
-          Se crean directo desde aquí, con una contraseña temporal — se
-          envía un correo de confirmación a la dirección indicada, que la
-          persona debe abrir antes de poder entrar (así se comprueba que
-          el correo existe de verdad). Si te equivocaste al escribirlo,
-          puedes corregirlo haciendo clic sobre el correo en la tabla.
+          Se crean por invitación — la persona recibe un correo, confirma
+          que esa dirección es suya y elige su propia contraseña. Si te
+          equivocaste al escribir el correo, corrígelo haciendo clic sobre
+          él en la tabla (pide tu código de autenticador). Eliminar una
+          cuenta también lo pide, y solo funciona si esa cuenta nunca
+          registró actividad en el sistema — si ya creó algo, usa
+          &ldquo;Desactivar&rdquo; en su lugar.
         </p>
         <DataTable columns={columns} rows={users} keyFor={(u) => u.id} maxWidth="max-w-4xl" emptyMessage="Sin usuarios registrados." />
       </div>
