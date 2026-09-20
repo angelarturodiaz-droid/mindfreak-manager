@@ -10,6 +10,7 @@ import {
   TRUSTED_DEVICE_DAYS,
   generateTrustedDeviceToken,
   hashTrustedDeviceToken,
+  isCurrentDeviceTrusted,
 } from "@/lib/mfa/trusted-devices";
 
 export type AuthActionState = {
@@ -19,33 +20,6 @@ export type AuthActionState = {
 };
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
-
-/**
- * ¿El equipo desde el que se conecta ya está marcado como "de confianza"
- * para este usuario (cookie + fila en mfa_trusted_devices, sin vencer)?
- * Si sí, refresca el "último uso" y deja saltar el paso de MFA en el
- * login normal — ver TRUSTED_DEVICE_DAYS. No reemplaza la verificación
- * real de Supabase para acciones sensibles (esas siguen pidiendo AAL2
- * aparte, sin importar el equipo).
- */
-async function isCurrentDeviceTrusted(supabase: SupabaseServerClient, userId: string): Promise<boolean> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(TRUSTED_DEVICE_COOKIE)?.value;
-  if (!token) return false;
-
-  const tokenHash = hashTrustedDeviceToken(token);
-  const { data, error } = await supabase
-    .from("mfa_trusted_devices")
-    .select("id, expires_at")
-    .eq("user_id", userId)
-    .eq("token_hash", tokenHash)
-    .maybeSingle();
-  if (error || !data) return false;
-  if (new Date(data.expires_at).getTime() < Date.now()) return false;
-
-  await supabase.from("mfa_trusted_devices").update({ last_used_at: new Date().toISOString() }).eq("id", data.id);
-  return true;
-}
 
 /** Marca el equipo actual como "de confianza" — cookie + fila, 90 días. */
 async function trustCurrentDevice(supabase: SupabaseServerClient, userId: string): Promise<void> {

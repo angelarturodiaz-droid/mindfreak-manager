@@ -1,5 +1,39 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: "recordar este equipo" (90 días) no evitaba que volviera a pedir el MFA
+
+Reporte del usuario: marcaba "recordar este equipo" al verificar el código
+del autenticador, pero en el siguiente login volvía a pedirle el MFA de
+todas formas — confirmado que no era un problema de ventana de incógnito.
+
+**Causa:** el equipo de confianza (cookie + fila en `mfa_trusted_devices`)
+solo se revisaba dentro de `signIn()` para decidir si mandaba directo a
+`/mfa-challenge` justo después de meter la contraseña. Pero
+`app/(dashboard)/layout.tsx` — que envuelve TODAS las páginas del
+dashboard — tiene su **propio** chequeo independiente de
+`getAuthenticatorAssuranceLevel()`, y ese chequeo no sabía nada de equipos
+de confianza. Como Supabase nunca eleva la sesión a `aal2` real cuando se
+salta el challenge (no hay forma de "fingir" esa verificación ante
+Supabase), `currentLevel` se queda en `aal1` incluso en un equipo
+confiable. Resultado:
+1. `signIn()` reconoce el equipo de confianza y deja pasar a `/dashboard`.
+2. La primera carga del layout del dashboard ve `nextLevel: "aal2"` !=
+   `currentLevel: "aal1"` (sesión real, sin "fingir") → redirige igual a
+   `/mfa-challenge`, deshaciendo el "recordar" un instante después de
+   haber entrado.
+3. Al completar el MFA ahí, se crea una fila NUEVA en
+   `mfa_trusted_devices` en vez de reusar la existente — lo que explicaba
+   las filas duplicadas vistas en la base de datos, cada una usada
+   exactamente una vez.
+
+**Fix:** se movió `isCurrentDeviceTrusted()` de `features/auth/actions.ts`
+a `lib/mfa/trusted-devices.ts` (módulo compartido, sin `"use server"`) y
+ahora `app/(dashboard)/layout.tsx` también la consulta antes de redirigir
+a `/mfa-challenge` — solo redirige si el equipo NO está marcado como
+confiable. El acceso a acciones sensibles (cambiar contraseña, etc.) sigue
+sin verse afectado: esas siguen exigiendo la verificación real de
+Supabase aparte, sin importar el equipo.
+
 ## Fix: usar un código de recuperación dejaba la cuenta en bucle infinito de redirects
 
 Reporte del usuario: tras poner un código de recuperación válido, la

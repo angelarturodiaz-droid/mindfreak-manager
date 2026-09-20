@@ -5,6 +5,7 @@ import { getCompany } from "@/features/settings/queries";
 import { getCurrentUser, hasPermission } from "@/lib/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { listMyNotifications, countUnreadNotifications } from "@/features/notifications/queries";
+import { isCurrentDeviceTrusted } from "@/lib/mfa/trusted-devices";
 import { Sidebar } from "@/components/layout/sidebar";
 import { UserMenu } from "@/components/layout/user-menu";
 import { NotificationBell } from "@/components/layout/notification-bell";
@@ -42,9 +43,20 @@ export default async function DashboardLayout({
     // Si el usuario tiene el autenticador activado pero todavía no
     // completó el código de esta sesión (ej. entró directo a una URL sin
     // pasar por /mfa-challenge), no se le deja ver nada del dashboard.
+    //
+    // Excepción: equipo marcado como "de confianza" (ver
+    // lib/mfa/trusted-devices.ts). Supabase nunca eleva la sesión a aal2
+    // real cuando el login se saltó el challenge por esto — no hay forma
+    // de "fingir" esa verificación — así que sin este chequeo aquí, esta
+    // misma condición se cumplía en CADA navegación del dashboard y
+    // mandaba a /mfa-challenge de nuevo, deshaciendo el "recordar este
+    // equipo" apenas un instante después del login.
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== aal.nextLevel) {
-      redirect("/mfa-challenge");
+      const trusted = await isCurrentDeviceTrusted(supabase, user.id);
+      if (!trusted) {
+        redirect("/mfa-challenge");
+      }
     }
 
     const { data: profile } = await supabase
