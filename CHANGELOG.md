@@ -1,5 +1,46 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño de la pantalla de login — visual SaaS, logo real de Mindfreak Events
+
+Pedido del usuario: mejorar el login (más UX/UI, más visual, más
+"SaaS profesional") y usar el logo real de Mindfreak Events. Diseñado
+primero como canvas en Claude Design (3 estados: escritorio, verificación
+de seguridad, móvil) y luego llevado 1:1 al código.
+
+**Layout nuevo — `app/(auth)/login/page.tsx`:** panel partido en pantallas
+grandes (`lg:`): a la izquierda un panel de marca oscuro (degradado navy +
+textura de puntos sutil) con el logo, un titular de valor y 3 bullets de
+funcionalidades reales del sistema (NCF electrónico, pagos/conciliación,
+reportes); a la derecha el formulario (correo con ícono de sobre,
+contraseña con ícono de candado + el "ojito" ya existente, link de
+"¿Olvidaste tu contraseña?", botón de ingresar, y la nota de "protegido con
+verificación en dos pasos..." que ya existía). En mobile/tablet el panel
+de marca se colapsa a una franja compacta arriba del formulario. Cuando
+`signIn` marca `requiresCaptcha: true` (ver feature de captcha, entrada
+anterior), el panel de marca cambia a un estado de alerta (degradado rojo,
+badge "ALERTA DE SEGURIDAD", copy explicando por qué se pide el captcha) —
+mismo mecanismo de antes, solo mejor comunicado visualmente.
+
+**Logo real:** el logo de Mindfreak Events que el usuario ya tenía
+cargado en Configuración → Sistema no se puede leer sin sesión (la tabla
+`companies` solo es visible para usuarios autenticados de esa empresa —
+RLS intacta, no se tocó). Como las pantallas de auth son públicas por
+definición, se guardó una copia recortada del logo como archivo estático
+en `public/brand/mindfreak-logo.png` (recortado del espacio en blanco
+sobrante, mismo archivo que subió el usuario) — solo para las pantallas
+de login/auth, no reemplaza el logo dinámico del sidebar ni el de los
+PDFs, que siguen leyendo `company.logo_url` como antes.
+
+**Componentes reutilizables extendidos (aditivo, no rompe nada):**
+`components/ui/field.tsx` (`Input`) y `components/ui/password-input.tsx`
+(`PasswordInput`) ahora aceptan una prop opcional `icon` para el ícono a
+la izquierda del campo — sin `icon`, se comportan exactamente igual que
+antes, así que el resto de los ~30 formularios que ya los usan no cambia.
+
+**Verificación:** `npx tsc --noEmit`, `npm run build`, `npx eslint .`
+(0 errores) y `npx vitest run` (19/19) — todos en verde. Sin cambios de
+lógica de negocio, permisos ni base de datos.
+
 ## Seguridad: "ojito" para ver la contraseña + captcha ante comportamiento sospechoso en el login
 
 Dos pedidos del usuario:

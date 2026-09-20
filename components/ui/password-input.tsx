@@ -10,6 +10,8 @@ export interface PasswordInputProps
   label?: string;
   error?: string;
   hint?: string;
+  /** Ícono decorativo a la izquierda del campo (ej. candado para "Contraseña"). */
+  icon?: React.ReactNode;
 }
 
 /**
@@ -17,20 +19,21 @@ export interface PasswordInputProps
  * mostrar/ocultar el texto mientras se escribe.
  */
 export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
-  function PasswordInput({ label, error, hint, id, className = "", required, ...props }, ref) {
+  function PasswordInput({ label, error, hint, id, className = "", required, icon, ...props }, ref) {
     const autoId = useId();
     const inputId = id ?? autoId;
     const [visible, setVisible] = useState(false);
 
     return (
       <FieldWrapper label={label} htmlFor={inputId} error={error} hint={hint} required={required}>
-        <div className="relative">
+        <div className="relative flex items-center">
+          {icon && <span className="pointer-events-none absolute left-3 flex text-brand-muted">{icon}</span>}
           <input
             ref={ref}
             id={inputId}
             type={visible ? "text" : "password"}
             required={required}
-            className={`${FIELD_CLASSES} pr-9 ${error ? "border-brand-danger" : ""} ${className}`}
+            className={`${FIELD_CLASSES} ${icon ? "pl-10" : ""} pr-9 ${error ? "border-brand-danger" : ""} ${className}`}
             {...props}
           />
           <button

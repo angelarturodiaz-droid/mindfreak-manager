@@ -41,23 +41,35 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   hint?: string;
+  /** Ícono decorativo a la izquierda del campo (ej. sobre para "Correo"). */
+  icon?: ReactNode;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { label, error, hint, id, className = "", required, ...props },
+  { label, error, hint, id, className = "", required, icon, ...props },
   ref,
 ) {
   const autoId = useId();
   const inputId = id ?? autoId;
+  const input = (
+    <input
+      ref={ref}
+      id={inputId}
+      required={required}
+      className={`${FIELD_CLASSES} ${icon ? "pl-10" : ""} ${error ? "border-brand-danger" : ""} ${className}`}
+      {...props}
+    />
+  );
   return (
     <FieldWrapper label={label} htmlFor={inputId} error={error} hint={hint} required={required}>
-      <input
-        ref={ref}
-        id={inputId}
-        required={required}
-        className={`${FIELD_CLASSES} ${error ? "border-brand-danger" : ""} ${className}`}
-        {...props}
-      />
+      {icon ? (
+        <div className="relative flex items-center">
+          <span className="pointer-events-none absolute left-3 flex text-brand-muted">{icon}</span>
+          {input}
+        </div>
+      ) : (
+        input
+      )}
     </FieldWrapper>
   );
 });
