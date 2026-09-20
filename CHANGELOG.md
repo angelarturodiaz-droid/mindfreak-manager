@@ -1,5 +1,38 @@
 # CHANGELOG — Mindfreak Manager
 
+## Unificación visual de las 3 pantallas de autenticación (login, recuperar contraseña, verificación en dos pasos)
+
+Pedido del usuario tras ver la pantalla de MFA: "esta parte de mfa no
+esta alineada con la primera parte ni con toda la linea grafica del
+sistema" — el rediseño anterior solo se había aplicado a `/login`, y
+`/recover-password` y `/mfa-challenge` seguían con la tarjeta blanca
+centrada de antes, con lo que las 3 pantallas del flujo de auth se
+sentían como sistemas distintos.
+
+**`components/auth/auth-shell.tsx` (nuevo):** se extrajo del login el
+panel de marca compartido (degradado oscuro, textura de puntos, glow,
+logo `mindfreak-logo-on-dark.png`, franja compacta en mobile) a un
+componente `AuthShell` reutilizable, con slots para el contenido de
+marca (`brandContent`) y la nota de pie (`footerNote`) de cada pantalla,
+más una variante `alert` (degradado rojo) para el estado de captcha del
+login.
+
+**Las 3 pantallas ahora usan `AuthShell`:**
+- `app/(auth)/login/page.tsx` — refactor sin cambios de comportamiento,
+  ahora consume `AuthShell` en vez de tener el panel embebido inline.
+- `app/(auth)/mfa-challenge/page.tsx` — mismo panel de marca oscuro, con
+  badge "VERIFICACIÓN EN DOS PASOS" y copy sobre el código de la app
+  autenticadora; el campo de código ahora tiene ícono y placeholder
+  `000000`, mismo estilo de inputs/botones que el login.
+- `app/(auth)/recover-password/page.tsx` — mismo panel, badge
+  "RECUPERAR ACCESO" y copy sobre el enlace de restablecimiento; el
+  mensaje de "enlace enviado" ahora se muestra como un aviso de éxito
+  (fondo verde) en vez de texto suelto.
+
+No se tocó lógica de negocio, RLS ni las server actions
+(`verifyMfaChallengeAction`, `requestPasswordReset`) — solo el layout
+visual de las 3 páginas.
+
 ## Rediseño de la pantalla de login — visual SaaS, logo real de Mindfreak Events
 
 Pedido del usuario: mejorar el login (más UX/UI, más visual, más
