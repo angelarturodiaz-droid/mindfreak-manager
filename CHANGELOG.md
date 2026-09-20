@@ -1,5 +1,21 @@
 # CHANGELOG — Mindfreak Manager
 
+## Proteger cuentas ADMIN contra el borrado
+
+A pedido explícito: ninguna cuenta con rol Administrador se puede
+eliminar, sin importar si tiene o no actividad registrada — para no
+quedarse sin nadie que administre el sistema por un borrado accidental
+(o de un admin eliminando a otro). Para quitarle acceso a un admin, la
+única vía sigue siendo "Desactivar" (o quitarle el rol ADMIN primero y
+luego eliminarlo si de verdad hace falta).
+
+- `deleteUserAction` ahora revisa los roles de la cuenta objetivo antes
+  de intentar borrarla; si tiene el rol `ADMIN`, lanza un error claro y
+  no llega ni a llamar a `adminClient.auth.admin.deleteUser`. Esta
+  verificación corre después de re-verificar el MFA del admin que hace
+  el borrado, y antes del chequeo de foreign keys (que sigue protegiendo
+  a los demás usuarios con actividad real).
+
 ## Nueva función: eliminar usuarios (con MFA del admin), y helper de re-verificación compartido
 
 A pedido explícito, para poder limpiar cuentas de prueba como la que se

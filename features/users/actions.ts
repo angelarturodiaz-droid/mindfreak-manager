@@ -185,6 +185,12 @@ export async function toggleUserActiveAction(userId: string, currentlyActive: bo
  * creó algo en el sistema, este borrado falla con un error de la base de
  * datos en vez de completarse a medias — en ese caso hay que usar
  * "Desactivar" en vez de eliminar.
+ *
+ * Además, ninguna cuenta con rol ADMIN se puede eliminar nunca, tenga o
+ * no actividad registrada — es la única forma de no quedarse sin nadie
+ * que administre el sistema por un borrado accidental (o de un admin
+ * eliminando a otro). Para un admin que ya no debe tener acceso, la
+ * única vía es "Desactivar" (o quitarle el rol ADMIN primero).
  */
 export async function deleteUserAction(userId: string, mfaCode: string): Promise<void> {
   await requirePermission("users.manage");
@@ -194,6 +200,22 @@ export async function deleteUserAction(userId: string, mfaCode: string): Promise
 
   if (adminUser.id === userId) {
     throw new Error("No puedes eliminar tu propia cuenta desde aquí.");
+  }
+
+  const { data: targetRoles, error: rolesError } = await supabase
+    .from("user_roles")
+    .select("roles(name)")
+    .eq("user_id", userId);
+  if (rolesError) throw new Error(rolesError.message);
+  const isAdmin = (targetRoles ?? []).some((row) => {
+    const roleData = row.roles as { name: string } | { name: string }[] | null;
+    const r = Array.isArray(roleData) ? roleData[0] : roleData;
+    return r?.name === "ADMIN";
+  });
+  if (isAdmin) {
+    throw new Error(
+      "No se puede eliminar una cuenta con rol Administrador. Usa \"Desactivar\", o quítale el rol de Administrador primero.",
+    );
   }
 
   const adminClient = createAdminClient();
