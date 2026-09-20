@@ -4,61 +4,62 @@
   Design System — Mindfreak Manager (rediseño ERP SaaS moderno)
   Ver F0-Arquitectura, sección U, y el brief de rediseño de la interfaz.
 
-  Paleta: negro + blanco + azul claro (identidad Mindfreak), con colores
-  semánticos completos (éxito/advertencia/error/info) y estados
-  (hover/active/focus/disabled). Los nombres de tokens existentes
-  (brand-primary, brand-accent, brand-surface, etc.) se mantienen para no
-  romper ninguna de las pantallas ya construidas — solo se actualizan sus
-  valores y se agregan tokens nuevos (hover, bordes, radios, sombras,
-  semánticos con fondo suave a juego).
+  Fase 5: paleta "SaaS Moderno" (Opción B del canvas de diseño), elegida
+  por el usuario entre 3 direcciones exploradas. Mantiene la identidad
+  Mindfreak (negro + blanco + azul), pero con un azul más vívido, más aire
+  entre elementos y esquinas más redondeadas que la Opción A original.
+  Los nombres de tokens existentes (brand-primary, brand-accent,
+  brand-surface, etc.) se mantienen para no romper ninguna pantalla ya
+  construida — solo cambian los valores.
 */
 :root {
   /* Marca */
-  --brand-primary: #0b0e14;        /* negro profundo, no puro — para texto/headers/botón principal */
-  --brand-primary-hover: #1c212b;
-  --brand-accent: #2e90fa;         /* azul claro — color interactivo principal */
-  --brand-accent-hover: #1570d6;
-  --brand-accent-light: #eaf4ff;   /* fondo suave para estados activos/seleccionados */
-  --brand-secondary: #101828;      /* variante oscura para navegación/sidebar si se usa sólido */
+  --brand-primary: #101828;        /* carbón — texto/headers/botón principal */
+  --brand-primary-hover: #1d2939;
+  --brand-accent: #155eef;         /* azul vívido — color interactivo principal */
+  --brand-accent-hover: #0e4fd1;
+  --brand-accent-light: #eaf1ff;   /* fondo suave para estados activos/seleccionados */
+  --brand-secondary: #0b1220;      /* variante oscura para navegación/sidebar si se usa sólido */
 
   /* Superficie y texto */
-  --brand-background: #f6f8fb;
+  --brand-background: #f9fafb;
   --brand-surface: #ffffff;
-  --brand-surface-hover: #f1f5f9;
-  --brand-border: #e2e8f0;
+  --brand-surface-hover: #f2f4f7;
+  --brand-border: #eaecf0;
   --brand-text: #101828;
   --brand-muted: #667085;
   --brand-disabled: #cbd5e1;
 
   /* Semánticos (con variante de fondo suave para badges/alerts) */
-  --brand-success: #12b76a;
-  --brand-success-bg: #ecfdf3;
+  --brand-success: #17b26a;
+  --brand-success-bg: #e7f9ef;
   --brand-warning: #f79009;
-  --brand-warning-bg: #fffaeb;
+  --brand-warning-bg: #fff6e8;
   --brand-danger: #f04438;
-  --brand-danger-bg: #fef3f2;
-  --brand-info: #2e90fa;
-  --brand-info-bg: #eaf4ff;
+  --brand-danger-bg: #fdecec;
+  --brand-info: #155eef;
+  --brand-info-bg: #eaf1ff;
 
-  /* Escala de radios y sombras */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --shadow-sm: 0 1px 2px 0 rgb(16 24 40 / 0.05);
-  --shadow-md: 0 4px 8px -2px rgb(16 24 40 / 0.08), 0 2px 4px -2px rgb(16 24 40 / 0.06);
-  --shadow-lg: 0 12px 16px -4px rgb(16 24 40 / 0.08), 0 4px 6px -2px rgb(16 24 40 / 0.03);
+  /* Escala de radios y sombras — más redondeada y con sombras más suaves,
+     acorde a la dirección "SaaS Moderno". */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --shadow-sm: 0 1px 2px 0 rgb(16 24 40 / 0.04);
+  --shadow-md: 0 6px 12px -3px rgb(16 24 40 / 0.08), 0 3px 6px -3px rgb(16 24 40 / 0.05);
+  --shadow-lg: 0 16px 24px -6px rgb(16 24 40 / 0.10), 0 6px 8px -4px rgb(16 24 40 / 0.04);
 
   /* Paleta complementaria para gráficos e indicadores (dashboard, reportes).
      Distinta de los semánticos de estado (success/warning/danger/info) —
      esta es para series de datos (barras, líneas, donas) donde se
      necesitan varios tonos diferenciables a la vez, no un solo significado
      fijo. Coherente con la identidad Mindfreak (azul como tono ancla). */
-  --chart-1: #2e90fa; /* azul — misma familia que brand-accent */
-  --chart-2: #12b76a; /* verde */
+  --chart-1: #155eef; /* azul — misma familia que brand-accent */
+  --chart-2: #17b26a; /* verde — misma familia que brand-success */
   --chart-3: #f79009; /* ámbar */
   --chart-4: #f04438; /* rojo */
   --chart-5: #7a5af8; /* violeta */
-  --chart-6: #0e7490; /* teal oscuro */
+  --chart-6: #0e9384; /* teal — segundo acento de la Opción B */
   --chart-grid: #eef2f6;
 
   --background: var(--brand-background);

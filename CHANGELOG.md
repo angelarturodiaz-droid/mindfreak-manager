@@ -1,5 +1,48 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño UI/UX — Fase 5: paleta "SaaS Moderno" (elegida en el canvas de diseño)
+
+El usuario revisó 3 direcciones de sistema de diseño en un canvas
+(Azul Ejecutivo, SaaS Moderno, Alto Contraste Premium) y eligió
+**SaaS Moderno**. Esta fase aplica esa paleta a los tokens reales de la
+app en `app/globals.css` — un solo archivo, cero cambios de lógica — que
+se propagan automáticamente a todos los módulos porque cada componente
+compartido (`Button`, `Field`, `Card`, `KpiCard`, `Badge`, `Sidebar`,
+gráficos) ya consume estos tokens en vez de colores sueltos.
+
+**Cambios de valores en `:root` (mismos nombres de token, no se agregó
+ni quitó ninguno):**
+- `--brand-primary`: `#0b0e14` → `#101828` (carbón en vez de negro puro)
+- `--brand-accent` / `--brand-info`: `#2e90fa` → `#155eef` (azul más vívido)
+- `--brand-accent-hover`: `#1570d6` → `#0e4fd1`
+- `--brand-accent-light` / `--brand-info-bg`: `#eaf4ff` → `#eaf1ff`
+- `--brand-secondary`: `#101828` → `#0b1220`
+- `--brand-background`: `#f6f8fb` → `#f9fafb`
+- `--brand-surface-hover`: `#f1f5f9` → `#f2f4f7`
+- `--brand-border`: `#e2e8f0` → `#eaecf0`
+- `--brand-success` / `-bg`: `#12b76a` / `#ecfdf3` → `#17b26a` / `#e7f9ef`
+- `--brand-warning-bg`: `#fffaeb` → `#fff6e8`
+- `--brand-danger-bg`: `#fef3f2` → `#fdecec`
+- `--chart-1`, `--chart-2`: siguen a `brand-accent`/`brand-success`;
+  `--chart-6`: `#0e7490` → `#0e9384` (teal, segundo acento de la Opción B)
+- **Radios**, más redondeados: `--radius-sm` 0.25rem→0.375rem,
+  `--radius-md` 0.5rem→0.625rem, `--radius-lg` 0.75rem→1rem
+- **Sombras**, más suaves y con más aire: `--shadow-sm/md/lg` ajustadas
+  (menos opacidad, más difuminado)
+
+**Fuera de alcance de esta fase (a propósito):** las plantillas PDF de
+facturas/cotizaciones/recibos (`lib/pdf/*.tsx`) siguen usando los colores
+de la Opción A original codificados directamente ahí — son documentos
+oficiales que el cliente ya recibe con esa imagen, así que no se tocaron
+sin pedirlo explícitamente. Si se quiere que los PDFs usen la nueva
+paleta, es un cambio aparte y puntual.
+
+**Verificación:** `npx tsc --noEmit`, `npm run build`, `npx eslint .` (0
+errores) y `npx vitest run` (19/19) — todos en verde. Solo un archivo CSS
+de tokens, sin cambios de esquema ni lógica. Verificación visual en
+navegador no disponible en este entorno (bloqueo de red documentado hacia
+`*.supabase.co`).
+
 ## Rediseño UI/UX — Fase 4: consistencia responsive en todos los módulos
 
 Cuarta fase del rediseño: pasada mecánica y de bajo riesgo sobre **todas**
