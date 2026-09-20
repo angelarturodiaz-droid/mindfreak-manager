@@ -1,5 +1,29 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: usar un código de recuperación dejaba la cuenta en bucle infinito de redirects
+
+Reporte del usuario: tras poner un código de recuperación válido, la
+pantalla se quedaba "pensando" en `/profile?mfa_reset=1` sin cargar nunca.
+
+**Causa:** `getAuthenticatorAssuranceLevel()` (lo que usa el layout del
+dashboard para exigir el paso de MFA) lee la sesión **en caché** de la
+cookie, no vuelve a consultar el servidor en cada llamada. Al borrar el
+factor MFA vía la API admin, esa caché seguía "recordando" el factor
+viejo, así que:
+1. El usuario entra a `/profile?mfa_reset=1`.
+2. El layout del dashboard (que envuelve `/profile`) sigue viendo
+   `nextLevel: "aal2"` en la sesión cacheada → redirige a
+   `/mfa-challenge`.
+3. El middleware ve `mfa_reset_pending = true` y esa ruta no es
+   `/profile` → redirige de vuelta a `/profile?mfa_reset=1`.
+4. Vuelve al paso 1 — bucle infinito, nunca llega a renderizar nada.
+
+**Solución:** `verifyRecoveryCodeAction` (en `features/auth/actions.ts`)
+ahora llama a `supabase.auth.refreshSession()` justo después de borrar
+el factor MFA — esto fuerza una sesión nueva cuyo `session.user.factors`
+sí refleja que ya no hay ningún factor, así `nextLevel` pasa a `"aal1"`
+y el layout deja de exigir el paso de MFA.
+
 ## Recuperación de MFA (códigos de respaldo) y "equipos de confianza" (90 días)
 
 Pedido del usuario: un flujo aparte para cuando se pierde el acceso al

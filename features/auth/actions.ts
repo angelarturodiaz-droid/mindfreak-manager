@@ -271,6 +271,15 @@ export async function verifyRecoveryCodeAction(
     await adminClient.auth.admin.mfa.deleteFactor({ userId: user.id, id: factor.id });
   }
 
+  // Refresca la sesión — getAuthenticatorAssuranceLevel() (lo que usa el
+  // layout del dashboard para exigir el paso de MFA) lee la sesión en
+  // CACHÉ, no vuelve a consultar el servidor cada vez. Sin este refresh,
+  // esa caché sigue mostrando el factor que se acaba de borrar, así que
+  // el layout sigue pensando que falta verificar MFA (nextLevel se queda
+  // en aal2) y redirige a /mfa-challenge — que a su vez rebota de vuelta
+  // a /profile por el candado de abajo, en un bucle infinito.
+  await supabase.auth.refreshSession();
+
   // Marca la cuenta como "reconfiguración de MFA pendiente" — el middleware
   // (lib/supabase/proxy.ts) bloquea el resto del sistema hasta que vuelva a
   // activar el autenticador desde /profile. Se lee-mezcla-escribe para no
