@@ -26,10 +26,19 @@ cargado en Configuración → Sistema no se puede leer sin sesión (la tabla
 `companies` solo es visible para usuarios autenticados de esa empresa —
 RLS intacta, no se tocó). Como las pantallas de auth son públicas por
 definición, se guardó una copia recortada del logo como archivo estático
-en `public/brand/mindfreak-logo.png` (recortado del espacio en blanco
-sobrante, mismo archivo que subió el usuario) — solo para las pantallas
-de login/auth, no reemplaza el logo dinámico del sidebar ni el de los
-PDFs, que siguen leyendo `company.logo_url` como antes.
+en `public/brand/mindfreak-logo.png` — solo para las pantallas de
+login/auth, no reemplaza el logo dinámico del sidebar ni el de los PDFs,
+que siguen leyendo `company.logo_url` como antes.
+
+**Ajuste (feedback del usuario tras ver el resultado):** la primera
+versión metía el logo negro dentro de una placa blanca sobre el panel
+oscuro — se veía "pegado ahí" en vez de integrado. Se generó una segunda
+variante, `public/brand/mindfreak-logo-on-dark.png`, recoloreando a
+blanco los píxeles negros del logo (detección por saturación: se
+preserva el teal de las barras/"EVENTS" y solo el texto/monograma negro
+pasa a blanco) para que quede directamente sobre el degradado oscuro,
+sin caja — mismo tratamiento que Linear/Stripe le dan a su logo en
+pantallas de login.
 
 **Componentes reutilizables extendidos (aditivo, no rompe nada):**
 `components/ui/field.tsx` (`Input`) y `components/ui/password-input.tsx`

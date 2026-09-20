@@ -49,9 +49,14 @@ export default function LoginPage() {
         />
 
         <div className="relative flex items-center">
-          <div className="inline-flex items-center rounded-xl bg-white px-4 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.25)]">
-            <Image src="/brand/mindfreak-logo.png" alt="Mindfreak Events" width={140} height={69} className="h-9 w-auto" priority />
-          </div>
+          <Image
+            src="/brand/mindfreak-logo-on-dark.png"
+            alt="Mindfreak Events"
+            width={175}
+            height={86}
+            className="h-11 w-auto drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]"
+            priority
+          />
         </div>
 
         {alert ? (
@@ -96,8 +101,15 @@ export default function LoginPage() {
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-10">
         {/* Marca compacta — solo en mobile/tablet */}
         <div className="mb-8 flex items-center lg:hidden">
-          <div className="inline-flex items-center rounded-xl bg-brand-secondary px-4 py-2.5">
-            <Image src="/brand/mindfreak-logo.png" alt="Mindfreak Events" width={140} height={69} className="h-7 w-auto" priority />
+          <div className="inline-flex items-center rounded-xl bg-brand-secondary px-5 py-3">
+            <Image
+              src="/brand/mindfreak-logo-on-dark.png"
+              alt="Mindfreak Events"
+              width={175}
+              height={86}
+              className="h-8 w-auto"
+              priority
+            />
           </div>
         </div>
 
