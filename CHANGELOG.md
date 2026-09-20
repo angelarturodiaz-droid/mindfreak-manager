@@ -1,5 +1,26 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: eliminar un usuario con actividad mostraba un mensaje crudo de base de datos
+
+Reportado al intentar eliminar una cuenta con facturas ya creadas
+(`jdiaz@mindfreakevents.com`): en vez del mensaje amigable
+("ya tiene actividad registrada... usa Desactivar"), se mostraba un
+texto genérico de error.
+
+- Causa confirmada revisando los logs de Auth en vivo: la API de
+  administración de Supabase (`deleteUser`) no siempre devuelve el texto
+  real de Postgres ("violates foreign key constraint") en
+  `error.message` — a veces lo envuelve en uno genérico ("Database error
+  deleting user", código `unexpected_failure`), así que el filtro
+  anterior (que buscaba las palabras "foreign key"/"violat") no lo
+  reconocía y dejaba pasar el mensaje crudo.
+- Como a esta altura del código ya se descartó que sea una cuenta
+  Administrador, la única causa real posible de que `deleteUser` falle
+  es actividad registrada — así que ahora cualquier error de ese paso
+  se trata como ese caso, y se registra el error real en el log del
+  servidor (`console.error`) para diagnóstico, sin exponérselo nunca al
+  admin en la UI.
+
 ## Proteger cuentas ADMIN contra el borrado
 
 A pedido explícito: ninguna cuenta con rol Administrador se puede

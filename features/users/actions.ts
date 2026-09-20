@@ -221,12 +221,19 @@ export async function deleteUserAction(userId: string, mfaCode: string): Promise
   const adminClient = createAdminClient();
   const { error } = await adminClient.auth.admin.deleteUser(userId);
   if (error) {
-    if (/foreign key|violat/i.test(error.message)) {
-      throw new Error(
-        "No se puede eliminar: este usuario ya tiene actividad registrada en el sistema (facturas, gastos, clientes, etc.). Usa \"Desactivar\" en vez de eliminar.",
-      );
-    }
-    throw new Error(error.message);
+    // El mensaje que llega aquí NO siempre trae el texto real de Postgres
+    // ("violates foreign key constraint") — confirmado revisando los logs
+    // de Auth en vivo: la API de administración de Supabase a veces lo
+    // envuelve en uno genérico ("Database error deleting user", código
+    // unexpected_failure) y esconde el motivo real. Como la única causa
+    // conocida de que deleteUser falle a esta altura (ya se descartó ser
+    // Administrador) es que la cuenta tiene actividad registrada, se trata
+    // cualquier error de este paso como ese caso — nunca se le muestra al
+    // admin un mensaje crudo de base de datos.
+    console.error("deleteUserAction: fallo al eliminar", userId, error);
+    throw new Error(
+      "No se puede eliminar: este usuario ya tiene actividad registrada en el sistema (facturas, gastos, clientes, etc.). Usa \"Desactivar\" en vez de eliminar.",
+    );
   }
 
   const companyId = await getPrimaryCompanyId();
