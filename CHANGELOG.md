@@ -1,5 +1,54 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: cambiar el correo de un usuario (Configuración → Usuarios) no mandaba ningún correo
+
+Reporte del usuario: al editar el correo de un usuario desde
+`/settings/users`, el cambio se guardaba pero nunca llegaba el correo de
+verificación esperado a la dirección nueva.
+
+**Causa:** el código llamaba a `supabase.auth.resend({ type: "signup",
+email })` después de `adminClient.auth.admin.updateUserById(userId,
+{email, email_confirm: false})`, asumiendo que eso reenviaría un correo de
+confirmación. Pero la API de administración de Supabase **no** es el mismo
+flujo que usa un usuario para cambiar su propio correo:
+- El flujo normal (`supabase.auth.updateUser({email})`, llamado por el
+  propio usuario con su sesión) crea un token de "cambio de correo"
+  pendiente y dispara el template "Change email address" para
+  confirmarlo.
+- La API de administración, en cambio, escribe el correo nuevo
+  **directo** en la base de datos — de inmediato y ya "confirmado" —
+  sin importar qué se le pase en `email_confirm`. Comprobado con una
+  consulta directa a `auth.users`: tras decenas de cambios de correo por
+  este camino, `email_change_sent_at` y `confirmation_sent_at` seguían en
+  `null` — nunca se generó nada que reenviar.
+
+Por eso `resend({type: "signup", ...})` no hacía nada: no había ninguna
+confirmación de signup pendiente que reenviar, así que Supabase
+simplemente no mandaba el correo — y como no devolvía error, pasaba
+desapercibido (el código ni siquiera revisaba el resultado).
+
+**Fix (código):**
+- Se quitó esa llamada inútil y se dejó `email_confirm: true` (para que
+  el estado en la base de datos refleje lo que realmente pasa: el correo
+  ya queda confirmado de inmediato, no "pendiente").
+- El botón "Reenviar" y el ícono de correo sin verificar en
+  `/settings/users` siguen funcionando igual, pero ahora solo aplican al
+  flujo real donde sí tiene sentido (un usuario recién creado que aún no
+  hizo clic en su correo de confirmación — `createUserAction`, que sí usa
+  correctamente `type: "signup"`).
+
+**Falta un paso en el dashboard de Supabase (no es código):** el correo
+pensado para este caso — "admin cambia el correo de otra persona" — es la
+notificación de seguridad **"Email address changed"**. Se dispara sola
+cada vez que cambia el correo de un usuario (lo haga el propio usuario o
+un admin), pero solo si está **activada a nivel de proyecto**. Ir a
+Supabase Dashboard → Authentication → Emails, buscar la sección de
+notificaciones de seguridad ("Security notification emails" /
+"Email address changed") y activarla — usa el mismo SMTP de Hostinger ya
+configurado, no requiere credenciales nuevas. Si esa sección no aparece
+donde se espera, revisar con un screenshot para confirmar la ubicación
+exacta (igual que se hizo con el template de "Reset password").
+
 ## Fix: "recordar este equipo" (90 días) no evitaba que volviera a pedir el MFA
 
 Reporte del usuario: marcaba "recordar este equipo" al verificar el código

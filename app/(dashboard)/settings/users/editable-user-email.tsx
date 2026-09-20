@@ -22,7 +22,7 @@ export function EditableUserEmail({
     startTransition(async () => {
       try {
         await updateUserEmailAction(userId, value);
-        toast.success("Correo actualizado — se envió un correo de verificación a la nueva dirección");
+        toast.success("Correo actualizado");
         setEditing(false);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "No se pudo guardar.");

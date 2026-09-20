@@ -257,14 +257,32 @@ export async function updateUserEmailAction(userId: string, newEmail: string): P
 
   const adminClient = createAdminClient();
 
-  // email_confirm: false — Supabase aplica el cambio de inmediato (no hay
-  // forma de "pedirle confirmación antes de aplicar" vía la API de
-  // administración), pero lo deja marcado como no verificado. El paso
-  // siguiente (resendEmailVerificationAction) es lo que realmente
-  // comprueba que el correo corregido existe de verdad.
+  // IMPORTANTE — por qué antes "no llegaba el correo": el endpoint de
+  // administración de Supabase (updateUserById) NO es el mismo flujo que
+  // usa un usuario para cambiar su propio correo. El flujo normal
+  // (supabase.auth.updateUser({email})) crea un token de "cambio de
+  // correo" pendiente y GoTrue manda el template "Change email address"
+  // para confirmarlo. La API de administración, en cambio, escribe el
+  // correo nuevo DIRECTO en la base de datos — de inmediato y ya
+  // "confirmado" — sin generar ese token ni disparar ese template, sin
+  // importar qué se le pase en email_confirm. Por eso el
+  // `supabase.auth.resend({ type: "signup", ... })` que había aquí antes
+  // no hacía nada: no había ninguna confirmación de signup pendiente que
+  // reenviar (el correo ya quedaba confirmado), así que Supabase
+  // simplemente no mandaba nada — y no lanzaba error, por eso pasaba
+  // desapercibido.
+  //
+  // El correo que SÍ está pensado para este caso (admin cambia el correo
+  // de otra persona) es la notificación de seguridad "Email address
+  // changed" — se dispara automáticamente cuando el correo de un usuario
+  // cambia, sin importar si fue el propio usuario o un admin quien lo
+  // cambió, pero solo si está ACTIVADA a nivel de proyecto: Supabase
+  // Dashboard → Authentication → Emails → sección de notificaciones de
+  // seguridad → "Email address changed" (usa el mismo SMTP de Hostinger
+  // ya configurado, no requiere credenciales nuevas). Ver CHANGELOG.md.
   const { error: authError } = await adminClient.auth.admin.updateUserById(userId, {
     email: trimmed,
-    email_confirm: false,
+    email_confirm: true,
   });
   if (authError) throw new Error(authError.message);
 
@@ -283,10 +301,6 @@ export async function updateUserEmailAction(userId: string, newEmail: string): P
     entityId: userId,
     newValues: { email: trimmed },
   });
-
-  // Dispara de inmediato el correo de verificación a la dirección
-  // corregida — así el admin no tiene que dar un paso extra aparte.
-  await supabase.auth.resend({ type: "signup", email: trimmed });
 
   revalidatePath("/settings/users");
 }
