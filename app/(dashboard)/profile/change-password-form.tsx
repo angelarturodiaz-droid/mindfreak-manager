@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { changeOwnPasswordAction, type ActionState } from "@/features/profile/actions";
-import { Input } from "@/components/ui/field";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toaster";
 
@@ -23,9 +23,9 @@ export function ChangePasswordForm({ onDone }: { onDone?: () => void }) {
 
   return (
     <form ref={formRef} action={formAction} className="space-y-4">
-      <Input label="Contraseña actual" name="current_password" type="password" required autoComplete="current-password" />
-      <Input label="Contraseña nueva" name="new_password" type="password" required minLength={8} autoComplete="new-password" />
-      <Input label="Confirmar contraseña nueva" name="confirm_password" type="password" required minLength={8} autoComplete="new-password" />
+      <PasswordInput label="Contraseña actual" name="current_password" required autoComplete="current-password" />
+      <PasswordInput label="Contraseña nueva" name="new_password" required minLength={8} autoComplete="new-password" />
+      <PasswordInput label="Confirmar contraseña nueva" name="confirm_password" required minLength={8} autoComplete="new-password" />
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
 

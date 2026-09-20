@@ -4,7 +4,7 @@ import type { InputHTMLAttributes, SelectHTMLAttributes, ReactNode, TextareaHTML
 export const FIELD_CLASSES =
   "w-full rounded-[var(--radius-md)] border border-brand-border bg-brand-surface px-3 py-2.5 text-sm text-brand-text outline-none transition-colors placeholder:text-brand-muted hover:border-brand-muted focus:border-brand-accent focus:ring-2 focus:ring-brand-accent-light disabled:cursor-not-allowed disabled:border-brand-border disabled:bg-brand-background disabled:text-brand-disabled disabled:hover:border-brand-border";
 
-function FieldWrapper({
+export function FieldWrapper({
   label,
   htmlFor,
   error,

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { KeyRound, Eye, EyeOff } from "lucide-react";
+import { KeyRound } from "lucide-react";
 import { resetUserPasswordAction } from "@/features/users/actions";
 import { Button } from "@/components/ui/button";
+import { PasswordInput } from "@/components/ui/password-input";
 import { toast } from "@/components/ui/toaster";
 
 function generatePassword(): string {
@@ -18,7 +19,6 @@ function generatePassword(): string {
 export function ResetPasswordButton({ userId, userName }: { userId: string; userName: string }) {
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   function handleSave() {
@@ -52,23 +52,13 @@ export function ResetPasswordButton({ userId, userName }: { userId: string; user
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="relative">
-        <input
-          type={showPassword ? "text" : "password"}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Nueva contraseña"
-          autoFocus
-          className="w-40 rounded-[var(--radius-sm)] border border-brand-accent bg-brand-surface px-2 py-1 pr-8 text-sm outline-none"
-        />
-        <button
-          type="button"
-          onClick={() => setShowPassword((s) => !s)}
-          className="absolute right-1.5 top-1/2 -translate-y-1/2 text-brand-muted hover:text-brand-text"
-        >
-          {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
-        </button>
-      </div>
+      <PasswordInput
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Nueva contraseña"
+        autoFocus
+        className="w-40 py-1"
+      />
       <Button size="sm" variant="outline" type="button" onClick={() => setPassword(generatePassword())}>
         Generar
       </Button>

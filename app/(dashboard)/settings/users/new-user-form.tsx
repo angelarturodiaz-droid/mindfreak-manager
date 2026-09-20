@@ -1,9 +1,10 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { UserPlus, Eye, EyeOff } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import { createUserAction, type ActionState } from "@/features/users/actions";
 import { Input } from "@/components/ui/field";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
@@ -30,7 +31,6 @@ function generatePassword(): string {
 export function NewUserForm({ roles }: { roles: Role[] }) {
   const [state, formAction, pending] = useActionState(createUserAction, initialState);
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <form action={formAction} className="max-w-md space-y-4">
@@ -38,26 +38,16 @@ export function NewUserForm({ roles }: { roles: Role[] }) {
       <Input label="Correo" name="email" type="email" required />
 
       <div>
-        <label className="text-sm font-medium text-brand-text">Contraseña temporal</label>
-        <div className="mt-1 flex gap-2">
-          <div className="relative flex-1">
-            <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-[var(--radius-md)] border border-brand-border bg-brand-surface px-3 py-2 pr-9 text-sm outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent-light"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((s) => !s)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-brand-muted hover:text-brand-text"
-            >
-              {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-            </button>
-          </div>
+        <div className="flex items-end gap-2">
+          <PasswordInput
+            label="Contraseña temporal"
+            name="password"
+            required
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="flex-1"
+          />
           <Button type="button" variant="outline" size="md" onClick={() => setPassword(generatePassword())}>
             Generar
           </Button>

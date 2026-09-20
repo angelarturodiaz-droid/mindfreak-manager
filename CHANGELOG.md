@@ -1,5 +1,47 @@
 # CHANGELOG — Mindfreak Manager
 
+## Seguridad: "ojito" para ver la contraseña + captcha ante comportamiento sospechoso en el login
+
+Dos pedidos del usuario:
+
+**1) Ver la contraseña (ícono de ojo).** Nuevo componente reutilizable
+`components/ui/password-input.tsx` (`PasswordInput`) — mismo look que
+`Input`, pero con un botón de ojo que alterna `type="password"` ↔
+`type="text"`. Reemplaza los campos de contraseña de:
+- Login (`app/(auth)/login/page.tsx`)
+- Cambiar contraseña propia (`app/(dashboard)/profile/change-password-form.tsx`)
+- Crear usuario y Restablecer contraseña de otro usuario
+  (`app/(dashboard)/settings/users/{new-user-form,reset-password-button}.tsx`),
+  que ya tenían un ojito hecho a mano — se consolidaron en el mismo
+  componente para no duplicar la lógica.
+
+**2) Captcha (Cloudflare Turnstile) tras varios logins fallidos.**
+Nueva migración `051_login_captcha_protection.sql`: tabla
+`auth_login_attempts` (sin policies — solo accesible vía funciones
+`SECURITY DEFINER`, ya que el login ocurre sin sesión) + 3 funciones
+RPC: `record_failed_login`, `get_login_attempts`, `reset_login_attempts`,
+todas con ventana de 15 minutos. En `features/auth/actions.ts`, `signIn`
+ahora:
+- Consulta el conteo de intentos fallidos del correo antes de validar
+  la contraseña.
+- A partir de 3 intentos fallidos seguidos (ventana de 15 min), exige
+  un token de Turnstile válido (verificado server-side contra
+  `https://challenges.cloudflare.com/turnstile/v0/siteverify`) antes de
+  siquiera intentar la contraseña de nuevo.
+- Registra cada intento fallido y resetea el contador en un login
+  exitoso.
+
+Nuevo componente `components/ui/turnstile-widget.tsx` — se renderiza en
+el login solo cuando el servidor marca `requiresCaptcha: true`. Nuevas
+variables de entorno en `.env.example`:
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` — si se dejan
+vacías, el captcha simplemente no aparece y el login sigue funcionando
+normal (no rompe nada mientras se configuran las llaves de Cloudflare).
+
+**Verificación:** `npx tsc --noEmit`, `npm run build`, `npx eslint .`
+(0 errores) y `npx vitest run` (19/19) — todos en verde. Migración
+aplicada directamente al proyecto de Supabase de producción.
+
 ## Fix: error "Event handlers cannot be passed to Client Component props" en Bancos y Términos de pago
 
 Reportado por el usuario al entrar a Configuración → Bancos. Bug

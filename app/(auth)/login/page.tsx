@@ -4,6 +4,8 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { signIn, type AuthActionState } from "@/features/auth/actions";
 import { Input } from "@/components/ui/field";
+import { PasswordInput } from "@/components/ui/password-input";
+import { TurnstileWidget } from "@/components/ui/turnstile-widget";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -32,14 +34,23 @@ export default function LoginPage() {
         <Card className="mt-8 shadow-[var(--shadow-md)]">
           <form action={formAction} className="space-y-4">
             <Input id="email" label="Correo" name="email" type="email" required autoComplete="email" />
-            <Input
+            <PasswordInput
               id="password"
               label="Contraseña"
               name="password"
-              type="password"
               required
               autoComplete="current-password"
             />
+
+            {state.requiresCaptcha && (
+              <div>
+                <p className="mb-2 text-xs text-brand-muted">
+                  Detectamos varios intentos fallidos seguidos — confirma que
+                  no eres un robot para continuar.
+                </p>
+                <TurnstileWidget />
+              </div>
+            )}
 
             {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
 
