@@ -1,5 +1,40 @@
 # CHANGELOG — Mindfreak Manager
 
+## Respaldo diario automático (base de datos + Storage)
+
+El plan de Supabase actual no incluye backups automáticos, así que se
+agregó un workflow propio de GitHub Actions (`.github/workflows/backup.yml`)
+que corre solo todos los días (~04:10 hora de Santo Domingo), sin depender
+de ningún equipo encendido:
+
+- Vuelca el esquema `public` completo (clientes, facturas, gastos,
+  cotizaciones, proyectos, perfiles, roles, auditoría, etc.) con
+  `pg_dump` corrido dentro de un contenedor `postgres:17` — misma
+  versión que Supabase, para evitar problemas de compatibilidad con el
+  cliente `psql`/`pg_dump` que trae `ubuntu-latest` por defecto.
+- Descarga todos los archivos de todos los buckets de Storage
+  (`scripts/backup/backup-storage.mjs`, usa la service role key).
+- Empaqueta ambas cosas en un solo `.tar.gz` y lo cifra con AES-256
+  (`openssl enc -pbkdf2`) usando una contraseña guardada como secreto
+  de GitHub Actions.
+- Sube el archivo cifrado a una rama huérfana `backups` del mismo
+  repositorio — un archivo por día, conservando los últimos 30 y
+  podando el resto automáticamente. No requiere una cuenta ni un
+  repositorio externo.
+
+Incluye scripts de restauración (`scripts/backup/restore-database.sh`,
+`scripts/backup/restore-storage.mjs`) y `scripts/backup/README.md` con
+instrucciones completas: qué secretos configurar en GitHub (y de dónde
+sacar cada uno), cómo lanzar el workflow a mano, y los pasos exactos
+para restaurar un respaldo. **Ojo**: esto cubre datos de negocio y
+archivos, pero no las cuentas de Supabase Auth (contraseñas, MFA) — esas
+se recrean invitando a los usuarios de nuevo desde `/settings/users`,
+ya que Supabase administra ese esquema internamente.
+
+Pendiente del lado del usuario: agregar los 4 secretos en GitHub
+(`Settings → Secrets and variables → Actions`) para que el workflow
+quede activo — documentado en `scripts/backup/README.md`.
+
 ## Auditoría de seguridad: RLS, funciones RPC públicas y buckets de Storage
 
 A pedido explícito ("revisa que nada quede público para evitar
