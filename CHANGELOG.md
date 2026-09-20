@@ -1,5 +1,68 @@
 # CHANGELOG — Mindfreak Manager
 
+## Recuperación de MFA (códigos de respaldo) y "equipos de confianza" (90 días)
+
+Pedido del usuario: un flujo aparte para cuando se pierde el acceso al
+autenticador, y poder "recordar" un equipo para no pedir el código de MFA
+en cada login. Antes de construir, se confirmaron con el usuario 3
+decisiones de diseño (todas las recomendadas):
+
+1. Un código de recuperación usado **desactiva el MFA de la cuenta y
+   obliga a reconfigurarlo** antes de seguir usando el sistema — no es una
+   preferencia de UX, es la única salida técnica: Supabase no tiene forma
+   de "fingir" que el autenticador se verificó, así que la única manera de
+   bajar el nivel de autenticación exigido (AAL2 → AAL1) es quitando el
+   factor MFA, y eso requiere la Secret Key (ni con sesión activa el
+   propio usuario puede quitarse su MFA sin AAL2).
+2. "Recordar este equipo" solo evita el código en el **login normal**, por
+   90 días. Supabase sigue exigiendo AAL2 aparte en acciones sensibles
+   (cambiar contraseña) sin importar el equipo — no se puede evitar, y no
+   se intentó evitar.
+3. Se generan 10 códigos de un solo uso cada vez (estándar de la
+   industria).
+
+**Nuevas tablas** (`supabase/migrations/052_mfa_recovery_codes_and_trusted_devices.sql`,
+aplicada directamente vía MCP de Supabase — revisados los advisors de
+seguridad después, sin hallazgos nuevos):
+- `mfa_recovery_codes` — hash (sha256) de cada código, nunca el código en
+  texto plano. RLS: cada quien solo ve/gestiona los suyos.
+- `mfa_trusted_devices` — hash del token del equipo (el token real vive
+  solo en una cookie httpOnly del navegador, nunca en la base de datos).
+  RLS igual, por `user_id = auth.uid()`.
+
+**Código nuevo:**
+- `lib/mfa/recovery-codes.ts` — genera códigos legibles tipo `XXXX-XXXX`
+  (alfabeto sin 0/O/1/I/L) y su hash.
+- `lib/mfa/trusted-devices.ts` — token aleatorio de 32 bytes y su hash;
+  `TRUSTED_DEVICE_DAYS = 90`.
+- `features/auth/actions.ts`:
+  - `signIn()` ahora chequea si el equipo actual es "de confianza" antes
+    de exigir el paso de `/mfa-challenge`.
+  - `verifyMfaChallengeAction` acepta un checkbox "recordar este equipo"
+    (marca el equipo de confianza tras verificar el código real).
+  - `verifyRecoveryCodeAction` (nueva) — valida el código de recuperación,
+    lo marca usado, borra el/los factor(es) MFA vía Secret Key, marca
+    `user_metadata.mfa_reset_pending = true` (con lectura-mezcla-escritura
+    para no pisar otras claves como `full_name`), y redirige a
+    `/profile?mfa_reset=1`.
+- `lib/supabase/proxy.ts` — si `mfa_reset_pending` está activo, redirige
+  cualquier navegación (GET) que no sea `/profile` de vuelta a `/profile`
+  — deja pasar las Server Actions (POST) para no bloquear, por ejemplo,
+  cerrar sesión desde otra página.
+- `features/profile/actions.ts` — `verifyMfaEnrollmentAction` limpia el
+  flag al reconfigurar con éxito; nuevas acciones
+  `generateRecoveryCodesAction`, `getRecoveryCodesStatusAction`,
+  `listTrustedDevicesAction`, `revokeTrustedDeviceAction`,
+  `revokeAllTrustedDevicesAction`.
+- `app/(dashboard)/profile/recovery-codes-setup.tsx` y
+  `trusted-devices-list.tsx` (nuevos) — UI en el perfil, filas nuevas
+  "Códigos de recuperación" y "Equipos de confianza" junto al
+  autenticador. El aviso de "MFA desactivado, reconfigúralo" aparece en
+  `/profile` cuando corresponde.
+- `app/(auth)/mfa-challenge/page.tsx` — agrega el checkbox "recordar este
+  equipo" y un enlace "¿Perdiste el acceso a tu autenticador?" que cambia
+  el formulario al de código de recuperación.
+
 ## Fix: recuperar contraseña fallaba con "AAL2 session is required..." en cuentas con MFA
 
 Tras el fix anterior (link de recuperación llevando a `/update-password`),

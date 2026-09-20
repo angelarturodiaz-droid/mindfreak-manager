@@ -2,7 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
 import { updateProfileSchema, changePasswordSchema } from "./schema";
+import { generateRecoveryCodes, hashRecoveryCode, RECOVERY_CODE_COUNT } from "@/lib/mfa/recovery-codes";
+import { TRUSTED_DEVICE_COOKIE, hashTrustedDeviceToken } from "@/lib/mfa/trusted-devices";
 
 export type ActionState = { error: string | null; success?: boolean };
 
@@ -112,6 +115,13 @@ export async function verifyMfaEnrollmentAction(factorId: string, code: string):
   });
   if (verifyError) throw new Error("Código incorrecto. Verifica la hora de tu teléfono e intenta de nuevo.");
 
+  // Si la reconfiguración venía de haber usado un código de recuperación
+  // (ver verifyRecoveryCodeAction), limpia el candado que la obligaba a
+  // pasar por acá antes de usar el resto del sistema. updateUser({ data })
+  // MEZCLA con el user_metadata existente (no lo reemplaza), así que es
+  // seguro llamarlo aunque el flag nunca haya estado activo.
+  await supabase.auth.updateUser({ data: { mfa_reset_pending: false } });
+
   revalidatePath("/profile");
 }
 
@@ -134,4 +144,131 @@ export async function getMfaFactorsAction() {
   const { data, error } = await supabase.auth.mfa.listFactors();
   if (error) throw new Error(error.message);
   return data.totp;
+}
+
+// ---------------------------------------------------------------------
+// Códigos de recuperación de MFA
+// ---------------------------------------------------------------------
+
+export type RecoveryCodesStatus = {
+  total: number;
+  remaining: number;
+  generatedAt: string | null;
+};
+
+/** Estado actual de los códigos (para mostrar "8 de 10 sin usar" en el perfil) — nunca expone los códigos. */
+export async function getRecoveryCodesStatusAction(): Promise<RecoveryCodesStatus> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Sesión no encontrada.");
+
+  const { data, error } = await supabase
+    .from("mfa_recovery_codes")
+    .select("used_at, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+
+  const total = data?.length ?? 0;
+  const remaining = data?.filter((c) => !c.used_at).length ?? 0;
+  const generatedAt = data?.[0]?.created_at ?? null;
+  return { total, remaining, generatedAt };
+}
+
+/**
+ * Genera 10 códigos de recuperación nuevos e invalida los anteriores.
+ * Requiere el autenticador activo (no tiene sentido sin MFA). Se devuelven
+ * en texto plano UNA sola vez — la base de datos solo guarda el hash.
+ */
+export async function generateRecoveryCodesAction(): Promise<string[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Sesión no encontrada.");
+
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  const hasVerifiedFactor = (factors?.totp ?? []).some((f) => f.status === "verified");
+  if (!hasVerifiedFactor) {
+    throw new Error("Activa el autenticador antes de generar códigos de recuperación.");
+  }
+
+  const codes = generateRecoveryCodes(RECOVERY_CODE_COUNT);
+
+  // Regenerar invalida los anteriores (se borran, no se acumulan).
+  const { error: deleteError } = await supabase.from("mfa_recovery_codes").delete().eq("user_id", user.id);
+  if (deleteError) throw new Error(deleteError.message);
+
+  const { error: insertError } = await supabase.from("mfa_recovery_codes").insert(
+    codes.map((code) => ({ user_id: user.id, code_hash: hashRecoveryCode(code) })),
+  );
+  if (insertError) throw new Error(insertError.message);
+
+  revalidatePath("/profile");
+  return codes;
+}
+
+// ---------------------------------------------------------------------
+// Equipos de confianza ("recordar este equipo" al verificar MFA)
+// ---------------------------------------------------------------------
+
+export type TrustedDeviceRow = {
+  id: string;
+  label: string | null;
+  createdAt: string;
+  lastUsedAt: string;
+  expiresAt: string;
+  isCurrent: boolean;
+};
+
+/** Lista los equipos marcados como "de confianza" para la cuenta actual. */
+export async function listTrustedDevicesAction(): Promise<TrustedDeviceRow[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Sesión no encontrada.");
+
+  const cookieStore = await cookies();
+  const currentToken = cookieStore.get(TRUSTED_DEVICE_COOKIE)?.value;
+  const currentHash = currentToken ? hashTrustedDeviceToken(currentToken) : null;
+
+  const { data, error } = await supabase
+    .from("mfa_trusted_devices")
+    .select("id, label, created_at, last_used_at, expires_at, token_hash")
+    .eq("user_id", user.id)
+    .order("last_used_at", { ascending: false });
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    label: row.label,
+    createdAt: row.created_at,
+    lastUsedAt: row.last_used_at,
+    expiresAt: row.expires_at,
+    isCurrent: currentHash !== null && row.token_hash === currentHash,
+  }));
+}
+
+/** Revoca un equipo de confianza — la próxima vez que entre desde ahí, vuelve a pedir el código. */
+export async function revokeTrustedDeviceAction(id: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("mfa_trusted_devices").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/profile");
+}
+
+/** Revoca todos los equipos de confianza de la cuenta a la vez. */
+export async function revokeAllTrustedDevicesAction(): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Sesión no encontrada.");
+
+  const { error } = await supabase.from("mfa_trusted_devices").delete().eq("user_id", user.id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/profile");
 }

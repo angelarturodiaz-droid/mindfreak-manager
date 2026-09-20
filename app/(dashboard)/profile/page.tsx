@@ -1,15 +1,23 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getRecoveryCodesStatusAction, listTrustedDevicesAction } from "@/features/profile/actions";
 import { EditProfileForm } from "./edit-profile-form";
 import { ProfileTabs } from "./profile-tabs";
 import { PasswordRow } from "./password-row";
 import { PhoneRow } from "./phone-row";
 import { AuthenticatorSetup } from "./authenticator-setup";
+import { RecoveryCodesSetup } from "./recovery-codes-setup";
+import { TrustedDevicesList } from "./trusted-devices-list";
 import { SecurityRow, ComingSoonBadge } from "./security-row";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mfa_reset?: string }>;
+}) {
+  const { mfa_reset } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -24,6 +32,8 @@ export default async function ProfilePage() {
 
   const { data: mfaFactors } = await supabase.auth.mfa.listFactors();
   const verifiedFactor = mfaFactors?.totp.find((f) => f.status === "verified") ?? null;
+  const recoveryCodesStatus = await getRecoveryCodesStatusAction();
+  const trustedDevices = await listTrustedDevicesAction();
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
@@ -31,6 +41,13 @@ export default async function ProfilePage() {
         <h1 className="text-xl font-semibold text-brand-primary">Mi perfil</h1>
         <p className="text-sm text-brand-muted">{user.email}</p>
       </div>
+
+      {(mfa_reset === "1" || user.user_metadata?.mfa_reset_pending === true) && (
+        <div className="max-w-2xl rounded-[var(--radius-md)] border border-brand-warning bg-brand-warning-bg px-4 py-3 text-sm text-brand-warning">
+          Usaste un código de recuperación para entrar, así que tu autenticador quedó desactivado por seguridad.
+          Vuelve a activarlo abajo antes de seguir usando el sistema.
+        </div>
+      )}
 
       <ProfileTabs
         profileContent={
@@ -76,6 +93,12 @@ export default async function ProfilePage() {
               </SecurityRow>
               <SecurityRow label="Autenticador">
                 <AuthenticatorSetup initialFactor={verifiedFactor} />
+              </SecurityRow>
+              <SecurityRow label="Códigos de recuperación">
+                <RecoveryCodesSetup initialStatus={recoveryCodesStatus} hasFactor={!!verifiedFactor} />
+              </SecurityRow>
+              <SecurityRow label="Equipos de confianza">
+                <TrustedDevicesList initialDevices={trustedDevices} />
               </SecurityRow>
               <SecurityRow label="Verificación en dos pasos">
                 <div className="flex items-center justify-between">

@@ -59,5 +59,24 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Cuenta con reconfiguración de MFA pendiente — se usó un código de
+  // recuperación (perdió el autenticador), lo que obliga a quitar el
+  // factor MFA de la cuenta (ver verifyRecoveryCodeAction). No puede usar
+  // el resto del sistema hasta que lo vuelva a activar desde su perfil.
+  // Solo se intercepta la navegación normal (GET) — las Server Actions
+  // (POST, como cerrar sesión desde cualquier página) siguen funcionando,
+  // para no dejar a nadie sin forma de salir de la cuenta.
+  if (
+    user &&
+    user.user_metadata?.mfa_reset_pending === true &&
+    path !== "/profile" &&
+    request.method === "GET"
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/profile";
+    url.searchParams.set("mfa_reset", "1");
+    return NextResponse.redirect(url);
+  }
+
   return supabaseResponse;
 }
