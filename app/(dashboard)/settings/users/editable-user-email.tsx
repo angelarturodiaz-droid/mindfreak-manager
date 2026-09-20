@@ -44,8 +44,10 @@ export function EditableUserEmail({
   function handleSave() {
     startTransition(async () => {
       try {
-        await updateUserEmailAction(userId, value, code);
-        toast.success("Correo actualizado");
+        const { notified } = await updateUserEmailAction(userId, value, code);
+        toast.success(
+          notified ? "Correo actualizado — se avisó a la dirección anterior" : "Correo actualizado — no se pudo avisar a la dirección anterior",
+        );
         reset();
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "No se pudo guardar.");

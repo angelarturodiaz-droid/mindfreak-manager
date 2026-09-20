@@ -1,5 +1,34 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: el aviso "tu correo cambió" seguía sin llegar (la API de admin de Supabase nunca dispara esa notificación)
+
+Se probó con la notificación de seguridad "Email address changed" ya
+activada en el dashboard (ver entrada anterior) y el correo seguía sin
+llegar. Se confirmó revisando los logs de Auth en vivo justo en el
+momento de la prueba: la API de administración (`admin.updateUserById`)
+no deja NINGÚN rastro de intento de envío — ni éxito ni error. Esa
+notificación de seguridad solo corre cuando el propio usuario cambia su
+correo con su sesión (`supabase.auth.updateUser`); el camino de admin
+(necesario porque quien cambia el correo es OTRA persona, no el dueño de
+la cuenta) nunca pasa por esa lógica en el software de Supabase, sin
+importar la configuración del dashboard.
+
+**Fix:** se agregó `lib/mail/send.ts` — un envío de correo directo,
+propio de la app, independiente del mailer de Supabase Auth. Usa SMTP
+genérico vía `nodemailer`, así que funciona igual con el SMTP de
+Hostinger que ya está configurado en Supabase, o con un proveedor
+transaccional dedicado (Resend, SendGrid, SES) más adelante — mismas 4
+variables de entorno (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`,
+`SMTP_PASSWORD`, más `SMTP_FROM` opcional) sin tocar código. Ver
+`.env.example`.
+
+`updateUserEmailAction` ahora manda ese aviso directo al correo anterior
+después de aplicar el cambio, y devuelve `{notified: boolean}` — la UI
+muestra honestamente si el aviso salió o no (en vez de asumir que sí,
+como pasaba antes). Si el SMTP no está configurado o el envío falla, el
+cambio de correo NO se revierte — ya se aplicó — solo se le avisa al
+admin en la UI para que notifique manualmente si hace falta.
+
 ## Seguridad: cambiar el correo de otro usuario ahora pide re-verificar el MFA del admin
 
 Complemento del fix anterior ("cambiar el correo de un usuario no mandaba

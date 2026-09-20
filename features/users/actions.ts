@@ -5,6 +5,7 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
+import { sendMail } from "@/lib/mail/send";
 import { createUserSchema } from "./schema";
 
 export type ActionState = { error: string | null };
@@ -247,7 +248,11 @@ export async function toggleRolePermissionAction(
   revalidatePath("/settings/roles");
 }
 
-export async function updateUserEmailAction(userId: string, newEmail: string, mfaCode: string): Promise<void> {
+export async function updateUserEmailAction(
+  userId: string,
+  newEmail: string,
+  mfaCode: string,
+): Promise<{ notified: boolean }> {
   await requirePermission("users.manage");
 
   const trimmed = newEmail.trim().toLowerCase();
@@ -301,27 +306,18 @@ export async function updateUserEmailAction(userId: string, newEmail: string, mf
 
   // IMPORTANTE — por qué antes "no llegaba el correo": el endpoint de
   // administración de Supabase (updateUserById) NO es el mismo flujo que
-  // usa un usuario para cambiar su propio correo. El flujo normal
-  // (supabase.auth.updateUser({email})) crea un token de "cambio de
-  // correo" pendiente y GoTrue manda el template "Change email address"
-  // para confirmarlo. La API de administración, en cambio, escribe el
-  // correo nuevo DIRECTO en la base de datos — de inmediato y ya
-  // "confirmado" — sin generar ese token ni disparar ese template, sin
-  // importar qué se le pase en email_confirm. Por eso el
-  // `supabase.auth.resend({ type: "signup", ... })` que había aquí antes
-  // no hacía nada: no había ninguna confirmación de signup pendiente que
-  // reenviar (el correo ya quedaba confirmado), así que Supabase
-  // simplemente no mandaba nada — y no lanzaba error, por eso pasaba
-  // desapercibido.
-  //
-  // El correo que SÍ está pensado para este caso (admin cambia el correo
-  // de otra persona) es la notificación de seguridad "Email address
-  // changed" — se dispara automáticamente cuando el correo de un usuario
-  // cambia, sin importar si fue el propio usuario o un admin quien lo
-  // cambió, pero solo si está ACTIVADA a nivel de proyecto: Supabase
-  // Dashboard → Authentication → Emails → sección de notificaciones de
-  // seguridad → "Email address changed" (usa el mismo SMTP de Hostinger
-  // ya configurado, no requiere credenciales nuevas). Ver CHANGELOG.md.
+  // usa un usuario para cambiar su propio correo, y tampoco dispara la
+  // notificación de seguridad "Email address changed" aunque esté
+  // activada en el dashboard — se confirmó revisando los logs de Auth en
+  // vivo: al cambiar un correo por esta vía no hay NINGÚN intento de
+  // envío, exista o no esa notificación. Esa notificación solo corre
+  // cuando el propio usuario cambia su correo con su sesión
+  // (supabase.auth.updateUser). Por eso el aviso al correo anterior lo
+  // manda esta misma app directo, por su cuenta — ver lib/mail/send.ts y
+  // CHANGELOG.md para el detalle completo.
+  const { data: previousUser } = await adminClient.auth.admin.getUserById(userId);
+  const previousEmail = previousUser?.user?.email ?? null;
+
   const { error: authError } = await adminClient.auth.admin.updateUserById(userId, {
     email: trimmed,
     email_confirm: true,
@@ -344,6 +340,24 @@ export async function updateUserEmailAction(userId: string, newEmail: string, mf
   });
 
   revalidatePath("/settings/users");
+
+  // El cambio ya se aplicó — si este aviso falla (SMTP no configurado,
+  // correo anterior inválido, etc.), no se revierte nada; solo se le
+  // informa al admin en la UI para que avise manualmente si hace falta.
+  let notified = false;
+  if (previousEmail && previousEmail !== trimmed) {
+    notified = await sendMail({
+      to: previousEmail,
+      subject: "Tu correo de acceso a Mindfreak Manager cambió",
+      html: `
+        <p>El correo de acceso de tu cuenta en Mindfreak Manager cambió de <strong>${previousEmail}</strong> a <strong>${trimmed}</strong>.</p>
+        <p>Lo hizo un administrador (${adminUser.email}) desde el panel de Usuarios.</p>
+        <p>Si no reconoces este cambio, contacta a un administrador de inmediato.</p>
+      `,
+    });
+  }
+
+  return { notified };
 }
 
 export async function resendEmailVerificationAction(email: string): Promise<void> {
