@@ -20,7 +20,9 @@ test.describe("Cotizaciones", () => {
     // Agrega una línea personalizada (sin servicio del catálogo)
     await page.locator('input[name="description"]').fill("Línea de prueba E2E");
     await page.locator('input[name="quantity"]').fill("2");
-    await page.locator('input[name="unit_price"]').fill("500");
+    // MoneyInput: el input visible no tiene "name" (eso está en un input
+    // oculto sincronizado) — se ubica por su label en su lugar.
+    await page.getByLabel(/precio/i).fill("500");
     await page.getByRole("button", { name: /agregar línea/i }).click();
 
     await expect(page.getByText("Línea de prueba E2E")).toBeVisible();

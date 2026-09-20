@@ -13,7 +13,9 @@ test.describe("Cotización → Proyecto", () => {
     // Necesita al menos una línea para poder enviarla/aprobarla con sentido
     await page.locator('input[name="description"]').fill("Línea E2E flujo completo");
     await page.locator('input[name="quantity"]').fill("1");
-    await page.locator('input[name="unit_price"]').fill("1000");
+    // MoneyInput: el input visible no tiene "name" (eso está en un input
+    // oculto sincronizado) — se ubica por su label en su lugar.
+    await page.getByLabel(/precio/i).fill("1000");
     await page.getByRole("button", { name: /agregar línea/i }).click();
     await expect(page.getByText("Línea E2E flujo completo")).toBeVisible();
 

@@ -9,6 +9,8 @@ test.describe("Autenticación", () => {
 
   test("cerrar sesión regresa a /login", async ({ page }) => {
     await login(page);
+    // El botón "Cerrar sesión" vive dentro del menú de cuenta (dropdown).
+    await page.getByRole("button", { name: /cuenta/i }).click();
     await page.getByRole("button", { name: /cerrar sesión/i }).click();
     await expect(page).toHaveURL(/\/login/);
   });

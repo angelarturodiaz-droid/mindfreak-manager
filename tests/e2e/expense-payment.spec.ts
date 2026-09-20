@@ -14,7 +14,9 @@ test.describe("Gastos y pagos a proveedores", () => {
     await page.goto("/expenses/new");
     await page.locator('input[name="description"]').fill("Gasto E2E con proveedor");
     await page.locator('select[name="supplier_id"]').selectOption({ label: supplierName });
-    await page.locator('input[name="subtotal"]').fill("1000");
+    // MoneyInput: el input visible no tiene "name" (eso está en un input
+    // oculto sincronizado) — se ubica por su label en su lugar.
+    await page.getByLabel(/subtotal/i).fill("1000");
     await page.getByRole("button", { name: /crear gasto/i }).click();
 
     await expect(page.getByText(/pendiente/i)).toBeVisible();
