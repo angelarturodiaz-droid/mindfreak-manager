@@ -1,5 +1,39 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño UI/UX — Fase 6: pulido "SaaS moderno" en topbar, badges, vacíos y pantallas de acceso
+
+Continuación de la Fase 5/5b: más señales visuales de producto SaaS
+moderno, aplicadas a componentes compartidos y a las 3 pantallas de
+acceso (login, recuperar contraseña, verificación en dos pasos) que no
+pasan por el layout del dashboard y por eso no habían recibido ningún
+toque de las fases anteriores. Sin cambios de lógica, validaciones ni
+flujos de autenticación.
+
+- **`app/(dashboard)/layout.tsx`**: la barra superior ahora es `sticky`
+  (se queda visible al hacer scroll en pantallas largas de tablas/reportes),
+  con `shadow-[var(--shadow-sm)]` en vez de solo un borde, y un fondo
+  semitransparente con `backdrop-blur-sm` — un detalle típico de topbars
+  SaaS modernos.
+- **`components/ui/badge.tsx`**: cada badge de estado ahora lleva un
+  punto de color antes del texto (patrón común en dashboards SaaS:
+  Linear, Vercel, Stripe), reforzando el color sin depender solo del
+  fondo. Mismo mapeo de estados → tono, sin cambios de comportamiento.
+- **`components/ui/empty-state.tsx`**: el ícono de los estados vacíos
+  ahora va dentro de un círculo con el color de acento suave, en vez de
+  flotar solo — más amigable y menos "formulario viejo".
+- **`app/(auth)/login/page.tsx`, `recover-password/page.tsx`,
+  `mfa-challenge/page.tsx`**: las 3 agregan la misma marca (cuadrado
+  oscuro con "M", igual al ícono del sidebar) centrada sobre el título,
+  el texto introductorio centrado, y la tarjeta del formulario con
+  `shadow-[var(--shadow-md)]` en vez de la sombra mínima por defecto —
+  quedan visualmente alineadas al resto del sistema en vez de sentirse
+  como una pantalla aparte.
+
+**Verificación:** `npx tsc --noEmit`, `npm run build`, `npx eslint .` (0
+errores) y `npx vitest run` (19/19) — todos en verde. Sin cambios de
+esquema ni de lógica de negocio. Verificación visual en navegador no
+disponible en este entorno.
+
 ## Rediseño UI/UX — Fase 5b: sidebar oscuro (corrigiendo fidelidad con el diseño elegido)
 
 El usuario reportó que la app en vivo no se veía como la Opción B del

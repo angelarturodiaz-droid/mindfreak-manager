@@ -60,7 +60,7 @@ export default async function DashboardLayout({
       <div className="flex min-h-full flex-1">
         <Sidebar platformName={platformName} logoUrl={logoUrl} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex items-center gap-2 border-b border-brand-border bg-brand-surface px-4 py-3 md:px-6">
+          <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-brand-border bg-brand-surface/95 px-4 py-3 shadow-[var(--shadow-sm)] backdrop-blur-sm md:px-6">
             <MobileMenuButton />
             <div className="flex-1" />
             {user && <NotificationBell notifications={notifications} unreadCount={unreadCount} />}

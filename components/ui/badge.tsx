@@ -8,6 +8,14 @@ const TONE_CLASSES: Record<BadgeTone, string> = {
   neutral: "bg-brand-surface-hover text-brand-muted",
 };
 
+const DOT_CLASSES: Record<BadgeTone, string> = {
+  success: "bg-brand-success",
+  warning: "bg-brand-warning",
+  danger: "bg-brand-danger",
+  info: "bg-brand-info",
+  neutral: "bg-brand-muted",
+};
+
 /**
  * Mapeo por defecto de estados de negocio → tono del badge. Cubre los
  * estados usados en cotizaciones, facturas, proyectos, gastos, pagos.
@@ -52,8 +60,9 @@ export function Badge({
   const resolvedTone = tone ?? (status ? STATUS_TONE[status] ?? "neutral" : "neutral");
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${TONE_CLASSES[resolvedTone]}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${TONE_CLASSES[resolvedTone]}`}
     >
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT_CLASSES[resolvedTone]}`} aria-hidden="true" />
       {children}
     </span>
   );
