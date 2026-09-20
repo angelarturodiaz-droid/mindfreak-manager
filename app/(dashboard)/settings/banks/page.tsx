@@ -34,7 +34,7 @@ export default async function BankCatalogSettingsPage() {
             label="Eliminar"
             confirmTitle={`¿Eliminar "${b.name}" del catálogo?`}
             confirmMessage="Las cuentas/proveedores que ya lo tengan guardado no se ven afectados."
-            onConfirm={() => deleteBankCatalogEntryAction(b.id)}
+            onConfirm={deleteBankCatalogEntryAction.bind(null, b.id)}
           />
         </div>
       ),

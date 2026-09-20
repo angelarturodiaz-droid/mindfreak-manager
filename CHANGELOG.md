@@ -1,5 +1,32 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: error "Event handlers cannot be passed to Client Component props" en Bancos y Términos de pago
+
+Reportado por el usuario al entrar a Configuración → Bancos. Bug
+preexistente, no relacionado con las fases de rediseño: en
+`app/(dashboard)/settings/banks/page.tsx` y
+`app/(dashboard)/settings/payment-terms/page.tsx` (ambos Server
+Components), el botón de eliminar le pasaba a `ConfirmButton` (un
+Client Component) una función flecha en línea que envolvía la Server
+Action —
+`onConfirm={() => deleteBankCatalogEntryAction(b.id)}` — en vez de
+pasar la Server Action ya vinculada con sus argumentos. Una función
+flecha común no es serializable a través del límite servidor/cliente;
+solo una Server Action (o una referencia a ella con `.bind`) lo es. El
+resto de las pantallas que usan `ConfirmButton` desde un Server
+Component (ej. `app/(dashboard)/suppliers/page.tsx`) ya usaban el
+patrón correcto (`accion.bind(null, id)`), por eso no fallaban.
+
+**Fix**: en ambos archivos, `onConfirm={() => deleteXAction(id)}` →
+`onConfirm={deleteXAction.bind(null, id)}` — dos líneas cambiadas, sin
+tocar ninguna Server Action, query ni la lógica de negocio.
+
+**Verificación:** `npx tsc --noEmit`, `npm run build`, `npx eslint .`
+(0 errores) y `npx vitest run` (19/19) — todos en verde. Este tipo de
+error de límite servidor/cliente no lo detecta `tsc` ni `eslint`, solo
+aparece en tiempo de ejecución — por eso no había salido antes en la
+verificación automática de las fases del rediseño.
+
 ## Rediseño UI/UX — Fase 7: manual del sistema, íconos circulares de color y logo más visible
 
 Tres pedidos del usuario en un solo lote: (1) el ícono de la marca no se

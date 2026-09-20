@@ -39,7 +39,7 @@ export default async function PaymentTermsSettingsPage() {
             label="Eliminar"
             confirmTitle={`¿Eliminar "${t.name}"?`}
             confirmMessage="Las cotizaciones/facturas que ya la usen no se ven afectadas."
-            onConfirm={() => deletePaymentTermAction(t.id)}
+            onConfirm={deletePaymentTermAction.bind(null, t.id)}
           />
         </div>
       ),
