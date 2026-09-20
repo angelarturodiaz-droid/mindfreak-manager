@@ -331,7 +331,10 @@ export async function updatePasswordAction(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return { error: "El enlace venció o ya se usó. Solicita uno nuevo desde \"¿Olvidaste tu contraseña?\"." };
+    // Genérico a propósito — esta pantalla la usan dos flujos distintos:
+    // recuperar contraseña ("¿Olvidaste tu contraseña?") e invitación de
+    // un usuario nuevo (pide que un admin reenvíe la invitación).
+    return { error: "El enlace venció o ya se usó. Pide que te lo reenvíen." };
   }
 
   const { error } = await supabase.auth.updateUser({ password });

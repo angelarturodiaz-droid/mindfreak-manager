@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
@@ -19,11 +20,19 @@ async function getPrimaryCompanyId(): Promise<string> {
 }
 
 /**
- * Crea un usuario directamente (sin correo de invitación) con la
- * contraseña que se le indique, y le asigna uno o más roles. Usa la
- * Secret Key de Supabase (API de administración de Auth) — ver
- * lib/supabase/admin.ts. El usuario queda activo de inmediato, sin pasar
- * por confirmación de correo (email_confirm: true).
+ * Crea un usuario por INVITACIÓN — el admin solo pone nombre, correo y
+ * rol(es); nunca le pone contraseña a otra cuenta. Supabase manda el
+ * correo real de invitación (plantilla "Invite user" en el dashboard,
+ * configurada para apuntar a /auth/confirm?type=invite → /update-password,
+ * igual que se hizo con "Reset password" — ver F0-Arquitectura y
+ * CHANGELOG.md) y la persona elige su propia contraseña al aceptar.
+ *
+ * Se cambió del modelo anterior (el admin creaba la cuenta con una
+ * contraseña temporal que él mismo inventaba) por dos razones: el admin
+ * nunca debería conocer la contraseña real de otra cuenta, y este camino
+ * SÍ confirma que el correo existe de verdad (si hay un typo, la
+ * invitación nunca se acepta y la cuenta queda visiblemente pendiente,
+ * en vez de creada con una contraseña que nadie puede usar).
  */
 export async function createUserAction(
   _prevState: ActionState,
@@ -34,7 +43,6 @@ export async function createUserAction(
   const parsed = createUserSchema.safeParse({
     full_name: String(formData.get("full_name") ?? ""),
     email: String(formData.get("email") ?? ""),
-    password: String(formData.get("password") ?? ""),
     role_ids: formData.getAll("role_ids").map(String),
   });
   if (!parsed.success) {
@@ -50,30 +58,21 @@ export async function createUserAction(
     return { error: e instanceof Error ? e.message : "No se pudo inicializar el cliente admin." };
   }
 
-  // email_confirm: false — el usuario debe hacer clic en el correo de
-  // confirmación antes de poder entrar. Antes se creaba con true (activo
-  // de inmediato); se cambió a pedido explícito del usuario para poder
-  // confirmar que el correo existe de verdad, no solo que tiene formato
-  // válido.
-  const { data: created, error: createError } = await adminClient.auth.admin.createUser({
-    email: parsed.data.email,
-    password: parsed.data.password,
-    email_confirm: false,
-    user_metadata: { full_name: parsed.data.full_name },
+  const headersList = await headers();
+  const origin =
+    headersList.get("origin") ??
+    `${headersList.get("x-forwarded-proto") ?? "https"}://${headersList.get("host")}`;
+
+  const { data: created, error: createError } = await adminClient.auth.admin.inviteUserByEmail(parsed.data.email, {
+    data: { full_name: parsed.data.full_name },
+    redirectTo: `${origin}/auth/confirm?next=/update-password`,
   });
   if (createError || !created.user) {
-    return { error: createError?.message ?? "No se pudo crear el usuario." };
+    return { error: createError?.message ?? "No se pudo invitar al usuario." };
   }
 
   const newUserId = created.user.id;
   const supabase = await createSupabaseClient();
-
-  // Envía el correo de confirmación real — es lo que prueba que el
-  // correo existe de verdad (si no llega, el usuario simplemente nunca
-  // puede confirmar su cuenta). No se bloquea la creación del usuario si
-  // esto falla (ej. rate limit) — se puede reenviar después desde la
-  // pantalla de usuarios.
-  await supabase.auth.resend({ type: "signup", email: parsed.data.email });
 
   // El trigger de F1 crea la fila en profiles automáticamente al crearse el
   // auth.users — solo hace falta completar el nombre (el trigger solo
@@ -360,9 +359,31 @@ export async function updateUserEmailAction(
   return { notified };
 }
 
+/**
+ * Reenvía la invitación a un usuario que todavía no la ha aceptado.
+ * `supabase.auth.resend()` NO soporta type "invite" (solo "signup" y
+ * "email_change" — ver tipos de @supabase/auth-js), así que el reenvío
+ * real es volver a llamar inviteUserByEmail(): para un usuario que ya
+ * existe pero sigue sin confirmar, Supabase actualiza la invitación y
+ * reenvía el correo en vez de dar error de "ya existe".
+ */
 export async function resendEmailVerificationAction(email: string): Promise<void> {
   await requirePermission("users.manage");
-  const supabase = await createSupabaseClient();
-  const { error } = await supabase.auth.resend({ type: "signup", email });
+
+  let adminClient;
+  try {
+    adminClient = createAdminClient();
+  } catch (e) {
+    throw new Error(e instanceof Error ? e.message : "No se pudo inicializar el cliente admin.");
+  }
+
+  const headersList = await headers();
+  const origin =
+    headersList.get("origin") ??
+    `${headersList.get("x-forwarded-proto") ?? "https"}://${headersList.get("host")}`;
+
+  const { error } = await adminClient.auth.admin.inviteUserByEmail(email, {
+    redirectTo: `${origin}/auth/confirm?next=/update-password`,
+  });
   if (error) throw new Error(error.message);
 }

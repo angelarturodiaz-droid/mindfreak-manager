@@ -1,5 +1,53 @@
 # CHANGELOG — Mindfreak Manager
 
+## Cambio de proceso: crear usuarios ahora es por invitación, no con contraseña puesta por el admin
+
+A pedido explícito, tras revisar el proceso completo de creación de
+usuarios tras el caso de "Jeremy" (correo con typo, contraseña puesta por
+el admin, cuenta confusa de corregir). El modelo anterior tenía dos
+problemas de fondo:
+
+1. **El admin conocía la contraseña real de otra cuenta** — el
+   formulario de "Crear usuario" tenía un campo de contraseña que el
+   admin inventaba (o generaba) y tenía que compartir por otro canal.
+2. **No había garantía real de que el correo existiera** — se creaba la
+   cuenta igual aunque el correo tuviera un typo; el "correo de
+   confirmación" era una llamada aparte (`resend({type:"signup"})`) que
+   dependía de que todo lo anterior hubiera salido bien.
+
+**Ahora es un flujo de invitación real:**
+- `createUserAction` usa `adminClient.auth.admin.inviteUserByEmail()` en
+  vez de `admin.createUser({password})`. El admin solo pone nombre,
+  correo y rol(es) — nunca una contraseña.
+- Supabase manda el correo de invitación real (plantilla "Invite user").
+  La persona hace clic, eso confirma que el correo es suyo de verdad, y
+  ahí mismo elige su propia contraseña en `/update-password` (se
+  reutiliza la misma pantalla que ya existía para recuperar contraseña —
+  el texto es genérico a propósito).
+- El formulario de "Crear usuario" (`new-user-form.tsx`) ya no tiene
+  campo de contraseña.
+- `resendEmailVerificationAction` (el botón "Reenviar" junto a un correo
+  sin confirmar) ahora vuelve a llamar `inviteUserByEmail()` en vez de
+  `resend({type:"signup"})` — ese `type` no aplica a invitaciones
+  (`resend()` de `@supabase/auth-js` solo acepta `"signup"` o
+  `"email_change"`, no `"invite"`; llamar `inviteUserByEmail()` de nuevo
+  sobre un usuario ya invitado pero sin confirmar reenvía la invitación
+  en vez de dar error de "ya existe").
+
+**Falta un paso en el dashboard de Supabase (no es código), igual que se
+hizo con "Reset password":** editar la plantilla **"Invite user"**
+(Authentication → Emails → Templates) para que el link apunte a esta app
+en vez del endpoint por defecto de Supabase:
+
+```html
+{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/update-password
+```
+
+Sin este paso, el link del correo de invitación lleva al servidor de
+Supabase directamente (no sirve para el flujo SSR con cookies de esta
+app) — el mismo problema que tuvimos con "Reset password" al principio
+de esta sesión.
+
 ## Fix: el aviso "tu correo cambió" seguía sin llegar (la API de admin de Supabase nunca dispara esa notificación)
 
 Se probó con la notificación de seguridad "Email address changed" ya

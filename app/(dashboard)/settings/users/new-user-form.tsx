@@ -1,10 +1,9 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import { UserPlus } from "lucide-react";
 import { createUserAction, type ActionState } from "@/features/users/actions";
 import { Input } from "@/components/ui/field";
-import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
@@ -19,44 +18,17 @@ const ROLE_LABELS: Record<string, string> = {
   OPERATIONS: "Operaciones",
 };
 
-function generatePassword(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
-  let pass = "";
-  for (let i = 0; i < 12; i++) {
-    pass += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return pass;
-}
-
 export function NewUserForm({ roles }: { roles: Role[] }) {
   const [state, formAction, pending] = useActionState(createUserAction, initialState);
-  const [password, setPassword] = useState("");
 
   return (
     <form action={formAction} className="max-w-md space-y-4">
       <Input label="Nombre completo" name="full_name" required />
       <Input label="Correo" name="email" type="email" required />
-
-      <div>
-        <div className="flex items-end gap-2">
-          <PasswordInput
-            label="Contraseña temporal"
-            name="password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="flex-1"
-          />
-          <Button type="button" variant="outline" size="md" onClick={() => setPassword(generatePassword())}>
-            Generar
-          </Button>
-        </div>
-        <p className="mt-1 text-xs text-brand-muted">
-          Mínimo 8 caracteres. Compártela con la persona por un canal seguro —
-          puede cambiarla después desde su propia cuenta.
-        </p>
-      </div>
+      <p className="-mt-2 text-xs text-brand-muted">
+        Se le manda un correo de invitación a esta dirección — la persona elige su propia contraseña al aceptarla.
+        No se activa hasta que lo haga.
+      </p>
 
       <fieldset>
         <legend className="text-sm font-medium text-brand-text">Roles</legend>
@@ -73,7 +45,7 @@ export function NewUserForm({ roles }: { roles: Role[] }) {
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
 
       <Button type="submit" loading={pending} icon={<UserPlus size={14} />}>
-        Crear usuario
+        Invitar usuario
       </Button>
     </form>
   );
