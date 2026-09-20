@@ -85,27 +85,27 @@ export function Sidebar({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-brand-border bg-brand-surface shadow-[var(--shadow-lg)] transition-transform duration-200 md:static md:z-auto md:shadow-none md:transition-[width] ${
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-brand-secondary shadow-[var(--shadow-lg)] transition-transform duration-200 md:static md:z-auto md:shadow-none md:transition-[width] ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0 ${collapsed ? "md:w-16" : "md:w-60"} w-64`}
       >
-      <div className="flex items-center gap-2 border-b border-brand-border px-4 py-4">
+      <div className="flex items-center gap-2 border-b border-white/10 px-4 py-4">
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoUrl} alt="" className="h-7 w-7 shrink-0 object-contain" />
         ) : (
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-brand-primary text-xs font-bold text-white">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-brand-accent text-xs font-bold text-white">
             {platformName.charAt(0)}
           </div>
         )}
         {!collapsed && (
-          <p className="flex-1 truncate text-sm font-semibold text-brand-primary">{platformName}</p>
+          <p className="flex-1 truncate text-sm font-semibold text-white">{platformName}</p>
         )}
         <button
           type="button"
           onClick={() => setMobileOpen(false)}
           aria-label="Cerrar menú"
-          className="text-brand-muted hover:text-brand-text md:hidden"
+          className="text-white/60 hover:text-white md:hidden"
         >
           <X size={18} />
         </button>
@@ -115,7 +115,7 @@ export function Sidebar({
         {NAV_GROUPS.map((group, gi) => (
           <div key={gi}>
             {group.label && !collapsed && (
-              <p className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wide text-brand-muted">
+              <p className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wide text-white/40">
                 {group.label}
               </p>
             )}
@@ -130,8 +130,8 @@ export function Sidebar({
                     title={collapsed ? item.label : undefined}
                     className={`flex items-center gap-2.5 rounded-[var(--radius-md)] px-2.5 py-2 text-sm font-medium transition-colors ${
                       active
-                        ? "bg-brand-accent-light text-brand-accent"
-                        : "text-brand-text hover:bg-brand-surface-hover"
+                        ? "bg-brand-accent text-white"
+                        : "text-white/70 hover:bg-white/10 hover:text-white"
                     }`}
                   >
                     <Icon size={18} />
@@ -147,7 +147,7 @@ export function Sidebar({
       <button
         type="button"
         onClick={() => setCollapsed((c) => !c)}
-        className="hidden items-center gap-2 border-t border-brand-border px-4 py-3 text-xs text-brand-muted hover:bg-brand-surface-hover hover:text-brand-text md:flex"
+        className="hidden items-center gap-2 border-t border-white/10 px-4 py-3 text-xs text-white/50 hover:bg-white/10 hover:text-white md:flex"
       >
         {collapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
         {!collapsed && "Colapsar"}

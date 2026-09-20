@@ -1,5 +1,35 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño UI/UX — Fase 5b: sidebar oscuro (corrigiendo fidelidad con el diseño elegido)
+
+El usuario reportó que la app en vivo no se veía como la Opción B del
+canvas ("SaaS Moderno"). Causa: la Fase 5 solo actualizó tokens de color
+(`app/globals.css`), pero el componente `Sidebar` nunca leía el token
+`--brand-secondary` — quedó definido desde la Fase 1 con el comentario
+"variante oscura para navegación/sidebar si se usa sólido" pero sin
+usarse; el sidebar seguía siendo blanco (`bg-brand-surface`), que es la
+diferencia visual más grande entre la app y las 3 opciones del canvas
+(las tres mostraban un sidebar oscuro sólido).
+
+**`components/layout/sidebar.tsx`** — único archivo tocado:
+- El `<aside>` pasa de `bg-brand-surface` + borde a `bg-brand-secondary`
+  (el oscuro `#0b1220` ya definido en la Fase 5), sin borde propio.
+- Logo, nombre de la plataforma y textos pasan a blanco/blanco-translúcido
+  (`text-white`, `text-white/70`, `text-white/40`) en vez de los tonos de
+  texto para fondo claro.
+- El ítem de navegación activo pasa de "fondo azul muy claro + texto azul"
+  a **fondo azul sólido (`brand-accent`) + texto blanco** — el pill de
+  navegación que se veía en las 3 opciones del canvas.
+- Separadores (`border-b`, `border-t`) y el botón "Colapsar" pasan a usar
+  `border-white/10` / `text-white/50` para tener contraste sobre el fondo
+  oscuro, en vez de los tokens de borde/texto pensados para fondo claro.
+- Nada de la lógica de navegación, rutas, colapsado o el drawer móvil
+  cambió — solo clases de color.
+
+**Verificación:** `npx tsc --noEmit`, `npm run build`, `npx eslint .` (0
+errores) y `npx vitest run` (19/19) — todos en verde. Verificación visual
+en navegador no disponible en este entorno.
+
 ## Rediseño UI/UX — Fase 5: paleta "SaaS Moderno" (elegida en el canvas de diseño)
 
 El usuario revisó 3 direcciones de sistema de diseño en un canvas
