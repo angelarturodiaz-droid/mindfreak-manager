@@ -167,7 +167,6 @@ async function ProjectProfitabilityTab({ period }: { period: Period }) {
                 { key: "Ingresos", name: "Ingresos", color: "var(--chart-1)" },
                 { key: "Gastos", name: "Gastos", color: "var(--chart-4)" },
               ]}
-              formatValue={(v) => formatMoney(v)}
             />
           </div>
         </section>
@@ -247,7 +246,6 @@ async function ReceivablesVsPayablesTab({ period }: { period: Period }) {
               { key: "Por pagar", name: "Por pagar", color: "var(--chart-4)" },
             ]}
             height={220}
-            formatValue={(v) => formatMoney(v)}
           />
         </div>
       </section>
@@ -318,7 +316,6 @@ async function SalesByClientTab({ period }: { period: Period }) {
                 { key: "Ventas", name: "Ventas", color: "var(--chart-1)" },
                 { key: "Cobros", name: "Cobros", color: "var(--chart-2)" },
               ]}
-              formatValue={(v) => formatMoney(v)}
             />
           </div>
         </section>
@@ -385,7 +382,6 @@ async function ClientProfitabilityTab({ period }: { period: Period }) {
                 { key: "Ingresos", name: "Ingresos", color: "var(--chart-1)" },
                 { key: "Costos", name: "Costos", color: "var(--chart-4)" },
               ]}
-              formatValue={(v) => formatMoney(v)}
             />
           </div>
         </section>
@@ -464,7 +460,6 @@ async function PeriodOverPeriodTab({ period }: { period: Period }) {
               { key: "Actual", name: period.label, color: "var(--chart-1)" },
               { key: "Anterior", name: period.prevLabel, color: "var(--chart-5)" },
             ]}
-            formatValue={(v) => formatMoney(v)}
           />
         </div>
       </section>

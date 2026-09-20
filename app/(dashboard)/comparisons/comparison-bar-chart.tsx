@@ -11,6 +11,18 @@ import {
   Legend,
 } from "recharts";
 
+type ValueFormat = "money" | "percent";
+
+// El formateo vive AQUÍ (componente cliente) y no se recibe como prop —
+// una función no puede pasar de un Server Component a un Client
+// Component en Next.js ("Functions cannot be passed directly to Client
+// Components"). Por eso el padre solo manda un `valueFormat` (string,
+// serializable) y este componente decide cómo formatear.
+function formatByType(value: number, format: ValueFormat, currency: string) {
+  if (format === "percent") return `${value.toFixed(1)}%`;
+  return new Intl.NumberFormat("es-DO", { style: "currency", currency, maximumFractionDigits: 0 }).format(value);
+}
+
 /**
  * Barras agrupadas genéricas para la sección de Comparaciones — misma
  * paleta y estilo que app/(dashboard)/dashboard/financial-flow-chart.tsx,
@@ -22,14 +34,17 @@ export function ComparisonBarChart({
   xKey,
   bars,
   height = 280,
-  formatValue,
+  valueFormat = "money",
+  currency = "DOP",
 }: {
   data: Record<string, string | number>[];
   xKey: string;
   bars: { key: string; name: string; color: string }[];
   height?: number;
-  formatValue: (v: number) => string;
+  valueFormat?: ValueFormat;
+  currency?: string;
 }) {
+  const formatValue = (v: number) => formatByType(v, valueFormat, currency);
   return (
     <div style={{ height }} className="w-full">
       <ResponsiveContainer width="100%" height="100%">

@@ -1,5 +1,13 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: /comparisons no cargaba ("Functions cannot be passed to Client Components")
+
+`ComparisonBarChart` (Client Component) recibía un `formatValue`
+(función) desde `page.tsx` (Server Component) — Next.js no permite pasar
+funciones a través de esa frontera. Se movió el formateo (dinero/
+porcentaje) adentro del propio componente de gráfico, que ahora solo
+recibe strings serializables (`valueFormat`, `currency`).
+
 ## Nueva sección: Comparaciones
 
 Nueva sección en Análisis (`/comparisons`) enfocada en los indicadores
