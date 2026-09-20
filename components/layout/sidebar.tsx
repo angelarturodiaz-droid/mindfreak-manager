@@ -22,14 +22,16 @@ import {
   X,
 } from "lucide-react";
 import { useSidebar } from "./sidebar-context";
+import { IconBadge, type IconBadgeTone } from "../ui/icon-badge";
 
 type NavItem = { href: string; label: string; icon: React.ComponentType<{ size?: number }> };
-type NavGroup = { label: string; items: NavItem[] };
+type NavGroup = { label: string; tone: IconBadgeTone; items: NavItem[] };
 
 const NAV_GROUPS: NavGroup[] = [
-  { label: "", items: [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }] },
+  { label: "", tone: "blue", items: [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }] },
   {
     label: "Comercial",
+    tone: "violet",
     items: [
       { href: "/clients", label: "Clientes", icon: Users },
       { href: "/quotations", label: "Cotizaciones", icon: FileText },
@@ -38,6 +40,7 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Operaciones",
+    tone: "teal",
     items: [
       { href: "/services", label: "Productos y Servicios", icon: Package },
       { href: "/suppliers", label: "Proveedores", icon: Truck },
@@ -46,6 +49,7 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Finanzas",
+    tone: "green",
     items: [
       { href: "/invoices", label: "Facturas", icon: Receipt },
       { href: "/payments", label: "Cobros y pagos", icon: Wallet },
@@ -55,6 +59,7 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Análisis",
+    tone: "amber",
     items: [
       { href: "/reports", label: "Reportes", icon: BarChart3 },
       { href: "/audit", label: "Auditoría", icon: History },
@@ -91,10 +96,12 @@ export function Sidebar({
       >
       <div className="flex items-center gap-2 border-b border-white/10 px-4 py-4">
         {logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={logoUrl} alt="" className="h-7 w-7 shrink-0 object-contain" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-white p-1 ring-1 ring-white/10">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={logoUrl} alt="" className="h-full w-full object-contain" />
+          </div>
         ) : (
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-brand-accent text-xs font-bold text-white">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-brand-accent text-base font-bold text-white ring-1 ring-white/10">
             {platformName.charAt(0)}
           </div>
         )}
@@ -128,13 +135,19 @@ export function Sidebar({
                     key={item.href}
                     href={item.href}
                     title={collapsed ? item.label : undefined}
-                    className={`flex items-center gap-2.5 rounded-[var(--radius-md)] px-2.5 py-2 text-sm font-medium transition-colors ${
+                    className={`flex items-center gap-2.5 rounded-[var(--radius-md)] py-1.5 pr-2.5 pl-1.5 text-sm font-medium transition-colors ${
                       active
                         ? "bg-brand-accent text-white"
                         : "text-white/70 hover:bg-white/10 hover:text-white"
                     }`}
                   >
-                    <Icon size={18} />
+                    {active ? (
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center">
+                        <Icon size={18} />
+                      </span>
+                    ) : (
+                      <IconBadge icon={<Icon size={15} />} tone={group.tone} size="sm" />
+                    )}
                     {!collapsed && <span className="truncate">{item.label}</span>}
                   </Link>
                 );

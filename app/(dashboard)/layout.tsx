@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Settings } from "lucide-react";
+import { Settings, HelpCircle } from "lucide-react";
 import { getCompany } from "@/features/settings/queries";
 import { getCurrentUser, hasPermission } from "@/lib/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
@@ -63,6 +63,14 @@ export default async function DashboardLayout({
           <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-brand-border bg-brand-surface/95 px-4 py-3 shadow-[var(--shadow-sm)] backdrop-blur-sm md:px-6">
             <MobileMenuButton />
             <div className="flex-1" />
+            <Link
+              href="/help"
+              title="Ayuda y manual del sistema"
+              aria-label="Ayuda y manual del sistema"
+              className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] text-brand-muted transition-colors hover:bg-brand-surface-hover hover:text-brand-accent"
+            >
+              <HelpCircle size={18} />
+            </Link>
             {user && <NotificationBell notifications={notifications} unreadCount={unreadCount} />}
           {canManageSettings && (
             <Link

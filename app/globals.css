@@ -59,7 +59,9 @@
   --chart-3: #f79009; /* ámbar */
   --chart-4: #f04438; /* rojo */
   --chart-5: #7a5af8; /* violeta */
+  --chart-5-bg: #f2effe;
   --chart-6: #0e9384; /* teal — segundo acento de la Opción B */
+  --chart-6-bg: #e6f6f4;
   --chart-grid: #eef2f6;
 
   --background: var(--brand-background);
@@ -106,7 +108,9 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-chart-5-bg: var(--chart-5-bg);
   --color-chart-6: var(--chart-6);
+  --color-chart-6-bg: var(--chart-6-bg);
   --color-chart-grid: var(--chart-grid);
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;

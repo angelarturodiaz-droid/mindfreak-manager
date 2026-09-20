@@ -4,13 +4,16 @@ export function Card({
   children,
   className = "",
   padded = true,
+  id,
 }: {
   children: ReactNode;
   className?: string;
   padded?: boolean;
+  id?: string;
 }) {
   return (
     <div
+      id={id}
       className={`rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface shadow-[var(--shadow-sm)] ${
         padded ? "p-5" : ""
       } ${className}`}

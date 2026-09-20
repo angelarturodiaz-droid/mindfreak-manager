@@ -1,5 +1,57 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rediseño UI/UX — Fase 7: manual del sistema, íconos circulares de color y logo más visible
+
+Tres pedidos del usuario en un solo lote: (1) el ícono de la marca no se
+veía bien, (2) faltaba un manual del sistema accesible como el ícono "?"
+de QuickBooks, con contenido completo módulo por módulo, y (3) usar
+íconos circulares de color como los de la captura de referencia, en todo
+el sistema. Sin cambios de lógica ni de datos — todo presentación y una
+página nueva de solo lectura.
+
+**Nuevo: `components/ui/icon-badge.tsx`** — ícono circular con fondo de
+color suave (`IconBadge`, 7 tonos: blue/green/amber/red/violet/teal/
+neutral), reutilizando los tokens de marca y de la paleta de gráficos.
+Se agregaron `--chart-5-bg` y `--chart-6-bg` a `app/globals.css` para
+tener el par color+fondo-suave también en violeta y teal, igual que ya
+existía para success/warning/danger/info.
+
+**`components/layout/sidebar.tsx`**:
+- Cada grupo de navegación tiene ahora un tono (Comercial=violeta,
+  Operaciones=teal, Finanzas=verde, Análisis=ámbar, Dashboard=azul); el
+  ítem inactivo muestra su ícono dentro de un `IconBadge` de ese color —
+  igual al estilo de círculos de color de la referencia — y el ítem
+  activo mantiene el pill sólido azul con el ícono en blanco (sin
+  duplicar color encima de color).
+- El logo/marca (arriba del sidebar) pasa de 28px a 36px, con
+  proporciones más cuadradas, texto más grande y un anillo sutil para
+  que se defina mejor contra el fondo oscuro; si hay un logo real
+  subido, ahora se muestra sobre una placa blanca para que no se pierda
+  contra el sidebar oscuro. Mientras no se suba el logo real de
+  Mindfreak Events, sigue usando la inicial "M" — el campo para subirlo
+  ya existe en Configuración → Organización.
+
+**Nuevo: `app/(dashboard)/help/page.tsx`** — el manual del sistema,
+accesible desde un ícono de ayuda (`?`) nuevo en la barra superior,
+junto a Notificaciones y Configuración. Navegación lateral con un
+`IconBadge` de color por módulo, saltando a una sección con contenido
+real (no genérico) de cada uno: Dashboard, Clientes, Proveedores,
+Cotizaciones, Proyectos, Servicios, Facturas, Cobros y pagos, Gastos,
+Bancos, Tareas, Reportes, Auditoría, Configuración/Usuarios y un
+resumen de cómo el sistema protege los datos financieros — incluyendo
+los estados reales de cada entidad (ej. los 8 estados de Cotizaciones,
+los 6 de Facturas) y qué permiso hace falta para las acciones
+sensibles (`quotations.approve`, `reports.view`, `settings.manage`,
+`banks.reconcile`).
+
+**`components/ui/card.tsx`**: se agregó soporte para `id` (para los
+anclajes del manual) — cambio aditivo, no afecta ningún uso existente.
+
+**Verificación:** `npx tsc --noEmit`, `npm run build` (incluye la nueva
+ruta `/help`), `npx eslint .` (0 errores) y `npx vitest run` (19/19) —
+todos en verde. Sin cambios de esquema. Verificación visual en
+navegador no disponible en este entorno.
+
 ## Rediseño UI/UX — Fase 6: pulido "SaaS moderno" en topbar, badges, vacíos y pantallas de acceso
 
 Continuación de la Fase 5/5b: más señales visuales de producto SaaS
