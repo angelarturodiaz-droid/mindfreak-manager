@@ -124,7 +124,14 @@ export async function verifyMfaChallengeAction(
   });
   if (verifyError) return { error: "Código incorrecto. Intenta de nuevo." };
 
-  redirect("/dashboard");
+  // A dónde seguir tras verificar el código — normalmente /dashboard (login
+  // normal), pero también se llega aquí desde /auth/confirm cuando la
+  // cuenta tiene MFA y se está recuperando la contraseña (Supabase exige
+  // AAL2 para cambiar la contraseña si hay MFA activo), en cuyo caso debe
+  // volver a /update-password. Solo se acepta una ruta interna (empieza
+  // con "/" y no con "//") para evitar un redirect abierto.
+  const next = String(formData.get("next") ?? "/dashboard");
+  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard");
 }
 
 export async function signOut(): Promise<void> {

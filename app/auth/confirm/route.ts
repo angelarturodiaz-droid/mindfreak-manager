@@ -24,6 +24,15 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.verifyOtp({ type, token_hash });
     if (!error) {
+      // Si la cuenta tiene MFA activo, Supabase exige la sesión en AAL2
+      // (código verificado) antes de dejar cambiar la contraseña o el
+      // correo, aunque la sesión venga de un link de recuperación válido
+      // (esa sesión solo llega a AAL1). Sin este paso, /update-password
+      // falla con "AAL2 session is required...".
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== aal.nextLevel) {
+        redirect(`/mfa-challenge?next=${encodeURIComponent(next)}`);
+      }
       redirect(next);
     }
   }

@@ -1,5 +1,34 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: recuperar contraseña fallaba con "AAL2 session is required..." en cuentas con MFA
+
+Tras el fix anterior (link de recuperación llevando a `/update-password`),
+en una cuenta con el autenticador (MFA/TOTP) activado el guardar la
+contraseña nueva fallaba con el error de Supabase "AAL2 session is
+required to update email or password when MFA is enabled." — la sesión
+que crea el link de recuperación solo llega a AAL1, y Supabase exige
+AAL2 (código de 6 dígitos verificado) para dejar cambiar la contraseña
+si la cuenta tiene MFA, sin importar que el link en sí sea válido.
+
+**Solución:** se le enseñó a `/mfa-challenge` a seguir a una ruta
+distinta de `/dashboard` cuando se le indica con `?next=...` (antes
+solo sabía volver al dashboard tras el login normal):
+- `app/auth/confirm/route.ts` — tras canjear el token, si la cuenta
+  tiene MFA y la sesión sigue en AAL1, redirige a
+  `/mfa-challenge?next=/update-password` en vez de directo a
+  `/update-password`.
+- `app/(auth)/mfa-challenge/page.tsx` — lee `next` de la URL
+  (`useSearchParams`, con `Suspense`) y lo manda como campo oculto del
+  formulario.
+- `features/auth/actions.ts` — `verifyMfaChallengeAction` redirige a
+  `next` en vez de siempre a `/dashboard` (con chequeo de que sea una
+  ruta interna, para no abrir un redirect arbitrario).
+
+Con esto, recuperar contraseña en una cuenta con MFA pide el código de
+6 dígitos como paso intermedio y luego sí deja guardar la contraseña
+nueva — mismo comportamiento de seguridad que ya tenía el login
+normal, solo que ahora también cubre este flujo.
+
 ## Fix: el link de "recuperar contraseña" llevaba al login en vez de a poner contraseña nueva
 
 Reporte del usuario: tras configurar SMTP propio (Hostinger) y confirmar que

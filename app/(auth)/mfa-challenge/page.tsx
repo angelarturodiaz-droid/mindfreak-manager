@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { Suspense, useActionState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ShieldCheck, KeyRound } from "lucide-react";
 import { verifyMfaChallengeAction, type AuthActionState } from "@/features/auth/actions";
 import { Input } from "@/components/ui/field";
@@ -9,8 +10,14 @@ import { AuthShell } from "@/components/auth/auth-shell";
 
 const initialState: AuthActionState = { error: null };
 
-export default function MfaChallengePage() {
+function MfaChallengeForm() {
   const [state, formAction, pending] = useActionState(verifyMfaChallengeAction, initialState);
+  // Normalmente sigue a /dashboard (login normal), pero cuando la cuenta
+  // tiene MFA y se está recuperando la contraseña, /auth/confirm nos manda
+  // acá con ?next=/update-password — Supabase exige AAL2 (código verificado)
+  // antes de dejar cambiar la contraseña, aunque la sesión venga de un link
+  // de recuperación válido.
+  const next = useSearchParams().get("next") ?? "/dashboard";
 
   return (
     <AuthShell
@@ -39,6 +46,7 @@ export default function MfaChallengePage() {
       </div>
 
       <form action={formAction} className="flex flex-col gap-[18px]">
+        <input type="hidden" name="next" value={next} />
         <Input
           id="code"
           label="Código de 6 dígitos"
@@ -76,5 +84,13 @@ export default function MfaChallengePage() {
         </span>
       </div>
     </AuthShell>
+  );
+}
+
+export default function MfaChallengePage() {
+  return (
+    <Suspense>
+      <MfaChallengeForm />
+    </Suspense>
   );
 }
