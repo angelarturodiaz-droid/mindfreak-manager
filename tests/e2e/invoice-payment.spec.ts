@@ -23,7 +23,9 @@ test.describe("Facturas y cobros", () => {
     await page.getByRole("button", { name: /emitir factura/i }).click();
     await expect(page.getByText(/emitida/i)).toBeVisible();
 
-    // El monto ya viene precargado con el balance completo — solo enviar
+    // El monto ya viene precargado con el balance completo, pero la cuenta
+    // bancaria es obligatoria y no trae valor por defecto — hay que elegirla.
+    await page.locator('select[name="bank_account_id"]').selectOption({ index: 1 });
     await page.getByRole("button", { name: /registrar cobro/i }).click();
     await expect(page.getByText(/pagada/i)).toBeVisible();
   });

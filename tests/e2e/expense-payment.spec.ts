@@ -21,7 +21,9 @@ test.describe("Gastos y pagos a proveedores", () => {
 
     await expect(page.getByText(/pendiente/i)).toBeVisible();
 
-    // El monto ya viene precargado con el balance completo — solo enviar
+    // El monto ya viene precargado con el balance completo, pero la cuenta
+    // bancaria es obligatoria y no trae valor por defecto — hay que elegirla.
+    await page.locator('select[name="bank_account_id"]').selectOption({ index: 1 });
     await page.getByRole("button", { name: /registrar pago/i }).click();
     await expect(page.getByText(/pagado/i)).toBeVisible();
   });
