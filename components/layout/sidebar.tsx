@@ -16,6 +16,7 @@ import {
   CreditCard,
   Landmark,
   BarChart3,
+  GitCompareArrows,
   History,
   ChevronsLeft,
   ChevronsRight,
@@ -62,6 +63,7 @@ const NAV_GROUPS: NavGroup[] = [
     tone: "amber",
     items: [
       { href: "/reports", label: "Reportes", icon: BarChart3 },
+      { href: "/comparisons", label: "Comparaciones", icon: GitCompareArrows },
       { href: "/audit", label: "Auditoría", icon: History },
     ],
   },

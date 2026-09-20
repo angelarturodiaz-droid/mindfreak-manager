@@ -1,5 +1,40 @@
 # CHANGELOG — Mindfreak Manager
 
+## Nueva sección: Comparaciones
+
+Nueva sección en Análisis (`/comparisons`) enfocada en los indicadores
+clave de gestión financiera y comercial, con selector de período y
+diferencias en valor absoluto y porcentaje contra el período anterior.
+
+- **Rentabilidad por proyecto** — ingresos, gastos, utilidad y margen
+  de los proyectos con evento en el período; gráfico ingresos vs.
+  gastos y tabla con variación de utilidad vs. el período anterior.
+- **CxC vs. CxP** — pendiente, vencido y próximos vencimientos de lo
+  facturado en el período (las facturas sí tienen fecha de vencimiento);
+  del lado de cuentas por pagar solo se muestra el pendiente total,
+  porque los gastos no tienen fecha de vencimiento en este sistema
+  todavía — se documenta en vez de inventar un dato que no existe.
+- **Ventas por cliente** — ventas, cobros y saldo pendiente por cliente
+  en el período, con variación de ventas vs. el período anterior.
+- **Rentabilidad por cliente** — ingresos (facturado) y costos (gastos
+  de los proyectos de ese cliente) por cliente en el período, con
+  margen y variación de utilidad vs. el período anterior.
+- **Período actual vs. período anterior** — ventas, gastos, utilidad y
+  margen totales, con la diferencia absoluta y porcentual línea por
+  línea.
+- Selector de período: este/mes anterior, este/trimestre anterior,
+  este/año anterior, y un rango personalizado — cada uno calcula
+  automáticamente su período anterior equivalente para comparar.
+- Reutiliza el permiso `reports.view` que ya usa Reportes (las mismas
+  políticas RLS de F19 ya lo aceptan para invoices/expenses/projects/
+  customer_payments) — no hizo falta ninguna migración de base de datos.
+- `features/comparisons/period.ts` y `features/comparisons/queries.ts`
+  son nuevos; la UI vive en `app/(dashboard)/comparisons/` y reutiliza
+  los mismos componentes (`KpiCard`, `DataTable`, `Badge`) y la misma
+  paleta de gráficos (`--chart-1`…`--chart-5`) que el resto de la app —
+  incluye un componente de barras genérico basado en el patrón ya usado
+  en el gráfico de flujo financiero del dashboard.
+
 ## Fix: eliminar un usuario con actividad mostraba un mensaje crudo de base de datos
 
 Reportado al intentar eliminar una cuenta con facturas ya creadas
