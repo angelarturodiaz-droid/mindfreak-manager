@@ -247,13 +247,55 @@ export async function toggleRolePermissionAction(
   revalidatePath("/settings/roles");
 }
 
-export async function updateUserEmailAction(userId: string, newEmail: string): Promise<void> {
+export async function updateUserEmailAction(userId: string, newEmail: string, mfaCode: string): Promise<void> {
   await requirePermission("users.manage");
 
   const trimmed = newEmail.trim().toLowerCase();
   if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
     throw new Error("Correo inválido.");
   }
+
+  const code = mfaCode.trim();
+  if (!/^\d{6}$/.test(code)) {
+    throw new Error("Escribe el código de 6 dígitos de tu autenticador.");
+  }
+
+  // Paso extra de seguridad, a pedido explícito (no es lo que exige
+  // Supabase por defecto): cambiar el correo de OTRO usuario equivale a
+  // poder tomar el control de su cuenta (la próxima recuperación de
+  // contraseña, por ejemplo, llegaría a la dirección nueva) — así que se
+  // le exige al ADMIN que hace el cambio volver a verificar su propio
+  // autenticador justo antes de aplicarlo, aunque su sesión ya esté en
+  // aal2 desde el login. No basta con mirar getAuthenticatorAssuranceLevel()
+  // (eso solo confirma que se verificó AL INICIAR SESIÓN, no en este
+  // instante) — se hace un challenge+verify nuevo contra el factor TOTP
+  // del propio admin, con el código que mandó desde el formulario.
+  const supabase = await createSupabaseClient();
+  const {
+    data: { user: adminUser },
+  } = await supabase.auth.getUser();
+  if (!adminUser) throw new Error("Tu sesión expiró. Vuelve a iniciar sesión.");
+
+  const { data: adminFactors, error: adminFactorsError } = await supabase.auth.mfa.listFactors();
+  if (adminFactorsError) throw new Error(adminFactorsError.message);
+  const adminFactor = adminFactors.totp.find((f) => f.status === "verified");
+  if (!adminFactor) {
+    throw new Error(
+      "Tu cuenta no tiene un autenticador activo — actívalo desde tu perfil antes de cambiar correos de otros usuarios.",
+    );
+  }
+
+  const { data: adminChallenge, error: adminChallengeError } = await supabase.auth.mfa.challenge({
+    factorId: adminFactor.id,
+  });
+  if (adminChallengeError) throw new Error(adminChallengeError.message);
+
+  const { error: adminVerifyError } = await supabase.auth.mfa.verify({
+    factorId: adminFactor.id,
+    challengeId: adminChallenge.id,
+    code,
+  });
+  if (adminVerifyError) throw new Error("Código incorrecto. Intenta de nuevo.");
 
   const adminClient = createAdminClient();
 
@@ -286,7 +328,6 @@ export async function updateUserEmailAction(userId: string, newEmail: string): P
   });
   if (authError) throw new Error(authError.message);
 
-  const supabase = await createSupabaseClient();
   const { error: profileError } = await supabase
     .from("profiles")
     .update({ email: trimmed })

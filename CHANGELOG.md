@@ -1,5 +1,33 @@
 # CHANGELOG — Mindfreak Manager
 
+## Seguridad: cambiar el correo de otro usuario ahora pide re-verificar el MFA del admin
+
+Complemento del fix anterior ("cambiar el correo de un usuario no mandaba
+ningún correo"), a pedido explícito tras revisar el flujo completo: cambiar
+el correo de OTRO usuario equivale a poder tomar el control de su cuenta
+(la próxima recuperación de contraseña llegaría a la dirección nueva), así
+que ahora:
+
+1. **Activación inmediata + aviso al correo viejo** (decisión tomada
+   sobre las alternativas — no se dejó pendiente de confirmación en el
+   correo nuevo para no complicar el flujo). El aviso usa la notificación
+   de seguridad nativa de Supabase "Email address changed" — ya está
+   activada en el proyecto (Authentication → Emails).
+2. **El admin debe volver a verificar su propio MFA justo antes de
+   aplicar el cambio**, aunque su sesión ya esté en `aal2` desde el
+   login — `getAuthenticatorAssuranceLevel()` solo confirma que se
+   verificó AL INICIAR SESIÓN, no en este instante, así que
+   `updateUserEmailAction` ahora exige un `mfaCode` y hace un
+   challenge+verify nuevo contra el factor TOTP del propio admin antes de
+   tocar la cuenta del otro usuario. En la UI (`editable-user-email.tsx`)
+   esto se ve como un segundo paso: se escribe el correo nuevo, se
+   confirma, y ahí aparece el campo para el código de 6 dígitos.
+
+Este control es intencionalmente más estricto que el resto del panel de
+administración (activar/desactivar usuarios, cambiar roles no lo piden) —
+se decidió así específicamente porque esta acción puede usarse para
+secuestrar una cuenta ajena.
+
 ## Fix: cambiar el correo de un usuario (Configuración → Usuarios) no mandaba ningún correo
 
 Reporte del usuario: al editar el correo de un usuario desde
