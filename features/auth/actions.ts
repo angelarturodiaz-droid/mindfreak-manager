@@ -143,12 +143,63 @@ export async function requestPasswordReset(
     return { error: "El correo es requerido." };
   }
 
+  const headersList = await headers();
+  const origin =
+    headersList.get("origin") ??
+    `${headersList.get("x-forwarded-proto") ?? "https"}://${headersList.get("host")}`;
+
   const supabase = await createClient();
-  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  // redirectTo apunta a la ruta que canjea el token del correo por una
+  // sesión (ver app/auth/confirm/route.ts) y de ahí sigue a /update-password
+  // para que el usuario escriba la contraseña nueva. Sin esto, Supabase usa
+  // el Site URL por defecto del proyecto y el link termina en /login en vez
+  // de en un formulario para poner la contraseña nueva.
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/confirm?next=/update-password`,
+  });
 
   // No revelamos si el correo existe o no (evita enumeración de usuarios).
   if (error) {
     console.error("Error solicitando recuperación:", error.message);
   }
   return { error: null, submitted: true };
+}
+
+/**
+ * Establece la contraseña nueva tras hacer clic en el link de recuperación.
+ * Requiere la sesión temporal de recuperación que crea
+ * app/auth/confirm/route.ts al canjear el token del correo — si no hay
+ * sesión (link vencido, ya usado, o se entró directo a la URL sin pasar por
+ * el correo), no deja continuar.
+ */
+export async function updatePasswordAction(
+  _prevState: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  if (password.length < 8) {
+    return { error: "La contraseña debe tener al menos 8 caracteres." };
+  }
+  if (password !== confirmPassword) {
+    return { error: "Las contraseñas no coinciden." };
+  }
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "El enlace venció o ya se usó. Solicita uno nuevo desde \"¿Olvidaste tu contraseña?\"." };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    console.error("Error actualizando contraseña:", error.message);
+    return { error: "No se pudo actualizar la contraseña. Intenta de nuevo." };
+  }
+
+  redirect("/dashboard");
 }

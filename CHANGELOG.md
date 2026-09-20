@@ -1,5 +1,44 @@
 # CHANGELOG — Mindfreak Manager
 
+## Fix: el link de "recuperar contraseña" llevaba al login en vez de a poner contraseña nueva
+
+Reporte del usuario: tras configurar SMTP propio (Hostinger) y confirmar que
+el correo de recuperación sí llega, el link del correo lo llevaba de vuelta
+a la pantalla de usuario/clave en vez de a un formulario para poner una
+contraseña nueva.
+
+**Causa:** `requestPasswordReset` llamaba a
+`supabase.auth.resetPasswordForEmail(email)` sin `redirectTo`, así que
+Supabase usaba el Site URL por defecto del proyecto (no una pantalla
+para poner contraseña nueva) — y esa pantalla, `/update-password`,
+tampoco existía todavía en la app.
+
+**Solución:**
+- `features/auth/actions.ts` — `requestPasswordReset` ahora arma el
+  `redirectTo` con el origen de la request:
+  `${origin}/auth/confirm?next=/update-password`. Se agregó
+  `updatePasswordAction`, que exige una sesión activa (la que crea el
+  canje del token) y llama a `supabase.auth.updateUser({ password })`.
+- `app/auth/confirm/route.ts` (nuevo) — Route Handler al que debe
+  apuntar la plantilla de correo "Reset Password" en el dashboard de
+  Supabase (Authentication → Emails → Templates), con
+  `token_hash`/`type` en vez del `{{ .ConfirmationURL }}` por defecto.
+  Canjea el token por una sesión real vía cookies (patrón SSR) y sigue
+  a `next`.
+- `app/(auth)/update-password/page.tsx` (nuevo) — formulario de
+  contraseña nueva + confirmación, mismo `AuthShell` que login/MFA/
+  recuperar contraseña, para que las 4 pantallas del flujo de auth se
+  vean como un mismo sistema.
+- `lib/supabase/proxy.ts` — `/auth/confirm` se agregó como ruta pública
+  (no hay sesión todavía la primera vez que se visita).
+
+**Pendiente en el dashboard de Supabase (no se puede hacer por código):**
+editar la plantilla "Reset Password" (Authentication → Emails →
+Templates) para que el link use
+`{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/update-password`
+en vez del `{{ .ConfirmationURL }}` por defecto, y agregar el dominio
+de la app a Authentication → URL Configuration → Redirect URLs.
+
 ## Unificación visual de las 3 pantallas de autenticación (login, recuperar contraseña, verificación en dos pasos)
 
 Pedido del usuario tras ver la pantalla de MFA: "esta parte de mfa no

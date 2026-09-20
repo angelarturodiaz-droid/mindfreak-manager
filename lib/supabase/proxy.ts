@@ -38,7 +38,12 @@ export async function updateSession(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   const isAuthRoute = path === "/login" || path === "/recover-password";
-  const isPublicRoute = path === "/" || isAuthRoute;
+  // /auth/confirm canjea el token del correo (recuperación, confirmación de
+  // signup) por una sesión — no hay sesión todavía cuando llega la primera
+  // vez, así que debe ser pública. No se agrega a isAuthRoute porque no
+  // queremos forzar un redirect a /dashboard si el usuario ya tenía sesión:
+  // la ruta hace su propio redirect a `next` (típicamente /update-password).
+  const isPublicRoute = path === "/" || isAuthRoute || path === "/auth/confirm";
 
   // Sin sesión intentando entrar a una ruta protegida -> /login
   if (!user && !isPublicRoute) {
