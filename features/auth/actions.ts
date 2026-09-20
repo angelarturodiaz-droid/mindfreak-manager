@@ -90,11 +90,35 @@ export async function signIn(
 
   const supabase = await createClient();
 
+  // Las 3 llamadas rpc() de anti-fuerza-bruta de aquí abajo usan el
+  // cliente ADMIN (service_role) a propósito, no el normal — son las
+  // únicas del sistema que corren ANTES de que exista una sesión (por
+  // definición: todavía se está iniciando sesión), así que no hay
+  // permiso de usuario que verificar primero como en el resto de los
+  // usos de este cliente. Antes se llamaban con el cliente normal (anon
+  // key), lo que las dejaba expuestas también como endpoint público de
+  // PostgREST (/rest/v1/rpc/reset_login_attempts) a cualquiera con la
+  // anon key — pública por diseño — permitiendo resetear el contador de
+  // intentos fallidos de OTRA persona sin pasar por esta pantalla,
+  // anulando el captcha. Ver migración 053_security_hardening.sql, que
+  // revoca el acceso público/anon/authenticated a estas 3 funciones y
+  // las deja solo para service_role.
+  //
+  // Si SUPABASE_SECRET_KEY no está configurada, se falla "abierto" (se
+  // deja entrar sin exigir captcha) en vez de romper el login por
+  // completo — mismo criterio que verifyTurnstile() más abajo.
+  let adminClient: ReturnType<typeof createAdminClient> | null = null;
+  try {
+    adminClient = createAdminClient();
+  } catch (e) {
+    console.error("signIn: no se pudo inicializar el cliente admin (SUPABASE_SECRET_KEY):", e);
+  }
+
   // Comportamiento sospechoso: varios intentos fallidos seguidos con este
   // mismo correo → exigir captcha antes de intentar la contraseña de nuevo.
-  const { data: currentAttempts } = await supabase.rpc("get_login_attempts", {
-    p_identifier: email,
-  });
+  const { data: currentAttempts } = adminClient
+    ? await adminClient.rpc("get_login_attempts", { p_identifier: email })
+    : { data: 0 };
   if ((currentAttempts ?? 0) >= CAPTCHA_THRESHOLD) {
     const token = String(formData.get("cf-turnstile-response") ?? "");
     const headersList = await headers();
@@ -112,16 +136,18 @@ export async function signIn(
 
   if (error) {
     console.error("Error de login:", error.message);
-    const { data: attempts } = await supabase.rpc("record_failed_login", {
-      p_identifier: email,
-    });
+    const { data: attempts } = adminClient
+      ? await adminClient.rpc("record_failed_login", { p_identifier: email })
+      : { data: 0 };
     return {
       error: "Correo o contraseña incorrectos.",
       requiresCaptcha: (attempts ?? 0) >= CAPTCHA_THRESHOLD,
     };
   }
 
-  await supabase.rpc("reset_login_attempts", { p_identifier: email });
+  if (adminClient) {
+    await adminClient.rpc("reset_login_attempts", { p_identifier: email });
+  }
 
   // Si el usuario tiene el autenticador activado, la contraseña sola no
   // basta — falta el código de 6 dígitos antes de dejarlo entrar de

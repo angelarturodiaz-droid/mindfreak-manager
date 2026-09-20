@@ -1,5 +1,50 @@
 # CHANGELOG — Mindfreak Manager
 
+## Auditoría de seguridad: RLS, funciones RPC públicas y buckets de Storage
+
+A pedido explícito ("revisa que nada quede público para evitar
+ataques"). Se verificaron las 43 tablas de `public` una por una: todas
+tienen RLS habilitado y con al menos una política (`auth_login_attempts`
+tiene RLS sin políticas, que es lo correcto — sin política = nadie
+puede leerla salvo `service_role`/funciones `SECURITY DEFINER`, no es un
+hueco). El resto de hallazgos, ya corregidos (migración
+`053_security_hardening.sql`):
+
+- **El hallazgo real**: `get_login_attempts`, `record_failed_login` y
+  `reset_login_attempts` (el anti-fuerza-bruta del login) estaban
+  otorgadas a `anon` porque tienen que poder llamarse ANTES de iniciar
+  sesión — pero eso también las dejaba expuestas directo como endpoint
+  público de PostgREST (`/rest/v1/rpc/reset_login_attempts`) a cualquiera
+  con la anon key (pública por diseño, no es un secreto). Un atacante
+  podía llamar `reset_login_attempts` con el correo de otra persona para
+  resetearle el contador de intentos fallidos a voluntad, anulando el
+  captcha que se exige a partir de 3 intentos (F/051) sin pasar por la
+  pantalla de login. **Corregido**: `features/auth/actions.ts` ahora
+  llama a esas 3 funciones desde el cliente admin (`service_role`,
+  servidor únicamente, con fallback si `SUPABASE_SECRET_KEY` no está
+  configurada) y la migración revoca el acceso a `public`/`anon`/
+  `authenticated`, dejándolas solo para `service_role`.
+- `create_card_expense` y `register_supplier_payment` no eran
+  explotables (revisan `has_permission()`/`auth.uid()` por dentro, y un
+  `anon` nunca pasa ese chequeo), pero seguían otorgadas a `anon` a
+  diferencia de sus funciones hermanas — se alinean por defensa en
+  profundidad.
+- `guard_expense_cancel` y `calculate_invoice_due_date` (funciones de
+  trigger, no invocables directo vía RPC) no tenían `search_path` fijo
+  — corregido por higiene, sin impacto práctico real.
+- **Storage**: el bucket `branding` (deprecado desde F/041 — el logo va
+  en `documents`, privado, con link firmado) seguía marcado público y
+  tenía un archivo de prueba (`logo-test-noauth.png`) servido sin
+  autenticación a cualquiera. `zzz-test-bucket` era un bucket de prueba
+  vacío, sin políticas, también público, sin ningún uso en el código.
+  Ambos se marcaron privados. Ninguno se pudo borrar por SQL (Supabase
+  Storage lo bloquea a propósito) — quedan inertes; borrarlos del todo
+  es opcional y se hace con el botón "Eliminar" en el Dashboard.
+- **Pendiente, solo se puede activar desde el Dashboard** (no hay forma
+  de hacerlo por SQL/migración): Authentication → Auth Settings →
+  activar "Leaked password protection" (bloquea contraseñas ya filtradas
+  según HaveIBeenPwned).
+
 ## Fix: /comparisons no cargaba ("Functions cannot be passed to Client Components")
 
 `ComparisonBarChart` (Client Component) recibía un `formatValue`
