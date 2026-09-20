@@ -1,6 +1,25 @@
 # CHANGELOG — Mindfreak Manager
 
-## Respaldo diario automático (base de datos + Storage)
+## Revertido: respaldo diario automático (base de datos + Storage)
+
+Se probó y luego se retiró por decisión explícita del usuario: no quería
+que información financiera de la empresa saliera hacia GitHub, ni
+siquiera cifrada. Se eliminaron `.github/workflows/backup.yml` y toda la
+carpeta `scripts/backup/` (scripts de respaldo/restauración de BD y
+Storage). Los 4 secretos de GitHub Actions creados para esto
+(`BACKUP_DB_URL`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`,
+`BACKUP_ENCRYPTION_PASSPHRASE`) también se eliminaron manualmente desde
+el dashboard de GitHub.
+
+**Lo que queda vigente**: el respaldo del código fuente sigue cubierto
+por el propio repositorio de GitHub (cada `git push`) — eso no dependía
+de este workflow y no se ve afectado. Si en el futuro se quiere retomar
+un respaldo de base de datos/Storage con otro proveedor o mecanismo más
+alineado a los requisitos de seguridad de la empresa, revisar el
+historial de git en torno a este commit como referencia de lo ya
+explorado.
+
+## Respaldo diario automático (base de datos + Storage) — [revertido, ver arriba]
 
 El plan de Supabase actual no incluye backups automáticos, así que se
 agregó un workflow propio de GitHub Actions (`.github/workflows/backup.yml`)
