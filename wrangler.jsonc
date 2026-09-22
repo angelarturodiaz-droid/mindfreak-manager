@@ -1,0 +1,19 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"main": ".open-next/worker.js",
+	"name": "mindfreak-manager",
+	"compatibility_date": "2026-09-21",
+	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"services": [
+		{
+			// Self-reference: necesario para el manejo interno de caché/streaming de OpenNext.
+			// El nombre debe coincidir con "name" arriba.
+			"binding": "WORKER_SELF_REFERENCE",
+			"service": "mindfreak-manager"
+		}
+	]
+}

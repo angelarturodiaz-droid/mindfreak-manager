@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { renderToBuffer } from "@react-pdf/renderer";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
@@ -12,8 +11,8 @@ import {
   calculateInvoiceItemSubtotal,
   calculateInvoiceTotals,
 } from "./schema";
-import { InvoicePdfDocument } from "@/lib/pdf/invoice-document";
-import { InvoiceElectronicPdfDocument } from "@/lib/pdf/invoice-electronic-document";
+import type { InvoicePdfData } from "@/lib/pdf/invoice-document";
+import type { InvoiceElectronicPdfData } from "@/lib/pdf/invoice-electronic-document";
 
 export type ActionState = { error: string | null };
 
@@ -362,13 +361,19 @@ export async function cancelInvoiceAction(invoiceId: string): Promise<void> {
 }
 
 /**
- * Genera el PDF de la factura, lo sube a Storage y devuelve una URL firmada
- * (7 días) para compartir. Mismo patrón que `generateQuotationShareLinkAction`
- * (F8) — ver F0-Arquitectura, sección R.
+ * Obtiene los datos necesarios para renderizar el PDF de la factura. El
+ * render en sí (`pdf()` de @react-pdf/renderer) se hace en el navegador —
+ * Cloudflare Workers no soporta la compilación WASM dinámica que usa
+ * yoga-layout para el layout del PDF. Ver conversación con el usuario:
+ * se decidió mover la generación de PDF fuera de Cloudflare (cliente).
  */
-export async function generateInvoiceShareLinkAction(
+export type InvoicePdfPayload =
+  | { billingType: "ELECTRONIC"; data: InvoiceElectronicPdfData }
+  | { billingType: "STANDARD"; data: InvoicePdfData };
+
+export async function getInvoicePdfDataAction(
   invoiceId: string,
-): Promise<{ url: string | null; error: string | null }> {
+): Promise<{ payload: InvoicePdfPayload | null; error: string | null }> {
   await requirePermission("invoices.view");
 
   const supabase = await createSupabaseClient();
@@ -393,8 +398,8 @@ export async function generateInvoiceShareLinkAction(
         .single(),
     ]);
 
-  if (iError || !invoice) return { url: null, error: iError?.message ?? "Factura no encontrada." };
-  if (itError) return { url: null, error: itError.message };
+  if (iError || !invoice) return { payload: null, error: iError?.message ?? "Factura no encontrada." };
+  if (itError) return { payload: null, error: itError.message };
 
   const clientData = invoice.clients as
     | { name: string; tax_id: string | null; email: string | null; phone: string | null }
@@ -428,25 +433,59 @@ export async function generateInvoiceShareLinkAction(
     phone: clientRecord?.phone ?? null,
   };
 
-  const buffer =
-    invoice.billing_type === "ELECTRONIC"
-      ? await renderToBuffer(
-          InvoiceElectronicPdfDocument({
-            company: commonCompany,
-            invoice,
-            client: commonClient,
-            project: projectRecord ?? null,
-            items: items ?? [],
-          }),
-        )
-      : await renderToBuffer(
-          InvoicePdfDocument({
-            company: commonCompany,
-            invoice: { ...invoice, payment_terms_name: paymentTermsName ?? null },
-            client: commonClient,
-            items: items ?? [],
-          }),
-        );
+  if (invoice.billing_type === "ELECTRONIC") {
+    return {
+      payload: {
+        billingType: "ELECTRONIC",
+        data: {
+          company: commonCompany,
+          invoice,
+          client: commonClient,
+          project: projectRecord ?? null,
+          items: items ?? [],
+        },
+      },
+      error: null,
+    };
+  }
+
+  return {
+    payload: {
+      billingType: "STANDARD",
+      data: {
+        company: commonCompany,
+        invoice: { ...invoice, payment_terms_name: paymentTermsName ?? null },
+        client: commonClient,
+        items: items ?? [],
+      },
+    },
+    error: null,
+  };
+}
+
+/**
+ * Sube el PDF de la factura (ya renderizado en el navegador) a Storage,
+ * registra/actualiza el documento en la tabla `documents` y devuelve una
+ * URL firmada (7 días) para compartir.
+ */
+export async function uploadInvoicePdfAction(
+  invoiceId: string,
+  pdfBase64: string,
+): Promise<{ url: string | null; error: string | null }> {
+  await requirePermission("invoices.view");
+
+  const supabase = await createSupabaseClient();
+  const companyId = await getPrimaryCompanyId();
+
+  const { data: invoice, error: iError } = await supabase
+    .from("invoices")
+    .select("number")
+    .eq("id", invoiceId)
+    .single();
+
+  if (iError || !invoice) return { url: null, error: iError?.message ?? "Factura no encontrada." };
+
+  const buffer = Buffer.from(pdfBase64, "base64");
 
   const path = `${companyId}/invoices/${invoiceId}.pdf`;
   const { error: uploadError } = await supabase.storage
@@ -495,6 +534,7 @@ export async function generateInvoiceShareLinkAction(
 }
 
 /**
+ * Duplica una factura existente:/**
  * Duplica una factura existente: crea una nueva factura en BORRADOR con el
  * mismo cliente/proyecto y copia todas las líneas (servicio, cantidad,
  * precio, descuento, impuesto) de la original. La factura original nunca se

@@ -2,9 +2,24 @@
 
 import { useState, useTransition } from "react";
 import { FileDown, Link2, Download } from "lucide-react";
-import { generateQuotationShareLinkAction } from "@/features/quotations/actions";
+import { getQuotationPdfDataAction, uploadQuotationPdfAction } from "@/features/quotations/actions";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toaster";
+
+// El render del PDF (`pdf()`) se hace en el navegador — Cloudflare Workers
+// no soporta la compilación dinámica de WASM que usa yoga-layout. El
+// servidor solo entrega los datos y sube el resultado a Storage. Ver
+// features/quotations/actions.ts.
+async function blobToBase64(blob: Blob): Promise<string> {
+  const buffer = await blob.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
 
 export function ShareLinkButton({ quotationId }: { quotationId: string }) {
   const [isPending, startTransition] = useTransition();
@@ -12,9 +27,27 @@ export function ShareLinkButton({ quotationId }: { quotationId: string }) {
 
   function handleGenerate() {
     startTransition(async () => {
-      const result = await generateQuotationShareLinkAction(quotationId);
-      if (result.error) toast.error(result.error);
-      else setUrl(result.url);
+      const { data, error } = await getQuotationPdfDataAction(quotationId);
+      if (error || !data) {
+        toast.error(error ?? "No se pudo obtener los datos de la cotización.");
+        return;
+      }
+
+      // Import dinámico: ver comentario en invoices/[id]/share-link-button.tsx.
+      const [{ pdf }, { QuotationPdfDocument }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("@/lib/pdf/quotation-document"),
+      ]);
+
+      const blob = await pdf(QuotationPdfDocument(data)).toBlob();
+      const pdfBase64 = await blobToBase64(blob);
+
+      const result = await uploadQuotationPdfAction(quotationId, pdfBase64);
+      if (result.error || !result.url) {
+        toast.error(result.error ?? "No se pudo subir el PDF.");
+        return;
+      }
+      setUrl(result.url);
     });
   }
 

@@ -1,4 +1,5 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
+import { registerPdfFonts } from "./fonts";
 
 function money(amount: number, currency: string) {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency }).format(
@@ -58,8 +59,10 @@ export function ReceiptPdfDocument({
   const accentLight = tintWithWhite(accent, 0.9);
   const receiptNumber = `REC-${payment.id.slice(0, 8).toUpperCase()}`;
 
+  registerPdfFonts();
+
   const styles = StyleSheet.create({
-    page: { fontSize: 9, fontFamily: "Helvetica", color: "#1a1a1a" },
+    page: { fontSize: 9, fontFamily: "Roboto", color: "#1a1a1a" },
     headerBar: {
       backgroundColor: dark,
       paddingHorizontal: 32,

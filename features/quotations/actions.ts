@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { renderToBuffer } from "@react-pdf/renderer";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
@@ -12,7 +11,7 @@ import {
   calculateItemSubtotal,
   calculateQuotationTotals,
 } from "./schema";
-import { QuotationPdfDocument } from "@/lib/pdf/quotation-document";
+import type { QuotationPdfData } from "@/lib/pdf/quotation-document";
 
 export type ActionState = { error: string | null };
 
@@ -335,13 +334,13 @@ export async function cancelQuotationAction(quotationId: string): Promise<void> 
 }
 
 /**
- * Genera el PDF de la cotización, lo sube a Storage y devuelve una URL firmada
- * (7 días de vigencia) para compartir por WhatsApp/correo. Ver F0-Arquitectura,
- * sección R (V1: link de descarga vía Storage).
+ * Obtiene los datos necesarios para renderizar el PDF de la cotización. El
+ * render (`pdf()` de @react-pdf/renderer) se hace en el navegador — ver
+ * `getInvoicePdfDataAction` en features/invoices/actions.ts para el porqué.
  */
-export async function generateQuotationShareLinkAction(
+export async function getQuotationPdfDataAction(
   quotationId: string,
-): Promise<{ url: string | null; error: string | null }> {
+): Promise<{ data: QuotationPdfData | null; error: string | null }> {
   await requirePermission("quotations.view");
 
   const supabase = await createSupabaseClient();
@@ -366,8 +365,8 @@ export async function generateQuotationShareLinkAction(
         .single(),
     ]);
 
-  if (qError || !quotation) return { url: null, error: qError?.message ?? "Cotización no encontrada." };
-  if (iError) return { url: null, error: iError.message };
+  if (qError || !quotation) return { data: null, error: qError?.message ?? "Cotización no encontrada." };
+  if (iError) return { data: null, error: iError.message };
 
   const clientData = quotation.clients as
     | { name: string; tax_id: string | null; email: string | null; phone: string | null }
@@ -378,8 +377,8 @@ export async function generateQuotationShareLinkAction(
   const paymentTermsData = quotation.payment_terms as { name: string } | { name: string }[] | null;
   const paymentTermsName = Array.isArray(paymentTermsData) ? paymentTermsData[0]?.name : paymentTermsData?.name;
 
-  const buffer = await renderToBuffer(
-    QuotationPdfDocument({
+  return {
+    data: {
       company: company ?? {
         name: "Mindfreak Manager",
         legal_name: null,
@@ -396,8 +395,34 @@ export async function generateQuotationShareLinkAction(
         phone: clientRecord?.phone ?? null,
       },
       items: items ?? [],
-    }),
-  );
+    },
+    error: null,
+  };
+}
+
+/**
+ * Sube el PDF de la cotización (ya renderizado en el navegador) a Storage,
+ * registra/actualiza el documento en la tabla `documents` y devuelve una
+ * URL firmada (7 días) para compartir.
+ */
+export async function uploadQuotationPdfAction(
+  quotationId: string,
+  pdfBase64: string,
+): Promise<{ url: string | null; error: string | null }> {
+  await requirePermission("quotations.view");
+
+  const supabase = await createSupabaseClient();
+  const companyId = await getPrimaryCompanyId();
+
+  const { data: quotation, error: qError } = await supabase
+    .from("quotations")
+    .select("number")
+    .eq("id", quotationId)
+    .single();
+
+  if (qError || !quotation) return { url: null, error: qError?.message ?? "Cotización no encontrada." };
+
+  const buffer = Buffer.from(pdfBase64, "base64");
 
   const path = `${companyId}/quotations/${quotationId}.pdf`;
   const { error: uploadError } = await supabase.storage
@@ -451,6 +476,7 @@ export async function generateQuotationShareLinkAction(
 }
 
 /**
+ * Duplica una cotización existente:/**
  * Duplica una cotización existente: crea una nueva en BORRADOR con el mismo
  * cliente/contacto y copia todas las líneas. La original nunca se toca.
  * Mismo patrón que `duplicateInvoiceAction` — ver conversación con el usuario.

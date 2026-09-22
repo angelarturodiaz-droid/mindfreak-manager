@@ -1,12 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { renderToBuffer } from "@react-pdf/renderer";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { registerPaymentSchema } from "./schema";
-import { ReceiptPdfDocument } from "@/lib/pdf/receipt-document";
-import { SupplierReceiptPdfDocument } from "@/lib/pdf/supplier-receipt-document";
+import type { ReceiptPdfData } from "@/lib/pdf/receipt-document";
+import type { SupplierReceiptPdfData } from "@/lib/pdf/supplier-receipt-document";
 
 export type ActionState = { error: string | null };
 /**
@@ -163,13 +162,14 @@ async function getPrimaryCompanyId(): Promise<string> {
 }
 
 /**
- * Genera el PDF del recibo de un cobro específico (customer_payments) y
- * devuelve un link firmado de 7 días — mismo patrón que las cotizaciones/
- * facturas.
+ * Obtiene los datos necesarios para renderizar el PDF del recibo de un
+ * cobro (customer_payments). El render (`pdf()` de @react-pdf/renderer) se
+ * hace en el navegador — ver `getInvoicePdfDataAction` en
+ * features/invoices/actions.ts para el porqué.
  */
-export async function generatePaymentReceiptAction(
+export async function getPaymentReceiptDataAction(
   paymentId: string,
-): Promise<{ url: string | null; error: string | null }> {
+): Promise<{ data: ReceiptPdfData | null; error: string | null }> {
   await requirePermission("payments.create");
 
   const supabase = await createSupabaseClient();
@@ -190,7 +190,7 @@ export async function generatePaymentReceiptAction(
       .single(),
   ]);
 
-  if (pError || !payment) return { url: null, error: pError?.message ?? "Cobro no encontrado." };
+  if (pError || !payment) return { data: null, error: pError?.message ?? "Cobro no encontrado." };
 
   type One<T> = T | T[] | null;
   const invoiceData = payment.invoices as One<{ number: string; balance: number }>;
@@ -205,8 +205,8 @@ export async function generatePaymentReceiptAction(
   const bankData = payment.bank_accounts as One<{ name: string; bank_name: string | null }>;
   const bankAccount = Array.isArray(bankData) ? bankData[0] : bankData;
 
-  const buffer = await renderToBuffer(
-    ReceiptPdfDocument({
+  return {
+    data: {
       company: company ?? {
         name: "Mindfreak Manager",
         legal_name: null,
@@ -219,8 +219,24 @@ export async function generatePaymentReceiptAction(
       invoice: invoice ?? { number: "—", balance: 0 },
       client: client ?? { name: "Cliente", tax_id: null, email: null, phone: null },
       bankAccount: bankAccount ?? null,
-    }),
-  );
+    },
+    error: null,
+  };
+}
+
+/**
+ * Sube el PDF del recibo de cobro (ya renderizado en el navegador) a
+ * Storage y devuelve una URL firmada (7 días).
+ */
+export async function uploadPaymentReceiptAction(
+  paymentId: string,
+  pdfBase64: string,
+): Promise<{ url: string | null; error: string | null }> {
+  await requirePermission("payments.create");
+
+  const supabase = await createSupabaseClient();
+  const companyId = await getPrimaryCompanyId();
+  const buffer = Buffer.from(pdfBase64, "base64");
 
   const path = `${companyId}/receipts/customer-payment-${paymentId}.pdf`;
   const { error: uploadError } = await supabase.storage
@@ -239,11 +255,12 @@ export async function generatePaymentReceiptAction(
 }
 
 /**
- * Genera el PDF del comprobante de un pago a proveedor (supplier_payments).
+ * Obtiene los datos necesarios para renderizar el PDF del comprobante de un
+ * pago a proveedor (supplier_payments). El render se hace en el navegador.
  */
-export async function generateSupplierPaymentReceiptAction(
+export async function getSupplierPaymentReceiptDataAction(
   paymentId: string,
-): Promise<{ url: string | null; error: string | null }> {
+): Promise<{ data: SupplierReceiptPdfData | null; error: string | null }> {
   await requirePermission("payments.create");
 
   const supabase = await createSupabaseClient();
@@ -264,7 +281,7 @@ export async function generateSupplierPaymentReceiptAction(
       .single(),
   ]);
 
-  if (pError || !payment) return { url: null, error: pError?.message ?? "Pago no encontrado." };
+  if (pError || !payment) return { data: null, error: pError?.message ?? "Pago no encontrado." };
 
   type One<T> = T | T[] | null;
   const expenseData = payment.expenses as One<{ description: string; balance: number }>;
@@ -279,8 +296,8 @@ export async function generateSupplierPaymentReceiptAction(
   const bankData = payment.bank_accounts as One<{ name: string; bank_name: string | null }>;
   const bankAccount = Array.isArray(bankData) ? bankData[0] : bankData;
 
-  const buffer = await renderToBuffer(
-    SupplierReceiptPdfDocument({
+  return {
+    data: {
       company: company ?? {
         name: "Mindfreak Manager",
         legal_name: null,
@@ -293,8 +310,24 @@ export async function generateSupplierPaymentReceiptAction(
       expense: expense ?? { description: "—", balance: 0 },
       supplier: supplier ?? { name: "Proveedor", tax_id: null, email: null, phone: null },
       bankAccount: bankAccount ?? null,
-    }),
-  );
+    },
+    error: null,
+  };
+}
+
+/**
+ * Sube el PDF del comprobante de pago a proveedor (ya renderizado en el
+ * navegador) a Storage y devuelve una URL firmada (7 días).
+ */
+export async function uploadSupplierPaymentReceiptAction(
+  paymentId: string,
+  pdfBase64: string,
+): Promise<{ url: string | null; error: string | null }> {
+  await requirePermission("payments.create");
+
+  const supabase = await createSupabaseClient();
+  const companyId = await getPrimaryCompanyId();
+  const buffer = Buffer.from(pdfBase64, "base64");
 
   const path = `${companyId}/receipts/supplier-payment-${paymentId}.pdf`;
   const { error: uploadError } = await supabase.storage

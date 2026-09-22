@@ -33,7 +33,6 @@ import { Card } from "@/components/ui/card";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { DownloadReceiptButton } from "@/components/payments/download-receipt-button";
-import { generatePaymentReceiptAction } from "@/features/payments/actions";
 
 const COLLECTION_ACTION_LABELS: Record<string, string> = {
   CALL: "Llamada",
@@ -146,7 +145,7 @@ export default async function InvoiceDetailPage({
       header: "",
       className: "text-right",
       accessor: (p) => (
-        <DownloadReceiptButton paymentId={p.id} label="Recibo" generateAction={generatePaymentReceiptAction} />
+        <DownloadReceiptButton paymentId={p.id} label="Recibo" kind="customer" />
       ),
     },
   ];

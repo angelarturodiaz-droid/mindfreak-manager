@@ -1,4 +1,5 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
+import { registerPdfFonts } from "./fonts";
 
 function money(amount: number, currency: string) {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency }).format(amount);
@@ -79,8 +80,10 @@ export function InvoiceElectronicPdfDocument({
   const accentLight = tintWithWhite(accent, 0.9);
   const isCertified = Boolean(invoice.e_ncf);
 
+  registerPdfFonts();
+
   const styles = StyleSheet.create({
-    page: { fontSize: 8.5, fontFamily: "Helvetica", color: "#1a1a1a", padding: 28 },
+    page: { fontSize: 8.5, fontFamily: "Roboto", color: "#1a1a1a", padding: 28 },
     headerRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 14 },
     logoWrap: {
       width: 42,
