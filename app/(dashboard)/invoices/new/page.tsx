@@ -1,14 +1,16 @@
 import { listActiveClients, listProjectsForSelect } from "@/features/invoices/queries";
 import { getCompany } from "@/features/settings/queries";
 import { listPaymentTerms } from "@/features/payment-terms/queries";
+import { listTaxRates } from "@/features/tax-rates/queries";
 import { NewInvoiceForm } from "./new-invoice-form";
 
 export default async function NewInvoicePage() {
-  const [clients, projects, company, paymentTerms] = await Promise.all([
+  const [clients, projects, company, paymentTerms, taxRates] = await Promise.all([
     listActiveClients(),
     listProjectsForSelect(),
     getCompany(),
     listPaymentTerms(),
+    listTaxRates(),
   ]);
 
   return (
@@ -26,6 +28,7 @@ export default async function NewInvoicePage() {
         projects={projects}
         baseCurrency={company.base_currency}
         paymentTerms={paymentTerms}
+        taxRates={taxRates}
       />
     </main>
   );

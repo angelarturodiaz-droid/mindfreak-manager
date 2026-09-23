@@ -21,6 +21,9 @@ export const quotationHeaderSchema = z.object({
   terms: z.string().trim().optional().or(z.literal("")),
   payment_terms_id: z.string().uuid().optional().or(z.literal("")),
   commission_percent: z.coerce.number().min(0).max(100).default(0),
+  // Tratamiento fiscal de la comisión — propio e independiente del de las
+  // líneas: NO hereda la exención del servicio principal.
+  commission_tax_rate_id: z.string().uuid().optional().or(z.literal("")),
 });
 
 export type QuotationHeaderInput = z.infer<typeof quotationHeaderSchema>;
@@ -85,6 +88,8 @@ export function calculateQuotationTotals(
     estimated_unit_cost: number;
   }[],
   commissionPercent = 0,
+  commissionTaxTreatment: "GRAVADO" | "EXENTO" | "NO_SUJETO" = "GRAVADO",
+  commissionTaxRatePercent = 0,
 ) {
   let subtotal = 0;
   let discount = 0;
@@ -98,9 +103,12 @@ export function calculateQuotationTotals(
     estimatedCost += calculateItemEstimatedCost(item);
   }
 
+  // La comisión tiene su propio tratamiento fiscal (Gravada/Exenta/No
+  // sujeta) — NUNCA hereda ni prorratea la exención de otras líneas. Si es
+  // Gravada, el % se aplica únicamente sobre el monto de la comisión.
   const commissionAmount = subtotal * (commissionPercent / 100);
-  const effectiveTaxRate = subtotal > 0 ? lineTax / subtotal : 0;
-  const commissionTax = commissionAmount * effectiveTaxRate;
+  const commissionTax =
+    commissionTaxTreatment === "GRAVADO" ? commissionAmount * (commissionTaxRatePercent / 100) : 0;
   const tax = lineTax + commissionTax;
 
   const total = Math.max(0, subtotal + commissionAmount - discount + tax);

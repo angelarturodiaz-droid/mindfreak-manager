@@ -215,7 +215,15 @@ export default async function QuotationDetailPage({
           </div>
           {quotation.commission_percent > 0 && (
             <div className="mt-1 flex items-center justify-between">
-              <span className="text-brand-muted">Comisión ({quotation.commission_percent}%)</span>
+              <span className="text-brand-muted">
+                Comisión ({quotation.commission_percent}%){" "}
+                <span className="text-xs">
+                  (
+                  {TAX_TREATMENT_LABELS[quotation.commission_tax_treatment as keyof typeof TAX_TREATMENT_LABELS] ??
+                    quotation.commission_tax_treatment}
+                  )
+                </span>
+              </span>
               <span className="font-medium">
                 {formatMoney(quotation.commission_amount, quotation.currency)}
               </span>

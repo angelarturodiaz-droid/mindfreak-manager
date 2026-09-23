@@ -47,11 +47,20 @@ async function recalculateInvoiceTotals(invoiceId: string) {
       .from("invoice_items")
       .select("quantity, unit_price, discount, tax")
       .eq("invoice_id", invoiceId),
-    supabase.from("invoices").select("paid_amount, commission_percent").eq("id", invoiceId).single(),
+    supabase
+      .from("invoices")
+      .select("paid_amount, commission_percent, commission_tax_treatment, commission_tax_rate_percent")
+      .eq("id", invoiceId)
+      .single(),
   ]);
   if (error) throw new Error(error.message);
 
-  const totals = calculateInvoiceTotals(items ?? [], invoice?.commission_percent ?? 0);
+  const totals = calculateInvoiceTotals(
+    items ?? [],
+    invoice?.commission_percent ?? 0,
+    (invoice?.commission_tax_treatment as "GRAVADO" | "EXENTO" | "NO_SUJETO" | undefined) ?? "GRAVADO",
+    invoice?.commission_tax_rate_percent ?? 0,
+  );
   const paidAmount = invoice?.paid_amount ?? 0;
 
   const { error: updateError } = await supabase
@@ -74,6 +83,7 @@ export async function createInvoiceAction(
     due_date: String(formData.get("due_date") ?? ""),
     payment_terms_id: String(formData.get("payment_terms_id") ?? ""),
     commission_percent: String(formData.get("commission_percent") ?? "0"),
+    commission_tax_rate_id: String(formData.get("commission_tax_rate_id") ?? ""),
     currency: String(formData.get("currency") ?? "DOP"),
     exchange_rate: String(formData.get("exchange_rate") ?? "1"),
     billing_type: String(formData.get("billing_type") ?? "REGULAR"),
@@ -140,6 +150,29 @@ export async function createInvoiceAction(
     creditDays = term.credit_days;
   }
 
+  // Tratamiento fiscal de la comisión: propio, resuelto contra el catálogo
+  // igual que una línea — NUNCA hereda la exención del servicio principal.
+  // Solo se exige si hay comisión (> 0).
+  let commissionTaxTreatment: "GRAVADO" | "EXENTO" | "NO_SUJETO" = "GRAVADO";
+  let commissionTaxRatePercent = 0;
+  if (parsed.data.commission_percent > 0) {
+    if (!parsed.data.commission_tax_rate_id) {
+      return { error: "Selecciona el tratamiento fiscal de la comisión." };
+    }
+    const { data: commissionTaxRate } = await supabase
+      .from("tax_rates")
+      .select("rate, treatment")
+      .eq("id", parsed.data.commission_tax_rate_id)
+      .eq("company_id", companyId)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!commissionTaxRate) {
+      return { error: "El tratamiento fiscal de la comisión no es válido o ya no está activo." };
+    }
+    commissionTaxTreatment = commissionTaxRate.treatment as "GRAVADO" | "EXENTO" | "NO_SUJETO";
+    commissionTaxRatePercent = Number(commissionTaxRate.rate);
+  }
+
   const { data, error } = await supabase
     .from("invoices")
     .insert({
@@ -153,6 +186,9 @@ export async function createInvoiceAction(
       payment_terms_id: effectivePaymentTermsId || null,
       credit_days: creditDays,
       commission_percent: parsed.data.commission_percent,
+      commission_tax_rate_id: parsed.data.commission_tax_rate_id || null,
+      commission_tax_treatment: commissionTaxTreatment,
+      commission_tax_rate_percent: commissionTaxRatePercent,
       currency: parsed.data.currency,
       exchange_rate: parsed.data.exchange_rate,
       billing_type: parsed.data.billing_type,

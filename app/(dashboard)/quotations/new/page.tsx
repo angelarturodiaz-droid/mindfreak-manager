@@ -1,13 +1,15 @@
 import { listActiveClients } from "@/features/quotations/queries";
 import { getCompany } from "@/features/settings/queries";
 import { listPaymentTerms } from "@/features/payment-terms/queries";
+import { listTaxRates } from "@/features/tax-rates/queries";
 import { NewQuotationForm } from "./new-quotation-form";
 
 export default async function NewQuotationPage() {
-  const [clients, company, paymentTerms] = await Promise.all([
+  const [clients, company, paymentTerms, taxRates] = await Promise.all([
     listActiveClients(),
     getCompany(),
     listPaymentTerms(),
+    listTaxRates(),
   ]);
 
   return (
@@ -21,7 +23,7 @@ export default async function NewQuotationPage() {
           ya sea cliente confirmado.
         </p>
       </div>
-      <NewQuotationForm clients={clients} baseCurrency={company.base_currency} paymentTerms={paymentTerms} />
+      <NewQuotationForm clients={clients} baseCurrency={company.base_currency} paymentTerms={paymentTerms} taxRates={taxRates} />
     </main>
   );
 }

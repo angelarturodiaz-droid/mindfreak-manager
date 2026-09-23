@@ -257,7 +257,15 @@ export default async function InvoiceDetailPage({
           </div>
           {invoice.commission_percent > 0 && (
             <div className="mt-1 flex items-center justify-between">
-              <span className="text-brand-muted">Comisión ({invoice.commission_percent}%)</span>
+              <span className="text-brand-muted">
+                Comisión ({invoice.commission_percent}%){" "}
+                <span className="text-xs">
+                  (
+                  {TAX_TREATMENT_LABELS[invoice.commission_tax_treatment as keyof typeof TAX_TREATMENT_LABELS] ??
+                    invoice.commission_tax_treatment}
+                  )
+                </span>
+              </span>
               <span className="font-medium">
                 {formatMoney(invoice.commission_amount, invoice.currency)}
               </span>

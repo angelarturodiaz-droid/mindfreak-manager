@@ -10,14 +10,18 @@ import { Button } from "@/components/ui/button";
 const initialState: ActionState = { error: null };
 const today = new Date().toISOString().slice(0, 10);
 
+type TaxRate = { id: string; name: string; rate: number; is_default: boolean };
+
 export function NewQuotationForm({
   clients,
   baseCurrency,
   paymentTerms,
+  taxRates,
 }: {
   clients: { id: string; name: string; stage: string }[];
   baseCurrency: string;
   paymentTerms: { id: string; name: string; credit_days: number }[];
+  taxRates: TaxRate[];
 }) {
   const [state, formAction, pending] = useActionState(
     createQuotationAction,
@@ -64,6 +68,18 @@ export function NewQuotationForm({
         defaultValue="0"
         hint="Se suma antes del descuento y del ITBIS."
       />
+      <Select
+        label="Tratamiento fiscal de la comisión"
+        name="commission_tax_rate_id"
+        defaultValue={taxRates.find((r) => r.is_default)?.id ?? taxRates[0]?.id ?? ""}
+        hint="Solo aplica si hay comisión. No hereda el tratamiento de las líneas."
+      >
+        {taxRates.map((r) => (
+          <option key={r.id} value={r.id}>
+            {r.name} ({r.rate}%)
+          </option>
+        ))}
+      </Select>
 
       <CurrencyExchangeFields baseCurrency={baseCurrency} />
 

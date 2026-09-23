@@ -18,17 +18,20 @@ type Project = {
   client_id: string;
   clients: { name: string }[] | { name: string } | null;
 };
+type TaxRate = { id: string; name: string; rate: number; is_default: boolean };
 
 export function NewInvoiceForm({
   clients,
   projects,
   baseCurrency,
   paymentTerms,
+  taxRates,
 }: {
   clients: Client[];
   projects: Project[];
   baseCurrency: string;
   paymentTerms: { id: string; name: string; credit_days: number }[];
+  taxRates: TaxRate[];
 }) {
   const [state, formAction, pending] = useActionState(
     createInvoiceAction,
@@ -149,6 +152,18 @@ export function NewInvoiceForm({
         defaultValue="0"
         hint="Se suma antes del descuento y del ITBIS."
       />
+      <Select
+        label="Tratamiento fiscal de la comisión"
+        name="commission_tax_rate_id"
+        defaultValue={taxRates.find((r) => r.is_default)?.id ?? taxRates[0]?.id ?? ""}
+        hint="Solo aplica si hay comisión. No hereda el tratamiento de las líneas."
+      >
+        {taxRates.map((r) => (
+          <option key={r.id} value={r.id}>
+            {r.name} ({r.rate}%)
+          </option>
+        ))}
+      </Select>
 
       <CurrencyExchangeFields baseCurrency={baseCurrency} />
 

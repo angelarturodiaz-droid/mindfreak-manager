@@ -49,11 +49,20 @@ async function recalculateQuotationTotals(quotationId: string) {
       .from("quotation_items")
       .select("quantity, unit_price, discount, tax, estimated_unit_cost")
       .eq("quotation_id", quotationId),
-    supabase.from("quotations").select("commission_percent").eq("id", quotationId).single(),
+    supabase
+      .from("quotations")
+      .select("commission_percent, commission_tax_treatment, commission_tax_rate_percent")
+      .eq("id", quotationId)
+      .single(),
   ]);
   if (error) throw new Error(error.message);
 
-  const totals = calculateQuotationTotals(items ?? [], quotation?.commission_percent ?? 0);
+  const totals = calculateQuotationTotals(
+    items ?? [],
+    quotation?.commission_percent ?? 0,
+    (quotation?.commission_tax_treatment as "GRAVADO" | "EXENTO" | "NO_SUJETO" | undefined) ?? "GRAVADO",
+    quotation?.commission_tax_rate_percent ?? 0,
+  );
   const { error: updateError } = await supabase
     .from("quotations")
     .update(totals)
@@ -77,6 +86,7 @@ export async function createQuotationAction(
     terms: String(formData.get("terms") ?? ""),
     payment_terms_id: String(formData.get("payment_terms_id") ?? ""),
     commission_percent: String(formData.get("commission_percent") ?? "0"),
+    commission_tax_rate_id: String(formData.get("commission_tax_rate_id") ?? ""),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -121,6 +131,28 @@ export async function createQuotationAction(
     };
   }
 
+  // Tratamiento fiscal de la comisión: propio, resuelto contra el catálogo
+  // igual que una línea — NUNCA hereda la exención del servicio principal.
+  let commissionTaxTreatment: "GRAVADO" | "EXENTO" | "NO_SUJETO" = "GRAVADO";
+  let commissionTaxRatePercent = 0;
+  if (parsed.data.commission_percent > 0) {
+    if (!parsed.data.commission_tax_rate_id) {
+      return { error: "Selecciona el tratamiento fiscal de la comisión." };
+    }
+    const { data: commissionTaxRate } = await supabase
+      .from("tax_rates")
+      .select("rate, treatment")
+      .eq("id", parsed.data.commission_tax_rate_id)
+      .eq("company_id", companyId)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!commissionTaxRate) {
+      return { error: "El tratamiento fiscal de la comisión no es válido o ya no está activo." };
+    }
+    commissionTaxTreatment = commissionTaxRate.treatment as "GRAVADO" | "EXENTO" | "NO_SUJETO";
+    commissionTaxRatePercent = Number(commissionTaxRate.rate);
+  }
+
   const { data, error } = await supabase
     .from("quotations")
     .insert({
@@ -134,6 +166,9 @@ export async function createQuotationAction(
       exchange_rate: parsed.data.exchange_rate,
       terms: parsed.data.terms || null,
       commission_percent: parsed.data.commission_percent,
+      commission_tax_rate_id: parsed.data.commission_tax_rate_id || null,
+      commission_tax_treatment: commissionTaxTreatment,
+      commission_tax_rate_percent: commissionTaxRatePercent,
       status: "DRAFT",
       created_by: user?.id,
       ...paymentTermsFields,
