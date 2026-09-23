@@ -255,7 +255,19 @@ export async function listTrustedDevicesAction(): Promise<TrustedDeviceRow[]> {
 /** Revoca un equipo de confianza — la próxima vez que entre desde ahí, vuelve a pedir el código. */
 export async function revokeTrustedDeviceAction(id: string): Promise<void> {
   const supabase = await createClient();
-  const { error } = await supabase.from("mfa_trusted_devices").delete().eq("id", id);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Sesión no encontrada.");
+
+  // Filtro explícito por user_id además de RLS (defensa en profundidad):
+  // sin esto, cualquier usuario autenticado podía revocar el equipo de
+  // confianza de otro usuario con solo adivinar/enumerar su id.
+  const { error } = await supabase
+    .from("mfa_trusted_devices")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
   if (error) throw new Error(error.message);
   revalidatePath("/profile");
 }

@@ -5,7 +5,19 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function markNotificationReadAction(id: string): Promise<void> {
   const supabase = await createClient();
-  const { error } = await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Sesión no encontrada.");
+
+  // Filtro explícito por user_id además de RLS (defensa en profundidad):
+  // sin esto, cualquier usuario autenticado podía marcar como leída la
+  // notificación de otro usuario con solo adivinar/enumerar su id.
+  const { error } = await supabase
+    .from("notifications")
+    .update({ is_read: true })
+    .eq("id", id)
+    .eq("user_id", user.id);
   if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
