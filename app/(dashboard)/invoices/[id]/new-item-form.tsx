@@ -17,17 +17,20 @@ type Service = {
   default_tax_percent: number;
 };
 type ProjectItem = { id: string; description: string; quantity: number; unit_price: number };
+type TaxRate = { id: string; name: string; rate: number; is_default: boolean };
 
 export function NewInvoiceItemForm({
   invoiceId,
   services,
   projectItems,
   defaultTaxPercent,
+  taxRates,
 }: {
   invoiceId: string;
   services: Service[];
   projectItems: ProjectItem[];
   defaultTaxPercent: number;
+  taxRates: TaxRate[];
 }) {
   const addWithId = addInvoiceItemAction.bind(null, invoiceId);
   const [state, formAction, pending] = useActionState(addWithId, initialState);
@@ -136,16 +139,27 @@ export function NewInvoiceItemForm({
         defaultValue={0}
         className="w-24"
       />
-      <Input
-        label="Impuesto (%)"
+      <Select
+        label="Impuesto"
         name="tax_percent"
-        type="number"
-        step="0.01"
-        min="0"
-        defaultValue={selectedService?.default_tax_percent ?? defaultTaxPercent}
+        defaultValue={String(selectedService?.default_tax_percent ?? defaultTaxPercent)}
         key={`tax-${selectedService?.id ?? "custom"}-${resetKey}`}
-        className="w-20"
-      />
+        className="w-32"
+      >
+        {/* Catálogo de Configuración → Impuestos (incluye tasas en 0%, ej. "Exento"). Si el
+            valor por defecto (del servicio o el predeterminado) no está en el catálogo, se
+            agrega como opción suelta para no perder el valor. */}
+        {!taxRates.some((r) => r.rate === (selectedService?.default_tax_percent ?? defaultTaxPercent)) && (
+          <option value={selectedService?.default_tax_percent ?? defaultTaxPercent}>
+            {(selectedService?.default_tax_percent ?? defaultTaxPercent)}% (personalizado)
+          </option>
+        )}
+        {taxRates.map((r) => (
+          <option key={r.id} value={r.rate}>
+            {r.name} ({r.rate}%)
+          </option>
+        ))}
+      </Select>
       <Button type="submit" loading={pending} icon={<Plus size={14} />}>
         Agregar línea
       </Button>

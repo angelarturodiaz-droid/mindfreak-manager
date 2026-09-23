@@ -19,7 +19,7 @@ import { AddCollectionHistoryForm } from "./add-collection-history-form";
 import { listPaymentsForInvoice, listBankAccounts } from "@/features/payments/queries";
 import { PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
 import { listPaymentTerms } from "@/features/payment-terms/queries";
-import { getDefaultTaxRate } from "@/features/tax-rates/queries";
+import { getDefaultTaxRate, listTaxRates } from "@/features/tax-rates/queries";
 import { hasPermission } from "@/lib/auth/permissions";
 import { NewInvoiceItemForm } from "./new-item-form";
 import { InvoiceHeaderForm } from "./invoice-header-form";
@@ -76,7 +76,7 @@ export default async function InvoiceDetailPage({
   }
   if (!invoice) notFound();
 
-  const [items, services, canEdit, canPay, projectItems, payments, bankAccounts, paymentTerms, defaultTaxPercent, companyUsers, collectionHistory] =
+  const [items, services, canEdit, canPay, projectItems, payments, bankAccounts, paymentTerms, defaultTaxPercent, companyUsers, collectionHistory, taxRates] =
     await Promise.all([
       listInvoiceItems(id),
       listActiveServices(),
@@ -89,6 +89,7 @@ export default async function InvoiceDetailPage({
       getDefaultTaxRate(),
       listCompanyUsersForSelect(),
       listCollectionHistory(id),
+      listTaxRates(),
     ]);
 
   const clientData = invoice.clients as { name: string } | { name: string }[] | null;
@@ -230,6 +231,7 @@ export default async function InvoiceDetailPage({
               services={services}
               projectItems={projectItems}
               defaultTaxPercent={defaultTaxPercent}
+              taxRates={taxRates}
             />
           </div>
         )}
