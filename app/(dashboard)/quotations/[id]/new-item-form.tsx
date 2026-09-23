@@ -83,7 +83,16 @@ export function NewItemForm({
         key={`price-${selectedService?.id ?? "custom"}`}
         className="w-28"
       />
-      <MoneyInput label="Descuento" name="discount" defaultValue={0} className="w-24" />
+      <Input
+        label="Descuento (%)"
+        name="discount_percent"
+        type="number"
+        step="0.01"
+        min="0"
+        max="100"
+        defaultValue={0}
+        className="w-24"
+      />
       <Input
         label="Impuesto (%)"
         name="tax_percent"

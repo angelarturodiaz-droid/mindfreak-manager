@@ -216,7 +216,7 @@ export async function addQuotationItemAction(
     description: String(formData.get("description") ?? ""),
     quantity: String(formData.get("quantity") ?? "1"),
     unit_price: String(formData.get("unit_price") ?? "0"),
-    discount: String(formData.get("discount") ?? "0"),
+    discount_percent: String(formData.get("discount_percent") ?? "0"),
     tax_percent: String(formData.get("tax_percent") ?? "0"),
     estimated_unit_cost: String(formData.get("estimated_unit_cost") ?? "0"),
   });
@@ -228,7 +228,9 @@ export async function addQuotationItemAction(
 
   // El impuesto se calcula DESPUÉS del subtotal y el descuento, tal como se
   // pidió: base = (cantidad × precio) − descuento; impuesto = base × %.
-  const base = parsed.data.quantity * parsed.data.unit_price - parsed.data.discount;
+  const lineAmount = parsed.data.quantity * parsed.data.unit_price;
+  const discount = Math.round(lineAmount * (parsed.data.discount_percent / 100) * 100) / 100;
+  const base = lineAmount - discount;
   const tax = Math.round(Math.max(0, base) * (parsed.data.tax_percent / 100) * 100) / 100;
 
   // tax_rate_id: referencia de mejor esfuerzo al catálogo de Impuestos —
@@ -246,14 +248,14 @@ export async function addQuotationItemAction(
     .limit(1)
     .maybeSingle();
 
-  const subtotal = calculateItemSubtotal({ ...parsed.data, tax });
+  const subtotal = calculateItemSubtotal({ ...parsed.data, discount, tax });
   const { error } = await supabase.from("quotation_items").insert({
     quotation_id: quotationId,
     service_id: parsed.data.service_id || null,
     description: parsed.data.description,
     quantity: parsed.data.quantity,
     unit_price: parsed.data.unit_price,
-    discount: parsed.data.discount,
+    discount,
     tax,
     estimated_unit_cost: parsed.data.estimated_unit_cost,
     subtotal,

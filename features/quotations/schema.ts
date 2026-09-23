@@ -30,7 +30,11 @@ export const quotationItemSchema = z.object({
   description: z.string().trim().min(1, "La descripción es requerida"),
   quantity: z.coerce.number().positive("Debe ser mayor a 0"),
   unit_price: z.coerce.number().min(0, "Debe ser un número positivo"),
-  discount: z.coerce.number().min(0).default(0),
+  // El usuario escribe el % de descuento (igual que con el Impuesto), y el
+  // Server Action calcula el monto en dólares sobre (cantidad×precio) antes
+  // de guardarlo — la columna `discount` en la base de datos sigue siendo
+  // un monto, no un %, así que no hace falta ninguna migración de datos.
+  discount_percent: z.coerce.number().min(0).max(100).default(0),
   // El usuario escribe el impuesto como PORCENTAJE (ej. 18 = ITBIS 18%). El
   // monto en dólares/pesos se calcula en el servidor sobre (cantidad×precio
   // − descuento), y ESE monto calculado es lo que se guarda en `tax`.
