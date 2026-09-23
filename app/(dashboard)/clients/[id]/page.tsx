@@ -5,6 +5,7 @@ import { getClient, listClientContacts } from "@/features/clients/queries";
 import {
   convertClientToActiveAction,
   deactivateClientAction,
+  reactivateClientAction,
   deleteContactAction,
 } from "@/features/clients/actions";
 import { ActionButton } from "@/components/ui/action-button";
@@ -66,12 +67,19 @@ export default async function ClientDetailPage({
             onAction={convertClientToActiveAction.bind(null, client.id)}
           />
         )}
-        {client.is_active && (
+        {client.is_active ? (
           <ConfirmButton
             label="Desactivar cliente"
             confirmTitle={`¿Desactivar a "${client.name}"?`}
             confirmMessage="Podrás reactivarlo más adelante si hace falta."
             onConfirm={deactivateClientAction.bind(null, client.id)}
+          />
+        ) : (
+          <ActionButton
+            label="Reactivar cliente"
+            variant="secondary"
+            icon={<UserCheck size={14} />}
+            onAction={reactivateClientAction.bind(null, client.id)}
           />
         )}
       </div>

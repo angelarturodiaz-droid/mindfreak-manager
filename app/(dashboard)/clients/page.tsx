@@ -4,6 +4,7 @@ import { listClients } from "@/features/clients/queries";
 import {
   convertClientToActiveAction,
   deactivateClientAction,
+  reactivateClientAction,
 } from "@/features/clients/actions";
 import { Button } from "@/components/ui/button";
 import { ActionLink } from "@/components/ui/action-link";
@@ -64,12 +65,14 @@ export default async function ClientsPage({
           {client.status === "LEAD" && (
             <ActionLink label="Convertir a cliente" onAction={convertClientToActiveAction.bind(null, client.id)} />
           )}
-          {client.is_active && (
+          {client.is_active ? (
             <ActionLink
               label="Desactivar"
               className="text-sm text-brand-muted hover:text-brand-danger"
               onAction={deactivateClientAction.bind(null, client.id)}
             />
+          ) : (
+            <ActionLink label="Reactivar" onAction={reactivateClientAction.bind(null, client.id)} />
           )}
         </div>
       ),

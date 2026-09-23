@@ -172,6 +172,30 @@ export async function deactivateClientAction(clientId: string): Promise<void> {
   revalidatePath("/clients");
 }
 
+/** Reactivar un cliente previamente desactivado. */
+export async function reactivateClientAction(clientId: string): Promise<void> {
+  await requirePermission("clients.delete");
+
+  const supabase = await createSupabaseClient();
+  const { error } = await supabase
+    .from("clients")
+    .update({ is_active: true })
+    .eq("id", clientId);
+
+  if (error) throw new Error(error.message);
+
+  const companyId = await getPrimaryCompanyId();
+  await logAudit({
+    companyId,
+    action: "REACTIVATE",
+    entityType: "client",
+    entityId: clientId,
+  });
+
+  revalidatePath(`/clients/${clientId}`);
+  revalidatePath("/clients");
+}
+
 export async function createContactAction(
   clientId: string,
   _prevState: ActionState,
