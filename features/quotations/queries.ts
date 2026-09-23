@@ -18,7 +18,7 @@ export async function getQuotation(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("quotations")
-    .select("*, clients(name, status), payment_terms(name)")
+    .select("*, clients(name, stage), payment_terms(name)")
     .eq("id", id)
     .single();
   if (error) throw new Error(error.message);
@@ -40,7 +40,7 @@ export async function listActiveClients() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("clients")
-    .select("id, name, status")
+    .select("id, name, stage")
     .eq("is_active", true)
     .order("name");
   if (error) throw new Error(error.message);

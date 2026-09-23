@@ -30,9 +30,10 @@ export default function NewClientPage() {
         <Input label="Correo" name="email" type="email" />
         <Input label="Teléfono" name="phone" />
         <Input label="Dirección" name="address" />
-        <Select label="Estado inicial" name="status" defaultValue="LEAD">
+        <Select label="Etapa inicial" name="stage" defaultValue="LEAD">
           <option value="LEAD">Cliente potencial (lead)</option>
-          <option value="ACTIVE">Cliente activo</option>
+          <option value="PROSPECT">Prospecto</option>
+          <option value="CLIENT">Cliente</option>
         </Select>
 
         {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}

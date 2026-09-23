@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, UserCheck, Trash2 } from "lucide-react";
 import { getClient, listClientContacts } from "@/features/clients/queries";
 import {
-  convertClientToActiveAction,
+  convertClientToProspectAction,
+  convertClientToClientAction,
   deactivateClientAction,
   reactivateClientAction,
   deleteContactAction,
@@ -51,27 +52,43 @@ export default async function ClientDetailPage({
         </Link>
         <div className="mt-2 flex items-center gap-3">
           <h1 className="text-xl font-semibold text-brand-primary">{client.name}</h1>
-          <Badge tone={client.status === "ACTIVE" ? "success" : "info"}>
-            {client.status === "ACTIVE" ? "Cliente activo" : "Lead"}
+          {/* Etapa del pipeline comercial — independiente del Estado (abajo). */}
+          <Badge
+            tone={
+              client.stage === "CLIENT" ? "success" : client.stage === "PROSPECT" ? "warning" : "info"
+            }
+          >
+            {client.stage === "CLIENT" ? "Cliente" : client.stage === "PROSPECT" ? "Prospecto" : "Lead"}
           </Badge>
-          {!client.is_active && <Badge tone="danger">Inactivo</Badge>}
+          {/* Estado operativo (activo/inactivo) — un Lead o Prospecto también puede estar Inactivo. */}
+          <Badge tone={client.is_active ? "success" : "danger"}>
+            {client.is_active ? "Activo" : "Inactivo"}
+          </Badge>
         </div>
       </div>
 
       <div className="flex gap-3">
-        {client.status === "LEAD" && (
+        {client.stage === "LEAD" && (
           <ActionButton
-            label="Convertir a cliente activo"
+            label="Marcar como prospecto"
             variant="secondary"
             icon={<UserCheck size={14} />}
-            onAction={convertClientToActiveAction.bind(null, client.id)}
+            onAction={convertClientToProspectAction.bind(null, client.id)}
+          />
+        )}
+        {client.stage !== "CLIENT" && (
+          <ActionButton
+            label="Convertir en cliente"
+            variant="secondary"
+            icon={<UserCheck size={14} />}
+            onAction={convertClientToClientAction.bind(null, client.id)}
           />
         )}
         {client.is_active ? (
           <ConfirmButton
             label="Desactivar cliente"
             confirmTitle={`¿Desactivar a "${client.name}"?`}
-            confirmMessage="Podrás reactivarlo más adelante si hace falta."
+            confirmMessage="Podrás reactivarlo más adelante si hace falta. No borra su historial ni sus datos."
             onConfirm={deactivateClientAction.bind(null, client.id)}
           />
         ) : (

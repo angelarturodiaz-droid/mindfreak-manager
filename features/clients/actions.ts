@@ -25,7 +25,7 @@ function parseFormFields(formData: FormData) {
     email: String(formData.get("email") ?? ""),
     phone: String(formData.get("phone") ?? ""),
     address: String(formData.get("address") ?? ""),
-    status: String(formData.get("status") ?? "LEAD"),
+    stage: String(formData.get("stage") ?? "LEAD"),
   };
 }
 
@@ -55,7 +55,7 @@ export async function createClientAction(
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
       address: parsed.data.address || null,
-      status: parsed.data.status,
+      stage: parsed.data.stage,
       created_by: user?.id,
     })
     .select("id")
@@ -82,7 +82,7 @@ export async function updateClientAction(
 ): Promise<ActionState> {
   await requirePermission("clients.update");
 
-  const parsed = clientSchema.omit({ status: true }).safeParse(parseFormFields(formData));
+  const parsed = clientSchema.omit({ stage: true }).safeParse(parseFormFields(formData));
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
   }
@@ -122,30 +122,59 @@ export async function updateClientAction(
   return { error: null };
 }
 
-/** Convertir un cliente potencial (LEAD) a cliente activo (ACTIVE). */
-export async function convertClientToActiveAction(clientId: string): Promise<void> {
+const STAGE_ORDER = ["LEAD", "PROSPECT", "CLIENT"] as const;
+type ClientStage = (typeof STAGE_ORDER)[number];
+
+/**
+ * Avanzar la Etapa del pipeline comercial de un cliente (Lead -> Prospecto ->
+ * Cliente). Nunca toca `is_active` — el Estado (activo/inactivo) es
+ * completamente independiente de en qué etapa del pipeline está el registro.
+ */
+async function advanceClientStage(clientId: string, targetStage: ClientStage): Promise<void> {
   await requirePermission("clients.convert");
 
   const supabase = await createSupabaseClient();
+  const { data: client } = await supabase
+    .from("clients")
+    .select("stage")
+    .eq("id", clientId)
+    .single();
+  if (!client) throw new Error("Cliente no encontrado.");
+
+  const currentIndex = STAGE_ORDER.indexOf(client.stage as ClientStage);
+  const targetIndex = STAGE_ORDER.indexOf(targetStage);
+  // Idempotente: si ya está en esa etapa o más adelante, no hace nada (no
+  // se puede "retroceder" con esta acción).
+  if (currentIndex >= targetIndex) return;
+
   const { error } = await supabase
     .from("clients")
-    .update({ status: "ACTIVE" })
-    .eq("id", clientId)
-    .eq("status", "LEAD"); // idempotente: no falla si ya estaba ACTIVE
+    .update({ stage: targetStage })
+    .eq("id", clientId);
 
   if (error) throw new Error(error.message);
 
   const companyId = await getPrimaryCompanyId();
   await logAudit({
     companyId,
-    action: "CONVERT_TO_ACTIVE",
+    action: `STAGE_${targetStage}`,
     entityType: "client",
     entityId: clientId,
-    newValues: { status: "ACTIVE" },
+    newValues: { stage: targetStage },
   });
 
   revalidatePath(`/clients/${clientId}`);
   revalidatePath("/clients");
+}
+
+/** Marcar un Lead como Prospecto. */
+export async function convertClientToProspectAction(clientId: string): Promise<void> {
+  await advanceClientStage(clientId, "PROSPECT");
+}
+
+/** Convertir un Lead o Prospecto en Cliente. */
+export async function convertClientToClientAction(clientId: string): Promise<void> {
+  await advanceClientStage(clientId, "CLIENT");
 }
 
 /** Desactivar cliente (soft delete — nunca se borra físicamente). */
@@ -291,7 +320,10 @@ export async function importClientsCsvAction(
       email: row.email ?? "",
       phone: row.phone ?? "",
       address: row.address ?? "",
-      status: (row.status === "ACTIVE" ? "ACTIVE" : "LEAD") as "LEAD" | "ACTIVE",
+      stage: (["LEAD", "PROSPECT", "CLIENT"].includes(row.stage) ? row.stage : "LEAD") as
+        | "LEAD"
+        | "PROSPECT"
+        | "CLIENT",
     });
 
     if (!candidate.success) {
@@ -309,7 +341,7 @@ export async function importClientsCsvAction(
       email: candidate.data.email || null,
       phone: candidate.data.phone || null,
       address: candidate.data.address || null,
-      status: candidate.data.status,
+      stage: candidate.data.stage,
       created_by: user?.id,
     });
 

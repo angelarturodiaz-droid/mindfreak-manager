@@ -11,7 +11,10 @@ export const clientSchema = z.object({
     .or(z.literal("")),
   phone: z.string().trim().optional().or(z.literal("")),
   address: z.string().trim().optional().or(z.literal("")),
-  status: z.enum(["LEAD", "ACTIVE"]).default("LEAD"),
+  // Etapa del pipeline comercial (Lead -> Prospecto -> Cliente). Independiente
+  // del Estado (is_active): un Lead puede estar activo o inactivo sin dejar
+  // de ser Lead — nunca se mezclan estos dos campos.
+  stage: z.enum(["LEAD", "PROSPECT", "CLIENT"]).default("LEAD"),
 });
 
 export type ClientInput = z.infer<typeof clientSchema>;
@@ -37,5 +40,5 @@ export const CLIENT_CSV_COLUMNS = [
   "email",
   "phone",
   "address",
-  "status",
+  "stage",
 ] as const;

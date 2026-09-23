@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Upload, UserPlus, Users } from "lucide-react";
 import { listClients } from "@/features/clients/queries";
 import {
-  convertClientToActiveAction,
+  convertClientToProspectAction,
+  convertClientToClientAction,
   deactivateClientAction,
   reactivateClientAction,
 } from "@/features/clients/actions";
@@ -15,32 +16,35 @@ import { EmptyState } from "@/components/ui/empty-state";
 
 type ClientRow = Awaited<ReturnType<typeof listClients>>[number];
 
+const STAGE_LABEL: Record<string, string> = {
+  LEAD: "Lead",
+  PROSPECT: "Prospecto",
+  CLIENT: "Cliente",
+};
+
 export default async function ClientsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; q?: string }>;
+  searchParams: Promise<{ stage?: string; q?: string }>;
 }) {
   const params = await searchParams;
-  const status =
-    params.status === "LEAD" || params.status === "ACTIVE"
-      ? params.status
+  const stage =
+    params.stage === "LEAD" || params.stage === "PROSPECT" || params.stage === "CLIENT"
+      ? params.stage
       : undefined;
 
-  const clients = await listClients({ status, search: params.q });
+  const clients = await listClients({ stage, search: params.q });
 
   const columns: Column<ClientRow>[] = [
     {
       header: "Nombre",
       accessor: (client) => (
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/clients/${client.id}`}
-            className="font-medium text-brand-text hover:text-brand-accent"
-          >
-            {client.name}
-          </Link>
-          {!client.is_active && <Badge tone="danger">Inactivo</Badge>}
-        </div>
+        <Link
+          href={`/clients/${client.id}`}
+          className="font-medium text-brand-text hover:text-brand-accent"
+        >
+          {client.name}
+        </Link>
       ),
     },
     {
@@ -50,10 +54,22 @@ export default async function ClientsPage({
       ),
     },
     {
+      // Etapa del pipeline comercial (Lead -> Prospecto -> Cliente).
+      // Independiente del Estado (activo/inactivo) — ver columna siguiente.
+      header: "Etapa",
+      accessor: (client) => (
+        <Badge tone={client.stage === "CLIENT" ? "success" : client.stage === "PROSPECT" ? "warning" : "info"}>
+          {STAGE_LABEL[client.stage] ?? client.stage}
+        </Badge>
+      ),
+    },
+    {
+      // Estado operativo (activo/inactivo) — un Lead o Prospecto también
+      // puede estar Inactivo sin dejar de ser Lead/Prospecto.
       header: "Estado",
       accessor: (client) => (
-        <Badge tone={client.status === "ACTIVE" ? "success" : "info"}>
-          {client.status === "ACTIVE" ? "Activo" : "Lead"}
+        <Badge tone={client.is_active ? "success" : "danger"}>
+          {client.is_active ? "Activo" : "Inactivo"}
         </Badge>
       ),
     },
@@ -62,8 +78,17 @@ export default async function ClientsPage({
       className: "text-right",
       accessor: (client) => (
         <div className="flex justify-end gap-3">
-          {client.status === "LEAD" && (
-            <ActionLink label="Convertir a cliente" onAction={convertClientToActiveAction.bind(null, client.id)} />
+          {client.stage === "LEAD" && (
+            <ActionLink
+              label="Marcar prospecto"
+              onAction={convertClientToProspectAction.bind(null, client.id)}
+            />
+          )}
+          {client.stage !== "CLIENT" && (
+            <ActionLink
+              label="Convertir en cliente"
+              onAction={convertClientToClientAction.bind(null, client.id)}
+            />
           )}
           {client.is_active ? (
             <ActionLink
@@ -85,7 +110,7 @@ export default async function ClientsPage({
         <div>
           <h1 className="text-xl font-semibold text-brand-primary">Clientes</h1>
           <p className="text-sm text-brand-muted">
-            Clientes potenciales (leads) y clientes activos.
+            Clientes potenciales (leads), prospectos y clientes activos.
           </p>
         </div>
         <div className="flex gap-2">
@@ -110,10 +135,11 @@ export default async function ClientsPage({
           placeholder="Buscar por nombre…"
           className="w-64"
         />
-        <Select name="status" defaultValue={status ?? ""} className="w-40">
-          <option value="">Todos los estados</option>
+        <Select name="stage" defaultValue={stage ?? ""} className="w-40">
+          <option value="">Todas las etapas</option>
           <option value="LEAD">Solo leads</option>
-          <option value="ACTIVE">Solo activos</option>
+          <option value="PROSPECT">Solo prospectos</option>
+          <option value="CLIENT">Solo clientes</option>
         </Select>
         <Button type="submit" variant="outline" size="md">
           Filtrar

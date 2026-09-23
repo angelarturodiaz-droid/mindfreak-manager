@@ -15,7 +15,7 @@ export function NewQuotationForm({
   baseCurrency,
   paymentTerms,
 }: {
-  clients: { id: string; name: string; status: string }[];
+  clients: { id: string; name: string; stage: string }[];
   baseCurrency: string;
   paymentTerms: { id: string; name: string; credit_days: number }[];
 }) {
@@ -32,7 +32,7 @@ export function NewQuotationForm({
         </option>
         {clients.map((c) => (
           <option key={c.id} value={c.id}>
-            {c.name} {c.status === "LEAD" ? "(lead)" : ""}
+            {c.name} {c.stage === "LEAD" ? "(lead)" : c.stage === "PROSPECT" ? "(prospecto)" : ""}
           </option>
         ))}
       </Select>

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
 
-type Client = { id: string; name: string; status: string };
+type Client = { id: string; name: string; stage: string };
 type Member = { id: string; full_name: string | null; email: string | null };
 
 export function NewProjectForm({
@@ -34,7 +34,7 @@ export function NewProjectForm({
         </option>
         {clients.map((c) => (
           <option key={c.id} value={c.id}>
-            {c.name} {c.status === "LEAD" ? "(lead)" : ""}
+            {c.name} {c.stage === "LEAD" ? "(lead)" : c.stage === "PROSPECT" ? "(prospecto)" : ""}
           </option>
         ))}
       </Select>

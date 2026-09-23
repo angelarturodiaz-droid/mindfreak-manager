@@ -41,7 +41,7 @@ export async function listActiveClients() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("clients")
-    .select("id, name, status")
+    .select("id, name, stage")
     .eq("is_active", true)
     .order("name");
   if (error) throw new Error(error.message);

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 
 export type ClientListFilters = {
-  status?: "LEAD" | "ACTIVE";
+  stage?: "LEAD" | "PROSPECT" | "CLIENT";
   search?: string;
 };
 
@@ -10,11 +10,11 @@ export async function listClients(filters: ClientListFilters = {}) {
   const supabase = await createClient();
   let query = supabase
     .from("clients")
-    .select("id, name, email, phone, status, is_active, created_at")
+    .select("id, name, email, phone, stage, is_active, created_at")
     .order("created_at", { ascending: false });
 
-  if (filters.status) {
-    query = query.eq("status", filters.status);
+  if (filters.stage) {
+    query = query.eq("stage", filters.stage);
   }
   if (filters.search) {
     query = query.ilike("name", `%${filters.search}%`);

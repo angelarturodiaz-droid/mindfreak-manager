@@ -38,8 +38,8 @@ export default async function ImportClientsPage() {
           Importar clientes (CSV)
         </h1>
         <p className="text-sm text-brand-muted">
-          Columnas esperadas: <code>name, tax_id, email, phone, address, status</code>{" "}
-          (status: <code>LEAD</code> o <code>ACTIVE</code>, opcional — por defecto LEAD).
+          Columnas esperadas: <code>name, tax_id, email, phone, address, stage</code>{" "}
+          (stage: <code>LEAD</code>, <code>PROSPECT</code> o <code>CLIENT</code>, opcional — por defecto LEAD).
         </p>
       </div>
 

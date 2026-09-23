@@ -91,25 +91,35 @@ const SECTIONS: Section[] = [
     label: "Clientes",
     icon: Users,
     tone: "violet",
-    summary: "Leads y clientes activos, con sus contactos.",
+    summary: "Leads, prospectos y clientes, con sus contactos.",
     content: (
       <>
         <p className="text-sm text-brand-text">
-          Un cliente puede ser un <strong>Lead</strong> (potencial, todavía no
-          ha comprado) o estar <strong>Activo</strong>. Cada cliente puede
+          Cada cliente tiene dos datos independientes. La <strong>Etapa</strong>{" "}
+          indica dónde está en el proceso comercial: <strong>Lead</strong> →{" "}
+          <strong>Prospecto</strong> → <strong>Cliente</strong>. El{" "}
+          <strong>Estado</strong> indica si está operativo:{" "}
+          <strong>Activo</strong> o <strong>Inactivo</strong> — un Lead puede
+          estar Activo o Inactivo sin dejar de ser Lead. Cada cliente puede
           tener varios contactos (nombre, cargo, teléfono, correo) para saber
           a quién llamar según el caso.
         </p>
-        <StatusRow items={[{ label: "Lead", tone: "info" }, { label: "Activo", tone: "success" }]} />
+        <StatusRow
+          items={[
+            { label: "Lead", tone: "info" },
+            { label: "Prospecto", tone: "warning" },
+            { label: "Cliente", tone: "success" },
+          ]}
+        />
         <Bullets
           items={[
             <>
-              Un lead se convierte en cliente activo con el botón{" "}
-              <strong>Convertir a cliente</strong> en el listado — no hace
-              falta editarlo a mano.
+              La Etapa avanza con los botones <strong>Marcar prospecto</strong>{" "}
+              y <strong>Convertir en cliente</strong> — no hace falta editarla a
+              mano, y nunca retrocede sola.
             </>,
-            "Desactivar un cliente no borra su historial de cotizaciones, proyectos o facturas — solo lo saca de las listas activas.",
-            "El listado se puede filtrar por estado y buscar por nombre.",
+            "Desactivar un cliente no borra su historial de cotizaciones, proyectos o facturas, ni cambia su Etapa — solo lo marca como Inactivo y lo puedes Reactivar cuando quieras.",
+            "El listado se puede filtrar por etapa y buscar por nombre.",
             "Se pueden importar clientes en lote desde un archivo CSV (botón Importar CSV).",
           ]}
         />
