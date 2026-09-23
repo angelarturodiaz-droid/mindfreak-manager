@@ -33,8 +33,12 @@ export const invoiceItemSchema = z.object({
   description: z.string().trim().min(1, "La descripción es requerida"),
   quantity: z.coerce.number().positive("Debe ser mayor a 0"),
   unit_price: z.coerce.number().min(0),
-  discount: z.coerce.number().min(0).default(0),
-  // Igual que en cotizaciones: el usuario escribe el % (ej. 18 = ITBIS 18%)
+  // El usuario escribe el % de descuento (igual que con el Impuesto), y el
+  // Server Action calcula el monto en dólares sobre (cantidad×precio) antes
+  // de guardarlo — la columna `discount` en la base de datos sigue siendo
+  // un monto, no un %, así que no hace falta ninguna migración de datos.
+  discount_percent: z.coerce.number().min(0).max(100).default(0),
+  // Igual patrón: el usuario escribe el % (ej. 18 = ITBIS 18%)
   // y el monto se calcula en el servidor sobre (cantidad×precio − descuento).
   tax_percent: z.coerce.number().min(0).default(0),
 });

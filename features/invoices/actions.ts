@@ -246,7 +246,7 @@ export async function addInvoiceItemAction(
     description: String(formData.get("description") ?? ""),
     quantity: String(formData.get("quantity") ?? "1"),
     unit_price: String(formData.get("unit_price") ?? "0"),
-    discount: String(formData.get("discount") ?? "0"),
+    discount_percent: String(formData.get("discount_percent") ?? "0"),
     tax_percent: String(formData.get("tax_percent") ?? "0"),
   });
   if (!parsed.success) {
@@ -255,7 +255,12 @@ export async function addInvoiceItemAction(
 
   const supabase = await createSupabaseClient();
 
-  const base = parsed.data.quantity * parsed.data.unit_price - parsed.data.discount;
+  const lineAmount = parsed.data.quantity * parsed.data.unit_price;
+  // discount_percent es solo la forma de entrada del usuario — la columna
+  // `discount` en la base de datos sigue siendo un monto en dólares, como
+  // siempre (ver comentario en invoiceItemSchema).
+  const discount = Math.round(lineAmount * (parsed.data.discount_percent / 100) * 100) / 100;
+  const base = lineAmount - discount;
   const tax = Math.round(Math.max(0, base) * (parsed.data.tax_percent / 100) * 100) / 100;
 
   // tax_rate_id: referencia de mejor esfuerzo al catálogo de Impuestos —
@@ -273,14 +278,14 @@ export async function addInvoiceItemAction(
     .limit(1)
     .maybeSingle();
 
-  const subtotal = calculateInvoiceItemSubtotal({ ...parsed.data, tax });
+  const subtotal = calculateInvoiceItemSubtotal({ ...parsed.data, discount, tax });
   const { error } = await supabase.from("invoice_items").insert({
     invoice_id: invoiceId,
     service_id: parsed.data.service_id || null,
     description: parsed.data.description,
     quantity: parsed.data.quantity,
     unit_price: parsed.data.unit_price,
-    discount: parsed.data.discount,
+    discount,
     tax,
     subtotal,
     tax_rate_id: matchingTaxRate?.id ?? null,
