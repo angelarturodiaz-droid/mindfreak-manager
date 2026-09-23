@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, Plus } from "lucide-react";
+import { Copy, FileText, Plus } from "lucide-react";
 import { listQuotations } from "@/features/quotations/queries";
 import { QUOTATION_STATUSES } from "@/features/quotations/schema";
 import { Button } from "@/components/ui/button";
@@ -39,8 +39,16 @@ export default async function QuotationsPage({
     {
       header: "Número",
       accessor: (q) => (
-        <Link href={`/quotations/${q.id}`} className="font-medium text-brand-text hover:text-brand-accent">
+        <Link
+          href={`/quotations/${q.id}`}
+          className="inline-flex items-center gap-1.5 font-medium text-brand-text hover:text-brand-accent"
+        >
           {q.number}
+          {q.duplicated_from_id && (
+            <span title="Duplicada">
+              <Copy size={12} className="text-brand-muted" aria-label="Duplicada" />
+            </span>
+          )}
         </Link>
       ),
     },

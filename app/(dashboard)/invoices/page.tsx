@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Receipt, Plus } from "lucide-react";
+import { Copy, Receipt, Plus } from "lucide-react";
 import { listInvoices } from "@/features/invoices/queries";
 import { INVOICE_STATUSES } from "@/features/invoices/schema";
 import { Button } from "@/components/ui/button";
@@ -37,8 +37,16 @@ export default async function InvoicesPage({
     {
       header: "Número",
       accessor: (inv) => (
-        <Link href={`/invoices/${inv.id}`} className="font-medium text-brand-text hover:text-brand-accent">
+        <Link
+          href={`/invoices/${inv.id}`}
+          className="inline-flex items-center gap-1.5 font-medium text-brand-text hover:text-brand-accent"
+        >
           {inv.number}
+          {inv.duplicated_from_id && (
+            <span title="Duplicada">
+              <Copy size={12} className="text-brand-muted" aria-label="Duplicada" />
+            </span>
+          )}
         </Link>
       ),
     },

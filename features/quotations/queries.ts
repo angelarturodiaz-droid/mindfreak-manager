@@ -4,7 +4,7 @@ export async function listQuotations(status?: string) {
   const supabase = await createClient();
   let query = supabase
     .from("quotations")
-    .select("id, number, status, total, currency, issue_date, clients(name)")
+    .select("id, number, status, total, currency, issue_date, duplicated_from_id, clients(name)")
     .order("issue_date", { ascending: false });
 
   if (status) query = query.eq("status", status);
@@ -18,7 +18,7 @@ export async function getQuotation(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("quotations")
-    .select("*, clients(name, stage), payment_terms(name)")
+    .select("*, clients(name, stage), payment_terms(name), duplicated_from:quotations!duplicated_from_id(number)")
     .eq("id", id)
     .single();
   if (error) throw new Error(error.message);

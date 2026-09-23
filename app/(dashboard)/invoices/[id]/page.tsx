@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Copy, Send } from "lucide-react";
 import {
   getInvoice,
   listInvoiceItems,
@@ -95,6 +95,10 @@ export default async function InvoiceDetailPage({
 
   const clientData = invoice.clients as { name: string } | { name: string }[] | null;
   const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
+  const duplicatedFromData = invoice.duplicated_from as { number: string } | { number: string }[] | null;
+  const duplicatedFromNumber = Array.isArray(duplicatedFromData)
+    ? duplicatedFromData[0]?.number
+    : duplicatedFromData?.number;
   const projectData = invoice.projects as
     | { number: string; name: string }
     | { number: string; name: string }[]
@@ -177,6 +181,23 @@ export default async function InvoiceDetailPage({
             {invoice.number}
           </h1>
           <Badge status={invoice.status}>{STATUS_LABELS[invoice.status] ?? invoice.status}</Badge>
+          {invoice.duplicated_from_id && (
+            <Badge tone="neutral">
+              <Copy size={12} className="shrink-0" aria-hidden="true" />
+              Duplicada
+              {duplicatedFromNumber && (
+                <>
+                  {" de "}
+                  <Link
+                    href={`/invoices/${invoice.duplicated_from_id}`}
+                    className="underline hover:text-brand-accent"
+                  >
+                    {duplicatedFromNumber}
+                  </Link>
+                </>
+              )}
+            </Badge>
+          )}
         </div>
         <p className="text-sm text-brand-muted">
           Cliente: {clientName ?? "—"}

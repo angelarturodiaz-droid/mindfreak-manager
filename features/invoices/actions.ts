@@ -641,6 +641,9 @@ export async function duplicateInvoiceAction(invoiceId: string): Promise<void> {
       commission_tax_rate_id: original.commission_tax_rate_id,
       commission_tax_treatment: original.commission_tax_treatment,
       commission_tax_rate_percent: original.commission_tax_rate_percent,
+      // Marca visual: de dónde salió esta copia (ver duplicate-invoice-
+      // button y el badge "Duplicada de ..." en la lista/detalle).
+      duplicated_from_id: invoiceId,
       status: "DRAFT",
       created_by: user?.id,
     })

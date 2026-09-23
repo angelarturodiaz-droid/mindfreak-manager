@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Send, Check, X, ArrowRightCircle, Eye } from "lucide-react";
+import { ArrowLeft, Copy, Send, Check, X, ArrowRightCircle, Eye } from "lucide-react";
 import {
   getQuotation,
   listQuotationItems,
@@ -73,6 +73,11 @@ export default async function QuotationDetailPage({
   const clientData = quotation.clients as { name: string } | { name: string }[] | null;
   const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
 
+  const duplicatedFromData = quotation.duplicated_from as { number: string } | { number: string }[] | null;
+  const duplicatedFromNumber = Array.isArray(duplicatedFromData)
+    ? duplicatedFromData[0]?.number
+    : duplicatedFromData?.number;
+
   const isEditable = quotation.status === "DRAFT" || quotation.status === "NEGOTIATING";
 
   const columns: Column<Item>[] = [
@@ -128,6 +133,23 @@ export default async function QuotationDetailPage({
           <Badge status={quotation.status}>
             {STATUS_LABELS[quotation.status] ?? quotation.status}
           </Badge>
+          {quotation.duplicated_from_id && (
+            <Badge tone="neutral">
+              <Copy size={12} className="shrink-0" aria-hidden="true" />
+              Duplicada
+              {duplicatedFromNumber && (
+                <>
+                  {" de "}
+                  <Link
+                    href={`/quotations/${quotation.duplicated_from_id}`}
+                    className="underline hover:text-brand-accent"
+                  >
+                    {duplicatedFromNumber}
+                  </Link>
+                </>
+              )}
+            </Badge>
+          )}
         </div>
         <p className="text-sm text-brand-muted">
           Cliente: {clientName ?? "—"} · Emitida: {quotation.issue_date}

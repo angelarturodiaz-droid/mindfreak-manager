@@ -4,7 +4,9 @@ export async function listInvoices(status?: string) {
   const supabase = await createClient();
   let query = supabase
     .from("invoices")
-    .select("id, number, status, total, paid_amount, balance, currency, issue_date, due_date, clients(name)")
+    .select(
+      "id, number, status, total, paid_amount, balance, currency, issue_date, due_date, duplicated_from_id, clients(name)",
+    )
     .order("issue_date", { ascending: false });
 
   if (status) query = query.eq("status", status);
@@ -18,7 +20,9 @@ export async function getInvoice(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("invoices")
-    .select("*, clients(name), projects(number, name), payment_terms(name), profiles!responsible_user_id(full_name)")
+    .select(
+      "*, clients(name), projects(number, name), payment_terms(name), profiles!responsible_user_id(full_name), duplicated_from:invoices!duplicated_from_id(number)",
+    )
     .eq("id", id)
     .single();
   if (error) throw new Error(error.message);
