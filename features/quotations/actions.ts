@@ -545,7 +545,9 @@ export async function duplicateQuotationAction(quotationId: string): Promise<voi
 
   const { data: original, error: origError } = await supabase
     .from("quotations")
-    .select("client_id, contact_id, currency, exchange_rate, terms")
+    .select(
+      "client_id, contact_id, currency, exchange_rate, terms, payment_terms_id, credit_days, payment_method, advance_percent, balance_percent, commission_percent, commission_tax_rate_id, commission_tax_treatment, commission_tax_rate_percent",
+    )
     .eq("id", quotationId)
     .single();
   if (origError || !original) throw new Error(origError?.message ?? "Cotización no encontrada.");
@@ -575,6 +577,19 @@ export async function duplicateQuotationAction(quotationId: string): Promise<voi
       currency: original.currency,
       exchange_rate: original.exchange_rate,
       terms: original.terms,
+      payment_terms_id: original.payment_terms_id,
+      credit_days: original.credit_days,
+      payment_method: original.payment_method,
+      advance_percent: original.advance_percent,
+      balance_percent: original.balance_percent,
+      // Comisión: se copia el snapshot tal cual (monto % + tratamiento
+      // fiscal ya resuelto) — igual criterio que las líneas, el duplicado
+      // arranca con la misma comisión que tenía el original en vez de
+      // perderla silenciosamente.
+      commission_percent: original.commission_percent,
+      commission_tax_rate_id: original.commission_tax_rate_id,
+      commission_tax_treatment: original.commission_tax_treatment,
+      commission_tax_rate_percent: original.commission_tax_rate_percent,
       status: "DRAFT",
       created_by: user?.id,
     })

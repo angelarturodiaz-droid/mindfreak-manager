@@ -600,7 +600,7 @@ export async function duplicateInvoiceAction(invoiceId: string): Promise<void> {
   const { data: original, error: origError } = await supabase
     .from("invoices")
     .select(
-      "client_id, project_id, quotation_id, currency, exchange_rate, ncf_type",
+      "client_id, project_id, quotation_id, currency, exchange_rate, ncf_type, billing_type, payment_terms_id, credit_days, commission_percent, commission_tax_rate_id, commission_tax_treatment, commission_tax_rate_percent",
     )
     .eq("id", invoiceId)
     .single();
@@ -630,6 +630,17 @@ export async function duplicateInvoiceAction(invoiceId: string): Promise<void> {
       currency: original.currency,
       exchange_rate: original.exchange_rate,
       ncf_type: original.ncf_type,
+      billing_type: original.billing_type,
+      payment_terms_id: original.payment_terms_id,
+      credit_days: original.credit_days,
+      // Comisión: se copia el snapshot tal cual (monto % + tratamiento
+      // fiscal ya resuelto) — igual criterio que las líneas, el duplicado
+      // arranca con la misma comisión que tenía el original en vez de
+      // perderla silenciosamente.
+      commission_percent: original.commission_percent,
+      commission_tax_rate_id: original.commission_tax_rate_id,
+      commission_tax_treatment: original.commission_tax_treatment,
+      commission_tax_rate_percent: original.commission_tax_rate_percent,
       status: "DRAFT",
       created_by: user?.id,
     })
