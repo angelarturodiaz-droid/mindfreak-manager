@@ -313,6 +313,18 @@ async function changeQuotationStatus(
 }
 
 export async function sendQuotationAction(quotationId: string): Promise<void> {
+  await requirePermission("quotations.update");
+  const supabase = await createSupabaseClient();
+
+  const { data: quotation } = await supabase
+    .from("quotations")
+    .select("total")
+    .eq("id", quotationId)
+    .single();
+  if (!quotation || quotation.total <= 0) {
+    throw new Error("La cotización necesita al menos una línea antes de enviarse.");
+  }
+
   await changeQuotationStatus(quotationId, "SENT", "quotations.update");
 }
 
