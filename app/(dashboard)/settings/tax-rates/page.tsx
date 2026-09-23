@@ -6,6 +6,7 @@ import {
 import { hasPermission } from "@/lib/auth/permissions";
 import { NewTaxRateForm } from "./new-tax-rate-form";
 import { Badge } from "@/components/ui/badge";
+import { ActionLink } from "@/components/ui/action-link";
 import { DataTable, type Column } from "@/components/ui/data-table";
 
 type TaxRateRow = Awaited<ReturnType<typeof listTaxRates>>[number];
@@ -25,11 +26,7 @@ export default async function TaxRatesPage() {
         r.is_default ? (
           <Badge tone="success">Sí</Badge>
         ) : canManage && r.is_active ? (
-          <form action={setDefaultTaxRateAction.bind(null, r.id)}>
-            <button type="submit" className="text-sm text-brand-accent hover:underline">
-              Hacer predeterminada
-            </button>
-          </form>
+          <ActionLink label="Hacer predeterminada" onAction={() => setDefaultTaxRateAction(r.id)} />
         ) : (
           "—"
         ),
@@ -43,11 +40,11 @@ export default async function TaxRatesPage() {
       className: "text-right",
       accessor: (r) =>
         canManage && (
-          <form action={toggleTaxRateActiveAction.bind(null, r.id, r.is_active)}>
-            <button type="submit" className="text-sm text-brand-muted hover:text-brand-danger">
-              {r.is_active ? "Desactivar" : "Activar"}
-            </button>
-          </form>
+          <ActionLink
+            label={r.is_active ? "Desactivar" : "Activar"}
+            className="text-sm text-brand-muted hover:text-brand-danger"
+            onAction={() => toggleTaxRateActiveAction(r.id, r.is_active)}
+          />
         ),
     },
   ];

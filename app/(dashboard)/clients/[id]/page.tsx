@@ -7,13 +7,13 @@ import {
   deactivateClientAction,
   deleteContactAction,
 } from "@/features/clients/actions";
+import { ActionButton } from "@/components/ui/action-button";
 import { ClientEditForm } from "./client-edit-form";
 import { NewContactForm } from "./new-contact-form";
 import { DocumentList } from "@/components/documents/document-list";
 import { UploadDocumentForm } from "@/components/documents/upload-document-form";
 import { listDocuments } from "@/features/documents/queries";
 import { hasPermission } from "@/lib/auth/permissions";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ConfirmButton } from "@/components/ui/confirm-button";
@@ -59,11 +59,12 @@ export default async function ClientDetailPage({
 
       <div className="flex gap-3">
         {client.status === "LEAD" && (
-          <form action={convertClientToActiveAction.bind(null, client.id)}>
-            <Button type="submit" variant="secondary" size="sm" icon={<UserCheck size={14} />}>
-              Convertir a cliente activo
-            </Button>
-          </form>
+          <ActionButton
+            label="Convertir a cliente activo"
+            variant="secondary"
+            icon={<UserCheck size={14} />}
+            onAction={() => convertClientToActiveAction(client.id)}
+          />
         )}
         {client.is_active && (
           <ConfirmButton

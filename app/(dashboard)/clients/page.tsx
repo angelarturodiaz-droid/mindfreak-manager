@@ -6,6 +6,7 @@ import {
   deactivateClientAction,
 } from "@/features/clients/actions";
 import { Button } from "@/components/ui/button";
+import { ActionLink } from "@/components/ui/action-link";
 import { Badge } from "@/components/ui/badge";
 import { Input, Select } from "@/components/ui/field";
 import { DataTable, type Column } from "@/components/ui/data-table";
@@ -61,21 +62,14 @@ export default async function ClientsPage({
       accessor: (client) => (
         <div className="flex justify-end gap-3">
           {client.status === "LEAD" && (
-            <form action={convertClientToActiveAction.bind(null, client.id)}>
-              <button type="submit" className="text-sm text-brand-accent hover:underline">
-                Convertir a cliente
-              </button>
-            </form>
+            <ActionLink label="Convertir a cliente" onAction={() => convertClientToActiveAction(client.id)} />
           )}
           {client.is_active && (
-            <form action={deactivateClientAction.bind(null, client.id)}>
-              <button
-                type="submit"
-                className="text-sm text-brand-muted hover:text-brand-danger"
-              >
-                Desactivar
-              </button>
-            </form>
+            <ActionLink
+              label="Desactivar"
+              className="text-sm text-brand-muted hover:text-brand-danger"
+              onAction={() => deactivateClientAction(client.id)}
+            />
           )}
         </div>
       ),

@@ -6,8 +6,8 @@ import {
 import { PAYMENT_METHOD_LABELS } from "@/features/payment-terms/schema";
 import { NewPaymentTermForm } from "./new-payment-term-form";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/ui/confirm-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { DataTable, type Column } from "@/components/ui/data-table";
 
 type Term = Awaited<ReturnType<typeof listPaymentTerms>>[number];
@@ -30,11 +30,11 @@ export default async function PaymentTermsSettingsPage() {
       className: "text-right",
       accessor: (t) => (
         <div className="flex justify-end gap-3">
-          <form action={togglePaymentTermActiveAction.bind(null, t.id, t.is_active)}>
-            <Button type="submit" variant="ghost" size="sm">
-              {t.is_active ? "Desactivar" : "Activar"}
-            </Button>
-          </form>
+          <ActionButton
+            label={t.is_active ? "Desactivar" : "Activar"}
+            variant="ghost"
+            onAction={() => togglePaymentTermActiveAction(t.id, t.is_active)}
+          />
           <ConfirmButton
             label="Eliminar"
             confirmTitle={`¿Eliminar "${t.name}"?`}

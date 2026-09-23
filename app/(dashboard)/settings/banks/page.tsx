@@ -5,8 +5,8 @@ import {
 } from "@/features/bank-catalog/actions";
 import { NewBankCatalogEntryForm } from "./new-bank-catalog-entry-form";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/ui/confirm-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { DataTable, type Column } from "@/components/ui/data-table";
 
 type BankEntry = Awaited<ReturnType<typeof listBankCatalog>>[number];
@@ -25,11 +25,11 @@ export default async function BankCatalogSettingsPage() {
       className: "text-right",
       accessor: (b) => (
         <div className="flex justify-end gap-3">
-          <form action={toggleBankCatalogActiveAction.bind(null, b.id, b.is_active)}>
-            <Button type="submit" variant="ghost" size="sm">
-              {b.is_active ? "Desactivar" : "Activar"}
-            </Button>
-          </form>
+          <ActionButton
+            label={b.is_active ? "Desactivar" : "Activar"}
+            variant="ghost"
+            onAction={() => toggleBankCatalogActiveAction(b.id, b.is_active)}
+          />
           <ConfirmButton
             label="Eliminar"
             confirmTitle={`¿Eliminar "${b.name}" del catálogo?`}

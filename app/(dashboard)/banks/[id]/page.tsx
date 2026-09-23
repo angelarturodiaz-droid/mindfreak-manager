@@ -14,6 +14,7 @@ import { TransferForm } from "./transfer-form";
 import { BankAccountEditForm } from "./bank-account-edit-form";
 import { listBankCatalog } from "@/features/bank-catalog/queries";
 import { ConfirmButton } from "@/components/ui/confirm-button";
+import { ActionLink } from "@/components/ui/action-link";
 import { Card } from "@/components/ui/card";
 import { DataTable, type Column } from "@/components/ui/data-table";
 
@@ -71,14 +72,11 @@ export default async function BankAccountDetailPage({
       header: "Conciliado",
       accessor: (t) =>
         canReconcile ? (
-          <form action={toggleReconciledAction.bind(null, t.id, account.id, t.reconciled)}>
-            <button
-              type="submit"
-              className={t.reconciled ? "text-brand-success hover:underline" : "text-brand-muted hover:underline"}
-            >
-              {t.reconciled ? "Sí" : "No"}
-            </button>
-          </form>
+          <ActionLink
+            label={t.reconciled ? "Sí" : "No"}
+            className={t.reconciled ? "text-sm text-brand-success hover:underline" : "text-sm text-brand-muted hover:underline"}
+            onAction={() => toggleReconciledAction(t.id, account.id, t.reconciled)}
+          />
         ) : (
           <span>{t.reconciled ? "Sí" : "No"}</span>
         ),

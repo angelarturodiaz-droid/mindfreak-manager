@@ -27,7 +27,7 @@ import { RegisterPaymentForm } from "./register-payment-form";
 import { InvoiceShareLinkButton } from "./share-link-button";
 import { DuplicateInvoiceButton } from "./duplicate-invoice-button";
 import { DiscardInvoiceButton } from "./discard-invoice-button";
-import { Button } from "@/components/ui/button";
+import { ActionButton } from "@/components/ui/action-button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ConfirmButton } from "@/components/ui/confirm-button";
@@ -181,11 +181,13 @@ export default async function InvoiceDetailPage({
 
       <div className="flex flex-wrap gap-3">
         {isEditable && canEdit && (
-          <form action={issueInvoiceAction.bind(null, invoice.id)}>
-            <Button type="submit" size="sm" className="!bg-brand-success" icon={<Send size={14} />}>
-              Emitir factura
-            </Button>
-          </form>
+          <ActionButton
+            label="Emitir factura"
+            variant="primary"
+            className="!bg-brand-success"
+            icon={<Send size={14} />}
+            onAction={() => issueInvoiceAction(invoice.id)}
+          />
         )}
         {invoice.status !== "CANCELLED" &&
           invoice.status !== "PAID" &&

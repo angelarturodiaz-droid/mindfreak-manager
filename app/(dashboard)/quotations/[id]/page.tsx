@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ConfirmButton } from "@/components/ui/confirm-button";
+import { ActionButton } from "@/components/ui/action-button";
 import { DataTable, type Column } from "@/components/ui/data-table";
 
 function formatMoney(amount: number, currency: string) {
@@ -123,27 +124,31 @@ export default async function QuotationDetailPage({
 
       <div className="flex flex-wrap gap-3">
         {quotation.status === "DRAFT" && canUpdate && (
-          <form action={sendQuotationAction.bind(null, quotation.id)}>
-            <Button type="submit" variant="secondary" size="sm" icon={<Send size={14} />}>
-              Marcar como enviada
-            </Button>
-          </form>
+          <ActionButton
+            label="Marcar como enviada"
+            variant="secondary"
+            icon={<Send size={14} />}
+            onAction={() => sendQuotationAction(quotation.id)}
+          />
         )}
         {(quotation.status === "SENT" ||
           quotation.status === "VIEWED" ||
           quotation.status === "NEGOTIATING") &&
           canApprove && (
             <>
-              <form action={approveQuotationAction.bind(null, quotation.id)}>
-                <Button type="submit" size="sm" icon={<Check size={14} />} className="!bg-brand-success">
-                  Aprobar
-                </Button>
-              </form>
-              <form action={rejectQuotationAction.bind(null, quotation.id)}>
-                <Button type="submit" variant="danger" size="sm" icon={<X size={14} />}>
-                  Rechazar
-                </Button>
-              </form>
+              <ActionButton
+                label="Aprobar"
+                variant="primary"
+                icon={<Check size={14} />}
+                className="!bg-brand-success"
+                onAction={() => approveQuotationAction(quotation.id)}
+              />
+              <ActionButton
+                label="Rechazar"
+                variant="danger"
+                icon={<X size={14} />}
+                onAction={() => rejectQuotationAction(quotation.id)}
+              />
             </>
           )}
         {!["APPROVED", "CANCELLED", "REJECTED"].includes(quotation.status) &&

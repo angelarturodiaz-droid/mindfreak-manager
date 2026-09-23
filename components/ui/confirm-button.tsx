@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Modal } from "./modal";
 import { Button } from "./button";
+import { toast } from "./toaster";
 
 /**
  * Botón para acciones destructivas: muestra un modal de confirmación propio
@@ -39,8 +40,13 @@ export function ConfirmButton({
 
   function handleConfirm() {
     startTransition(async () => {
-      await onConfirm();
-      setOpen(false);
+      try {
+        await onConfirm();
+        setOpen(false);
+      } catch (err) {
+        // No cerramos el modal: así el usuario ve el toast y puede reintentar.
+        toast.error(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
+      }
     });
   }
 
