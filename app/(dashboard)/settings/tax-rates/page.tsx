@@ -26,7 +26,7 @@ export default async function TaxRatesPage() {
         r.is_default ? (
           <Badge tone="success">Sí</Badge>
         ) : canManage && r.is_active ? (
-          <ActionLink label="Hacer predeterminada" onAction={() => setDefaultTaxRateAction(r.id)} />
+          <ActionLink label="Hacer predeterminada" onAction={setDefaultTaxRateAction.bind(null, r.id)} />
         ) : (
           "—"
         ),
@@ -43,7 +43,7 @@ export default async function TaxRatesPage() {
           <ActionLink
             label={r.is_active ? "Desactivar" : "Activar"}
             className="text-sm text-brand-muted hover:text-brand-danger"
-            onAction={() => toggleTaxRateActiveAction(r.id, r.is_active)}
+            onAction={toggleTaxRateActiveAction.bind(null, r.id, r.is_active)}
           />
         ),
     },

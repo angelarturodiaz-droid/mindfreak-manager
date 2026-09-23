@@ -186,7 +186,7 @@ export default async function InvoiceDetailPage({
             variant="primary"
             className="!bg-brand-success"
             icon={<Send size={14} />}
-            onAction={() => issueInvoiceAction(invoice.id)}
+            onAction={issueInvoiceAction.bind(null, invoice.id)}
           />
         )}
         {invoice.status !== "CANCELLED" &&

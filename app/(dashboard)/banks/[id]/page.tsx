@@ -75,7 +75,7 @@ export default async function BankAccountDetailPage({
           <ActionLink
             label={t.reconciled ? "Sí" : "No"}
             className={t.reconciled ? "text-sm text-brand-success hover:underline" : "text-sm text-brand-muted hover:underline"}
-            onAction={() => toggleReconciledAction(t.id, account.id, t.reconciled)}
+            onAction={toggleReconciledAction.bind(null, t.id, account.id, t.reconciled)}
           />
         ) : (
           <span>{t.reconciled ? "Sí" : "No"}</span>

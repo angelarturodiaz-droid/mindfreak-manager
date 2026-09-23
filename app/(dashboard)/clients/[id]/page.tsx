@@ -63,7 +63,7 @@ export default async function ClientDetailPage({
             label="Convertir a cliente activo"
             variant="secondary"
             icon={<UserCheck size={14} />}
-            onAction={() => convertClientToActiveAction(client.id)}
+            onAction={convertClientToActiveAction.bind(null, client.id)}
           />
         )}
         {client.is_active && (

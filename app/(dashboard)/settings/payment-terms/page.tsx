@@ -33,7 +33,7 @@ export default async function PaymentTermsSettingsPage() {
           <ActionButton
             label={t.is_active ? "Desactivar" : "Activar"}
             variant="ghost"
-            onAction={() => togglePaymentTermActiveAction(t.id, t.is_active)}
+            onAction={togglePaymentTermActiveAction.bind(null, t.id, t.is_active)}
           />
           <ConfirmButton
             label="Eliminar"

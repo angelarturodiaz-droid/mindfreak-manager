@@ -62,13 +62,13 @@ export default async function ClientsPage({
       accessor: (client) => (
         <div className="flex justify-end gap-3">
           {client.status === "LEAD" && (
-            <ActionLink label="Convertir a cliente" onAction={() => convertClientToActiveAction(client.id)} />
+            <ActionLink label="Convertir a cliente" onAction={convertClientToActiveAction.bind(null, client.id)} />
           )}
           {client.is_active && (
             <ActionLink
               label="Desactivar"
               className="text-sm text-brand-muted hover:text-brand-danger"
-              onAction={() => deactivateClientAction(client.id)}
+              onAction={deactivateClientAction.bind(null, client.id)}
             />
           )}
         </div>

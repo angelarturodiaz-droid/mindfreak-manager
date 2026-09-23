@@ -128,7 +128,7 @@ export default async function QuotationDetailPage({
             label="Marcar como enviada"
             variant="secondary"
             icon={<Send size={14} />}
-            onAction={() => sendQuotationAction(quotation.id)}
+            onAction={sendQuotationAction.bind(null, quotation.id)}
           />
         )}
         {(quotation.status === "SENT" ||
@@ -141,13 +141,13 @@ export default async function QuotationDetailPage({
                 variant="primary"
                 icon={<Check size={14} />}
                 className="!bg-brand-success"
-                onAction={() => approveQuotationAction(quotation.id)}
+                onAction={approveQuotationAction.bind(null, quotation.id)}
               />
               <ActionButton
                 label="Rechazar"
                 variant="danger"
                 icon={<X size={14} />}
-                onAction={() => rejectQuotationAction(quotation.id)}
+                onAction={rejectQuotationAction.bind(null, quotation.id)}
               />
             </>
           )}

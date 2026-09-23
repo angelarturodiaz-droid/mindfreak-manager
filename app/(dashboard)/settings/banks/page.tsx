@@ -28,7 +28,7 @@ export default async function BankCatalogSettingsPage() {
           <ActionButton
             label={b.is_active ? "Desactivar" : "Activar"}
             variant="ghost"
-            onAction={() => toggleBankCatalogActiveAction(b.id, b.is_active)}
+            onAction={toggleBankCatalogActiveAction.bind(null, b.id, b.is_active)}
           />
           <ConfirmButton
             label="Eliminar"
