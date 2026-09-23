@@ -73,7 +73,7 @@ export async function listActiveServices() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("services")
-    .select("id, name, unit, default_price, default_tax_percent")
+    .select("id, name, unit, default_price, default_tax_rate_id, tax_rates(id, name, rate, treatment)")
     .eq("is_active", true)
     .order("name");
   if (error) throw new Error(error.message);

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getService, listServiceCategories } from "@/features/services/queries";
 import { deactivateServiceAction } from "@/features/services/actions";
+import { listTaxRates } from "@/features/tax-rates/queries";
 import { ServiceEditForm } from "./service-edit-form";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -23,7 +24,7 @@ export default async function ServiceDetailPage({
   }
   if (!service) notFound();
 
-  const categories = await listServiceCategories();
+  const [categories, taxRates] = await Promise.all([listServiceCategories(), listTaxRates()]);
 
   return (
     <main className="flex flex-1 flex-col gap-8 p-4 md:p-8">
@@ -52,7 +53,7 @@ export default async function ServiceDetailPage({
 
       <section className="max-w-md">
         <Card>
-          <ServiceEditForm service={service} categories={categories} />
+          <ServiceEditForm service={service} categories={categories} taxRates={taxRates} />
         </Card>
       </section>
     </main>

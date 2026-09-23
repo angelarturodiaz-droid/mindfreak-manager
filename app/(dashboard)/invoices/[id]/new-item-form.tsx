@@ -9,27 +9,37 @@ import { Button } from "@/components/ui/button";
 
 const initialState: ActionState = { error: null };
 
+type TaxRateRef = { id: string; name: string; rate: number; treatment: string };
 type Service = {
   id: string;
   name: string;
   unit: string | null;
   default_price: number;
-  default_tax_percent: number;
+  default_tax_rate_id: string | null;
+  tax_rates: TaxRateRef | TaxRateRef[] | null;
 };
 type ProjectItem = { id: string; description: string; quantity: number; unit_price: number };
 type TaxRate = { id: string; name: string; rate: number; is_default: boolean };
+
+function serviceTaxRateId(service: Service | null): string | null {
+  if (!service) return null;
+  const rate = Array.isArray(service.tax_rates) ? service.tax_rates[0] : service.tax_rates;
+  return rate?.id ?? service.default_tax_rate_id ?? null;
+}
 
 export function NewInvoiceItemForm({
   invoiceId,
   services,
   projectItems,
-  defaultTaxPercent,
+  defaultTaxRate,
   taxRates,
 }: {
   invoiceId: string;
   services: Service[];
   projectItems: ProjectItem[];
-  defaultTaxPercent: number;
+  // Tasa marcada como predeterminada en Configuración → Impuestos. Si es
+  // null (nada marcado como predeterminada), se usa la primera del catálogo.
+  defaultTaxRate: TaxRateRef | null;
   taxRates: TaxRate[];
 }) {
   const addWithId = addInvoiceItemAction.bind(null, invoiceId);
@@ -45,11 +55,12 @@ export function NewInvoiceItemForm({
   const wasPending = useRef(false);
 
   // Al agregar una línea con éxito, se reinicia todo el formulario —
-  // incluyendo el Impuesto (%). Un form.reset() nativo por sí solo NO
+  // incluyendo el tratamiento fiscal. Un form.reset() nativo por sí solo NO
   // vuelve a aplicar el defaultValue de React si el `key` del campo no
   // cambia (defaultValue solo se usa al montar) — por eso resetKey se
   // suma a cada key, forzando un remount real con el valor por defecto
-  // correcto (el de Configuración → Impuestos) en cada línea nueva.
+  // correcto (el del servicio, o si no tiene, el de Configuración →
+  // Impuestos) en cada línea nueva.
   useEffect(() => {
     if (wasPending.current && !pending && !state.error) {
       formRef.current?.reset();
@@ -59,6 +70,13 @@ export function NewInvoiceItemForm({
     }
     wasPending.current = pending;
   }, [pending, state.error]);
+
+  // Tratamiento fiscal por defecto para la línea actual: el del servicio
+  // elegido (Settings → Servicios) si tiene uno configurado; si no, el
+  // predeterminado de Configuración → Impuestos; si tampoco hay ninguno
+  // marcado como predeterminado, la primera tasa activa del catálogo.
+  const defaultTaxRateId =
+    serviceTaxRateId(selectedService) ?? defaultTaxRate?.id ?? taxRates[0]?.id ?? "";
 
   return (
     <form ref={formRef} action={formAction} className="flex flex-wrap items-end gap-2">
@@ -140,22 +158,17 @@ export function NewInvoiceItemForm({
         className="w-24"
       />
       <Select
-        label="Impuesto"
-        name="tax_percent"
-        defaultValue={String(selectedService?.default_tax_percent ?? defaultTaxPercent)}
+        label="Tratamiento fiscal"
+        name="tax_rate_id"
+        required
+        defaultValue={defaultTaxRateId}
         key={`tax-${selectedService?.id ?? "custom"}-${resetKey}`}
-        className="w-32"
+        className="w-44"
       >
-        {/* Catálogo de Configuración → Impuestos (incluye tasas en 0%, ej. "Exento"). Si el
-            valor por defecto (del servicio o el predeterminado) no está en el catálogo, se
-            agrega como opción suelta para no perder el valor. */}
-        {!taxRates.some((r) => r.rate === (selectedService?.default_tax_percent ?? defaultTaxPercent)) && (
-          <option value={selectedService?.default_tax_percent ?? defaultTaxPercent}>
-            {(selectedService?.default_tax_percent ?? defaultTaxPercent)}% (personalizado)
-          </option>
-        )}
+        {/* Únicamente el catálogo de Configuración → Impuestos — nunca un %
+            suelto (Gravado/Exento/No sujeto se resuelven ahí). */}
         {taxRates.map((r) => (
-          <option key={r.id} value={r.rate}>
+          <option key={r.id} value={r.id}>
             {r.name} ({r.rate}%)
           </option>
         ))}

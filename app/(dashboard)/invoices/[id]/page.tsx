@@ -20,6 +20,7 @@ import { listPaymentsForInvoice, listBankAccounts } from "@/features/payments/qu
 import { PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
 import { listPaymentTerms } from "@/features/payment-terms/queries";
 import { getDefaultTaxRate, listTaxRates } from "@/features/tax-rates/queries";
+import { TAX_TREATMENT_LABELS } from "@/features/tax-rates/schema";
 import { hasPermission } from "@/lib/auth/permissions";
 import { NewInvoiceItemForm } from "./new-item-form";
 import { InvoiceHeaderForm } from "./invoice-header-form";
@@ -76,7 +77,7 @@ export default async function InvoiceDetailPage({
   }
   if (!invoice) notFound();
 
-  const [items, services, canEdit, canPay, projectItems, payments, bankAccounts, paymentTerms, defaultTaxPercent, companyUsers, collectionHistory, taxRates] =
+  const [items, services, canEdit, canPay, projectItems, payments, bankAccounts, paymentTerms, defaultTaxRate, companyUsers, collectionHistory, taxRates] =
     await Promise.all([
       listInvoiceItems(id),
       listActiveServices(),
@@ -107,7 +108,18 @@ export default async function InvoiceDetailPage({
     { header: "Cant.", accessor: (item) => item.quantity },
     { header: "Precio", accessor: (item) => formatMoney(item.unit_price, invoice.currency) },
     { header: "Descuento", accessor: (item) => formatMoney(item.discount, invoice.currency) },
-    { header: "Impuesto", accessor: (item) => formatMoney(item.tax, invoice.currency) },
+    {
+      header: "Impuesto",
+      accessor: (item) => (
+        <span>
+          {formatMoney(item.tax, invoice.currency)}{" "}
+          <span className="text-xs text-brand-muted">
+            ({TAX_TREATMENT_LABELS[item.tax_treatment as keyof typeof TAX_TREATMENT_LABELS] ?? item.tax_treatment}
+            {item.tax_treatment === "GRAVADO" ? ` ${item.tax_rate_percent}%` : ""})
+          </span>
+        </span>
+      ),
+    },
     {
       header: "Total",
       accessor: (item) => <span className="font-medium">{formatMoney(item.subtotal, invoice.currency)}</span>,
@@ -230,7 +242,7 @@ export default async function InvoiceDetailPage({
               invoiceId={invoice.id}
               services={services}
               projectItems={projectItems}
-              defaultTaxPercent={defaultTaxPercent}
+              defaultTaxRate={defaultTaxRate}
               taxRates={taxRates}
             />
           </div>

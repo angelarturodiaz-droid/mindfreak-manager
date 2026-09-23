@@ -25,6 +25,7 @@ export async function createTaxRateAction(
   const parsed = taxRateSchema.safeParse({
     name: String(formData.get("name") ?? ""),
     rate: String(formData.get("rate") ?? "0"),
+    treatment: String(formData.get("treatment") ?? "GRAVADO"),
     is_default: formData.get("is_default") === "on",
   });
   if (!parsed.success) {
@@ -48,6 +49,7 @@ export async function createTaxRateAction(
       company_id: companyId,
       name: parsed.data.name,
       rate: parsed.data.rate,
+      treatment: parsed.data.treatment,
       is_default: parsed.data.is_default,
     })
     .select("id")

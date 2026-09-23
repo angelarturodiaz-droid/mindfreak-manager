@@ -17,7 +17,12 @@ export const serviceSchema = z.object({
   unit: z.string().trim().optional().or(z.literal("")),
   default_price: z.coerce.number().min(0, "Debe ser un número positivo").default(0),
   default_cost: z.coerce.number().min(0, "Debe ser un número positivo").default(0),
-  default_tax_percent: z.coerce.number().min(0).default(0),
+  // Tratamiento fiscal por defecto — referencia una tasa del catálogo
+  // (Configuración → Impuestos). Opcional: si se deja vacío, al agregar el
+  // servicio a una cotización/factura se usa la tasa predeterminada del
+  // catálogo. Nunca se guarda aquí un % suelto — Settings es la única
+  // fuente de tasas/tratamientos.
+  default_tax_rate_id: z.string().uuid().optional().or(z.literal("")),
 });
 
 export type ServiceInput = z.infer<typeof serviceSchema>;

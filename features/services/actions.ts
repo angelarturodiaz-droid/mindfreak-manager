@@ -60,7 +60,7 @@ export async function createServiceAction(
     unit: String(formData.get("unit") ?? ""),
     default_price: String(formData.get("default_price") ?? "0"),
     default_cost: String(formData.get("default_cost") ?? "0"),
-    default_tax_percent: String(formData.get("default_tax_percent") ?? "0"),
+    default_tax_rate_id: String(formData.get("default_tax_rate_id") ?? ""),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -79,7 +79,7 @@ export async function createServiceAction(
       unit: parsed.data.unit || null,
       default_price: parsed.data.default_price,
       default_cost: parsed.data.default_cost,
-      default_tax_percent: parsed.data.default_tax_percent,
+      default_tax_rate_id: parsed.data.default_tax_rate_id || null,
     })
     .select("id")
     .single();
@@ -114,7 +114,7 @@ export async function updateServiceAction(
     unit: String(formData.get("unit") ?? ""),
     default_price: String(formData.get("default_price") ?? "0"),
     default_cost: String(formData.get("default_cost") ?? "0"),
-    default_tax_percent: String(formData.get("default_tax_percent") ?? "0"),
+    default_tax_rate_id: String(formData.get("default_tax_rate_id") ?? ""),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -123,7 +123,7 @@ export async function updateServiceAction(
   const supabase = await createSupabaseClient();
   const { data: before } = await supabase
     .from("services")
-    .select("name, category_id, type, description, unit, default_price, default_cost, default_tax_percent")
+    .select("name, category_id, type, description, unit, default_price, default_cost, default_tax_rate_id")
     .eq("id", serviceId)
     .single();
 
@@ -137,7 +137,7 @@ export async function updateServiceAction(
       unit: parsed.data.unit || null,
       default_price: parsed.data.default_price,
       default_cost: parsed.data.default_cost,
-      default_tax_percent: parsed.data.default_tax_percent,
+      default_tax_rate_id: parsed.data.default_tax_rate_id || null,
     })
     .eq("id", serviceId);
 

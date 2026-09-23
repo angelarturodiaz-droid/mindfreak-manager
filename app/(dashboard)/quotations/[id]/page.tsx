@@ -15,6 +15,7 @@ import {
 } from "@/features/quotations/actions";
 import { hasPermission } from "@/lib/auth/permissions";
 import { getDefaultTaxRate, listTaxRates } from "@/features/tax-rates/queries";
+import { TAX_TREATMENT_LABELS } from "@/features/tax-rates/schema";
 import { NewItemForm } from "./new-item-form";
 import { ShareLinkButton } from "./share-link-button";
 import { DuplicateQuotationButton } from "./duplicate-quotation-button";
@@ -60,7 +61,7 @@ export default async function QuotationDetailPage({
   }
   if (!quotation) notFound();
 
-  const [items, services, canUpdate, canApprove, defaultTaxPercent, taxRates] = await Promise.all([
+  const [items, services, canUpdate, canApprove, defaultTaxRate, taxRates] = await Promise.all([
     listQuotationItems(id),
     listActiveServices(),
     hasPermission("quotations.update"),
@@ -79,7 +80,18 @@ export default async function QuotationDetailPage({
     { header: "Cant.", accessor: (item) => item.quantity },
     { header: "Precio", accessor: (item) => formatMoney(item.unit_price, quotation.currency) },
     { header: "Descuento", accessor: (item) => formatMoney(item.discount, quotation.currency) },
-    { header: "Impuesto", accessor: (item) => formatMoney(item.tax, quotation.currency) },
+    {
+      header: "Impuesto",
+      accessor: (item) => (
+        <span>
+          {formatMoney(item.tax, quotation.currency)}{" "}
+          <span className="text-xs text-brand-muted">
+            ({TAX_TREATMENT_LABELS[item.tax_treatment as keyof typeof TAX_TREATMENT_LABELS] ?? item.tax_treatment}
+            {item.tax_treatment === "GRAVADO" ? ` ${item.tax_rate_percent}%` : ""})
+          </span>
+        </span>
+      ),
+    },
     {
       header: "Total",
       accessor: (item) => (
@@ -190,7 +202,7 @@ export default async function QuotationDetailPage({
 
         {isEditable && canUpdate && (
           <div className="mt-4">
-            <NewItemForm quotationId={quotation.id} services={services} defaultTaxPercent={defaultTaxPercent} taxRates={taxRates} />
+            <NewItemForm quotationId={quotation.id} services={services} defaultTaxRate={defaultTaxRate} taxRates={taxRates} />
           </div>
         )}
 

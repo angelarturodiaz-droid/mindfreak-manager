@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listServiceCategories, listServices } from "@/features/services/queries";
+import { listTaxRates } from "@/features/tax-rates/queries";
 import { NewCategoryForm } from "./new-category-form";
 import { NewServiceForm } from "./new-service-form";
 import { Badge } from "@/components/ui/badge";
@@ -20,9 +21,10 @@ const TYPE_LABELS: Record<string, string> = {
 type ServiceRow = Awaited<ReturnType<typeof listServices>>[number];
 
 export default async function ServicesPage() {
-  const [categories, services] = await Promise.all([
+  const [categories, services, taxRates] = await Promise.all([
     listServiceCategories(),
     listServices(),
+    listTaxRates(),
   ]);
 
   const columns: Column<ServiceRow>[] = [
@@ -49,7 +51,18 @@ export default async function ServicesPage() {
     { header: "Unidad", accessor: (s) => <span className="text-brand-muted">{s.unit || "—"}</span> },
     { header: "Costo", accessor: (s) => <span className="text-brand-muted">{formatMoney(s.default_cost)}</span> },
     { header: "Precio", accessor: (s) => formatMoney(s.default_price) },
-    { header: "Impuesto", accessor: (s) => <span className="text-brand-muted">{s.default_tax_percent}%</span> },
+    {
+      header: "Impuesto",
+      accessor: (s) => {
+        const rate = s.tax_rates as { name: string; rate: number; treatment: string } | { name: string; rate: number; treatment: string }[] | null;
+        const r = Array.isArray(rate) ? rate[0] : rate;
+        return (
+          <span className="text-brand-muted">
+            {r ? `${r.name} (${r.rate}%)` : "Predeterminado del catálogo"}
+          </span>
+        );
+      },
+    },
   ];
 
   return (
@@ -89,7 +102,7 @@ export default async function ServicesPage() {
         <h2 className="mb-3 text-sm font-medium text-brand-text">
           Nuevo producto/servicio
         </h2>
-        <NewServiceForm categories={categories} />
+        <NewServiceForm categories={categories} taxRates={taxRates} />
       </section>
 
       <section>

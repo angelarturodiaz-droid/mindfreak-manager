@@ -15,10 +15,14 @@ const TYPE_LABELS: Record<string, string> = {
   SERVICIO: "Servicio",
 };
 
+type TaxRate = { id: string; name: string; rate: number; treatment: string };
+
 export function NewServiceForm({
   categories,
+  taxRates,
 }: {
   categories: { id: string; name: string }[];
+  taxRates: TaxRate[];
 }) {
   const [state, formAction, pending] = useActionState(
     createServiceAction,
@@ -53,15 +57,14 @@ export function NewServiceForm({
         defaultValue={0}
         className="w-24"
       />
-      <Input
-        label="Impuesto (%)"
-        name="default_tax_percent"
-        type="number"
-        step="0.01"
-        min="0"
-        defaultValue="18"
-        className="w-20"
-      />
+      <Select label="Tratamiento fiscal" name="default_tax_rate_id" defaultValue="" className="w-44">
+        <option value="">Usar el predeterminado del catálogo</option>
+        {taxRates.map((r) => (
+          <option key={r.id} value={r.id}>
+            {r.name} ({r.rate}%)
+          </option>
+        ))}
+      </Select>
       <Button type="submit" loading={pending} icon={<Plus size={14} />}>
         Agregar
       </Button>

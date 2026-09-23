@@ -4,6 +4,7 @@ import {
   toggleTaxRateActiveAction,
 } from "@/features/tax-rates/actions";
 import { hasPermission } from "@/lib/auth/permissions";
+import { TAX_TREATMENT_LABELS } from "@/features/tax-rates/schema";
 import { NewTaxRateForm } from "./new-tax-rate-form";
 import { Badge } from "@/components/ui/badge";
 import { ActionLink } from "@/components/ui/action-link";
@@ -20,6 +21,14 @@ export default async function TaxRatesPage() {
   const columns: Column<TaxRateRow>[] = [
     { header: "Nombre", accessor: (r) => r.name },
     { header: "Tasa", accessor: (r) => `${r.rate}%` },
+    {
+      header: "Tratamiento fiscal",
+      accessor: (r) => (
+        <Badge tone={r.treatment === "GRAVADO" ? "info" : "warning"}>
+          {TAX_TREATMENT_LABELS[r.treatment as keyof typeof TAX_TREATMENT_LABELS] ?? r.treatment}
+        </Badge>
+      ),
+    },
     {
       header: "Predeterminada",
       accessor: (r) =>

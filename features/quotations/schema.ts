@@ -35,10 +35,14 @@ export const quotationItemSchema = z.object({
   // de guardarlo — la columna `discount` en la base de datos sigue siendo
   // un monto, no un %, así que no hace falta ninguna migración de datos.
   discount_percent: z.coerce.number().min(0).max(100).default(0),
-  // El usuario escribe el impuesto como PORCENTAJE (ej. 18 = ITBIS 18%). El
-  // monto en dólares/pesos se calcula en el servidor sobre (cantidad×precio
-  // − descuento), y ESE monto calculado es lo que se guarda en `tax`.
-  tax_percent: z.coerce.number().min(0).default(0),
+  // El tratamiento fiscal y la tasa SIEMPRE se eligen del catálogo de
+  // Configuración → Impuestos (tax_rates) — nunca un % suelto. El servidor
+  // resuelve este id contra la tabla (nombre, tasa, tratamiento) y congela
+  // una copia en la línea (tax_treatment, tax_rate_percent) para que el
+  // historial no cambie si luego se edita o desactiva la tasa. Si el
+  // tratamiento es Exento o No sujeto, el impuesto de la línea es 0 sin
+  // importar la tasa configurada — ver addQuotationItemAction.
+  tax_rate_id: z.string().uuid("Selecciona un tratamiento fiscal"),
   estimated_unit_cost: z.coerce.number().min(0).default(0),
 });
 

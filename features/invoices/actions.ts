@@ -247,13 +247,29 @@ export async function addInvoiceItemAction(
     quantity: String(formData.get("quantity") ?? "1"),
     unit_price: String(formData.get("unit_price") ?? "0"),
     discount_percent: String(formData.get("discount_percent") ?? "0"),
-    tax_percent: String(formData.get("tax_percent") ?? "0"),
+    tax_rate_id: String(formData.get("tax_rate_id") ?? ""),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
   }
 
   const supabase = await createSupabaseClient();
+  const companyId = await getPrimaryCompanyId();
+
+  // El tratamiento fiscal y la tasa SIEMPRE se resuelven contra el catálogo
+  // de Configuración → Impuestos en el servidor — nunca se confía en un %
+  // enviado desde el formulario (evita que alguien manipule el request y
+  // meta una tasa que no está en Settings).
+  const { data: taxRate } = await supabase
+    .from("tax_rates")
+    .select("rate, treatment")
+    .eq("id", parsed.data.tax_rate_id)
+    .eq("company_id", companyId)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (!taxRate) {
+    return { error: "El tratamiento fiscal seleccionado no es válido o ya no está activo." };
+  }
 
   const lineAmount = parsed.data.quantity * parsed.data.unit_price;
   // discount_percent es solo la forma de entrada del usuario — la columna
@@ -261,22 +277,12 @@ export async function addInvoiceItemAction(
   // siempre (ver comentario en invoiceItemSchema).
   const discount = Math.round(lineAmount * (parsed.data.discount_percent / 100) * 100) / 100;
   const base = lineAmount - discount;
-  const tax = Math.round(Math.max(0, base) * (parsed.data.tax_percent / 100) * 100) / 100;
-
-  // tax_rate_id: referencia de mejor esfuerzo al catálogo de Impuestos —
-  // NO participa en el cálculo del ITBIS (eso sigue siendo tax_percent,
-  // sin cambios). Si el % elegido coincide con una tasa activa del
-  // catálogo, se deja la referencia; si no coincide con ninguna (ej. un %
-  // personalizado), se deja en null en vez de inventar un vínculo falso.
-  const companyId = await getPrimaryCompanyId();
-  const { data: matchingTaxRate } = await supabase
-    .from("tax_rates")
-    .select("id")
-    .eq("company_id", companyId)
-    .eq("rate", parsed.data.tax_percent)
-    .eq("is_active", true)
-    .limit(1)
-    .maybeSingle();
+  // Exento/No sujeto: ITBIS siempre 0, sin importar la tasa configurada en
+  // esa fila del catálogo (defensa extra ante un catálogo mal cargado).
+  const tax =
+    taxRate.treatment === "GRAVADO"
+      ? Math.round(Math.max(0, base) * (Number(taxRate.rate) / 100) * 100) / 100
+      : 0;
 
   const subtotal = calculateInvoiceItemSubtotal({ ...parsed.data, discount, tax });
   const { error } = await supabase.from("invoice_items").insert({
@@ -288,7 +294,11 @@ export async function addInvoiceItemAction(
     discount,
     tax,
     subtotal,
-    tax_rate_id: matchingTaxRate?.id ?? null,
+    tax_rate_id: parsed.data.tax_rate_id,
+    // Snapshot histórico: si luego se edita/desactiva esta tasa en
+    // Settings, esta línea conserva el tratamiento y % que se usaron.
+    tax_treatment: taxRate.treatment,
+    tax_rate_percent: taxRate.rate,
   });
 
   if (error) return { error: error.message };
@@ -562,7 +572,7 @@ export async function duplicateInvoiceAction(invoiceId: string): Promise<void> {
 
   const { data: items, error: itemsError } = await supabase
     .from("invoice_items")
-    .select("service_id, description, quantity, unit_price, discount, tax, tax_rate_id, subtotal")
+    .select("service_id, description, quantity, unit_price, discount, tax, tax_rate_id, tax_treatment, tax_rate_percent, subtotal")
     .eq("invoice_id", invoiceId)
     .order("sort_order");
   if (itemsError) throw new Error(itemsError.message);
@@ -602,6 +612,10 @@ export async function duplicateInvoiceAction(invoiceId: string): Promise<void> {
         discount: item.discount,
         tax: item.tax,
         tax_rate_id: item.tax_rate_id,
+        // Se copia el snapshot tal cual — el duplicado arranca con el mismo
+        // tratamiento fiscal que tenía el original.
+        tax_treatment: item.tax_treatment,
+        tax_rate_percent: item.tax_rate_percent,
         subtotal: item.subtotal,
       })),
     );

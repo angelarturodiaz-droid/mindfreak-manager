@@ -14,9 +14,12 @@ const TYPE_LABELS: Record<string, string> = {
   SERVICIO: "Servicio",
 };
 
+type TaxRate = { id: string; name: string; rate: number; treatment: string };
+
 export function ServiceEditForm({
   service,
   categories,
+  taxRates,
 }: {
   service: {
     id: string;
@@ -27,9 +30,10 @@ export function ServiceEditForm({
     unit: string | null;
     default_price: number;
     default_cost: number;
-    default_tax_percent: number;
+    default_tax_rate_id: string | null;
   };
   categories: { id: string; name: string }[];
+  taxRates: TaxRate[];
 }) {
   const updateWithId = updateServiceAction.bind(null, service.id);
   const [state, formAction, pending] = useActionState(updateWithId, initialState);
@@ -68,15 +72,19 @@ export function ServiceEditForm({
         />
       </div>
 
-      <Input
-        label="Impuesto por defecto (%)"
-        name="default_tax_percent"
-        type="number"
-        step="0.01"
-        min="0"
-        defaultValue={service.default_tax_percent}
-        className="w-32"
-      />
+      <Select
+        label="Tratamiento fiscal por defecto"
+        name="default_tax_rate_id"
+        defaultValue={service.default_tax_rate_id ?? ""}
+        className="w-56"
+      >
+        <option value="">Usar el predeterminado del catálogo</option>
+        {taxRates.map((r) => (
+          <option key={r.id} value={r.id}>
+            {r.name} ({r.rate}%)
+          </option>
+        ))}
+      </Select>
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
 
