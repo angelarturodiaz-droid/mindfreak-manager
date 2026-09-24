@@ -14,7 +14,10 @@ export async function listProjects(filters: ProjectListFilters = {}) {
   const [from, to] = pageRange(filters.page ?? 1);
   let query = supabase
     .from("projects")
-    .select("id, number, name, status, event_date, budget, clients(name)", { count: "exact" })
+    .select(
+      "id, number, name, status, event_date, event_time, location_name, budget, client_id, clients(name)",
+      { count: "exact" },
+    )
     .order("event_date", { ascending: true, nullsFirst: false })
     .order("number", { ascending: true })
     .range(from, to);
@@ -25,6 +28,41 @@ export async function listProjects(filters: ProjectListFilters = {}) {
   const { data, error, count } = await query;
   if (error) throw new Error(error.message);
   return { rows: data, total: count ?? 0, pageSize: PAGE_SIZE };
+}
+
+/**
+ * Conteos para el encabezado de /projects: cuántos hay por estado, cuántos
+ * eventos activos caen en los próximos 30 días y el presupuesto de los
+ * activos. Respeta el filtro de cliente para que los números coincidan con
+ * la lista que se está viendo.
+ */
+export async function getProjectStats(clientId?: string) {
+  const supabase = await createClient();
+  let query = supabase.from("projects").select("status, event_date, budget");
+  if (clientId) query = query.eq("client_id", clientId);
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Santo_Domingo" }).format(
+    new Date(),
+  );
+  const in30 = new Date(`${today}T00:00:00Z`);
+  in30.setUTCDate(in30.getUTCDate() + 30);
+  const limit = in30.toISOString().slice(0, 10);
+
+  const byStatus: Record<string, number> = {};
+  let active = 0;
+  let upcoming = 0;
+  let activeBudget = 0;
+  for (const p of data ?? []) {
+    byStatus[p.status] = (byStatus[p.status] ?? 0) + 1;
+    const isActive = ["PLANNING", "CONFIRMED", "IN_PROGRESS"].includes(p.status);
+    if (!isActive) continue;
+    active += 1;
+    activeBudget += Number(p.budget ?? 0);
+    if (p.event_date && p.event_date >= today && p.event_date <= limit) upcoming += 1;
+  }
+  return { total: (data ?? []).length, byStatus, active, upcoming, activeBudget };
 }
 
 export async function getProject(id: string) {
