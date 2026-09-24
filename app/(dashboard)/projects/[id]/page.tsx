@@ -44,6 +44,7 @@ import {
   formatEventTime,
   formatMoney,
 } from "@/features/projects/display";
+import { transactionEffect } from "@/features/banks/queries";
 import { DocumentList } from "@/components/documents/document-list";
 import { UploadDocumentForm } from "@/components/documents/upload-document-form";
 import { listDocuments } from "@/features/documents/queries";
@@ -441,11 +442,17 @@ export default async function ProjectDetailPage({
     {
       header: "Monto",
       className: "text-right",
-      accessor: (t) => (
-        <span className={`font-medium tabular-nums ${t.amount < 0 ? "text-brand-danger" : "text-brand-success"}`}>
-          {formatMoney(t.amount, t.currency)}
-        </span>
-      ),
+      accessor: (t) => {
+        // Mismo criterio que el balance de la cuenta: los gastos se guardan en
+        // positivo pero salen de la cuenta.
+        const effect = transactionEffect(t.type, t.amount);
+        return (
+          <span className={`whitespace-nowrap font-medium tabular-nums ${effect < 0 ? "text-brand-danger" : "text-brand-success"}`}>
+            {effect < 0 ? "−" : "+"}
+            {formatMoney(Math.abs(effect), t.currency)}
+          </span>
+        );
+      },
     },
   ];
 

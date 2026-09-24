@@ -4,7 +4,7 @@ export async function listBankAccountsWithBalance() {
   const supabase = await createClient();
   const { data: accounts, error } = await supabase
     .from("bank_accounts")
-    .select("id, name, bank_name, currency, is_active, type, credit_limit")
+    .select("id, name, bank_name, account_number_masked, currency, is_active, type, credit_limit")
     .order("name");
   if (error) throw new Error(error.message);
   if (!accounts || accounts.length === 0) return [];
@@ -70,4 +70,16 @@ export async function hasBankTransactions(accountId: string): Promise<boolean> {
     .eq("bank_account_id", accountId);
   if (error) throw new Error(error.message);
   return (count ?? 0) > 0;
+}
+
+/**
+ * Efecto real de un movimiento sobre el balance de la cuenta, igual que la
+ * vista bank_account_balances: INCOME suma, EXPENSE resta (se guarda en
+ * positivo), TRANSFER ya viene con signo. Solo para mostrarlo con + / −.
+ */
+export function transactionEffect(type: string, amount: number): number {
+  if (type === "INCOME") return Number(amount);
+  if (type === "EXPENSE") return -Number(amount);
+  if (type === "TRANSFER") return Number(amount);
+  return 0;
 }
