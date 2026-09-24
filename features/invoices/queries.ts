@@ -29,6 +29,49 @@ export async function listInvoices(filters: InvoiceListFilters = {}) {
   return { rows: data, total: count ?? 0, pageSize: PAGE_SIZE };
 }
 
+/**
+ * Resumen para el encabezado de /invoices (solo lectura): conteo por
+ * estado, por cobrar, vencido y lo que vence en los próximos 7 días, en
+ * moneda base. "Vencido" incluye facturas abiertas con fecha de
+ * vencimiento pasada aunque su estado todavía no se haya marcado Vencida.
+ */
+export async function getInvoiceStats(clientId?: string) {
+  const supabase = await createClient();
+  let query = supabase.from("invoices").select("status, balance, exchange_rate, due_date");
+  if (clientId) query = query.eq("client_id", clientId);
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Santo_Domingo" }).format(
+    new Date(),
+  );
+  const in7 = new Date(`${today}T00:00:00Z`);
+  in7.setUTCDate(in7.getUTCDate() + 7);
+  const limit7 = in7.toISOString().slice(0, 10);
+
+  const byStatus: Record<string, number> = {};
+  let porCobrar = 0;
+  let vencido = 0;
+  let vencidoCount = 0;
+  let dueSoon = 0;
+  let dueSoonCount = 0;
+  for (const inv of data ?? []) {
+    byStatus[inv.status] = (byStatus[inv.status] ?? 0) + 1;
+    if (!["ISSUED", "PARTIALLY_PAID", "OVERDUE"].includes(inv.status)) continue;
+    const bal = Number(inv.balance) * Number(inv.exchange_rate ?? 1);
+    if (bal <= 0) continue;
+    porCobrar += bal;
+    if (inv.status === "OVERDUE" || (inv.due_date && inv.due_date < today)) {
+      vencido += bal;
+      vencidoCount += 1;
+    } else if (inv.due_date && inv.due_date <= limit7) {
+      dueSoon += bal;
+      dueSoonCount += 1;
+    }
+  }
+  return { total: (data ?? []).length, byStatus, porCobrar, vencido, vencidoCount, dueSoon, dueSoonCount };
+}
+
 export async function getInvoice(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase

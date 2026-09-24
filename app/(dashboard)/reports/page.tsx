@@ -18,7 +18,10 @@ import {
 import { Select, FIELD_CLASSES } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { KpiCard } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { Chip, InitialsAvatar, SectionHeader, StatCard } from "@/components/ui/page-kit";
+import { relationName } from "@/lib/utils/relation";
+import { formatDate, pluralDays } from "@/lib/utils/dates";
 import { DataTable, type Column } from "@/components/ui/data-table";
 
 function formatMoney(amount: number, currency = "DOP") {
@@ -97,7 +100,7 @@ export default async function ReportsPage({
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 md:flex-row md:gap-8 md:p-8">
-      <aside className="w-full shrink-0 md:w-64">
+      <aside className="w-full shrink-0 md:sticky md:top-4 md:w-60 md:self-start">
         <h1 className="mb-1 text-xl font-semibold text-brand-primary">Reportes</h1>
         <p className="mb-4 text-xs text-brand-muted">
           Vistas de solo lectura, consolidadas en la moneda base.
@@ -140,6 +143,48 @@ export default async function ReportsPage({
   );
 }
 
+function ClientCell({ rel }: { rel: unknown }) {
+  const name = relationName(rel);
+  if (!name) return <span className="text-brand-muted">—</span>;
+  return (
+    <span className="flex items-center gap-2">
+      <InitialsAvatar name={name} size="sm" />
+      <span className="text-brand-text">{name}</span>
+    </span>
+  );
+}
+
+function Money({ value, currency, strong, tone }: { value: number; currency?: string; strong?: boolean; tone?: "danger" | "warning" }) {
+  const color = tone === "danger" ? "text-brand-danger" : tone === "warning" ? "text-brand-warning" : "";
+  return (
+    <span className={`whitespace-nowrap tabular-nums ${strong ? "font-medium" : ""} ${color}`}>
+      {formatMoney(value, currency)}
+    </span>
+  );
+}
+
+/** Barra horizontal de participación (% del total) para reportes agrupados. */
+function ShareBar({ value, total }: { value: number; total: number }) {
+  const pct = total > 0 ? (value / total) * 100 : 0;
+  return (
+    <div className="flex min-w-[8rem] items-center gap-2">
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-brand-surface-hover">
+        <div className="h-full rounded-full bg-brand-accent" style={{ width: `${Math.min(100, pct)}%` }} />
+      </div>
+      <span className="w-10 text-right text-xs tabular-nums text-brand-muted">{pct.toFixed(0)}%</span>
+    </div>
+  );
+}
+
+function ReportTitle({ title, description }: { title: string; description?: string }) {
+  return (
+    <div className="mb-4">
+      <h2 className="text-xl font-semibold text-brand-primary">{title}</h2>
+      {description && <p className="text-sm text-brand-muted">{description}</p>}
+    </div>
+  );
+}
+
 function DateRangeFields({ from, to }: { from?: string; to?: string }) {
   return (
     <>
@@ -157,16 +202,18 @@ function DateRangeFields({ from, to }: { from?: string; to?: string }) {
 
 function FilterBar({ report, children }: { report: string; children: React.ReactNode }) {
   return (
-    <form action="/reports" method="get" className="mb-4 flex flex-wrap items-end gap-3">
-      <input type="hidden" name="report" value={report} />
-      {children}
-      <Button type="submit" variant="outline" size="md">
-        Filtrar
-      </Button>
-      <Link href={`/reports?report=${report}`} className="text-sm text-brand-muted hover:underline">
-        Limpiar filtros
-      </Link>
-    </form>
+    <Card className="mb-5">
+      <form action="/reports" method="get" className="flex flex-wrap items-end gap-3">
+        <input type="hidden" name="report" value={report} />
+        {children}
+        <Button type="submit" variant="primary" size="md">
+          Aplicar filtros
+        </Button>
+        <Link href={`/reports?report=${report}`} className="py-2 text-sm text-brand-muted hover:text-brand-accent hover:underline">
+          Limpiar
+        </Link>
+      </form>
+    </Card>
   );
 }
 
@@ -192,29 +239,50 @@ async function ProfitabilityReport({ params }: { params: Params }) {
   ]);
 
   const columns: Column<ProfitabilityRow>[] = [
-    { header: "Proyecto", accessor: (p) => `${p.number} — ${p.name}` },
+    {
+      header: "Proyecto",
+      accessor: (p) => (
+        <Link href={`/projects/${p.id}`} className="group block min-w-[10rem]">
+          <span className="block font-medium text-brand-text group-hover:text-brand-accent">{p.name}</span>
+          <span className="text-xs text-brand-muted">{p.number}</span>
+        </Link>
+      ),
+    },
     {
       header: "Estado",
       accessor: (p) => <Badge status={p.status}>{PROJECT_STATUS_LABELS[p.status] ?? p.status}</Badge>,
     },
-    { header: "Cotizado", accessor: (p) => formatMoney(p.cotizado) },
-    { header: "Facturado", accessor: (p) => formatMoney(p.facturado) },
-    { header: "Cobrado", accessor: (p) => formatMoney(p.cobrado) },
-    { header: "Costo real", accessor: (p) => formatMoney(p.costoReal) },
+    { header: "Cotizado", className: "text-right", accessor: (p) => <Money value={p.cotizado} /> },
+    { header: "Facturado", className: "text-right", accessor: (p) => <Money value={p.facturado} /> },
+    { header: "Cobrado", className: "text-right", accessor: (p) => <Money value={p.cobrado} /> },
+    { header: "Costo real", className: "text-right", accessor: (p) => <Money value={p.costoReal} /> },
     {
       header: "Utilidad real",
-      accessor: (p) => (
-        <span className={p.utilidadReal < 0 ? "font-medium text-brand-danger" : "font-medium"}>
-          {formatMoney(p.utilidadReal)}
-        </span>
-      ),
+      className: "text-right",
+      accessor: (p) => <Money value={p.utilidadReal} strong tone={p.utilidadReal < 0 ? "danger" : undefined} />,
     },
-    { header: "Margen", accessor: (p) => <span className="text-brand-muted">{formatPercent(p.margenReal)}</span> },
+    {
+      header: "Margen",
+      className: "text-right",
+      accessor: (p) =>
+        p.margenReal === null ? (
+          <span className="text-brand-muted">—</span>
+        ) : (
+          <span className="inline-flex justify-end">
+            <Chip tone={p.margenReal < 0 ? "danger" : p.margenReal < 20 ? "warning" : "success"}>
+              {formatPercent(p.margenReal)}
+            </Chip>
+          </span>
+        ),
+    },
   ];
 
   return (
     <div>
-      <h2 className="mb-3 text-lg font-semibold text-brand-primary">Rentabilidad por proyecto</h2>
+      <ReportTitle
+        title="Rentabilidad por proyecto"
+        description="Cotizado, facturado, cobrado y costo real de cada proyecto, con su utilidad y margen."
+      />
       <FilterBar report="rentabilidad">
         <DateRangeFields from={params.from} to={params.to} />
         <Select label="Proyecto" name="project_id" defaultValue={params.project_id ?? ""}>
@@ -251,6 +319,20 @@ async function ProfitabilityReport({ params }: { params: Params }) {
         </Select>
       </FilterBar>
 
+      {profitability.length > 0 && (
+        <section className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Facturado" value={formatMoney(profitability.reduce((a, p) => a + p.facturado, 0))} icon={<ArrowDownCircle size={20} />} tone="blue" hint={`${profitability.length} proyectos`} />
+          <StatCard label="Cobrado" value={formatMoney(profitability.reduce((a, p) => a + p.cobrado, 0))} icon={<CalendarDays size={20} />} tone="green" />
+          <StatCard label="Costo real" value={formatMoney(profitability.reduce((a, p) => a + p.costoReal, 0))} icon={<Clock size={20} />} tone="amber" />
+          <StatCard
+            label="Utilidad real"
+            value={formatMoney(profitability.reduce((a, p) => a + p.utilidadReal, 0))}
+            valueTone={profitability.reduce((a, p) => a + p.utilidadReal, 0) < 0 ? "danger" : "success"}
+            icon={<CalendarRange size={20} />}
+            tone="violet"
+          />
+        </section>
+      )}
       <DataTable
         columns={columns}
         rows={profitability}
@@ -266,169 +348,175 @@ async function ReceivablesDashboardReport() {
   const data = await getReceivablesDashboard();
 
   const overdueColumns: Column<(typeof data.facturasVencidas)[number]>[] = [
-    { header: "Factura", accessor: (inv) => inv.number },
     {
-      header: "Cliente",
-      accessor: (inv) => {
-        const clientData = inv.clients as { name: string }[] | { name: string } | null;
-        const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
-        return <span className="text-brand-muted">{clientName ?? "—"}</span>;
-      },
+      header: "Factura",
+      accessor: (inv) => (
+        <Link href={`/invoices/${inv.id}`} className="font-medium text-brand-text hover:text-brand-accent">
+          {inv.number}
+        </Link>
+      ),
     },
-    { header: "Vencimiento", accessor: (inv) => inv.due_date },
-    { header: "Días vencida", accessor: (inv) => <Badge tone="danger">{inv.daysOverdue} días</Badge> },
-    { header: "Balance", accessor: (inv) => <span className="font-medium">{formatMoney(inv.balance, inv.currency)}</span> },
+    { header: "Cliente", accessor: (inv) => <ClientCell rel={inv.clients} /> },
+    { header: "Vencimiento", accessor: (inv) => <span className="whitespace-nowrap text-brand-muted">{formatDate(inv.due_date)}</span> },
+    { header: "Atraso", accessor: (inv) => <Chip tone="danger">Vencida hace {pluralDays(inv.daysOverdue)}</Chip> },
+    { header: "Balance", className: "text-right", accessor: (inv) => <Money value={inv.balance} currency={inv.currency} strong tone="danger" /> },
   ];
 
   const upcomingColumns: Column<(typeof data.facturasProximasAVencer)[number]>[] = [
-    { header: "Factura", accessor: (inv) => inv.number },
     {
-      header: "Cliente",
-      accessor: (inv) => {
-        const clientData = inv.clients as { name: string }[] | { name: string } | null;
-        const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
-        return <span className="text-brand-muted">{clientName ?? "—"}</span>;
-      },
+      header: "Factura",
+      accessor: (inv) => (
+        <Link href={`/invoices/${inv.id}`} className="font-medium text-brand-text hover:text-brand-accent">
+          {inv.number}
+        </Link>
+      ),
     },
-    { header: "Vencimiento", accessor: (inv) => inv.due_date },
+    { header: "Cliente", accessor: (inv) => <ClientCell rel={inv.clients} /> },
+    { header: "Vencimiento", accessor: (inv) => <span className="whitespace-nowrap text-brand-muted">{formatDate(inv.due_date)}</span> },
     {
-      header: "En",
+      header: "Vence",
       accessor: (inv) =>
         inv.daysUntilDue === 0 ? (
-          <Badge tone="warning">Hoy</Badge>
+          <Chip tone="warning">Hoy</Chip>
+        ) : inv.daysUntilDue === 1 ? (
+          <Chip tone="warning">Mañana</Chip>
         ) : (
-          <span className="text-brand-muted">{inv.daysUntilDue} días</span>
+          <Chip tone={(inv.daysUntilDue ?? 99) <= 7 ? "warning" : "muted"}>En {pluralDays(inv.daysUntilDue ?? 0)}</Chip>
         ),
     },
-    { header: "Balance", accessor: (inv) => <span className="font-medium">{formatMoney(inv.balance, inv.currency)}</span> },
+    { header: "Balance", className: "text-right", accessor: (inv) => <Money value={inv.balance} currency={inv.currency} strong /> },
   ];
 
   const pendingQuoteColumns: Column<(typeof data.cotizacionesPendientes)[number]>[] = [
-    { header: "Cotización", accessor: (q) => q.number },
     {
-      header: "Cliente",
-      accessor: (q) => {
-        const clientData = q.clients as { name: string }[] | { name: string } | null;
-        const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
-        return <span className="text-brand-muted">{clientName ?? "—"}</span>;
-      },
+      header: "Cotización",
+      accessor: (q) => (
+        <Link href={`/quotations/${q.id}`} className="font-medium text-brand-text hover:text-brand-accent">
+          {q.number}
+        </Link>
+      ),
     },
-    { header: "Válida hasta", accessor: (q) => <span className="text-brand-muted">{q.valid_until ?? "—"}</span> },
-    { header: "Total", accessor: (q) => formatMoney(q.total, q.currency) },
+    { header: "Cliente", accessor: (q) => <ClientCell rel={q.clients} /> },
+    { header: "Válida hasta", accessor: (q) => <span className="whitespace-nowrap text-brand-muted">{formatDate(q.valid_until)}</span> },
+    { header: "Total", className: "text-right", accessor: (q) => <Money value={q.total} currency={q.currency} strong /> },
   ];
 
   const acceptedColumns: Column<(typeof data.cotizacionesAceptadasSinFacturar)[number]>[] = [
-    { header: "Cotización", accessor: (q) => q.number },
     {
-      header: "Cliente",
-      accessor: (q) => {
-        const clientData = q.clients as { name: string }[] | { name: string } | null;
-        const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
-        return <span className="text-brand-muted">{clientName ?? "—"}</span>;
-      },
+      header: "Cotización",
+      accessor: (q) => (
+        <Link href={`/quotations/${q.id}`} className="font-medium text-brand-text hover:text-brand-accent">
+          {q.number}
+        </Link>
+      ),
     },
-    { header: "Total", accessor: (q) => formatMoney(q.total, q.currency) },
+    { header: "Cliente", accessor: (q) => <ClientCell rel={q.clients} /> },
+    { header: "Total", className: "text-right", accessor: (q) => <Money value={q.total} currency={q.currency} strong /> },
   ];
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-lg font-semibold text-brand-primary">
-          Cuentas por Cobrar y Vencimientos
-        </h2>
-        <p className="text-sm text-brand-muted">
-          Consolidado en la moneda base, en vivo — no es un corte histórico.
-        </p>
-      </div>
+      <ReportTitle
+        title="Cuentas por Cobrar y Vencimientos"
+        description="Consolidado en la moneda base, en vivo — no es un corte histórico."
+      />
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <KpiCard
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <StatCard
           label="Total por cobrar"
           value={formatMoney(data.totalPorCobrar)}
-          icon={<ArrowDownCircle size={16} />}
+          hint="Balance de todas las facturas abiertas"
+          icon={<ArrowDownCircle size={20} />}
+          tone="blue"
         />
-        <KpiCard
+        <StatCard
           label="Total vencido"
           value={formatMoney(data.totalVencido)}
-          danger
-          icon={<AlertTriangle size={16} />}
+          valueTone={data.totalVencido > 0 ? "danger" : "success"}
+          hint={`${data.facturasVencidas.length} ${data.facturasVencidas.length === 1 ? "factura vencida" : "facturas vencidas"}`}
+          icon={<AlertTriangle size={20} />}
+          tone="red"
         />
-        <KpiCard
+        <StatCard
           label="Vence hoy"
           value={formatMoney(data.totalVenceHoy)}
-          danger
-          icon={<Clock size={16} />}
-        />
-        <KpiCard
-          label="Próximos 7 días"
-          value={formatMoney(data.totalProximos7)}
-          icon={<CalendarClock size={16} />}
-        />
-        <KpiCard
-          label="Próximos 15 días"
-          value={formatMoney(data.totalProximos15)}
-          icon={<CalendarDays size={16} />}
-        />
-        <KpiCard
-          label="Próximos 30 días"
-          value={formatMoney(data.totalProximos30)}
-          icon={<CalendarRange size={16} />}
+          valueTone={data.totalVenceHoy > 0 ? "warning" : undefined}
+          hint={data.totalVenceHoy > 0 ? "Dar seguimiento hoy" : "Nada vence hoy"}
+          icon={<Clock size={20} />}
+          tone="amber"
         />
       </section>
 
+      <Card>
+        <p className="mb-3 text-sm font-semibold text-brand-text">Lo que vence próximamente</p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {[
+            { label: "Próximos 7 días", value: data.totalProximos7, icon: <CalendarClock size={16} /> },
+            { label: "Próximos 15 días", value: data.totalProximos15, icon: <CalendarDays size={16} /> },
+            { label: "Próximos 30 días", value: data.totalProximos30, icon: <CalendarRange size={16} /> },
+          ].map((h) => {
+            const pct = data.totalProximos30 > 0 ? (h.value / data.totalProximos30) * 100 : 0;
+            return (
+              <div key={h.label} className="flex flex-col gap-1.5">
+                <p className="flex items-center gap-1.5 text-sm text-brand-muted">
+                  {h.icon} {h.label}
+                </p>
+                <p className="break-words text-lg font-semibold tabular-nums text-brand-text">{formatMoney(h.value)}</p>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-brand-surface-hover">
+                  <div className="h-full rounded-full bg-brand-accent" style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-3 text-xs text-brand-muted">Los rangos son acumulados: 30 días incluye lo de 7 y 15.</p>
+      </Card>
+
       <section>
-        <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-brand-text">
-          Línea de tiempo de vencimientos (próximos 30 días)
-        </h3>
+        <SectionHeader title="Calendario de vencimientos" description="Próximos 30 días, agrupado por fecha." />
         <ReceivablesTimeline invoices={data.facturasProximasAVencer} />
       </section>
 
       <section>
-        <h3 className="mb-2 text-sm font-medium text-brand-text">
-          Facturas vencidas ({data.facturasVencidas.length})
-        </h3>
+        <SectionHeader title="Facturas vencidas" count={data.facturasVencidas.length} />
         <DataTable
           columns={overdueColumns}
           rows={data.facturasVencidas}
           keyFor={(inv) => inv.id}
-          maxWidth="max-w-4xl"
+          maxWidth="max-w-none"
           emptyMessage="Sin facturas vencidas. 🎉"
         />
       </section>
 
       <section>
-        <h3 className="mb-2 text-sm font-medium text-brand-text">
-          Facturas próximas a vencer (30 días)
-        </h3>
+        <SectionHeader title="Facturas próximas a vencer" count={data.facturasProximasAVencer.length} description="Próximos 30 días." />
         <DataTable
           columns={upcomingColumns}
           rows={data.facturasProximasAVencer}
           keyFor={(inv) => inv.id}
-          maxWidth="max-w-4xl"
+          maxWidth="max-w-none"
           emptyMessage="Sin facturas próximas a vencer."
         />
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section>
-          <h3 className="mb-2 text-sm font-medium text-brand-text">
-            Cotizaciones pendientes de aceptación ({data.cotizacionesPendientes.length})
-          </h3>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <section className="min-w-0">
+          <SectionHeader title="Cotizaciones pendientes de aceptación" count={data.cotizacionesPendientes.length} />
           <DataTable
             columns={pendingQuoteColumns}
             rows={data.cotizacionesPendientes}
             keyFor={(q) => q.id}
+            maxWidth="max-w-none"
             emptyMessage="Sin cotizaciones pendientes."
           />
         </section>
-        <section>
-          <h3 className="mb-2 text-sm font-medium text-brand-text">
-            Aceptadas, pendientes de facturar ({data.cotizacionesAceptadasSinFacturar.length})
-          </h3>
+        <section className="min-w-0">
+          <SectionHeader title="Aceptadas, pendientes de facturar" count={data.cotizacionesAceptadasSinFacturar.length} />
           <DataTable
             columns={acceptedColumns}
             rows={data.cotizacionesAceptadasSinFacturar}
             keyFor={(q) => q.id}
+            maxWidth="max-w-none"
             emptyMessage="Sin pendientes."
           />
         </section>
@@ -456,19 +544,32 @@ function ReceivablesTimeline({
   const sortedDates = Array.from(byDate.keys()).sort();
 
   return (
-    <div className="flex gap-4 overflow-x-auto rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface p-4">
+    <div className="flex gap-3 overflow-x-auto pb-1">
       {sortedDates.map((date) => {
         const dayInvoices = byDate.get(date) ?? [];
         const dayTotal = dayInvoices.reduce((acc, i) => acc + i.balance, 0);
-        const isToday = dayInvoices[0]?.daysUntilDue === 0;
+        const days = dayInvoices[0]?.daysUntilDue ?? null;
+        const soon = days !== null && days <= 7;
         return (
-          <div key={date} className="flex w-40 shrink-0 flex-col gap-1 border-l-2 border-brand-accent pl-3">
-            <p className={`text-xs font-semibold ${isToday ? "text-brand-danger" : "text-brand-text"}`}>
-              {date} {isToday && "· Hoy"}
+          <div
+            key={date}
+            className={`flex w-44 shrink-0 flex-col gap-1 rounded-[var(--radius-lg)] border p-4 ${
+              days === 0
+                ? "border-brand-danger/40 bg-brand-danger-bg"
+                : soon
+                  ? "border-brand-warning/40 bg-brand-warning-bg"
+                  : "border-brand-border bg-brand-surface"
+            }`}
+          >
+            <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">
+              {days === 0 ? "Hoy" : days === 1 ? "Mañana" : days !== null ? `En ${pluralDays(days)}` : ""}
             </p>
-            <p className="text-sm font-medium">{formatMoney(dayTotal, dayInvoices[0]?.currency)}</p>
+            <p className="text-sm font-semibold text-brand-text">{date === "—" ? "Sin fecha" : formatDate(date)}</p>
+            <p className="mt-1 text-base font-semibold tabular-nums text-brand-text">
+              {formatMoney(dayTotal, dayInvoices[0]?.currency)}
+            </p>
             <p className="text-xs text-brand-muted">
-              {dayInvoices.length} factura{dayInvoices.length !== 1 ? "s" : ""}
+              {dayInvoices.length === 1 ? dayInvoices[0].number : `${dayInvoices.length} facturas`}
             </p>
           </div>
         );
@@ -492,27 +593,35 @@ async function ReceivableReport({ params }: { params: Params }) {
   ]);
 
   const columns: Column<ReceivableRow>[] = [
-    { header: "Factura", accessor: (inv) => inv.number },
     {
-      header: "Cliente",
-      accessor: (inv) => {
-        const clientData = inv.clients as { name: string }[] | { name: string } | null;
-        const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
-        return <span className="text-brand-muted">{clientName ?? "—"}</span>;
-      },
+      header: "Factura",
+      accessor: (inv) => (
+        <Link href={`/invoices/${inv.id}`} className="font-medium text-brand-text hover:text-brand-accent">
+          {inv.number}
+        </Link>
+      ),
     },
-    { header: "Vencimiento", accessor: (inv) => <span className="text-brand-muted">{inv.due_date ?? "—"}</span> },
+    { header: "Cliente", accessor: (inv) => <ClientCell rel={inv.clients} /> },
+    { header: "Vencimiento", accessor: (inv) => <span className="whitespace-nowrap text-brand-muted">{formatDate(inv.due_date)}</span> },
     {
-      header: "Días vencida",
+      header: "Situación",
       accessor: (inv) =>
-        inv.daysOverdue > 0 ? <Badge tone="danger">{inv.daysOverdue} días</Badge> : <Badge tone="success">Al día</Badge>,
+        inv.daysOverdue > 0 ? (
+          <Chip tone="danger">Vencida hace {pluralDays(inv.daysOverdue)}</Chip>
+        ) : (
+          <Chip tone="success">Al día</Chip>
+        ),
     },
-    { header: "Balance", accessor: (inv) => <span className="font-medium">{formatMoney(inv.balance, inv.currency)}</span> },
+    {
+      header: "Balance",
+      className: "text-right",
+      accessor: (inv) => <Money value={inv.balance} currency={inv.currency} strong tone={inv.daysOverdue > 0 ? "danger" : undefined} />,
+    },
   ];
 
   return (
     <div>
-      <h2 className="mb-3 text-lg font-semibold text-brand-primary">Cuentas por cobrar</h2>
+      <ReportTitle title="Cuentas por cobrar" description="Detalle de facturas con balance, filtrable por cliente, proyecto, estado y moneda." />
       <FilterBar report="cxc">
         <DateRangeFields from={params.from} to={params.to} />
         <Select label="Cliente" name="client_id" defaultValue={params.client_id ?? ""}>
@@ -550,7 +659,7 @@ async function ReceivableReport({ params }: { params: Params }) {
         rows={receivable}
         keyFor={(inv) => inv.id}
         emptyMessage="No hay facturas que coincidan con el filtro."
-        maxWidth="max-w-3xl"
+        maxWidth="max-w-none"
       />
     </div>
   );
@@ -571,22 +680,22 @@ async function PayableReport({ params }: { params: Params }) {
   ]);
 
   const columns: Column<PayableRow>[] = [
-    { header: "Gasto", accessor: (e) => e.description },
     {
-      header: "Proveedor",
-      accessor: (e) => {
-        const supplierData = e.suppliers as { name: string }[] | { name: string } | null;
-        const supplierName = Array.isArray(supplierData) ? supplierData[0]?.name : supplierData?.name;
-        return <span className="text-brand-muted">{supplierName ?? "—"}</span>;
-      },
+      header: "Gasto",
+      accessor: (e) => (
+        <Link href={`/expenses/${e.id}`} className="font-medium text-brand-text hover:text-brand-accent">
+          {e.description}
+        </Link>
+      ),
     },
-    { header: "Fecha", accessor: (e) => <span className="text-brand-muted">{e.expense_date}</span> },
-    { header: "Balance", accessor: (e) => <span className="font-medium">{formatMoney(e.balance, e.currency)}</span> },
+    { header: "Proveedor", accessor: (e) => <ClientCell rel={e.suppliers} /> },
+    { header: "Fecha", accessor: (e) => <span className="whitespace-nowrap text-brand-muted">{formatDate(e.expense_date)}</span> },
+    { header: "Balance", className: "text-right", accessor: (e) => <Money value={e.balance} currency={e.currency} strong tone="warning" /> },
   ];
 
   return (
     <div>
-      <h2 className="mb-3 text-lg font-semibold text-brand-primary">Cuentas por pagar</h2>
+      <ReportTitle title="Cuentas por pagar" description="Gastos con saldo pendiente con proveedores." />
       <FilterBar report="cxp">
         <DateRangeFields from={params.from} to={params.to} />
         <Select label="Proveedor" name="supplier_id" defaultValue={params.supplier_id ?? ""}>
@@ -623,7 +732,7 @@ async function PayableReport({ params }: { params: Params }) {
         rows={payable}
         keyFor={(e) => e.id}
         emptyMessage="No hay gastos que coincidan con el filtro."
-        maxWidth="max-w-3xl"
+        maxWidth="max-w-none"
       />
     </div>
   );
@@ -643,14 +752,24 @@ async function SalesByClientReport({ params }: { params: Params }) {
     listProjectsForFilter(),
   ]);
 
+  const salesTotal = salesByClient.reduce((a, c) => a + c.total, 0);
   const columns: Column<SalesRow>[] = [
-    { header: "Cliente", accessor: (c) => c.name },
-    { header: "Total facturado", accessor: (c) => <span className="font-medium">{formatMoney(c.total)}</span> },
+    {
+      header: "Cliente",
+      accessor: (c) => (
+        <span className="flex items-center gap-2">
+          <InitialsAvatar name={c.name} size="sm" />
+          <span className="text-brand-text">{c.name}</span>
+        </span>
+      ),
+    },
+    { header: "Participación", accessor: (c) => <ShareBar value={c.total} total={salesTotal} /> },
+    { header: "Total facturado", className: "text-right", accessor: (c) => <Money value={c.total} strong /> },
   ];
 
   return (
     <div>
-      <h2 className="mb-3 text-lg font-semibold text-brand-primary">Ventas por cliente</h2>
+      <ReportTitle title="Ventas por cliente" description="Total facturado por cliente en la moneda base, de mayor a menor." />
       <FilterBar report="ventas-cliente">
         <DateRangeFields from={params.from} to={params.to} />
         <Select label="Cliente" name="client_id" defaultValue={params.client_id ?? ""}>
@@ -689,8 +808,13 @@ async function SalesByClientReport({ params }: { params: Params }) {
         rows={salesByClient}
         keyFor={(c) => c.clientId}
         emptyMessage="Sin facturación que coincida con el filtro."
-        maxWidth="max-w-md"
+        maxWidth="max-w-3xl"
       />
+      {salesByClient.length > 0 && (
+        <p className="mt-3 max-w-3xl text-right text-sm text-brand-muted">
+          Total: <span className="font-semibold tabular-nums text-brand-text">{formatMoney(salesTotal)}</span>
+        </p>
+      )}
     </div>
   );
 }
@@ -710,14 +834,16 @@ async function ExpensesByCategoryReport({ params }: { params: Params }) {
     listSuppliersForFilter(),
   ]);
 
+  const expensesTotal = expensesByCategory.reduce((a, c) => a + c.total, 0);
   const columns: Column<ExpenseCategoryRow>[] = [
-    { header: "Categoría", accessor: (c) => c.name },
-    { header: "Total gastado", accessor: (c) => <span className="font-medium">{formatMoney(c.total)}</span> },
+    { header: "Categoría", accessor: (c) => <span className="font-medium text-brand-text">{c.name}</span> },
+    { header: "Participación", accessor: (c) => <ShareBar value={c.total} total={expensesTotal} /> },
+    { header: "Total gastado", className: "text-right", accessor: (c) => <Money value={c.total} strong /> },
   ];
 
   return (
     <div>
-      <h2 className="mb-3 text-lg font-semibold text-brand-primary">Gastos por categoría</h2>
+      <ReportTitle title="Gastos por categoría" description="Total gastado por categoría en la moneda base, de mayor a menor." />
       <FilterBar report="gastos-categoria">
         <DateRangeFields from={params.from} to={params.to} />
         <Select label="Categoría" name="category_id" defaultValue={params.category_id ?? ""}>
@@ -759,8 +885,13 @@ async function ExpensesByCategoryReport({ params }: { params: Params }) {
         rows={expensesByCategory}
         keyFor={(c) => c.categoryId}
         emptyMessage="Sin gastos que coincidan con el filtro."
-        maxWidth="max-w-md"
+        maxWidth="max-w-3xl"
       />
+      {expensesByCategory.length > 0 && (
+        <p className="mt-3 max-w-3xl text-right text-sm text-brand-muted">
+          Total: <span className="font-semibold tabular-nums text-brand-text">{formatMoney(expensesTotal)}</span>
+        </p>
+      )}
     </div>
   );
 }

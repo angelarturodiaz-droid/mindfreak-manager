@@ -1,19 +1,65 @@
 import { createClient } from "@/lib/supabase/server";
+import { PAGE_SIZE, pageRange } from "@/lib/utils/pagination";
 
-export async function listExpenses(status?: string) {
+export type ExpenseListFilters = {
+  status?: string;
+  page?: number;
+};
+
+/** Lista paginada de gastos (PAGE_SIZE por página) con el total para la paginación. */
+export async function listExpenses(filters: ExpenseListFilters = {}) {
   const supabase = await createClient();
+  const [from, to] = pageRange(filters.page ?? 1);
   let query = supabase
     .from("expenses")
     .select(
-      "id, expense_date, description, subtotal, tax, total, status, currency, expense_categories(name), suppliers(name), projects(number, name)",
+      "id, expense_date, description, subtotal, tax, total, balance, status, currency, expense_categories(name), suppliers(name), projects(number, name)",
+      { count: "exact" },
     )
-    .order("expense_date", { ascending: false });
+    .order("expense_date", { ascending: false })
+    .range(from, to);
 
-  if (status) query = query.eq("status", status);
+  if (filters.status) query = query.eq("status", filters.status);
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
   if (error) throw new Error(error.message);
-  return data;
+  return { rows: data, total: count ?? 0, pageSize: PAGE_SIZE };
+}
+
+/**
+ * Resumen para el encabezado de /expenses (solo lectura), en moneda base:
+ * conteo por estado, saldo por pagar y lo gastado en el mes y el año en
+ * curso (sin cancelados).
+ */
+export async function getExpenseStats() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("expenses")
+    .select("status, total, balance, exchange_rate, expense_date");
+  if (error) throw new Error(error.message);
+
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Santo_Domingo" }).format(
+    new Date(),
+  );
+  const month = today.slice(0, 7);
+  const year = today.slice(0, 4);
+  const byStatus: Record<string, number> = {};
+  let porPagar = 0;
+  let porPagarCount = 0;
+  let mes = 0;
+  let anio = 0;
+  for (const e of data ?? []) {
+    byStatus[e.status] = (byStatus[e.status] ?? 0) + 1;
+    if (e.status === "CANCELLED") continue;
+    const rate = Number(e.exchange_rate ?? 1);
+    if (e.status === "PENDING" || e.status === "PARTIALLY_PAID") {
+      porPagar += Number(e.balance) * rate;
+      porPagarCount += 1;
+    }
+    if (e.expense_date?.startsWith(month)) mes += Number(e.total) * rate;
+    if (e.expense_date?.startsWith(year)) anio += Number(e.total) * rate;
+  }
+  return { total: (data ?? []).length, byStatus, porPagar, porPagarCount, mes, anio };
 }
 
 export async function getExpense(id: string) {

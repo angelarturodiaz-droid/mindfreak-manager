@@ -41,7 +41,9 @@ export function formatEventDate(dateISO: string): string {
     month: "short",
     year: "numeric",
     timeZone: "UTC",
-  }).format(new Date(`${dateISO}T00:00:00Z`));
+  })
+    .format(new Date(`${dateISO}T00:00:00Z`))
+    .replace(" de ", " ");
 }
 
 /** "7:30 p. m." a partir de "19:30:00" */
