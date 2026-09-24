@@ -25,12 +25,24 @@ export const bankAccountEditSchema = z.object({
 
 export type BankAccountEditInput = z.infer<typeof bankAccountEditSchema>;
 
-export const manualTransactionSchema = z.object({
-  type: z.enum(["INCOME", "EXPENSE"]),
-  transaction_date: z.string().min(1, "La fecha es requerida"),
-  amount: z.coerce.number().positive("El monto debe ser mayor a 0"),
-  description: z.string().trim().min(1, "La descripción es requerida"),
-});
+export const manualTransactionSchema = z
+  .object({
+    type: z.enum(["INCOME", "EXPENSE"]),
+    transaction_date: z.string().min(1, "La fecha es requerida"),
+    amount: z.coerce.number().positive("El monto debe ser mayor a 0"),
+    // Categoría del catálogo (Configuración > Categorías). Si se elige, la
+    // descripción es opcional y se usa el nombre de la categoría.
+    category_id: z.string().uuid().optional().or(z.literal("")),
+    description: z.string().trim().optional().or(z.literal("")),
+    // Número de cheque, de transacción o de depósito (opcional).
+    reference: z.string().trim().max(100).optional().or(z.literal("")),
+  })
+  // Se permite guardar "Sin categoría" (queda en la alerta para clasificar
+  // después), pero entonces la descripción es obligatoria.
+  .refine((d) => Boolean(d.category_id) || Boolean(d.description), {
+    message: "Si lo dejas sin categoría, escribe una descripción.",
+    path: ["category_id"],
+  });
 
 export const transferSchema = z.object({
   to_bank_account_id: z.string().uuid("Selecciona la cuenta destino"),

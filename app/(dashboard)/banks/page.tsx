@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, CreditCard, Landmark, Plus, ShieldCheck, Wallet } from "lucide-react";
+import { AlertTriangle, ChevronRight, CreditCard, Landmark, Plus, ShieldCheck, Wallet } from "lucide-react";
 import { listBankAccountsWithBalance } from "@/features/banks/queries";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,6 +59,13 @@ function AccountCard({ a }: { a: AccountRow }) {
           <ChevronRight size={16} className="text-brand-muted group-hover:text-brand-accent" />
         </div>
       </div>
+
+      {a.uncategorized_count > 0 && (
+        <p className="-mt-1 inline-flex w-fit items-center gap-1.5 rounded-full bg-brand-warning-bg px-2.5 py-0.5 text-xs font-medium text-brand-warning">
+          <AlertTriangle size={12} />
+          {a.uncategorized_count === 1 ? "1 sin categoría" : `${a.uncategorized_count} sin categoría`}
+        </p>
+      )}
 
       {isCard ? (
         <div className="flex flex-col gap-2">
@@ -151,6 +158,24 @@ export default async function BanksPage() {
         />
       ) : (
         <>
+          {(() => {
+            const pending = accounts.reduce((acc, a) => acc + a.uncategorized_count, 0);
+            if (pending === 0) return null;
+            const first = accounts.find((a) => a.uncategorized_count > 0);
+            return (
+              <Link
+                href={first ? `/banks/${first.id}?cat=none` : "/banks"}
+                className="flex items-center justify-between gap-3 rounded-[var(--radius-lg)] border border-brand-warning/30 bg-brand-warning-bg px-4 py-3 text-sm text-brand-text hover:border-brand-warning/60"
+              >
+                <span className="inline-flex items-center gap-2 font-medium">
+                  <AlertTriangle size={16} className="text-brand-warning" />
+                  {pending === 1 ? "1 movimiento sin categoría" : `${pending} movimientos sin categoría`}
+                </span>
+                <span className="text-brand-muted">Clasifícalos para que salgan bien en los reportes →</span>
+              </Link>
+            );
+          })()}
+
           <StatGrid>
             <StatCard
               label="Disponible en bancos"

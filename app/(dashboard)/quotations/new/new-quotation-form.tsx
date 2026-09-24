@@ -6,9 +6,9 @@ import { createQuotationAction, type ActionState } from "@/features/quotations/a
 import { Input, Select, Textarea } from "@/components/ui/field";
 import { CurrencyExchangeFields } from "@/components/ui/currency-exchange-fields";
 import { Button } from "@/components/ui/button";
+import { todayISO } from "@/lib/utils/dates";
 
 const initialState: ActionState = { error: null };
-const today = new Date().toISOString().slice(0, 10);
 
 type TaxRate = { id: string; name: string; rate: number; is_default: boolean };
 
@@ -44,7 +44,7 @@ export function NewQuotationForm({
         ))}
       </Select>
 
-      <Input label="Fecha de emisión" name="issue_date" type="date" required defaultValue={today} />
+      <Input label="Fecha de emisión" name="issue_date" type="date" required defaultValue={todayISO()} />
       <Input label="Válida hasta" name="valid_until" type="date" />
 
       <Select

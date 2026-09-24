@@ -6,9 +6,9 @@ import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/features/payments/sche
 import { Input, Select } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
+import { todayISO } from "@/lib/utils/dates";
 
 const initialState: ActionState = { error: null };
-const today = new Date().toISOString().slice(0, 10);
 
 type BankAccount = { id: string; name: string; bank_name: string | null; currency: string };
 
@@ -32,7 +32,7 @@ export function RegisterPaymentForm({
 
   return (
     <form action={formAction} className="flex flex-wrap items-end gap-2">
-      <Input label="Fecha" name="payment_date" type="date" required defaultValue={today} />
+      <Input label="Fecha" name="payment_date" type="date" required defaultValue={todayISO()} />
       <MoneyInput
         label="Monto"
         name="amount"

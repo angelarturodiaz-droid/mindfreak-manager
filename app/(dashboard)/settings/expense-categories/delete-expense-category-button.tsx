@@ -14,7 +14,7 @@ export function DeleteExpenseCategoryButton({
 }) {
   const message =
     expenseCount > 0
-      ? `"${categoryName}" tiene ${expenseCount} gasto(s) asociado(s). Si la eliminas, esos gastos quedarán sin categoría (no se borran).`
+      ? `"${categoryName}" se usa en ${expenseCount} gasto(s) o movimiento(s) de banco. Si la eliminas, quedarán sin categoría (no se borran).`
       : undefined;
 
   return (

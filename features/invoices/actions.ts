@@ -1,5 +1,6 @@
 "use server";
 
+import { todayISO } from "@/lib/utils/dates";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
@@ -626,7 +627,7 @@ export async function duplicateInvoiceAction(invoiceId: string): Promise<void> {
       project_id: original.project_id,
       quotation_id: original.quotation_id,
       number,
-      issue_date: new Date().toISOString().slice(0, 10),
+      issue_date: todayISO(),
       currency: original.currency,
       exchange_rate: original.exchange_rate,
       ncf_type: original.ncf_type,

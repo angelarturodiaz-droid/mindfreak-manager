@@ -389,3 +389,111 @@ export async function getReceivablesDashboard() {
     cotizacionesAceptadasSinFacturar: acceptedNotInvoiced,
   };
 }
+
+export async function listBankAccountsForFilter() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("bank_accounts")
+    .select("id, name, currency, type")
+    .order("name");
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export type CashflowByCategoryFilters = {
+  from?: string;
+  to?: string;
+  bankAccountId?: string;
+  projectId?: string;
+  /** Las transferencias entre cuentas propias no son ingreso ni gasto: fuera por defecto. */
+  includeTransfers?: boolean;
+};
+
+export type CashflowCategoryRow = {
+  categoryId: string;
+  name: string;
+  ingresos: number;
+  egresos: number;
+  neto: number;
+  count: number;
+  /** Neto por mes (YYYY-MM). */
+  byMonth: Record<string, number>;
+};
+
+/**
+ * Ingresos y egresos por categoría a partir de los movimientos de banco
+ * (flujo de caja real, como el Excel de control). Tipo y Categoría son
+ * independientes: una misma categoría puede tener ingresos y egresos.
+ *
+ * - Ingreso = movimiento INCOME; egreso = EXPENSE (se guarda en positivo).
+ * - Transferencias: excluidas salvo includeTransfers; si se incluyen, la
+ *   fila que entra cuenta como ingreso y la que sale como egreso.
+ * - Montos en moneda base: amount × exchange_rate de cada movimiento.
+ * - "Sin categoría" es una fila propia para que se vea lo que falta clasificar.
+ */
+export async function getCashflowByCategoryReport(filters: CashflowByCategoryFilters = {}) {
+  const supabase = await createClient();
+  let query = supabase
+    .from("bank_transactions")
+    .select("type, amount, exchange_rate, transaction_date, category_id, expense_categories(name)");
+
+  if (!filters.includeTransfers) query = query.neq("type", "TRANSFER");
+  if (filters.from) query = query.gte("transaction_date", filters.from);
+  if (filters.to) query = query.lte("transaction_date", filters.to);
+  if (filters.bankAccountId) query = query.eq("bank_account_id", filters.bankAccountId);
+  if (filters.projectId) query = query.eq("project_id", filters.projectId);
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+
+  const map = new Map<string, CashflowCategoryRow>();
+  const months = new Set<string>();
+  for (const row of data ?? []) {
+    const rate = Number(row.exchange_rate ?? 1);
+    const amount = Number(row.amount);
+    let ingreso = 0;
+    let egreso = 0;
+    if (row.type === "INCOME") ingreso = amount * rate;
+    else if (row.type === "EXPENSE") egreso = amount * rate;
+    else if (row.type === "TRANSFER") {
+      if (amount >= 0) ingreso = amount * rate;
+      else egreso = -amount * rate;
+    }
+
+    const categoryData = row.expense_categories as { name: string }[] | { name: string } | null;
+    const name = Array.isArray(categoryData) ? categoryData[0]?.name : categoryData?.name;
+    const key = (row.category_id as string | null) ?? "sin-categoria";
+    const current =
+      map.get(key) ??
+      ({ categoryId: key, name: name ?? "Sin categoría", ingresos: 0, egresos: 0, neto: 0, count: 0, byMonth: {} } as CashflowCategoryRow);
+    current.ingresos += ingreso;
+    current.egresos += egreso;
+    current.neto += ingreso - egreso;
+    current.count += 1;
+    const month = String(row.transaction_date).slice(0, 7);
+    months.add(month);
+    current.byMonth[month] = (current.byMonth[month] ?? 0) + ingreso - egreso;
+    map.set(key, current);
+  }
+
+  const rows = Array.from(map.values()).sort(
+    (a, b) => b.ingresos + b.egresos - (a.ingresos + a.egresos),
+  );
+  const totals = rows.reduce(
+    (acc, r) => ({
+      ingresos: acc.ingresos + r.ingresos,
+      egresos: acc.egresos + r.egresos,
+      neto: acc.neto + r.neto,
+    }),
+    { ingresos: 0, egresos: 0, neto: 0 },
+  );
+  const uncategorized = map.get("sin-categoria");
+  return {
+    rows,
+    months: Array.from(months).sort(),
+    totals,
+    uncategorized: uncategorized
+      ? { count: uncategorized.count, amount: uncategorized.ingresos + uncategorized.egresos }
+      : { count: 0, amount: 0 },
+  };
+}

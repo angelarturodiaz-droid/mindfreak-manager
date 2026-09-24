@@ -121,7 +121,9 @@ export async function createManualTransactionAction(
     type: String(formData.get("type") ?? "INCOME"),
     transaction_date: String(formData.get("transaction_date") ?? ""),
     amount: String(formData.get("amount") ?? "0"),
+    category_id: String(formData.get("category_id") ?? ""),
     description: String(formData.get("description") ?? ""),
+    reference: String(formData.get("reference") ?? ""),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -129,6 +131,18 @@ export async function createManualTransactionAction(
 
   const companyId = await getPrimaryCompanyId();
   const supabase = await createSupabaseClient();
+
+  let categoryName: string | null = null;
+  if (parsed.data.category_id) {
+    const { data: category } = await supabase
+      .from("expense_categories")
+      .select("name")
+      .eq("id", parsed.data.category_id)
+      .eq("company_id", companyId)
+      .single();
+    if (!category) return { error: "La categoría elegida no existe." };
+    categoryName = category.name;
+  }
 
   const { data: account, error: accError } = await supabase
     .from("bank_accounts")
@@ -147,7 +161,9 @@ export async function createManualTransactionAction(
       currency: account.currency,
       exchange_rate: 1,
       transaction_date: parsed.data.transaction_date,
-      description: parsed.data.description,
+      description: parsed.data.description || categoryName,
+      category_id: parsed.data.category_id || null,
+      reference: parsed.data.reference || null,
     })
     .select("id")
     .single();
@@ -211,6 +227,48 @@ export async function createTransferAction(
   revalidatePath(`/banks/${parsed.data.to_bank_account_id}`);
   revalidatePath("/banks");
   return { error: null };
+}
+
+/**
+ * Asigna o cambia la categoría de un movimiento (manual o automático:
+ * cobros, pagos a proveedores, gastos). Solo cambia la categoría, nunca el
+ * monto, la fecha ni la cuenta.
+ */
+export async function setTransactionCategoryAction(
+  transactionId: string,
+  bankAccountId: string,
+  categoryId: string | null,
+): Promise<void> {
+  await requirePermission("banks.create");
+  const companyId = await getPrimaryCompanyId();
+  const supabase = await createSupabaseClient();
+
+  if (categoryId) {
+    const { data: category } = await supabase
+      .from("expense_categories")
+      .select("id")
+      .eq("id", categoryId)
+      .eq("company_id", companyId)
+      .single();
+    if (!category) throw new Error("La categoría elegida no existe.");
+  }
+
+  const { error } = await supabase
+    .from("bank_transactions")
+    .update({ category_id: categoryId })
+    .eq("id", transactionId)
+    .eq("bank_account_id", bankAccountId);
+  if (error) throw new Error(error.message);
+
+  await logAudit({
+    companyId,
+    action: "UPDATE",
+    entityType: "bank_transaction",
+    entityId: transactionId,
+    newValues: { category_id: categoryId },
+  });
+
+  revalidatePath(`/banks/${bankAccountId}`);
 }
 
 export async function toggleReconciledAction(

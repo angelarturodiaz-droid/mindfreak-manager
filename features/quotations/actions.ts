@@ -1,5 +1,6 @@
 "use server";
 
+import { todayISO } from "@/lib/utils/dates";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
@@ -573,7 +574,7 @@ export async function duplicateQuotationAction(quotationId: string): Promise<voi
       client_id: original.client_id,
       contact_id: original.contact_id,
       number,
-      issue_date: new Date().toISOString().slice(0, 10),
+      issue_date: todayISO(),
       currency: original.currency,
       exchange_rate: original.exchange_rate,
       terms: original.terms,

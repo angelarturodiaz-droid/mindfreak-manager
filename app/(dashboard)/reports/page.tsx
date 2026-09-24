@@ -9,6 +9,8 @@ import {
   getSalesByClientReport,
   getExpensesByCategoryReport,
   getReceivablesDashboard,
+  getCashflowByCategoryReport,
+  listBankAccountsForFilter,
   listClientsForFilter,
   listSuppliersForFilter,
   listProjectsForFilter,
@@ -67,6 +69,10 @@ const REPORT_CATALOG: { category: string; reports: { key: string; label: string 
     ],
   },
   { category: "Pagos", reports: [{ key: "cxp", label: "Cuentas por pagar" }] },
+  {
+    category: "Bancos",
+    reports: [{ key: "flujo-categoria", label: "Ingresos y egresos por categoría" }],
+  },
   { category: "Ventas", reports: [{ key: "ventas-cliente", label: "Ventas por cliente" }] },
   { category: "Gastos", reports: [{ key: "gastos-categoria", label: "Gastos por categoría" }] },
 ];
@@ -84,6 +90,9 @@ type Params = {
   manager_id?: string;
   status?: string;
   currency?: string;
+  bank_account_id?: string;
+  include_transfers?: string;
+  view?: string;
 };
 
 export default async function ReportsPage({
@@ -137,6 +146,7 @@ export default async function ReportsPage({
         {activeReport === "cxc" && <ReceivableReport params={params} />}
         {activeReport === "cxp" && <PayableReport params={params} />}
         {activeReport === "ventas-cliente" && <SalesByClientReport params={params} />}
+        {activeReport === "flujo-categoria" && <CashflowByCategoryReport params={params} />}
         {activeReport === "gastos-categoria" && <ExpensesByCategoryReport params={params} />}
       </section>
     </main>
@@ -892,6 +902,231 @@ async function ExpensesByCategoryReport({ params }: { params: Params }) {
           Total: <span className="font-semibold tabular-nums text-brand-text">{formatMoney(expensesTotal)}</span>
         </p>
       )}
+    </div>
+  );
+}
+
+function monthLabel(ym: string) {
+  const [y, m] = ym.split("-").map(Number);
+  return new Intl.DateTimeFormat("es-DO", { month: "short", year: "2-digit", timeZone: "UTC" })
+    .format(new Date(Date.UTC(y, m - 1, 1)))
+    .replace(" de ", " ");
+}
+
+async function CashflowByCategoryReport({ params }: { params: Params }) {
+  const includeTransfers = params.include_transfers === "1";
+  const monthly = params.view === "mensual";
+  const [report, accounts, projects] = await Promise.all([
+    getCashflowByCategoryReport({
+      from: params.from,
+      to: params.to,
+      bankAccountId: params.bank_account_id,
+      projectId: params.project_id,
+      includeTransfers,
+    }),
+    listBankAccountsForFilter(),
+    listProjectsForFilter(),
+  ]);
+  type Row = (typeof report.rows)[number];
+  const volume = report.rows.reduce((a, r) => a + r.ingresos + r.egresos, 0);
+
+  const viewHref = (view?: string) => {
+    const qs = new URLSearchParams();
+    qs.set("report", "flujo-categoria");
+    for (const k of ["from", "to", "bank_account_id", "project_id", "include_transfers"] as const) {
+      const v = params[k];
+      if (v) qs.set(k, v);
+    }
+    if (view) qs.set("view", view);
+    return `/reports?${qs.toString()}`;
+  };
+
+  const categoryCell = (r: Row) =>
+    r.categoryId === "sin-categoria" ? (
+      <span className="inline-flex items-center gap-1.5 font-medium text-brand-warning">
+        <AlertTriangle size={14} /> Sin categoría
+      </span>
+    ) : (
+      <span className="font-medium text-brand-text">{r.name}</span>
+    );
+
+  const summaryColumns: Column<Row>[] = [
+    { header: "Categoría", accessor: categoryCell },
+    { header: "Mov.", className: "text-right", accessor: (r) => <span className="tabular-nums text-brand-muted">{r.count}</span> },
+    {
+      header: "Ingresos",
+      className: "text-right",
+      accessor: (r) =>
+        r.ingresos > 0 ? <span className="whitespace-nowrap tabular-nums text-brand-success">{formatMoney(r.ingresos)}</span> : <span className="text-brand-muted">—</span>,
+    },
+    {
+      header: "Egresos",
+      className: "text-right",
+      accessor: (r) =>
+        r.egresos > 0 ? <span className="whitespace-nowrap tabular-nums text-brand-danger">{formatMoney(r.egresos)}</span> : <span className="text-brand-muted">—</span>,
+    },
+    {
+      header: "Neto",
+      className: "text-right",
+      accessor: (r) => <Money value={r.neto} strong tone={r.neto < 0 ? "danger" : undefined} />,
+    },
+    { header: "Peso", accessor: (r) => <ShareBar value={r.ingresos + r.egresos} total={volume} /> },
+  ];
+
+  return (
+    <div>
+      <ReportTitle
+        title="Ingresos y egresos por categoría"
+        description="Flujo real de los movimientos de banco, agrupado por categoría y en la moneda base."
+      />
+      <FilterBar report="flujo-categoria">
+        {monthly && <input type="hidden" name="view" value="mensual" />}
+        <DateRangeFields from={params.from} to={params.to} />
+        <Select label="Cuenta" name="bank_account_id" defaultValue={params.bank_account_id ?? ""}>
+          <option value="">Todas</option>
+          {accounts.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name} ({a.currency})
+            </option>
+          ))}
+        </Select>
+        <Select label="Proyecto" name="project_id" defaultValue={params.project_id ?? ""}>
+          <option value="">Todos</option>
+          {projects.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.number} — {p.name}
+            </option>
+          ))}
+        </Select>
+        <label className="flex items-center gap-2 pb-2 text-sm text-brand-text">
+          <input type="checkbox" name="include_transfers" value="1" defaultChecked={includeTransfers} />
+          Incluir transferencias entre cuentas
+        </label>
+      </FilterBar>
+
+      <section className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Ingresos" value={formatMoney(report.totals.ingresos)} valueTone="success" icon={<ArrowDownCircle size={20} />} tone="green" />
+        <StatCard label="Egresos" value={formatMoney(report.totals.egresos)} valueTone="danger" icon={<CalendarClock size={20} />} tone="red" />
+        <StatCard
+          label="Neto"
+          value={formatMoney(report.totals.neto)}
+          valueTone={report.totals.neto < 0 ? "danger" : "success"}
+          hint="Ingresos − egresos"
+          icon={<CalendarRange size={20} />}
+          tone="blue"
+        />
+        <StatCard
+          label="Sin categoría"
+          value={String(report.uncategorized.count)}
+          valueTone={report.uncategorized.count > 0 ? "warning" : "success"}
+          hint={report.uncategorized.count > 0 ? `${formatMoney(report.uncategorized.amount)} por clasificar` : "Todo clasificado"}
+          icon={<AlertTriangle size={20} />}
+          tone="amber"
+        />
+      </section>
+
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <nav aria-label="Vista" className="flex gap-1.5">
+          {[
+            { key: undefined, label: "Resumen" },
+            { key: "mensual", label: "Por mes" },
+          ].map((v) => {
+            const active = (v.key === "mensual") === monthly;
+            return (
+              <Link
+                key={v.label}
+                href={viewHref(v.key)}
+                className={`rounded-full border px-3 py-1.5 text-sm font-medium ${
+                  active
+                    ? "border-brand-primary bg-brand-primary text-white"
+                    : "border-brand-border bg-brand-surface text-brand-muted hover:bg-brand-surface-hover hover:text-brand-text"
+                }`}
+              >
+                {v.label}
+              </Link>
+            );
+          })}
+        </nav>
+        <p className="text-xs text-brand-muted">
+          {includeTransfers
+            ? "Incluye transferencias entre cuentas propias."
+            : "Sin transferencias entre cuentas propias (no son ingreso ni gasto)."}
+        </p>
+      </div>
+
+      {report.rows.length === 0 ? (
+        <p className="rounded-[var(--radius-lg)] border border-dashed border-brand-border p-6 text-center text-sm text-brand-muted">
+          Sin movimientos que coincidan con el filtro.
+        </p>
+      ) : !monthly ? (
+        <>
+          <DataTable columns={summaryColumns} rows={report.rows} keyFor={(r) => r.categoryId} maxWidth="max-w-none" />
+          <div className="mt-3 flex flex-wrap justify-end gap-6 text-sm text-brand-muted">
+            <span>
+              Ingresos <span className="font-semibold tabular-nums text-brand-success">{formatMoney(report.totals.ingresos)}</span>
+            </span>
+            <span>
+              Egresos <span className="font-semibold tabular-nums text-brand-danger">{formatMoney(report.totals.egresos)}</span>
+            </span>
+            <span>
+              Neto <span className="font-semibold tabular-nums text-brand-text">{formatMoney(report.totals.neto)}</span>
+            </span>
+          </div>
+        </>
+      ) : (
+        <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-brand-border">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-brand-border bg-brand-background text-left text-xs font-medium uppercase tracking-wide text-brand-muted">
+                <th className="sticky left-0 bg-brand-background px-4 py-3">Categoría</th>
+                {report.months.map((m) => (
+                  <th key={m} className="whitespace-nowrap px-4 py-3 text-right">
+                    {monthLabel(m)}
+                  </th>
+                ))}
+                <th className="px-4 py-3 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.rows.map((r) => (
+                <tr key={r.categoryId} className="border-b border-brand-border/60 bg-brand-surface last:border-0 hover:bg-brand-surface-hover">
+                  <td className="sticky left-0 bg-inherit px-4 py-3">{categoryCell(r)}</td>
+                  {report.months.map((m) => {
+                    const v = r.byMonth[m] ?? 0;
+                    return (
+                      <td
+                        key={m}
+                        className={`whitespace-nowrap px-4 py-3 text-right tabular-nums ${
+                          v === 0 ? "text-brand-muted" : v < 0 ? "text-brand-danger" : "text-brand-success"
+                        }`}
+                      >
+                        {v === 0 ? "—" : formatMoney(v)}
+                      </td>
+                    );
+                  })}
+                  <td className="whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums">{formatMoney(r.neto)}</td>
+                </tr>
+              ))}
+              <tr className="bg-brand-background font-semibold">
+                <td className="sticky left-0 bg-brand-background px-4 py-3">Neto del mes</td>
+                {report.months.map((m) => {
+                  const v = report.rows.reduce((a, r) => a + (r.byMonth[m] ?? 0), 0);
+                  return (
+                    <td key={m} className={`whitespace-nowrap px-4 py-3 text-right tabular-nums ${v < 0 ? "text-brand-danger" : "text-brand-text"}`}>
+                      {formatMoney(v)}
+                    </td>
+                  );
+                })}
+                <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatMoney(report.totals.neto)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+      <p className="mt-3 text-xs text-brand-muted">
+        Los valores positivos son ingresos netos y los negativos, egresos netos. Montos consolidados con la
+        tasa guardada en cada movimiento.
+      </p>
     </div>
   );
 }

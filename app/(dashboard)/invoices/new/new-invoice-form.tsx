@@ -6,9 +6,9 @@ import { createInvoiceAction, type ActionState } from "@/features/invoices/actio
 import { Input, Select } from "@/components/ui/field";
 import { CurrencyExchangeFields } from "@/components/ui/currency-exchange-fields";
 import { Button } from "@/components/ui/button";
+import { todayISO } from "@/lib/utils/dates";
 
 const initialState: ActionState = { error: null };
-const today = new Date().toISOString().slice(0, 10);
 
 type Client = { id: string; name: string };
 type Project = {
@@ -42,7 +42,7 @@ export function NewInvoiceForm({
   );
   const [useProject, setUseProject] = useState(false);
   const [paymentTermsId, setPaymentTermsId] = useState("");
-  const [issueDate, setIssueDate] = useState(today);
+  const [issueDate, setIssueDate] = useState(todayISO);
   const [manualDueDate, setManualDueDate] = useState("");
   const [billingType, setBillingType] = useState("REGULAR");
 
@@ -108,7 +108,7 @@ export function NewInvoiceForm({
         name="issue_date"
         type="date"
         required
-        defaultValue={today}
+        defaultValue={todayISO()}
         onChange={(e) => setIssueDate(e.target.value)}
       />
 

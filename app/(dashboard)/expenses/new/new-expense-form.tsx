@@ -8,9 +8,9 @@ import { Input, Select } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import { CurrencyExchangeFields } from "@/components/ui/currency-exchange-fields";
 import { Button } from "@/components/ui/button";
+import { todayISO } from "@/lib/utils/dates";
 
 const initialState: ActionState = { error: null };
-const today = new Date().toISOString().slice(0, 10);
 
 type Option = { id: string; name: string };
 type ProjectOption = { id: string; number: string; name: string };
@@ -42,7 +42,7 @@ export function NewExpenseForm({
   return (
     <form action={formAction} className="max-w-md space-y-4">
       <Input label="Descripción" name="description" required />
-      <Input label="Fecha" name="expense_date" type="date" required defaultValue={today} />
+      <Input label="Fecha" name="expense_date" type="date" required defaultValue={todayISO()} />
 
       <Select label="Categoría" name="category_id" defaultValue="">
         <option value="">Sin categoría</option>

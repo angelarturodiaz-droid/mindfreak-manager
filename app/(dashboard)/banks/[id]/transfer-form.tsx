@@ -6,9 +6,9 @@ import { createTransferAction, type ActionState } from "@/features/banks/actions
 import { Input, Select } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
+import { todayISO } from "@/lib/utils/dates";
 
 const initialState: ActionState = { error: null };
-const today = new Date().toISOString().slice(0, 10);
 
 type Account = { id: string; name: string; bank_name: string | null; currency: string; type: string };
 
@@ -43,7 +43,7 @@ export function TransferForm({
           </option>
         ))}
       </Select>
-      <Input label="Fecha" name="transaction_date" type="date" required defaultValue={today} />
+      <Input label="Fecha" name="transaction_date" type="date" required defaultValue={todayISO()} />
       <MoneyInput label="Monto" name="amount" min={0.01} required defaultValue={0} className="w-28" />
       <Input label="Descripción" name="description" placeholder="Opcional" className="w-48" />
       <Button type="submit" loading={pending} icon={<ArrowRightLeft size={14} />}>

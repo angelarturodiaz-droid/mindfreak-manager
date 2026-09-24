@@ -6,9 +6,9 @@ import { createBankAccountAction, type ActionState } from "@/features/banks/acti
 import { Input, Select } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
+import { todayISO } from "@/lib/utils/dates";
 
 const initialState: ActionState = { error: null };
-const today = new Date().toISOString().slice(0, 10);
 
 export function NewBankAccountForm({ bankCatalog }: { bankCatalog: { id: string; name: string }[] }) {
   const [state, formAction, pending] = useActionState(createBankAccountAction, initialState);
@@ -77,7 +77,7 @@ export function NewBankAccountForm({ bankCatalog }: { bankCatalog: { id: string;
         name="opening_balance_date"
         type="date"
         required
-        defaultValue={today}
+        defaultValue={todayISO()}
       />
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}

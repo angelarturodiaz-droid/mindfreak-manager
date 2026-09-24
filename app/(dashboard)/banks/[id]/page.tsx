@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ArrowRightLeft,
   ArrowUpRight,
+  AlertTriangle,
   CreditCard,
   Landmark,
 } from "lucide-react";
@@ -36,6 +37,10 @@ import {
   listHref,
 } from "@/components/ui/page-kit";
 import { formatDate, todayISO } from "@/lib/utils/dates";
+import { listCategoryOptions } from "@/features/expense-categories/queries";
+import { TransactionCategorySelect } from "@/components/banks/transaction-category-select";
+import { AutoSubmitSelect } from "@/components/ui/auto-submit-select";
+import { relationName, relationRow } from "@/lib/utils/relation";
 
 const TYPE_LABELS: Record<string, string> = {
   INCOME: "Ingreso",
@@ -61,12 +66,55 @@ const TYPE_FILTERS = [
   { key: "TRANSFER", label: "Transferencias" },
 ] as const;
 
+/** Qué generó el movimiento, con link cuando aplica. */
+function TransactionOrigin({ t }: { t: TransactionRow }) {
+  const payment = relationRow<{ invoice_id: string; invoices: unknown }>(t.customer_payments);
+  if (t.customer_payment_id && payment) {
+    const number = relationRow<{ number: string }>(payment.invoices)?.number;
+    return (
+      <Link href={`/invoices/${payment.invoice_id}`} className="whitespace-nowrap text-brand-accent hover:underline">
+        Factura {number ?? ""}
+      </Link>
+    );
+  }
+  if (t.expense_id) {
+    const desc = relationRow<{ description: string }>(t.expenses)?.description;
+    return (
+      <Link href={`/expenses/${t.expense_id}`} className="block max-w-[12rem] truncate text-brand-accent hover:underline">
+        Gasto: {desc ?? "ver"}
+      </Link>
+    );
+  }
+  if (t.supplier_payment_id) {
+    const sp = relationRow<{ expense_id: string; expenses: unknown }>(t.supplier_payments);
+    const desc = sp ? relationRow<{ description: string }>(sp.expenses)?.description : null;
+    return sp?.expense_id ? (
+      <Link href={`/expenses/${sp.expense_id}`} className="block max-w-[12rem] truncate text-brand-accent hover:underline">
+        Pago: {desc ?? "ver gasto"}
+      </Link>
+    ) : (
+      <span className="text-brand-muted">Pago a proveedor</span>
+    );
+  }
+  if (t.type === "TRANSFER") {
+    const other = relationName(t.counterpart);
+    return other && t.counterpart_account_id ? (
+      <Link href={`/banks/${t.counterpart_account_id}`} className="whitespace-nowrap text-brand-accent hover:underline">
+        {t.effect < 0 ? "A" : "Desde"} {other}
+      </Link>
+    ) : (
+      <span className="text-brand-muted">Transferencia</span>
+    );
+  }
+  return <span className="text-brand-muted">Manual</span>;
+}
+
 export default async function BankAccountDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ type?: string; rec?: string }>;
+  searchParams: Promise<{ type?: string; rec?: string; cat?: string }>;
 }) {
   const { id } = await params;
   const filters = await searchParams;
@@ -79,13 +127,14 @@ export default async function BankAccountDetailPage({
   }
   if (!account) notFound();
 
-  const [transactions, otherAccounts, canCreate, canReconcile, hasTx, bankCatalog] = await Promise.all([
+  const [transactions, otherAccounts, canCreate, canReconcile, hasTx, bankCatalog, categories] = await Promise.all([
     listBankTransactions(id),
     listOtherActiveAccounts(id),
     hasPermission("banks.create"),
     hasPermission("banks.reconcile"),
     hasBankTransactions(id),
     listBankCatalog(),
+    listCategoryOptions(),
   ]);
 
   const isCard = account.type === "CREDIT_CARD";
@@ -104,12 +153,15 @@ export default async function BankAccountDetailPage({
 
   const typeFilter = ["INCOME", "EXPENSE", "TRANSFER"].includes(filters.type ?? "") ? filters.type : undefined;
   const recFilter = filters.rec === "no" ? "no" : filters.rec === "si" ? "si" : undefined;
+  const catFilter = filters.cat || undefined;
   const filtered = rows.filter(
     (t) =>
       (!typeFilter || t.type === typeFilter) &&
+      (!catFilter || (catFilter === "none" ? !t.category_id : t.category_id === catFilter)) &&
       (!recFilter || (recFilter === "si" ? t.reconciled : !t.reconciled)),
   );
 
+  const uncategorized = rows.filter((t) => !t.category_id).length;
   const month = todayISO().slice(0, 7);
   const monthRows = rows.filter((t) => t.transaction_date?.startsWith(month));
   const inMonth = monthRows.filter((t) => t.effect > 0).reduce((a, t) => a + t.effect, 0);
@@ -139,11 +191,18 @@ export default async function BankAccountDetailPage({
             </span>
             <span className="min-w-0">
               <span className="block truncate text-brand-text">{t.description ?? "—"}</span>
-              <span className="text-xs text-brand-muted">{TYPE_LABELS[t.type] ?? t.type}</span>
+              <span className="text-xs text-brand-muted">
+                {TYPE_LABELS[t.type] ?? t.type}
+                {t.reference ? ` · Ref. ${t.reference}` : ""}
+              </span>
             </span>
           </div>
         );
       },
+    },
+    {
+      header: "Origen",
+      accessor: (t) => <TransactionOrigin t={t} />,
     },
     {
       header: "Monto",
@@ -155,7 +214,21 @@ export default async function BankAccountDetailPage({
         </span>
       ),
     },
-    ...(typeFilter || recFilter
+    {
+      header: "Categoría",
+      accessor: (t) =>
+        canCreate ? (
+          <TransactionCategorySelect
+            transactionId={t.id}
+            bankAccountId={account.id}
+            value={t.category_id}
+            categories={categories}
+          />
+        ) : (
+          <span className="text-brand-muted">{relationName(t.expense_categories) ?? "Sin categoría"}</span>
+        ),
+    },
+    ...(typeFilter || recFilter || catFilter
       ? []
       : [
           {
@@ -273,6 +346,20 @@ export default async function BankAccountDetailPage({
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <section className="flex min-w-0 flex-col gap-4 xl:col-span-2">
           <SectionHeader title="Movimientos" count={filtered.length} />
+          {uncategorized > 0 && catFilter !== "none" && (
+            <Link
+              href={listHref(`/banks/${id}`, { cat: "none" })}
+              className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-brand-warning/30 bg-brand-warning-bg px-4 py-3 text-sm text-brand-text hover:border-brand-warning/60"
+            >
+              <span className="inline-flex items-center gap-2 font-medium">
+                <AlertTriangle size={16} className="text-brand-warning" />
+                {uncategorized === 1
+                  ? "1 movimiento sin categoría"
+                  : `${uncategorized} movimientos sin categoría`}
+              </span>
+              <span className="text-brand-accent">Clasificar ahora →</span>
+            </Link>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <FilterPills
               label="Filtrar por tipo"
@@ -281,36 +368,49 @@ export default async function BankAccountDetailPage({
                 label: f.label,
                 count: f.key ? rows.filter((t) => t.type === f.key).length : rows.length,
                 active: typeFilter === f.key,
-                href: listHref(`/banks/${id}`, { type: f.key, rec: recFilter }),
+                href: listHref(`/banks/${id}`, { type: f.key, rec: recFilter, cat: catFilter }),
               }))}
             />
             <FilterPills
               label="Filtrar por conciliación"
               items={[
-                { key: "all", label: "Todos", active: !recFilter, href: listHref(`/banks/${id}`, { type: typeFilter }) },
+                { key: "all", label: "Todos", active: !recFilter, href: listHref(`/banks/${id}`, { type: typeFilter, cat: catFilter }) },
                 {
                   key: "no",
                   label: "Sin conciliar",
                   count: unreconciled,
                   active: recFilter === "no",
-                  href: listHref(`/banks/${id}`, { type: typeFilter, rec: "no" }),
+                  href: listHref(`/banks/${id}`, { type: typeFilter, rec: "no", cat: catFilter }),
                 },
                 {
                   key: "si",
                   label: "Conciliados",
                   count: rows.length - unreconciled,
                   active: recFilter === "si",
-                  href: listHref(`/banks/${id}`, { type: typeFilter, rec: "si" }),
+                  href: listHref(`/banks/${id}`, { type: typeFilter, rec: "si", cat: catFilter }),
                 },
               ]}
             />
+            <form action={`/banks/${id}`} method="get">
+              {typeFilter && <input type="hidden" name="type" value={typeFilter} />}
+              {recFilter && <input type="hidden" name="rec" value={recFilter} />}
+              <AutoSubmitSelect name="cat" defaultValue={catFilter ?? ""} className="w-52" aria-label="Filtrar por categoría">
+                <option value="">Todas las categorías</option>
+                <option value="none">Sin categoría ({rows.filter((t) => !t.category_id).length})</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </AutoSubmitSelect>
+            </form>
           </div>
           <DataTable
             columns={columns}
             rows={filtered}
             keyFor={(t) => t.id}
             maxWidth="max-w-none"
-            emptyMessage={typeFilter || recFilter ? "Sin movimientos con este filtro." : "Sin movimientos todavía."}
+            emptyMessage={typeFilter || recFilter || catFilter ? "Sin movimientos con este filtro." : "Sin movimientos todavía."}
           />
         </section>
 
@@ -328,7 +428,7 @@ export default async function BankAccountDetailPage({
               <p className="mb-3 text-xs text-brand-muted">
                 Para intereses, comisiones u otros movimientos que no vienen de una factura o gasto.
               </p>
-              <ManualTransactionForm bankAccountId={account.id} />
+              <ManualTransactionForm bankAccountId={account.id} categories={categories} />
             </Card>
             <Card>
               <p className="mb-3 text-sm font-semibold text-brand-text">

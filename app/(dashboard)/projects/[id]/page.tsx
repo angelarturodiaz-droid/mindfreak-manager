@@ -440,6 +440,17 @@ export default async function ProjectDetailPage({
     { header: "Tipo", accessor: (t) => <span className="text-brand-muted">{BANK_TX_TYPE_LABELS[t.type] ?? t.type}</span> },
     { header: "Descripción", accessor: (t) => t.description ?? "—" },
     {
+      header: "Categoría",
+      accessor: (t) => {
+        const name = relationName(t.expense_categories);
+        return name ? (
+          <span className="text-brand-text">{name}</span>
+        ) : (
+          <span className="text-xs font-medium text-brand-warning">Sin categoría</span>
+        );
+      },
+    },
+    {
       header: "Monto",
       className: "text-right",
       accessor: (t) => {

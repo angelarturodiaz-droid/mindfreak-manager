@@ -15,7 +15,23 @@ export async function listBankAccountsWithBalance() {
   if (balError) throw new Error(balError.message);
 
   const balanceMap = new Map((balances ?? []).map((b) => [b.bank_account_id, b.current_balance]));
-  return accounts.map((a) => ({ ...a, current_balance: balanceMap.get(a.id) ?? 0 }));
+
+  // Movimientos "Sin categoría" por cuenta, para la alerta de clasificación.
+  const { data: uncategorized, error: uncError } = await supabase
+    .from("bank_transactions")
+    .select("bank_account_id")
+    .is("category_id", null);
+  if (uncError) throw new Error(uncError.message);
+  const uncMap = new Map<string, number>();
+  for (const t of uncategorized ?? []) {
+    uncMap.set(t.bank_account_id, (uncMap.get(t.bank_account_id) ?? 0) + 1);
+  }
+
+  return accounts.map((a) => ({
+    ...a,
+    current_balance: balanceMap.get(a.id) ?? 0,
+    uncategorized_count: uncMap.get(a.id) ?? 0,
+  }));
 }
 
 export async function getBankAccount(id: string) {
@@ -41,7 +57,7 @@ export async function listBankTransactions(bankAccountId: string) {
   const { data, error } = await supabase
     .from("bank_transactions")
     .select(
-      "id, type, amount, transaction_date, description, reconciled, project_id, client_id, supplier_id",
+      "id, type, amount, transaction_date, description, reference, reconciled, project_id, client_id, supplier_id, category_id, expense_categories(name), customer_payment_id, supplier_payment_id, expense_id, transfer_group_id, counterpart_account_id, counterpart:bank_accounts!bank_transactions_counterpart_account_id_fkey(name), customer_payments(invoice_id, invoices(number)), expenses(description), supplier_payments(expense_id, expenses(description))",
     )
     .eq("bank_account_id", bankAccountId)
     .order("transaction_date", { ascending: false })

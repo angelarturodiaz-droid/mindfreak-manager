@@ -343,7 +343,7 @@ export async function listProjectBankTransactions(projectId: string) {
   const { data, error } = await supabase
     .from("bank_transactions")
     .select(
-      "id, type, amount, currency, transaction_date, description, bank_accounts(name)",
+      "id, type, amount, currency, transaction_date, description, bank_accounts!bank_transactions_bank_account_id_fkey(name), expense_categories(name)",
     )
     .eq("project_id", projectId)
     .order("transaction_date", { ascending: false });
