@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/field";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
+import { relationName, relationRow } from "@/lib/utils/relation";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente",
@@ -44,22 +45,20 @@ export default async function ExpensesPage({
     {
       header: "Categoría",
       accessor: (e) => {
-        const category = e.expense_categories as { name: string }[] | null;
-        return <span className="text-brand-muted">{category?.[0]?.name ?? "—"}</span>;
+        return <span className="text-brand-muted">{relationName(e.expense_categories) ?? "—"}</span>;
       },
     },
     {
       header: "Proveedor",
       accessor: (e) => {
-        const supplier = e.suppliers as { name: string }[] | null;
-        return <span className="text-brand-muted">{supplier?.[0]?.name ?? "—"}</span>;
+        return <span className="text-brand-muted">{relationName(e.suppliers) ?? "—"}</span>;
       },
     },
     {
       header: "Proyecto",
       accessor: (e) => {
-        const project = e.projects as { number: string; name: string }[] | null;
-        return <span className="text-brand-muted">{project?.[0] ? project[0].number : "—"}</span>;
+        const project = relationRow<{ number: string; name: string }>(e.projects);
+        return <span className="text-brand-muted">{project?.number ?? "—"}</span>;
       },
     },
     { header: "Total", accessor: (e) => formatMoney(e.total, e.currency) },

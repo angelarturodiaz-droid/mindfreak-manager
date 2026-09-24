@@ -16,3 +16,4 @@ export { ConfirmButton } from "./confirm-button";
 export { Toaster, toast } from "./toaster";
 export { DataTable } from "./data-table";
 export type { Column } from "./data-table";
+export { Pagination } from "./pagination";

@@ -7,6 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/field";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Pagination } from "@/components/ui/pagination";
+import { listClientOptions } from "@/features/clients/queries";
+import { relationName } from "@/lib/utils/relation";
+import { parsePage } from "@/lib/utils/pagination";
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Borrador",
@@ -23,15 +27,19 @@ function formatMoney(amount: number, currency: string) {
   );
 }
 
-type InvoiceRow = Awaited<ReturnType<typeof listInvoices>>[number];
+type InvoiceRow = Awaited<ReturnType<typeof listInvoices>>["rows"][number];
 
 export default async function InvoicesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; client?: string; page?: string }>;
 }) {
   const params = await searchParams;
-  const invoices = await listInvoices(params.status);
+  const page = parsePage(params.page);
+  const [{ rows: invoices, total, pageSize }, clientOptions] = await Promise.all([
+    listInvoices({ status: params.status, clientId: params.client, page }),
+    listClientOptions(),
+  ]);
 
   const columns: Column<InvoiceRow>[] = [
     {
@@ -54,7 +62,7 @@ export default async function InvoicesPage({
       header: "Cliente",
       accessor: (inv) => (
         <span className="text-brand-muted">
-          {(inv.clients as { name: string }[] | null)?.[0]?.name ?? "—"}
+          {relationName(inv.clients) ?? "—"}
         </span>
       ),
     },
@@ -92,9 +100,23 @@ export default async function InvoicesPage({
             </option>
           ))}
         </Select>
+        <Select name="client" defaultValue={params.client ?? ""} className="w-56">
+          <option value="">Todos los clientes</option>
+          {clientOptions.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+              {c.is_active ? "" : " (inactivo)"}
+            </option>
+          ))}
+        </Select>
         <Button type="submit" variant="outline" size="md">
           Filtrar
         </Button>
+        {(params.status || params.client) && (
+          <Link href="/invoices" className="px-2 py-2 text-sm text-brand-muted hover:text-brand-accent">
+            Limpiar filtros
+          </Link>
+        )}
       </form>
 
       {invoices.length === 0 ? (
@@ -110,7 +132,16 @@ export default async function InvoicesPage({
           }
         />
       ) : (
-        <DataTable columns={columns} rows={invoices} keyFor={(inv) => inv.id} maxWidth="max-w-4xl" />
+        <div className="flex flex-col gap-4">
+          <DataTable columns={columns} rows={invoices} keyFor={(inv) => inv.id} maxWidth="max-w-4xl" />
+          <Pagination
+            basePath="/invoices"
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            params={{ status: params.status, client: params.client }}
+          />
+        </div>
       )}
     </main>
   );

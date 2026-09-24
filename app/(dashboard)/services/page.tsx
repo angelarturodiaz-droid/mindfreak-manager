@@ -5,6 +5,7 @@ import { NewCategoryForm } from "./new-category-form";
 import { NewServiceForm } from "./new-service-form";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
+import { relationName } from "@/lib/utils/relation";
 
 function formatMoney(amount: number) {
   return new Intl.NumberFormat("es-DO", {
@@ -44,7 +45,7 @@ export default async function ServicesPage() {
       header: "Categoría",
       accessor: (s) => (
         <span className="text-brand-muted">
-          {(s.service_categories as { name: string }[] | null)?.[0]?.name ?? "—"}
+          {relationName(s.service_categories) ?? "—"}
         </span>
       ),
     },

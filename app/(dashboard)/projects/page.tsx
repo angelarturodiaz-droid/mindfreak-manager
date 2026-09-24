@@ -8,6 +8,7 @@ import { Select } from "@/components/ui/field";
 import { Card } from "@/components/ui/card";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
+import { relationName } from "@/lib/utils/relation";
 
 const STATUS_LABELS: Record<string, string> = {
   PLANNING: "Planificación",
@@ -50,7 +51,7 @@ export default async function ProjectsPage({
       header: "Cliente",
       accessor: (p) => (
         <span className="text-brand-muted">
-          {(p.clients as { name: string }[] | null)?.[0]?.name ?? "—"}
+          {relationName(p.clients) ?? "—"}
         </span>
       ),
     },
@@ -90,7 +91,7 @@ export default async function ProjectsPage({
               <li key={q.id} className="flex items-center justify-between text-sm">
                 <span>
                   {q.number} —{" "}
-                  {(q.clients as { name: string }[] | null)?.[0]?.name ?? "—"} —{" "}
+                  {relationName(q.clients) ?? "—"} —{" "}
                   {formatMoney(q.total)}
                 </span>
                 <Link

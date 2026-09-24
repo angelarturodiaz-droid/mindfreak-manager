@@ -25,6 +25,17 @@ export async function listClients(filters: ClientListFilters = {}) {
   return data;
 }
 
+/** Opciones para filtros por cliente (todos, incluidos inactivos, para poder ver su historial). */
+export async function listClientOptions() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("clients")
+    .select("id, name, is_active")
+    .order("name");
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export async function getClient(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase

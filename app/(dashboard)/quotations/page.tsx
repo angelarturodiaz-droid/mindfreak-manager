@@ -7,6 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/field";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Pagination } from "@/components/ui/pagination";
+import { listClientOptions } from "@/features/clients/queries";
+import { relationName } from "@/lib/utils/relation";
+import { parsePage } from "@/lib/utils/pagination";
 
 function formatMoney(amount: number, currency: string) {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency }).format(
@@ -25,15 +29,19 @@ const STATUS_LABELS: Record<string, string> = {
   CANCELLED: "Cancelada",
 };
 
-type QuotationRow = Awaited<ReturnType<typeof listQuotations>>[number];
+type QuotationRow = Awaited<ReturnType<typeof listQuotations>>["rows"][number];
 
 export default async function QuotationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; client?: string; page?: string }>;
 }) {
   const params = await searchParams;
-  const quotations = await listQuotations(params.status);
+  const page = parsePage(params.page);
+  const [{ rows: quotations, total, pageSize }, clientOptions] = await Promise.all([
+    listQuotations({ status: params.status, clientId: params.client, page }),
+    listClientOptions(),
+  ]);
 
   const columns: Column<QuotationRow>[] = [
     {
@@ -56,7 +64,7 @@ export default async function QuotationsPage({
       header: "Cliente",
       accessor: (q) => (
         <span className="text-brand-muted">
-          {(q.clients as { name: string }[] | null)?.[0]?.name ?? "—"}
+          {relationName(q.clients) ?? "—"}
         </span>
       ),
     },
@@ -95,9 +103,23 @@ export default async function QuotationsPage({
             </option>
           ))}
         </Select>
+        <Select name="client" defaultValue={params.client ?? ""} className="w-56">
+          <option value="">Todos los clientes</option>
+          {clientOptions.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+              {c.is_active ? "" : " (inactivo)"}
+            </option>
+          ))}
+        </Select>
         <Button type="submit" variant="outline" size="md">
           Filtrar
         </Button>
+        {(params.status || params.client) && (
+          <Link href="/quotations" className="px-2 py-2 text-sm text-brand-muted hover:text-brand-accent">
+            Limpiar filtros
+          </Link>
+        )}
       </form>
 
       {quotations.length === 0 ? (
@@ -113,7 +135,16 @@ export default async function QuotationsPage({
           }
         />
       ) : (
-        <DataTable columns={columns} rows={quotations} keyFor={(q) => q.id} />
+        <div className="flex flex-col gap-4">
+          <DataTable columns={columns} rows={quotations} keyFor={(q) => q.id} />
+          <Pagination
+            basePath="/quotations"
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            params={{ status: params.status, client: params.client }}
+          />
+        </div>
       )}
     </main>
   );

@@ -1,19 +1,32 @@
 import { createClient } from "@/lib/supabase/server";
+import { PAGE_SIZE, pageRange } from "@/lib/utils/pagination";
 
-export async function listInvoices(status?: string) {
+export type InvoiceListFilters = {
+  status?: string;
+  clientId?: string;
+  page?: number;
+};
+
+/** Lista paginada de facturas (PAGE_SIZE por página) con el total para la paginación. */
+export async function listInvoices(filters: InvoiceListFilters = {}) {
   const supabase = await createClient();
+  const [from, to] = pageRange(filters.page ?? 1);
   let query = supabase
     .from("invoices")
     .select(
       "id, number, status, total, paid_amount, balance, currency, issue_date, due_date, duplicated_from_id, clients(name)",
+      { count: "exact" },
     )
-    .order("issue_date", { ascending: false });
+    .order("issue_date", { ascending: false })
+    .order("number", { ascending: false })
+    .range(from, to);
 
-  if (status) query = query.eq("status", status);
+  if (filters.status) query = query.eq("status", filters.status);
+  if (filters.clientId) query = query.eq("client_id", filters.clientId);
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
   if (error) throw new Error(error.message);
-  return data;
+  return { rows: data, total: count ?? 0, pageSize: PAGE_SIZE };
 }
 
 export async function getInvoice(id: string) {
