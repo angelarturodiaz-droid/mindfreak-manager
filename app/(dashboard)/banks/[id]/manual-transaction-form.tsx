@@ -41,7 +41,7 @@ export function ManualTransactionForm({
       <Input
         label="Detalle"
         name="description"
-        placeholder="Obligatorio si queda sin categoría"
+        placeholder="Requerido sin categoría"
         className="w-56"
       />
       <Input label="Referencia" name="reference" placeholder="Cheque / No. transacción" className="w-44" />

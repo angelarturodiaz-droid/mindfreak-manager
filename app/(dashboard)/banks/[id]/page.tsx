@@ -6,8 +6,11 @@ import {
   ArrowRightLeft,
   ArrowUpRight,
   AlertTriangle,
+  ChevronDown,
   CreditCard,
   Landmark,
+  Pencil,
+  Plus,
 } from "lucide-react";
 import {
   getBankAccount,
@@ -343,102 +346,121 @@ export default async function BankAccountDetailPage({
         />
       </section>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <section className="flex min-w-0 flex-col gap-4 xl:col-span-2">
-          <SectionHeader title="Movimientos" count={filtered.length} />
-          {uncategorized > 0 && catFilter !== "none" && (
-            <Link
-              href={listHref(`/banks/${id}`, { cat: "none" })}
-              className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-brand-warning/30 bg-brand-warning-bg px-4 py-3 text-sm text-brand-text hover:border-brand-warning/60"
-            >
-              <span className="inline-flex items-center gap-2 font-medium">
-                <AlertTriangle size={16} className="text-brand-warning" />
-                {uncategorized === 1
-                  ? "1 movimiento sin categoría"
-                  : `${uncategorized} movimientos sin categoría`}
+      {canCreate && (
+        <section className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3" aria-label="Acciones de la cuenta">
+          <details className="group rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface shadow-[var(--shadow-sm)] open:shadow-[var(--shadow-md)]">
+            <summary className="flex cursor-pointer list-none items-center gap-3 p-4 [&::-webkit-details-marker]:hidden">
+              <IconBadge icon={<Plus size={16} />} tone="green" size="sm" />
+              <span className="flex-1">
+                <span className="block text-sm font-semibold text-brand-text">Movimiento manual</span>
+                <span className="block text-xs text-brand-muted">Intereses, comisiones y otros que no vienen de una factura o gasto</span>
               </span>
-              <span className="text-brand-accent">Clasificar ahora →</span>
-            </Link>
-          )}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <FilterPills
-              label="Filtrar por tipo"
-              items={TYPE_FILTERS.map((f) => ({
-                key: f.key ?? "all",
-                label: f.label,
-                count: f.key ? rows.filter((t) => t.type === f.key).length : rows.length,
-                active: typeFilter === f.key,
-                href: listHref(`/banks/${id}`, { type: f.key, rec: recFilter, cat: catFilter }),
-              }))}
-            />
-            <FilterPills
-              label="Filtrar por conciliación"
-              items={[
-                { key: "all", label: "Todos", active: !recFilter, href: listHref(`/banks/${id}`, { type: typeFilter, cat: catFilter }) },
-                {
-                  key: "no",
-                  label: "Sin conciliar",
-                  count: unreconciled,
-                  active: recFilter === "no",
-                  href: listHref(`/banks/${id}`, { type: typeFilter, rec: "no", cat: catFilter }),
-                },
-                {
-                  key: "si",
-                  label: "Conciliados",
-                  count: rows.length - unreconciled,
-                  active: recFilter === "si",
-                  href: listHref(`/banks/${id}`, { type: typeFilter, rec: "si", cat: catFilter }),
-                },
-              ]}
-            />
-            <form action={`/banks/${id}`} method="get">
-              {typeFilter && <input type="hidden" name="type" value={typeFilter} />}
-              {recFilter && <input type="hidden" name="rec" value={recFilter} />}
-              <AutoSubmitSelect name="cat" defaultValue={catFilter ?? ""} className="w-52" aria-label="Filtrar por categoría">
-                <option value="">Todas las categorías</option>
-                <option value="none">Sin categoría ({rows.filter((t) => !t.category_id).length})</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </AutoSubmitSelect>
-            </form>
-          </div>
-          <DataTable
-            columns={columns}
-            rows={filtered}
-            keyFor={(t) => t.id}
-            maxWidth="max-w-none"
-            emptyMessage={typeFilter || recFilter || catFilter ? "Sin movimientos con este filtro." : "Sin movimientos todavía."}
-          />
-        </section>
-
-        {canCreate && (
-          <aside className="flex flex-col gap-4">
-            <Card>
-              <p className="mb-1 text-sm font-semibold text-brand-text">
-                Transferir{account.type === "BANK" ? " o pagar una tarjeta" : ""}
-              </p>
-              <p className="mb-3 text-xs text-brand-muted">Mueve dinero desde esta cuenta a otra.</p>
-              <TransferForm fromAccountId={account.id} otherAccounts={otherAccounts} />
-            </Card>
-            <Card>
-              <p className="mb-1 text-sm font-semibold text-brand-text">Movimiento manual</p>
-              <p className="mb-3 text-xs text-brand-muted">
-                Para intereses, comisiones u otros movimientos que no vienen de una factura o gasto.
-              </p>
+              <ChevronDown size={16} className="text-brand-muted transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="border-t border-brand-border p-4">
               <ManualTransactionForm bankAccountId={account.id} categories={categories} />
-            </Card>
-            <Card>
-              <p className="mb-3 text-sm font-semibold text-brand-text">
-                Editar {isCard ? "tarjeta" : "cuenta"}
-              </p>
+            </div>
+          </details>
+          <details className="group rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface shadow-[var(--shadow-sm)] open:shadow-[var(--shadow-md)]">
+            <summary className="flex cursor-pointer list-none items-center gap-3 p-4 [&::-webkit-details-marker]:hidden">
+              <IconBadge icon={<ArrowRightLeft size={16} />} tone="blue" size="sm" />
+              <span className="flex-1">
+                <span className="block text-sm font-semibold text-brand-text">
+                  Transferir{account.type === "BANK" ? " o pagar tarjeta" : ""}
+                </span>
+                <span className="block text-xs text-brand-muted">Mueve dinero desde esta cuenta a otra</span>
+              </span>
+              <ChevronDown size={16} className="text-brand-muted transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="border-t border-brand-border p-4">
+              <TransferForm fromAccountId={account.id} otherAccounts={otherAccounts} />
+            </div>
+          </details>
+          <details className="group rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface shadow-[var(--shadow-sm)] open:shadow-[var(--shadow-md)]">
+            <summary className="flex cursor-pointer list-none items-center gap-3 p-4 [&::-webkit-details-marker]:hidden">
+              <IconBadge icon={<Pencil size={16} />} tone="neutral" size="sm" />
+              <span className="flex-1">
+                <span className="block text-sm font-semibold text-brand-text">Editar {isCard ? "tarjeta" : "cuenta"}</span>
+                <span className="block text-xs text-brand-muted">Nombre, banco, número y límite</span>
+              </span>
+              <ChevronDown size={16} className="text-brand-muted transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="border-t border-brand-border p-4">
               <BankAccountEditForm account={account} canEditOpeningBalance={!hasTx} bankCatalog={bankCatalog} />
-            </Card>
-          </aside>
+            </div>
+          </details>
+        </section>
+      )}
+
+      <section className="flex min-w-0 flex-col gap-4">
+        <SectionHeader title="Movimientos" count={filtered.length} />
+        {uncategorized > 0 && catFilter !== "none" && (
+          <Link
+            href={listHref(`/banks/${id}`, { cat: "none" })}
+            className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-brand-warning/30 bg-brand-warning-bg px-4 py-3 text-sm text-brand-text hover:border-brand-warning/60"
+          >
+            <span className="inline-flex items-center gap-2 font-medium">
+              <AlertTriangle size={16} className="text-brand-warning" />
+              {uncategorized === 1
+                ? "1 movimiento sin categoría"
+                : `${uncategorized} movimientos sin categoría`}
+            </span>
+            <span className="text-brand-accent">Clasificar ahora →</span>
+          </Link>
         )}
-      </div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <FilterPills
+            label="Filtrar por tipo"
+            items={TYPE_FILTERS.map((f) => ({
+              key: f.key ?? "all",
+              label: f.label,
+              count: f.key ? rows.filter((t) => t.type === f.key).length : rows.length,
+              active: typeFilter === f.key,
+              href: listHref(`/banks/${id}`, { type: f.key, rec: recFilter, cat: catFilter }),
+            }))}
+          />
+          <FilterPills
+            label="Filtrar por conciliación"
+            items={[
+              { key: "all", label: "Todos", active: !recFilter, href: listHref(`/banks/${id}`, { type: typeFilter, cat: catFilter }) },
+              {
+                key: "no",
+                label: "Sin conciliar",
+                count: unreconciled,
+                active: recFilter === "no",
+                href: listHref(`/banks/${id}`, { type: typeFilter, rec: "no", cat: catFilter }),
+              },
+              {
+                key: "si",
+                label: "Conciliados",
+                count: rows.length - unreconciled,
+                active: recFilter === "si",
+                href: listHref(`/banks/${id}`, { type: typeFilter, rec: "si", cat: catFilter }),
+              },
+            ]}
+          />
+          <form action={`/banks/${id}`} method="get">
+            {typeFilter && <input type="hidden" name="type" value={typeFilter} />}
+            {recFilter && <input type="hidden" name="rec" value={recFilter} />}
+            <AutoSubmitSelect name="cat" defaultValue={catFilter ?? ""} className="w-52" aria-label="Filtrar por categoría">
+              <option value="">Todas las categorías</option>
+              <option value="none">Sin categoría ({rows.filter((t) => !t.category_id).length})</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </AutoSubmitSelect>
+          </form>
+        </div>
+        <DataTable
+          columns={columns}
+          rows={filtered}
+          keyFor={(t) => t.id}
+          maxWidth="max-w-none"
+          emptyMessage={typeFilter || recFilter || catFilter ? "Sin movimientos con este filtro." : "Sin movimientos todavía."}
+        />
+      </section>
     </main>
   );
 }
