@@ -4,7 +4,12 @@ import { listPaymentTerms } from "@/features/payment-terms/queries";
 import { listTaxRates } from "@/features/tax-rates/queries";
 import { NewInvoiceForm } from "./new-invoice-form";
 
-export default async function NewInvoicePage() {
+export default async function NewInvoicePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ client?: string }>;
+}) {
+  const { client } = await searchParams;
   const [clients, projects, company, paymentTerms, taxRates] = await Promise.all([
     listActiveClients(),
     listProjectsForSelect(),
@@ -25,6 +30,7 @@ export default async function NewInvoicePage() {
       </div>
       <NewInvoiceForm
         clients={clients}
+        defaultClientId={clients.some((c) => c.id === client) ? client : undefined}
         projects={projects}
         baseCurrency={company.base_currency}
         paymentTerms={paymentTerms}

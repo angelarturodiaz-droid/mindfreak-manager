@@ -17,8 +17,11 @@ export function NewQuotationForm({
   baseCurrency,
   paymentTerms,
   taxRates,
+  defaultClientId,
 }: {
   clients: { id: string; name: string; stage: string }[];
+  /** Cliente preseleccionado (ej. al venir desde el detalle del cliente). */
+  defaultClientId?: string;
   baseCurrency: string;
   paymentTerms: { id: string; name: string; credit_days: number }[];
   taxRates: TaxRate[];
@@ -30,7 +33,7 @@ export function NewQuotationForm({
 
   return (
     <form action={formAction} className="max-w-md space-y-4">
-      <Select label="Cliente" name="client_id" required defaultValue="">
+      <Select label="Cliente" name="client_id" required defaultValue={defaultClientId ?? ""}>
         <option value="" disabled>
           Selecciona un cliente…
         </option>

@@ -26,8 +26,11 @@ export function NewInvoiceForm({
   baseCurrency,
   paymentTerms,
   taxRates,
+  defaultClientId,
 }: {
   clients: Client[];
+  /** Cliente preseleccionado (ej. al venir desde el detalle del cliente). */
+  defaultClientId?: string;
   projects: Project[];
   baseCurrency: string;
   paymentTerms: { id: string; name: string; credit_days: number }[];
@@ -74,7 +77,7 @@ export function NewInvoiceForm({
       </div>
 
       {!useProject ? (
-        <Select label="Cliente" name="client_id" required={!useProject} defaultValue="">
+        <Select label="Cliente" name="client_id" required={!useProject} defaultValue={defaultClientId ?? ""}>
           <option value="" disabled>
             Selecciona un cliente…
           </option>

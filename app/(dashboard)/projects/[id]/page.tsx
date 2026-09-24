@@ -62,6 +62,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, KpiCard } from "@/components/ui/card";
 import { ConfirmButton } from "@/components/ui/confirm-button";
+import { ActionBlock } from "@/components/ui/action-block";
+import { ActionButton } from "@/components/ui/action-button";
 import { DataTable, type Column } from "@/components/ui/data-table";
 
 const QUOTATION_STATUS_LABELS: Record<string, string> = {
@@ -547,11 +549,11 @@ export default async function ProjectDetailPage({
               <XCircle size={16} /> Este proyecto está cancelado.
             </span>
             {canUpdate && (
-              <form action={updateProjectStatusAction.bind(null, project.id, "PLANNING")}>
-                <Button type="submit" variant="outline" size="sm" icon={<RotateCcw size={14} />}>
-                  Reactivar en Planificación
-                </Button>
-              </form>
+              <ActionButton
+                label="Reactivar en Planificación"
+                icon={<RotateCcw size={14} />}
+                onAction={updateProjectStatusAction.bind(null, project.id, "PLANNING")}
+              />
             )}
           </div>
         ) : (
@@ -596,15 +598,13 @@ export default async function ProjectDetailPage({
                 return (
                   <li key={step}>
                     {canUpdate && !current ? (
-                      <form action={updateProjectStatusAction.bind(null, project.id, step)}>
-                        <button
-                          type="submit"
-                          title={`Mover a ${PROJECT_STATUS_LABELS[step]}`}
-                          className={`${base} border-brand-border bg-brand-surface transition-colors hover:border-brand-accent/40 hover:bg-brand-accent-light`}
-                        >
-                          {content}
-                        </button>
-                      </form>
+                      <ActionBlock
+                        onAction={updateProjectStatusAction.bind(null, project.id, step)}
+                        title={`Mover a ${PROJECT_STATUS_LABELS[step]}`}
+                        className={`${base} border-brand-border bg-brand-surface transition-colors hover:border-brand-accent/40 hover:bg-brand-accent-light`}
+                      >
+                        {content}
+                      </ActionBlock>
                     ) : (
                       <div
                         className={`${base} ${current ? "border-brand-accent/40 bg-brand-accent-light" : "border-brand-border bg-brand-surface"}`}
