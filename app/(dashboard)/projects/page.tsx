@@ -8,7 +8,10 @@ import { Select } from "@/components/ui/field";
 import { Card } from "@/components/ui/card";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Pagination } from "@/components/ui/pagination";
+import { listClientOptions } from "@/features/clients/queries";
 import { relationName } from "@/lib/utils/relation";
+import { parsePage } from "@/lib/utils/pagination";
 
 const STATUS_LABELS: Record<string, string> = {
   PLANNING: "Planificación",
@@ -24,18 +27,21 @@ function formatMoney(amount: number) {
   );
 }
 
-type ProjectRow = Awaited<ReturnType<typeof listProjects>>[number];
+type ProjectRow = Awaited<ReturnType<typeof listProjects>>["rows"][number];
 
 export default async function ProjectsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; client?: string; page?: string }>;
 }) {
   const params = await searchParams;
-  const [projects, convertibleQuotations] = await Promise.all([
-    listProjects(params.status),
-    listConvertibleQuotations(),
-  ]);
+  const page = parsePage(params.page);
+  const [{ rows: projects, total, pageSize }, convertibleQuotations, clientOptions] =
+    await Promise.all([
+      listProjects({ status: params.status, clientId: params.client, page }),
+      listConvertibleQuotations(),
+      listClientOptions(),
+    ]);
 
   const columns: Column<ProjectRow>[] = [
     {
@@ -115,9 +121,23 @@ export default async function ProjectsPage({
             </option>
           ))}
         </Select>
+        <Select name="client" defaultValue={params.client ?? ""} className="w-56">
+          <option value="">Todos los clientes</option>
+          {clientOptions.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+              {c.is_active ? "" : " (inactivo)"}
+            </option>
+          ))}
+        </Select>
         <Button type="submit" variant="outline" size="md">
           Filtrar
         </Button>
+        {(params.status || params.client) && (
+          <Link href="/projects" className="px-2 py-2 text-sm text-brand-muted hover:text-brand-accent">
+            Limpiar filtros
+          </Link>
+        )}
       </form>
 
       {projects.length === 0 ? (
@@ -126,7 +146,16 @@ export default async function ProjectsPage({
           title="Aún no tienes proyectos que coincidan con este filtro."
         />
       ) : (
-        <DataTable columns={columns} rows={projects} keyFor={(p) => p.id} />
+        <div className="flex flex-col gap-4">
+          <DataTable columns={columns} rows={projects} keyFor={(p) => p.id} />
+          <Pagination
+            basePath="/projects"
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            params={{ status: params.status, client: params.client }}
+          />
+        </div>
       )}
     </main>
   );
