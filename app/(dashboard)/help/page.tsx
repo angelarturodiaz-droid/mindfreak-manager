@@ -313,6 +313,8 @@ const SECTIONS: Section[] = [
         />
         <Bullets
           items={[
+            <><strong>Borrador → Emitir</strong>: mientras está en Borrador puedes agregar o quitar líneas y editar NCF y vencimiento. El botón <strong>Emitir factura</strong> la hace oficial: ya no se edita, empieza a contar el vencimiento, aparece en Por cobrar y se le pueden registrar cobros.</>,
+            <><strong>¿Y &ldquo;enviada&rdquo;?</strong> Las facturas no tienen estado &ldquo;Enviada&rdquo; (las cotizaciones sí, porque el cliente todavía tiene que aceptarlas). Para mandársela al cliente usa <strong>Compartir</strong> (enlace sin acceso al sistema) o el PDF, siempre <strong>después de emitirla</strong>, para que reciba la versión definitiva.</>,
             "El balance pendiente baja automáticamente a medida que se registran cobros contra esa factura.",
             "Una factura vencida es la que pasó su fecha de vencimiento sin liquidarse — aparece en el Dashboard y en el reporte de Vencimientos.",
             "Se puede compartir un enlace de la factura sin dar acceso al sistema completo (botón de compartir en el detalle).",

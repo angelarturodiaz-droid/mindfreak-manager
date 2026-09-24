@@ -194,3 +194,15 @@ desmarcar. Permiso banks.reconcile.
 - Movimientos manuales en cuentas que no están en pesos: se pide la tasa
   (pesos por 1 dólar) y se guarda en el movimiento, para que los reportes
   lo conviertan correctamente (antes se guardaban con tasa 1).
+
+## Módulo: Facturas — Emitir vs. enviar (2026-09-23)
+
+- Las facturas no tienen estado "Enviada". Borrador = se arma y corrige;
+  "Emitir factura" = se oficializa (no se edita, corre el vencimiento,
+  entra en Por cobrar y acepta cobros). Para mandarla al cliente: botón
+  Compartir o PDF, después de emitir.
+- Diferencia con cotizaciones: la cotización sí pasa por "Enviada" porque
+  el cliente debe aceptarla; la factura ya es un cobro acordado.
+- Pendiente de decisión del usuario: botón opcional "Marcar como enviada
+  al cliente" en facturas emitidas (fecha y usuario) para la gestión de
+  cobro, sin cambiar el flujo de estados.
