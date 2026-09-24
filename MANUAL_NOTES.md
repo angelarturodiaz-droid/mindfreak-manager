@@ -182,3 +182,15 @@ conciliar", marcar lo que coincide, investigar lo que sobra en el
 sistema y registrar como movimiento manual lo que falta. Al final el
 balance del sistema debe igualar el saldo final del banco. Se puede
 desmarcar. Permiso banks.reconcile.
+
+## Módulo: Bancos — Cuentas en dólares y tipo de cuenta (2026-09-23)
+
+- Se pueden crear cuentas en USD (Bancos → Nueva cuenta o tarjeta →
+  Moneda USD). La moneda no se puede cambiar después de crear la cuenta.
+- Tipo de cuenta: Ahorros o Corriente (solo cuentas bancarias; las
+  tarjetas no lo usan). Es informativo: no cambia balances ni cálculos.
+  Filtros por tipo y por moneda en la lista de Bancos. Las cuentas
+  anteriores quedan "sin indicar" hasta editarlas. Migración 061.
+- Movimientos manuales en cuentas que no están en pesos: se pide la tasa
+  (pesos por 1 dólar) y se guarda en el movimiento, para que los reportes
+  lo conviertan correctamente (antes se guardaban con tasa 1).

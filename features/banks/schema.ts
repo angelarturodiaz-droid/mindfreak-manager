@@ -2,6 +2,13 @@ import { z } from "zod";
 
 export const ACCOUNT_TYPES = ["BANK", "CREDIT_CARD"] as const;
 
+/** Tipo de cuenta bancaria (solo para type = BANK). Informativo. */
+export const ACCOUNT_KINDS = ["SAVINGS", "CHECKING"] as const;
+export const ACCOUNT_KIND_LABELS: Record<string, string> = {
+  SAVINGS: "Ahorros",
+  CHECKING: "Corriente",
+};
+
 export const bankAccountSchema = z.object({
   name: z.string().trim().min(1, "El nombre es requerido"),
   bank_name: z.string().trim().optional().or(z.literal("")),
@@ -11,6 +18,7 @@ export const bankAccountSchema = z.object({
   opening_balance: z.coerce.number().default(0),
   opening_balance_date: z.string().min(1, "La fecha es requerida"),
   credit_limit: z.coerce.number().min(0).optional(),
+  account_kind: z.enum(ACCOUNT_KINDS).optional(),
 });
 
 export const bankAccountEditSchema = z.object({
@@ -21,6 +29,7 @@ export const bankAccountEditSchema = z.object({
   // Solo se aplican si la cuenta todavía no tiene movimientos (ver acción).
   opening_balance: z.coerce.number().optional(),
   opening_balance_date: z.string().optional().or(z.literal("")),
+  account_kind: z.enum(ACCOUNT_KINDS).optional(),
 });
 
 export type BankAccountEditInput = z.infer<typeof bankAccountEditSchema>;
@@ -36,6 +45,9 @@ export const manualTransactionSchema = z
     description: z.string().trim().optional().or(z.literal("")),
     // Número de cheque, de transacción o de depósito (opcional).
     reference: z.string().trim().max(100).optional().or(z.literal("")),
+    // Solo en cuentas en otra moneda (ej. USD): unidades de moneda base por
+    // 1 unidad de la moneda de la cuenta, para convertir en los reportes.
+    exchange_rate: z.coerce.number().positive("La tasa debe ser mayor a 0").optional(),
   })
   // Se permite guardar "Sin categoría" (queda en la alerta para clasificar
   // después), pero entonces la descripción es obligatoria.

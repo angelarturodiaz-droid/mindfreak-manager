@@ -4,7 +4,7 @@ export async function listBankAccountsWithBalance() {
   const supabase = await createClient();
   const { data: accounts, error } = await supabase
     .from("bank_accounts")
-    .select("id, name, bank_name, account_number_masked, currency, is_active, type, credit_limit")
+    .select("id, name, bank_name, account_number_masked, currency, is_active, type, credit_limit, account_kind")
     .order("name");
   if (error) throw new Error(error.message);
   if (!accounts || accounts.length === 0) return [];

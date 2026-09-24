@@ -1,5 +1,18 @@
 # CHANGELOG — Mindfreak Manager
 
+## Cuentas en dólares: tipo de cuenta y tasa en movimientos manuales (2026-09-23)
+
+- Migración `061_bank_account_kind.sql` (aplicada): `bank_accounts.account_kind`
+  (SAVINGS / CHECKING, opcional, solo cuentas bancarias).
+- Nueva cuenta y Editar cuenta: campo "Tipo de cuenta"; moneda con aviso de
+  que no se puede cambiar después.
+- Lista de Bancos: tipo de cuenta en cada tarjeta y filtros por tipo y moneda.
+- Movimiento manual en cuentas que no están en moneda base: pide la tasa y
+  la guarda en `exchange_rate` (antes siempre 1), así el reporte de
+  Ingresos y egresos convierte bien a pesos.
+- Manual (/help, MANUAL_NOTES): cómo crear una cuenta en dólares paso a
+  paso, filtros, y movimientos manuales con tasa.
+
 ## Transferencias entre monedas distintas y manual de Bancos (2026-09-23)
 
 - `create_bank_transfer` acepta `p_exchange_rate` (migración

@@ -281,7 +281,15 @@ export default async function BankAccountDetailPage({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-semibold tracking-tight text-brand-primary">{account.name}</h1>
-              <Badge tone="neutral">{isCard ? "Tarjeta de crédito" : "Cuenta bancaria"}</Badge>
+              <Badge tone="neutral">
+                {isCard
+                  ? "Tarjeta de crédito"
+                  : account.account_kind === "SAVINGS"
+                    ? "Cuenta de ahorros"
+                    : account.account_kind === "CHECKING"
+                      ? "Cuenta corriente"
+                      : "Cuenta bancaria"}
+              </Badge>
               <Badge tone="neutral">{account.currency}</Badge>
               {!account.is_active && <Badge tone="danger">Inactiva</Badge>}
             </div>
@@ -360,7 +368,12 @@ export default async function BankAccountDetailPage({
               <ChevronDown size={16} className="text-brand-muted transition-transform group-open:rotate-180" />
             </summary>
             <div className="border-t border-brand-border p-4">
-              <ManualTransactionForm bankAccountId={account.id} categories={categories} />
+              <ManualTransactionForm
+                bankAccountId={account.id}
+                categories={categories}
+                accountCurrency={account.currency}
+                baseCurrency={company.base_currency}
+              />
             </div>
           </details>
           <details className="group rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface shadow-[var(--shadow-sm)] open:shadow-[var(--shadow-md)]">

@@ -32,6 +32,7 @@ export async function createBankAccountAction(
     opening_balance: String(formData.get("opening_balance") ?? "0"),
     opening_balance_date: String(formData.get("opening_balance_date") ?? ""),
     credit_limit: formData.get("credit_limit") ? String(formData.get("credit_limit")) : undefined,
+    account_kind: formData.get("account_kind") ? String(formData.get("account_kind")) : undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -61,6 +62,7 @@ export async function createBankAccountAction(
       opening_balance: openingBalance,
       opening_balance_date: parsed.data.opening_balance_date,
       credit_limit: parsed.data.type === "CREDIT_CARD" ? parsed.data.credit_limit ?? null : null,
+      account_kind: parsed.data.type === "BANK" ? parsed.data.account_kind ?? null : null,
     })
     .select("id")
     .single();
@@ -124,6 +126,7 @@ export async function createManualTransactionAction(
     category_id: String(formData.get("category_id") ?? ""),
     description: String(formData.get("description") ?? ""),
     reference: String(formData.get("reference") ?? ""),
+    exchange_rate: formData.get("exchange_rate") ? String(formData.get("exchange_rate")) : undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -151,6 +154,21 @@ export async function createManualTransactionAction(
     .single();
   if (accError || !account) return { error: "Cuenta no encontrada." };
 
+  // Cuenta en otra moneda (ej. USD): se pide la tasa para que los reportes
+  // conviertan el movimiento a la moneda base. En moneda base es 1.
+  const { data: company } = await supabase
+    .from("companies")
+    .select("base_currency")
+    .eq("id", companyId)
+    .single();
+  const isForeign = Boolean(company && account.currency !== company.base_currency);
+  if (isForeign && !parsed.data.exchange_rate) {
+    return {
+      error: `Esta cuenta está en ${account.currency}: indica la tasa (${company?.base_currency} por 1 ${account.currency}).`,
+    };
+  }
+  const exchangeRate = isForeign ? parsed.data.exchange_rate! : 1;
+
   const { data: inserted, error } = await supabase
     .from("bank_transactions")
     .insert({
@@ -159,7 +177,7 @@ export async function createManualTransactionAction(
       type: parsed.data.type,
       amount: parsed.data.amount,
       currency: account.currency,
-      exchange_rate: 1,
+      exchange_rate: exchangeRate,
       transaction_date: parsed.data.transaction_date,
       description: parsed.data.description || categoryName,
       category_id: parsed.data.category_id || null,
@@ -320,6 +338,7 @@ export async function updateBankAccountAction(
       ? String(formData.get("opening_balance"))
       : undefined,
     opening_balance_date: String(formData.get("opening_balance_date") ?? ""),
+    account_kind: formData.get("account_kind") ? String(formData.get("account_kind")) : undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -353,6 +372,9 @@ export async function updateBankAccountAction(
     account_number_masked: parsed.data.account_number_masked || null,
     credit_limit: parsed.data.credit_limit ?? null,
   };
+  if (existing.type === "BANK") {
+    updatePayload.account_kind = parsed.data.account_kind ?? null;
+  }
 
   if (canEditOpeningBalance) {
     if (parsed.data.opening_balance !== undefined) {

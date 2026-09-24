@@ -430,7 +430,25 @@ const SECTIONS: Section[] = [
             <>Columna <strong>Saldo</strong>: cómo quedó la cuenta después de cada movimiento, como un estado de cuenta (se oculta al filtrar).</>,
             "Filtros por tipo, por conciliación y por categoría (incluida Sin categoría).",
             "Movimiento manual, Transferir y Editar cuenta están en paneles plegables arriba de la tabla: haz clic en el título para abrirlos.",
-            "Cada cuenta tiene su propia moneda. Los movimientos manuales se guardan con tasa 1: en cuentas en dólares los reportes los suman sin convertirlos a pesos.",
+            "Cada cuenta tiene su propia moneda.",
+          ]}
+        />
+
+        <p className="text-sm font-medium text-brand-text">Crear una cuenta (incluida una cuenta en dólares):</p>
+        <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-sm text-brand-text">
+          <li>Ve a <strong>Bancos → Nueva cuenta o tarjeta</strong>.</li>
+          <li>En <strong>Tipo</strong> elige <em>Cuenta bancaria</em> (o <em>Tarjeta de crédito</em>).</li>
+          <li>En <strong>Tipo de cuenta</strong> elige <em>Ahorros</em> o <em>Corriente</em> (solo para cuentas bancarias).</li>
+          <li>Ponle un <strong>Nombre</strong> que la identifique, ej. <em>Popular Ahorros USD</em>, y elige el banco.</li>
+          <li>En <strong>Moneda</strong> elige <em>DOP (pesos)</em> o <em>USD (dólares)</em>. <strong>No se puede cambiar después</strong>, para no alterar los movimientos ya registrados.</li>
+          <li>En <strong>Balance inicial</strong> escribe el saldo que tiene hoy, en la moneda de la cuenta, con su fecha.</li>
+        </ol>
+        <Bullets
+          items={[
+            <>En la lista de Bancos puedes filtrar las cuentas por <strong>tipo</strong> (Ahorros / Corriente) y por <strong>moneda</strong> (DOP / USD). Las cuentas creadas antes quedan como <em>sin indicar</em>: complétalas desde <strong>Editar cuenta</strong>.</>,
+            <>El total <strong>Disponible en bancos</strong> muestra los pesos como monto principal y los dólares aparte, sin mezclarlos.</>,
+            <><strong>Movimientos manuales en cuentas en dólares</strong>: el formulario pide la <strong>Tasa</strong> (pesos por 1 dólar). El movimiento se guarda en dólares en la cuenta, y la tasa sirve para que los reportes lo conviertan a pesos. Ejemplo: intereses de US$10 a tasa 59.50 cuentan como RD$595 en el reporte de Ingresos y egresos.</>,
+            "Cobros, pagos y transferencias en dólares ya guardan su propia tasa, así que también se convierten bien en los reportes.",
           ]}
         />
 

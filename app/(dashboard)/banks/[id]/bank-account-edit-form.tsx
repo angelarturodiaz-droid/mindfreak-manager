@@ -19,6 +19,7 @@ export function BankAccountEditForm({
     bank_name: string | null;
     account_number_masked: string | null;
     type: string;
+    account_kind?: string | null;
     credit_limit: number | null;
     opening_balance: number;
     opening_balance_date: string;
@@ -33,6 +34,13 @@ export function BankAccountEditForm({
   return (
     <form action={formAction} className="max-w-md space-y-4">
       <Input label="Nombre" name="name" defaultValue={account.name} required />
+      {!isCard && (
+        <Select label="Tipo de cuenta" name="account_kind" defaultValue={account.account_kind ?? ""}>
+          <option value="">Sin indicar</option>
+          <option value="SAVINGS">Ahorros</option>
+          <option value="CHECKING">Corriente</option>
+        </Select>
+      )}
       <Select label="Banco" name="bank_name" defaultValue={account.bank_name ?? ""}>
         <option value="">Selecciona un banco…</option>
         {account.bank_name && !bankCatalog.some((b) => b.name === account.bank_name) && (

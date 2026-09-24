@@ -27,11 +27,21 @@ export function NewBankAccountForm({ bankCatalog }: { bankCatalog: { id: string;
         <option value="CREDIT_CARD">Tarjeta de crédito</option>
       </Select>
 
+      {!isCard && (
+        <Select label="Tipo de cuenta" name="account_kind" defaultValue="" required>
+          <option value="" disabled>
+            Selecciona…
+          </option>
+          <option value="SAVINGS">Ahorros</option>
+          <option value="CHECKING">Corriente</option>
+        </Select>
+      )}
+
       <Input
         label="Nombre"
         name="name"
         required
-        placeholder={isCard ? "Ej. Visa Banreservas" : "Ej. Cuenta Corriente Banreservas"}
+        placeholder={isCard ? "Ej. Visa Banreservas USD" : "Ej. Popular Ahorros USD"}
       />
       <Select label="Banco" name="bank_name" defaultValue="">
         <option value="">Selecciona un banco…</option>
@@ -49,9 +59,14 @@ export function NewBankAccountForm({ bankCatalog }: { bankCatalog: { id: string;
       />
 
       <div className="grid grid-cols-2 gap-3">
-        <Select label="Moneda" name="currency" defaultValue="DOP">
-          <option value="DOP">DOP</option>
-          <option value="USD">USD</option>
+        <Select
+          label="Moneda"
+          name="currency"
+          defaultValue="DOP"
+          hint="No se puede cambiar después de crearla."
+        >
+          <option value="DOP">DOP (pesos)</option>
+          <option value="USD">USD (dólares)</option>
         </Select>
         <MoneyInput
           label={isCard ? "Deuda inicial" : "Balance inicial"}

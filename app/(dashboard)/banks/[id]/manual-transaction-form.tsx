@@ -14,8 +14,13 @@ const initialState: ActionState = { error: null };
 export function ManualTransactionForm({
   bankAccountId,
   categories,
+  accountCurrency,
+  baseCurrency,
 }: {
   bankAccountId: string;
+  /** Moneda de la cuenta; si no es la moneda base se pide la tasa. */
+  accountCurrency: string;
+  baseCurrency: string;
   /** Catálogo de Configuración > Categorías (mismo para ingresos y egresos). */
   categories: { id: string; name: string }[];
 }) {
@@ -45,6 +50,19 @@ export function ManualTransactionForm({
         className="w-56"
       />
       <Input label="Referencia" name="reference" placeholder="Cheque / No. transacción" className="w-44" />
+      {accountCurrency !== baseCurrency && (
+        <Input
+          label={`Tasa (${baseCurrency} por 1 ${accountCurrency})`}
+          name="exchange_rate"
+          type="number"
+          step="0.0001"
+          min={0.0001}
+          required
+          placeholder="Ej. 59.50"
+          className="w-44"
+          hint="Para convertir este movimiento a pesos en los reportes."
+        />
+      )}
       <Button type="submit" loading={pending} icon={<Plus size={14} />}>
         Agregar movimiento
       </Button>

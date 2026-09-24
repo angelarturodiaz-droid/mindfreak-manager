@@ -5,7 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { IconBadge } from "@/components/ui/icon-badge";
-import { ProgressBar, SectionHeader, StatCard, StatGrid } from "@/components/ui/page-kit";
+import {
+  FilterPills,
+  ProgressBar,
+  SectionHeader,
+  StatCard,
+  StatGrid,
+  listHref,
+} from "@/components/ui/page-kit";
+import { ACCOUNT_KIND_LABELS } from "@/features/banks/schema";
 
 function formatMoney(amount: number, currency: string) {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency }).format(
@@ -48,6 +56,7 @@ function AccountCard({ a }: { a: AccountRow }) {
           <div className="min-w-0">
             <p className="truncate font-medium text-brand-text group-hover:text-brand-accent">{a.name}</p>
             <p className="truncate text-xs text-brand-muted">
+              {!isCard && a.account_kind ? `${ACCOUNT_KIND_LABELS[a.account_kind] ?? ""} · ` : ""}
               {a.bank_name ?? "Sin banco"}
               {a.account_number_masked ? ` · ${a.account_number_masked}` : ""}
             </p>
@@ -110,11 +119,21 @@ function AccountCard({ a }: { a: AccountRow }) {
   );
 }
 
-export default async function BanksPage() {
+export default async function BanksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ kind?: string; currency?: string }>;
+}) {
+  const params = await searchParams;
+  const kindFilter = params.kind === "SAVINGS" || params.kind === "CHECKING" ? params.kind : undefined;
+  const currencyFilter = params.currency === "DOP" || params.currency === "USD" ? params.currency : undefined;
   const accounts = await listBankAccountsWithBalance();
-  const banks = accounts.filter((a) => a.type !== "CREDIT_CARD");
+  const allBanks = accounts.filter((a) => a.type !== "CREDIT_CARD");
+  const banks = allBanks.filter(
+    (a) => (!kindFilter || a.account_kind === kindFilter) && (!currencyFilter || a.currency === currencyFilter),
+  );
   const cards = accounts.filter((a) => a.type === "CREDIT_CARD");
-  const activeBanks = banks.filter((a) => a.is_active);
+  const activeBanks = allBanks.filter((a) => a.is_active);
   const activeCards = cards.filter((a) => a.is_active);
 
   const available = splitCurrencies(sumByCurrency(activeBanks, (a) => a.current_balance));
@@ -210,9 +229,37 @@ export default async function BanksPage() {
 
           <section>
             <SectionHeader title="Cuentas bancarias" count={banks.length} />
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+              <FilterPills
+                label="Filtrar por tipo de cuenta"
+                items={[
+                  { key: "all", label: "Todas", count: allBanks.length, active: !kindFilter, href: listHref("/banks", { currency: currencyFilter }) },
+                  ...(["SAVINGS", "CHECKING"] as const).map((k) => ({
+                    key: k,
+                    label: ACCOUNT_KIND_LABELS[k],
+                    count: allBanks.filter((a) => a.account_kind === k).length,
+                    active: kindFilter === k,
+                    href: listHref("/banks", { kind: k, currency: currencyFilter }),
+                  })),
+                ]}
+              />
+              <FilterPills
+                label="Filtrar por moneda"
+                items={[
+                  { key: "all", label: "Todas las monedas", active: !currencyFilter, href: listHref("/banks", { kind: kindFilter }) },
+                  ...(["DOP", "USD"] as const).map((c) => ({
+                    key: c,
+                    label: c,
+                    count: allBanks.filter((a) => a.currency === c).length,
+                    active: currencyFilter === c,
+                    href: listHref("/banks", { kind: kindFilter, currency: c }),
+                  })),
+                ]}
+              />
+            </div>
             {banks.length === 0 ? (
               <p className="rounded-[var(--radius-lg)] border border-dashed border-brand-border p-6 text-center text-sm text-brand-muted">
-                Sin cuentas bancarias todavía.
+                {kindFilter || currencyFilter ? "No hay cuentas con este filtro." : "Sin cuentas bancarias todavía."}
               </p>
             ) : (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
