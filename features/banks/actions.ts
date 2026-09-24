@@ -199,6 +199,7 @@ export async function createTransferAction(
     transaction_date: String(formData.get("transaction_date") ?? ""),
     amount: String(formData.get("amount") ?? "0"),
     description: String(formData.get("description") ?? ""),
+    exchange_rate: formData.get("exchange_rate") ? String(formData.get("exchange_rate")) : undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -214,11 +215,18 @@ export async function createTransferAction(
     p_amount: parsed.data.amount,
     p_transaction_date: parsed.data.transaction_date,
     p_description: parsed.data.description || null,
+    p_exchange_rate: parsed.data.exchange_rate ?? null,
   });
 
   if (error) {
     if (error.message.includes("invalid_accounts")) {
       return { error: "La cuenta origen y destino no pueden ser la misma." };
+    }
+    if (error.message.includes("exchange_rate_required")) {
+      return { error: "Las cuentas tienen monedas distintas: indica la tasa de cambio." };
+    }
+    if (error.message.includes("unsupported_currencies")) {
+      return { error: "Una de las dos cuentas debe estar en la moneda base de la empresa." };
     }
     return { error: error.message };
   }

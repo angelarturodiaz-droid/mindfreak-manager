@@ -429,17 +429,64 @@ const SECTIONS: Section[] = [
             <>Columna <strong>Origen</strong>: la factura, el gasto, el pago o la otra cuenta que generó el movimiento, con enlace. Las dos partes de una transferencia quedan enlazadas entre sí.</>,
             <>Columna <strong>Saldo</strong>: cómo quedó la cuenta después de cada movimiento, como un estado de cuenta (se oculta al filtrar).</>,
             "Filtros por tipo, por conciliación y por categoría (incluida Sin categoría).",
-            <>
-              Conciliar (permiso{" "}
-              <code className="rounded bg-brand-surface-hover px-1 py-0.5 text-xs">
-                banks.reconcile
-              </code>
-              ) marca cada movimiento como verificado contra el estado de
-              cuenta real del banco.
-            </>,
-            "Cada cuenta tiene su propia moneda. Los movimientos manuales y las transferencias se guardan con tasa 1: en cuentas en dólares los reportes los suman sin convertirlos a pesos.",
+            "Movimiento manual, Transferir y Editar cuenta están en paneles plegables arriba de la tabla: haz clic en el título para abrirlos.",
+            "Cada cuenta tiene su propia moneda. Los movimientos manuales se guardan con tasa 1: en cuentas en dólares los reportes los suman sin convertirlos a pesos.",
           ]}
         />
+
+        <p className="text-sm font-medium text-brand-text">Transferir entre cuentas y pagar tarjetas:</p>
+        <p className="text-sm text-brand-text">
+          El panel <strong>Transferir o pagar tarjeta</strong> mueve dinero desde la cuenta que
+          estás viendo hacia otra cuenta o tarjeta tuya. En <em>Cuenta destino</em> aparecen todas
+          tus demás cuentas y tarjetas <strong>activas</strong> (nunca la cuenta en la que estás).
+          Si no aparece la que buscas, créala primero en <strong>Bancos → Nueva cuenta o
+          tarjeta</strong> o revisa que no esté inactiva.
+        </p>
+        <Bullets
+          items={[
+            <><strong>Entre bancos</strong> (ej. de Banreservas a Popular): la cuenta de origen baja y la de destino sube por el mismo monto. Queda con la categoría <em>Transferencia entre cuentas</em>.</>,
+            <><strong>Pagar una tarjeta de crédito</strong>: desde tu cuenta de banco elige la tarjeta como destino. El banco baja y la <strong>deuda de la tarjeta baja</strong> por lo pagado. Queda con la categoría <em>Pago de tarjeta de crédito</em>.</>,
+            <>Una transferencia <strong>no es ingreso ni gasto</strong>: solo mueve tu propio dinero. Por eso el reporte de Ingresos y egresos la excluye por defecto.</>,
+            <>Las dos partes quedan <strong>enlazadas</strong>: en la columna Origen de cada una verás <em>A Popular</em> o <em>Desde Banreservas</em>, con enlace a la otra cuenta.</>,
+          ]}
+        />
+        <p className="text-sm font-medium text-brand-text">Transferencias entre monedas distintas (ej. pagar una tarjeta en dólares desde una cuenta en pesos):</p>
+        <Bullets
+          items={[
+            <>Al elegir una cuenta destino con otra moneda aparece el campo <strong>Tasa</strong>: cuántos pesos vale 1 dólar según tu banco (ej. <em>59.50</em>).</>,
+            <>Escribe en <strong>Monto que sale</strong> lo que se descuenta de la cuenta de origen, en su moneda. El sistema calcula y te muestra lo que entra en la otra cuenta antes de guardar. Ejemplo: sale <strong>RD$5,950.00</strong> a tasa 59.50 → entran <strong>US$100.00</strong> a la tarjeta.</>,
+            "También funciona al revés (de dólares a pesos): sale el monto en dólares y entra el equivalente en pesos.",
+            "Cada movimiento guarda su tasa, así los reportes convierten correctamente a pesos. Una de las dos cuentas debe estar en la moneda base de la empresa (pesos).",
+            <><strong>Tarjetas con dos monedas</strong> (balance en pesos y en dólares): regístrala como <strong>dos tarjetas</strong>, una en DOP y otra en USD (ej. <em>Visa Popular DOP</em> y <em>Visa Popular USD</em>). Así cada balance lleva su propia deuda y límite, y pagas cada uno desde la cuenta que corresponda.</>,
+          ]}
+        />
+
+        <p className="text-sm font-medium text-brand-text">Conciliación: ¿qué es y para qué sirve?</p>
+        <p className="text-sm text-brand-text">
+          Conciliar es <strong>comparar cada movimiento del sistema con el estado de cuenta real
+          del banco</strong> y marcar los que confirmaste que sí aparecen ahí, con la misma fecha y
+          el mismo monto. No cambia montos ni balances: es una verificación.
+        </p>
+        <Bullets
+          items={[
+            "Te asegura que lo registrado en el sistema coincide con lo que realmente pasó en el banco.",
+            "Ayuda a encontrar errores: cobros registrados que no llegaron, montos mal digitados, movimientos duplicados, o cargos del banco (comisiones, intereses) que faltan por registrar.",
+            <>La tarjeta <strong>Sin conciliar</strong> y el filtro del mismo nombre te dicen cuántos movimientos te faltan por verificar.</>,
+          ]}
+        />
+        <p className="text-sm font-medium text-brand-text">Cómo conciliar paso a paso (por ejemplo, una vez al mes):</p>
+        <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-sm text-brand-text">
+          <li>Descarga o abre el estado de cuenta del banco del período.</li>
+          <li>En Bancos, abre la cuenta y filtra por <strong>Sin conciliar</strong>.</li>
+          <li>Por cada línea del estado de cuenta, busca el movimiento con la misma fecha y monto y haz clic en <strong>Marcar</strong>: pasa a <em>✓ Conciliado</em>.</li>
+          <li>Lo que quede sin marcar en el sistema, investígalo (¿se registró de más o con otro monto?).</li>
+          <li>Lo que esté en el banco y no en el sistema (ej. una comisión), regístralo como <strong>Movimiento manual</strong> y márcalo.</li>
+          <li>Al terminar, el balance del sistema debe coincidir con el saldo final del estado de cuenta.</li>
+        </ol>
+        <p className="text-sm text-brand-muted">
+          Si marcas uno por error, vuelve a hacer clic y se desmarca. Conciliar requiere el permiso{" "}
+          <code className="rounded bg-brand-surface-hover px-1 py-0.5 text-xs">banks.reconcile</code>.
+        </p>
       </>
     ),
   },

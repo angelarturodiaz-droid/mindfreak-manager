@@ -49,4 +49,7 @@ export const transferSchema = z.object({
   transaction_date: z.string().min(1, "La fecha es requerida"),
   amount: z.coerce.number().positive("El monto debe ser mayor a 0"),
   description: z.string().trim().optional().or(z.literal("")),
+  // Solo si las cuentas tienen monedas distintas: unidades de moneda base
+  // por 1 unidad de la otra moneda (ej. 59.50 RD$ por US$).
+  exchange_rate: z.coerce.number().positive("La tasa debe ser mayor a 0").optional(),
 });

@@ -154,3 +154,31 @@ de las 8:00 p. m. aparecía la fecha del día siguiente.
 Todos los listados muestran tarjetas de resumen, filtros por estado con
 su conteo, filtro por cliente donde aplica y paginación de 25 registros
 (los filtros se conservan al cambiar de página).
+
+## Módulo: Bancos — Transferencias, pago de tarjetas y monedas (2026-09-23)
+
+- "Transferir o pagar tarjeta" mueve dinero desde la cuenta abierta hacia
+  otra cuenta o tarjeta activa. La cuenta destino lista todas las demás
+  cuentas activas (nunca la actual): si solo aparece una, es porque solo
+  hay dos cuentas activas. Las tarjetas se crean en Bancos → Nueva cuenta
+  o tarjeta (tipo Tarjeta de crédito).
+- Pagar una tarjeta = transferir desde el banco a la tarjeta: el banco
+  baja y la deuda de la tarjeta baja. No es ingreso ni gasto.
+- Monedas distintas: se pide la tasa (pesos por 1 dólar). Sale el monto
+  en la moneda de origen y entra el convertido en la de destino (ej.
+  RD$5,950 a 59.50 → US$100). Cada fila guarda su tasa para los reportes.
+  Una de las dos cuentas debe estar en la moneda base. Migración 060.
+- Tarjetas con balance en dos monedas: se registran como dos tarjetas
+  (una DOP y una USD), cada una con su deuda y límite.
+
+## Módulo: Bancos — Conciliación
+
+Conciliar = comparar cada movimiento del sistema contra el estado de
+cuenta real del banco y marcar los confirmados (misma fecha y monto). No
+cambia montos ni balances. Sirve para detectar cobros que no llegaron,
+montos mal digitados, duplicados y cargos del banco sin registrar.
+Proceso sugerido mensual: abrir el estado de cuenta, filtrar "Sin
+conciliar", marcar lo que coincide, investigar lo que sobra en el
+sistema y registrar como movimiento manual lo que falta. Al final el
+balance del sistema debe igualar el saldo final del banco. Se puede
+desmarcar. Permiso banks.reconcile.

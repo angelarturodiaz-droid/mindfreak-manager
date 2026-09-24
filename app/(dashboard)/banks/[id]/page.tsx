@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/page-kit";
 import { formatDate, todayISO } from "@/lib/utils/dates";
 import { listCategoryOptions } from "@/features/expense-categories/queries";
+import { getCompany } from "@/features/settings/queries";
 import { TransactionCategorySelect } from "@/components/banks/transaction-category-select";
 import { AutoSubmitSelect } from "@/components/ui/auto-submit-select";
 import { relationName, relationRow } from "@/lib/utils/relation";
@@ -130,7 +131,7 @@ export default async function BankAccountDetailPage({
   }
   if (!account) notFound();
 
-  const [transactions, otherAccounts, canCreate, canReconcile, hasTx, bankCatalog, categories] = await Promise.all([
+  const [transactions, otherAccounts, canCreate, canReconcile, hasTx, bankCatalog, categories, company] = await Promise.all([
     listBankTransactions(id),
     listOtherActiveAccounts(id),
     hasPermission("banks.create"),
@@ -138,6 +139,7 @@ export default async function BankAccountDetailPage({
     hasBankTransactions(id),
     listBankCatalog(),
     listCategoryOptions(),
+    getCompany(),
   ]);
 
   const isCard = account.type === "CREDIT_CARD";
@@ -373,7 +375,12 @@ export default async function BankAccountDetailPage({
               <ChevronDown size={16} className="text-brand-muted transition-transform group-open:rotate-180" />
             </summary>
             <div className="border-t border-brand-border p-4">
-              <TransferForm fromAccountId={account.id} otherAccounts={otherAccounts} />
+              <TransferForm
+                fromAccountId={account.id}
+                fromCurrency={account.currency}
+                baseCurrency={company.base_currency}
+                otherAccounts={otherAccounts}
+              />
             </div>
           </details>
           <details className="group rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface shadow-[var(--shadow-sm)] open:shadow-[var(--shadow-md)]">

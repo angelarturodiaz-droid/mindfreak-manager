@@ -1,5 +1,20 @@
 # CHANGELOG — Mindfreak Manager
 
+## Transferencias entre monedas distintas y manual de Bancos (2026-09-23)
+
+- `create_bank_transfer` acepta `p_exchange_rate` (migración
+  `060_bank_transfer_exchange_rate.sql`): entre cuentas de distinta
+  moneda (ej. pesos → tarjeta en dólares) sale el monto en la moneda de
+  origen y entra el convertido; cada fila guarda su tasa a moneda base.
+  Misma moneda: sin cambios. Se reemplazó la función anterior (mismos
+  permisos: authenticated y service_role).
+- Formulario de transferencia: campo Tasa cuando las monedas difieren y
+  vista previa de lo que entra en la cuenta destino.
+- Detalle de cuenta: tabla a todo el ancho; formularios en paneles
+  plegables.
+- Manual (/help y MANUAL_NOTES): explicación detallada de transferencias,
+  pago de tarjetas, tarjetas con dos monedas y conciliación paso a paso.
+
 ## Tipo + Categoría en movimientos de banco, reporte por categoría, import CSV de categorías y fecha del día (2026-09-23)
 
 - Movimientos de banco con **Tipo** (Ingreso/Egreso/Transferencia) y

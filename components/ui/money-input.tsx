@@ -34,6 +34,7 @@ export function MoneyInput({
   disabled,
   className = "",
   hint,
+  onValueChange,
 }: {
   label?: string;
   name: string;
@@ -43,6 +44,8 @@ export function MoneyInput({
   disabled?: boolean;
   className?: string;
   hint?: string;
+  /** Opcional: recibe el valor numérico cada vez que cambia (ej. para mostrar una conversión en vivo). */
+  onValueChange?: (value: number) => void;
 }) {
   const autoId = useId();
   const [raw, setRaw] = useState(() => sanitize(String(defaultValue ?? "")));
@@ -60,7 +63,11 @@ export function MoneyInput({
         type="text"
         inputMode="decimal"
         value={formatWithCommas(raw)}
-        onChange={(e) => setRaw(sanitize(e.target.value))}
+        onChange={(e) => {
+          const next = sanitize(e.target.value);
+          setRaw(next);
+          onValueChange?.(Number(next) || 0);
+        }}
         disabled={disabled}
         className={`${FIELD_CLASSES} ${className} ${disabled ? "cursor-not-allowed bg-brand-background text-brand-disabled" : ""}`}
       />
