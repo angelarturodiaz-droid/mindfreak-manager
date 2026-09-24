@@ -103,3 +103,54 @@ Condiciones de pago), los documentos ya creados no se alteran.
 ---
 
 <!-- Agregar aquí nuevas notas a medida que surjan, con su propio ## encabezado de módulo -->
+
+---
+
+## Módulo: Bancos — Tipo y Categoría de cada movimiento (2026-09-23)
+
+Decisión del usuario: este esquema reemplaza la clasificación manual que
+llevaba en Excel. Objetivo: poder analizar ingresos y egresos agrupados
+por categoría.
+
+- **Tipo y Categoría son independientes.** Tipo = Ingreso / Egreso /
+  Transferencia (define si el dinero entra, sale o se mueve entre cuentas
+  propias). Categoría = de dónde viene o en qué se usó.
+- **Las categorías NO tienen tipo.** Una misma categoría puede usarse en
+  ingresos y en egresos (ej. "Comisión" cobrada o pagada). Es una sola
+  lista, la misma que usan los gastos (Configuración → Categorías).
+- **Categoría automática según el origen**:
+  - Cobro de factura → "Cobro de factura".
+  - Pago a proveedor / gasto pagado → hereda la categoría del gasto
+    (Catering, Sonido, Alquiler…), para que el reporte muestre en qué se
+    usó el dinero. Si el gasto no tiene categoría: "Pago a suplidor" /
+    "Otros gastos".
+  - Transferencia con una tarjeta de crédito → "Pago de tarjeta de crédito";
+    otra transferencia → "Transferencia entre cuentas".
+- **"Sin categoría" se permite temporalmente** (casos excepcionales) para
+  no bloquear una operación bancaria. Se muestra una alerta
+  "⚠️ N movimientos sin categoría" en Bancos y en cada cuenta, con enlace
+  para clasificarlos, y aparece como fila propia en el reporte.
+- **Movimientos manuales**: se elige la categoría de un desplegable; si se
+  deja "Sin categoría", la descripción es obligatoria. Campo "Referencia"
+  opcional para número de cheque / transacción.
+- **Transferencias**: las dos filas (salida y entrada) quedan enlazadas y
+  cada una sabe cuál es la otra cuenta.
+- **Reporte "Ingresos y egresos por categoría"** (Reportes → Bancos): las
+  transferencias se excluyen por defecto porque son movimientos entre
+  cuentas propias (no son ingreso ni gasto); hay una casilla para
+  incluirlas cuando se quiera ver todo el movimiento bancario.
+- Limitación conocida: movimientos manuales y transferencias se guardan
+  con tasa 1; en cuentas en dólares el reporte no los convierte a pesos.
+
+## General: fecha por defecto
+
+Todos los formularios con fecha de la operación (factura, cotización,
+gasto, cobro, pago, movimiento de banco, cuenta nueva) traen la fecha de
+hoy en hora de República Dominicana. Antes se calculaba en UTC y después
+de las 8:00 p. m. aparecía la fecha del día siguiente.
+
+## General: listados
+
+Todos los listados muestran tarjetas de resumen, filtros por estado con
+su conteo, filtro por cliente donde aplica y paginación de 25 registros
+(los filtros se conservan al cambiar de página).

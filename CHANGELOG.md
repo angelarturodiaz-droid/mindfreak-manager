@@ -1,5 +1,45 @@
 # CHANGELOG — Mindfreak Manager
 
+## Tipo + Categoría en movimientos de banco, reporte por categoría, import CSV de categorías y fecha del día (2026-09-23)
+
+- Movimientos de banco con **Tipo** (Ingreso/Egreso/Transferencia) y
+  **Categoría** independientes; categorías sin tipo, mismo catálogo que
+  los gastos. Categoría automática por origen (trigger
+  `trg_bank_transaction_default_category`): cobro → "Cobro de factura";
+  pago a proveedor/gasto → categoría del gasto; transferencias → "Pago de
+  tarjeta de crédito" / "Transferencia entre cuentas". "Sin categoría"
+  permitido con alerta. Referencia opcional. Transferencias enlazadas
+  (`transfer_group_id`, `counterpart_account_id`). Migración
+  `059_bank_transaction_categories.sql` (aplicada en producción; creó 27
+  categorías iniciales y clasificó los movimientos existentes).
+- Detalle de cuenta: columna Origen con enlace, categoría editable por
+  fila, filtro por categoría, alerta de movimientos sin categoría.
+- Reporte nuevo **Ingresos y egresos por categoría** (Reportes → Bancos),
+  con vista por mes; transferencias excluidas por defecto.
+- Configuración → Categorías: importación por CSV con plantilla
+  (`public/plantillas/categorias-gastos.csv`), sin duplicar.
+- Fecha del día por defecto en zona horaria de RD (antes UTC).
+- Manual de la app (`/help`) actualizado con todo lo anterior y con el
+  rediseño de pantallas.
+
+## Rediseño UX/UI de todas las pantallas (2026-09-23)
+
+Proyectos, Clientes, Cotizaciones, Facturas, Cobros y pagos, Gastos,
+Proveedores, Tareas, Productos y servicios, Reportes y Bancos: tarjetas
+de resumen, filtros por estado con conteo, filtro por cliente,
+paginación de 25, fechas legibles con avisos de vencimiento, encabezados
+de detalle con pasos de avance y pestañas. Solo presentación (sin cambios
+en acciones ni permisos). Piezas compartidas en
+`components/ui/page-kit.tsx` y `lib/utils/dates.ts`. Corrige la columna
+Cliente vacía en listados (relación leída como arreglo) y muestra los
+montos de Bancos con su efecto real (+ entra / − sale).
+
+## Migraciones faltantes reconstruidas 055–058 (2026-09-23)
+
+Cuatro migraciones aplicadas directo en Supabase sin archivo en el repo
+se recuperaron de `supabase_migrations.schema_migrations` y se agregaron
+de forma idempotente.
+
 ## Revertido: respaldo diario automático (base de datos + Storage)
 
 Se probó y luego se retiró por decisión explícita del usuario: no quería

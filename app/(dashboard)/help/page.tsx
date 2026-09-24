@@ -15,6 +15,7 @@ import {
   History,
   Settings,
   ShieldCheck,
+  ListFilter,
 } from "lucide-react";
 import { IconBadge, type IconBadgeTone } from "@/components/ui/icon-badge";
 import { Card } from "@/components/ui/card";
@@ -87,6 +88,33 @@ const SECTIONS: Section[] = [
     ),
   },
   {
+    id: "uso-general",
+    label: "Cómo se usan las pantallas",
+    icon: ListFilter,
+    tone: "blue",
+    summary: "Resúmenes, filtros, páginas y fechas: igual en todos los módulos.",
+    content: (
+      <>
+        <p className="text-sm text-brand-text">
+          Todos los listados (Clientes, Proveedores, Cotizaciones, Proyectos,
+          Facturas, Gastos, Bancos, Tareas, Productos y servicios) funcionan
+          igual, para que aprendas una vez y lo uses en todas partes.
+        </p>
+        <Bullets
+          items={[
+            <><strong>Tarjetas de resumen</strong> arriba de cada listado: los números clave del módulo (por ejemplo, por cobrar, vencido, en seguimiento).</>,
+            <><strong>Filtros por estado</strong> como botones con su cantidad (ej. <em>Borrador 3</em>). Haz clic en uno para ver solo esos; <em>Todos</em> quita el filtro.</>,
+            <><strong>Filtro por cliente</strong> (Cotizaciones, Facturas y Proyectos): se aplica al elegirlo, sin botón adicional. <em>Limpiar filtros</em> vuelve a la vista completa.</>,
+            <><strong>Páginas</strong>: se muestran 25 registros por página. Abajo aparece <em>Mostrando 1–25 de N</em> con <em>Anterior</em> y <em>Siguiente</em>; los filtros se mantienen al cambiar de página.</>,
+            <><strong>Etiquetas de tiempo</strong>: fechas legibles (24 sept 2026) con avisos como <em>Vence en 3 días</em> (ámbar) o <em>Vencida hace 2 días</em> (rojo).</>,
+            <><strong>Fecha del día por defecto</strong>: al crear una factura, cotización, gasto, cobro, pago o movimiento de banco, la fecha ya viene con el día de hoy (hora de República Dominicana). Puedes cambiarla si hace falta.</>,
+            <>Dentro de cada registro (proyecto, cliente, proveedor, factura…) el encabezado resume lo importante y las <strong>pestañas</strong> agrupan el resto de la información.</>,
+          ]}
+        />
+      </>
+    ),
+  },
+  {
     id: "clientes",
     label: "Clientes",
     icon: Users,
@@ -119,7 +147,9 @@ const SECTIONS: Section[] = [
               mano, y nunca retrocede sola.
             </>,
             "Desactivar un cliente no borra su historial de cotizaciones, proyectos o facturas, ni cambia su Etapa — solo lo marca como Inactivo y lo puedes Reactivar cuando quieras.",
-            "El listado se puede filtrar por etapa y buscar por nombre.",
+            "El listado se puede filtrar por etapa, por estado (activos / inactivos) y buscar por nombre. Muestra, por cliente, sus proyectos activos y lo que tiene por cobrar.",
+            <>En el detalle del cliente, la <strong>Etapa comercial</strong> se ve como pasos: haz clic en la siguiente etapa para avanzar. Debajo están sus números (cotizado aprobado, facturado, por cobrar, vencido y proyectos activos) y pestañas con sus <strong>Cotizaciones</strong>, <strong>Facturas</strong>, <strong>Proyectos</strong> y <strong>Documentos</strong>.</>,
+            <>Desde el cliente, <strong>Nueva cotización</strong> y <strong>Nueva factura</strong> abren el formulario con ese cliente ya elegido.</>,
             "Se pueden importar clientes en lote desde un archivo CSV (botón Importar CSV).",
           ]}
         />
@@ -144,6 +174,8 @@ const SECTIONS: Section[] = [
           items={[
             "Igual que Clientes, cada proveedor puede tener varios contactos.",
             "El tipo de servicio ayuda a clasificar gastos y pagos por categoría de proveedor.",
+            "El listado muestra, por proveedor, cuánto se le ha gastado y cuánto se le debe (por pagar), con búsqueda y filtro de activos/inactivos.",
+            <>El detalle del proveedor tiene sus números (total gastado, pagado, por pagar y proyectos) y pestañas con sus <strong>Gastos</strong>, <strong>Pagos</strong> y <strong>Documentos</strong>.</>,
             "Importación en lote por CSV disponible, igual que en Clientes.",
           ]}
         />
@@ -190,6 +222,8 @@ const SECTIONS: Section[] = [
               <strong>Proyecto</strong> con el botón de conversión, sin volver
               a capturar los datos del cliente ni los ítems.
             </>,
+            "El listado resume lo que está en seguimiento (enviadas, vistas o negociando), lo aprobado, los borradores y la tasa de aprobación, y avisa cuántos días de validez le quedan a cada cotización abierta.",
+            <>En el detalle, los pasos <em>Borrador → Enviada → Aprobada → Proyecto</em> muestran en qué punto está. Los botones principales (enviar, aprobar, rechazar, convertir) están a la izquierda y los secundarios (compartir, duplicar, cancelar) a la derecha. El resumen de totales, la condición de pago y las condiciones quedan en la columna derecha.</>,
           ]}
         />
       </>
@@ -220,9 +254,11 @@ const SECTIONS: Section[] = [
         />
         <Bullets
           items={[
-            "Se puede crear un proyecto directo (sin pasar por cotización) o convertir una cotización ya aprobada.",
+            "Se puede crear un proyecto directo (sin pasar por cotización) o convertir una cotización ya aprobada. Arriba del listado aparecen las cotizaciones aprobadas que todavía no tienen proyecto, con su botón Convertir en proyecto.",
             "Los gastos que se le cargan a un proyecto son los que determinan su costo real y utilidad.",
-            "El listado se puede filtrar por estado, cliente y responsable.",
+            "El listado se puede filtrar por estado y por cliente, y muestra cuánto falta para cada evento (Mañana, En 5 días, Hace 3 días en rojo si el proyecto sigue abierto).",
+            <>En el detalle, el estado se cambia haciendo clic en los pasos <em>Planificación → Confirmado → En curso → Completado</em>. <strong>Cancelar proyecto</strong> es un botón aparte que pide confirmación; un proyecto cancelado se puede reactivar.</>,
+            <>Siempre visibles: presupuesto (con barra de lo gastado), facturado, cobrado (y lo que falta por cobrar) y utilidad real. Pestañas: Resumen, Finanzas, Ventas y cobros, Gastos y proveedores, Bancos, Tareas, Documentos y Actividades.</>,
           ]}
         />
       </>
@@ -241,7 +277,13 @@ const SECTIONS: Section[] = [
           servicios y productos con su precio, para no tener que escribirlos
           desde cero cada vez que se arma una cotización o una factura.
         </p>
-        <Bullets items={["Se pueden organizar por categoría.", "Un cambio de precio aquí no altera cotizaciones o facturas ya emitidas — esas quedan congeladas al valor con el que se crearon."]} />
+        <Bullets
+          items={[
+            "Se pueden organizar por categoría y filtrar por tipo (servicio o producto), categoría o nombre.",
+            "Cada uno muestra su margen (precio vs. costo por defecto) en verde, ámbar o rojo.",
+            "Un cambio de precio aquí no altera cotizaciones o facturas ya emitidas — esas quedan congeladas al valor con el que se crearon.",
+          ]}
+        />
       </>
     ),
   },
@@ -274,6 +316,8 @@ const SECTIONS: Section[] = [
             "El balance pendiente baja automáticamente a medida que se registran cobros contra esa factura.",
             "Una factura vencida es la que pasó su fecha de vencimiento sin liquidarse — aparece en el Dashboard y en el reporte de Vencimientos.",
             "Se puede compartir un enlace de la factura sin dar acceso al sistema completo (botón de compartir en el detalle).",
+            "El listado resume lo que hay por cobrar, lo vencido, lo que vence en 7 días y los borradores, y marca cada factura con su situación (Vence en 3 días / Vencida hace 2 días).",
+            <>En el detalle, los pasos <em>Borrador → Emitida → Pago parcial → Pagada</em> muestran el avance (en rojo si está vencida). En la columna derecha están el resumen con la barra de lo pagado, NCF/vencimiento (en borrador) y la <strong>Gestión de cobro</strong> con su historial.</>,
           ]}
         />
       </>
@@ -295,7 +339,14 @@ const SECTIONS: Section[] = [
           la factura o el gasto correspondiente y quedan reflejados en
           Bancos.
         </p>
-        <Bullets items={["Cada cobro o pago se registra en la moneda en la que ocurrió, con su tasa de cambio congelada si es distinta a la moneda base de la empresa.", "No se puede cobrar o pagar más del balance pendiente."]} />
+        <Bullets
+          items={[
+            "Cada cobro o pago se registra en la moneda en la que ocurrió, con su tasa de cambio congelada si es distinta a la moneda base de la empresa.",
+            "No se puede cobrar o pagar más del balance pendiente.",
+            "La pantalla Cobros y pagos resume lo cobrado y pagado en el mes, el neto del mes y lo cobrado en el año, con dos pestañas: Cobros de clientes y Pagos a proveedores.",
+            "Cada cobro o pago genera su movimiento en Bancos con la categoría asignada automáticamente (ver Bancos).",
+          ]}
+        />
       </>
     ),
   },
@@ -320,7 +371,13 @@ const SECTIONS: Section[] = [
             { label: "Cancelado", status: "CANCELLED" },
           ]}
         />
-        <Bullets items={["Se pueden organizar por categoría de gasto (ver Configuración → Categorías de gasto).", "Un gasto con proveedor se liquida registrando un pago a proveedor contra él."]} />
+        <Bullets
+          items={[
+            "Se organizan por categoría (Configuración → Categorías). Es la misma lista que usan los movimientos de Bancos, así que al pagar un gasto su movimiento bancario hereda esa misma categoría.",
+            "Un gasto con proveedor se liquida registrando un pago a proveedor contra él.",
+            "El listado resume lo que hay por pagar y lo gastado en el mes y el año; el detalle muestra la barra de lo pagado y sus recibos y comprobantes.",
+          ]}
+        />
       </>
     ),
   },
@@ -329,27 +386,58 @@ const SECTIONS: Section[] = [
     label: "Bancos",
     icon: Landmark,
     tone: "green",
-    summary: "El consolidado de todo el movimiento de dinero.",
+    summary: "Cuentas, tarjetas y cada movimiento con su Tipo y su Categoría.",
     content: (
       <>
         <p className="text-sm text-brand-text">
-          Bancos reúne automáticamente los movimientos que genera el resto
-          del sistema (cobros de facturas, pagos a proveedores, gastos) por
-          cuenta bancaria, y también permite registrar movimientos manuales
-          para lo que no viene de ahí (transferencias entre cuentas, ajustes,
-          etc.).
+          Bancos reúne automáticamente los movimientos que genera el resto del
+          sistema (cobros de facturas, pagos a proveedores, gastos pagados,
+          transferencias) por cuenta o tarjeta, y permite registrar
+          movimientos manuales para lo demás (intereses, comisiones,
+          ajustes).
+        </p>
+        <p className="text-sm text-brand-text">
+          Cada movimiento tiene dos datos <strong>independientes</strong>:
         </p>
         <Bullets
           items={[
-            "Cada cuenta bancaria tiene su propia moneda.",
+            <><strong>Tipo</strong>: Ingreso (entra dinero, se ve en verde con +), Egreso (sale dinero, en rojo con −) o Transferencia (entre tus propias cuentas).</>,
+            <><strong>Categoría</strong>: de qué proviene o en qué se usó el dinero (Nómina, Alquiler, Cobro de factura, Catering…). Las categorías no tienen tipo: la misma categoría puede aparecer en ingresos y en egresos (ej. Comisión cobrada o pagada). Salen de Configuración → Categorías.</>,
+          ]}
+        />
+        <p className="text-sm font-medium text-brand-text">La categoría se asigna sola según el origen:</p>
+        <Bullets
+          items={[
+            <>Cobro de una factura → <strong>Cobro de factura</strong>.</>,
+            <>Pago a proveedor o gasto pagado → <strong>la categoría del gasto</strong> (Catering, Sonido, Alquiler…). Si el gasto no tiene categoría: Pago a suplidor u Otros gastos.</>,
+            <>Transferencia hacia o desde una tarjeta → <strong>Pago de tarjeta de crédito</strong>; cualquier otra transferencia → <strong>Transferencia entre cuentas</strong>.</>,
+            "Siempre puedes cambiar la categoría de cualquier movimiento con el selector de su fila: solo cambia la categoría, nunca el monto, la fecha ni la cuenta.",
+          ]}
+        />
+        <p className="text-sm font-medium text-brand-text">Movimientos manuales:</p>
+        <Bullets
+          items={[
+            "Elige el tipo (Ingreso o Egreso), la fecha, el monto y la categoría del desplegable. El detalle es opcional si eliges categoría.",
+            <>Si todavía no sabes la categoría, elige <strong>Sin categoría (clasificar después)</strong> y escribe una descripción: el movimiento se guarda igual y queda en la alerta <strong>⚠️ N movimientos sin categoría</strong> para corregirlo luego.</>,
+            <>El campo <strong>Referencia</strong> (opcional) guarda el número de cheque, depósito o transacción.</>,
+          ]}
+        />
+        <p className="text-sm font-medium text-brand-text">En el detalle de una cuenta:</p>
+        <Bullets
+          items={[
+            "Balance actual (o deuda y crédito disponible si es tarjeta), entradas, salidas y neto del mes, y cuántos movimientos faltan por conciliar.",
+            <>Columna <strong>Origen</strong>: la factura, el gasto, el pago o la otra cuenta que generó el movimiento, con enlace. Las dos partes de una transferencia quedan enlazadas entre sí.</>,
+            <>Columna <strong>Saldo</strong>: cómo quedó la cuenta después de cada movimiento, como un estado de cuenta (se oculta al filtrar).</>,
+            "Filtros por tipo, por conciliación y por categoría (incluida Sin categoría).",
             <>
-              Conciliar una cuenta (permiso{" "}
+              Conciliar (permiso{" "}
               <code className="rounded bg-brand-surface-hover px-1 py-0.5 text-xs">
                 banks.reconcile
               </code>
-              ) marca los movimientos como verificados contra el estado de
+              ) marca cada movimiento como verificado contra el estado de
               cuenta real del banco.
             </>,
+            "Cada cuenta tiene su propia moneda. Los movimientos manuales y las transferencias se guardan con tasa 1: en cuentas en dólares los reportes los suman sin convertirlos a pesos.",
           ]}
         />
       </>
@@ -369,7 +457,13 @@ const SECTIONS: Section[] = [
           alguien más, esa persona recibe una notificación automática — la
           campana de notificaciones en la barra superior.
         </p>
-        <Bullets items={["Las tareas pendientes de cada usuario aparecen también como widget en su Dashboard.", "Asignarte una tarea a ti mismo no genera notificación — solo se notifica cuando es a otra persona."]} />
+        <Bullets
+          items={[
+            "Las tareas pendientes de cada usuario aparecen también como widget en su Dashboard.",
+            "Asignarte una tarea a ti mismo no genera notificación — solo se notifica cuando es a otra persona.",
+            "El estado se cambia directo en la lista (el selector de color de cada fila). Las tareas abiertas con fecha pasada se marcan como Atrasadas en rojo, y la prioridad se ve por color (alta en rojo, media en ámbar).",
+          ]}
+        />
       </>
     ),
   },
@@ -394,6 +488,7 @@ const SECTIONS: Section[] = [
             <><strong>Cuentas por pagar</strong> — gastos pendientes de pago a proveedores.</>,
             <><strong>Ventas por cliente</strong> — total facturado, agrupado por cliente.</>,
             <><strong>Gastos por categoría</strong> — total gastado, agrupado por categoría.</>,
+            <><strong>Ingresos y egresos por categoría</strong> (sección Bancos) — el flujo real de dinero de tus cuentas agrupado por categoría: ingresos, egresos y neto, con vista <em>Por mes</em>. Se filtra por fecha, cuenta y proyecto. Las transferencias entre tus cuentas se excluyen por defecto (no son ingreso ni gasto) y se pueden incluir con la casilla. La fila <em>Sin categoría</em> muestra lo que falta clasificar.</>,
           ]}
         />
         <p className="text-sm text-brand-muted">
@@ -434,6 +529,7 @@ const SECTIONS: Section[] = [
         </p>
         <Bullets
           items={[
+            <><strong>Categorías</strong> — una sola lista para los gastos y para los ingresos y egresos de Bancos. Se crean una por una o <strong>en lote desde un CSV</strong> (botón Importar, con plantilla descargable: columnas <em>nombre</em> y <em>descripcion</em>). Si una categoría ya existe con el mismo nombre (sin importar mayúsculas ni acentos) no se duplica. Al borrar una categoría en uso, sus gastos y movimientos quedan Sin categoría; no se borran.</>,
             <><strong>Usuarios</strong> — quién tiene acceso al sistema y con qué rol.</>,
             <><strong>Roles</strong> — qué puede hacer cada rol (los permisos como <code className="rounded bg-brand-surface-hover px-1 py-0.5 text-xs">quotations.approve</code> o <code className="rounded bg-brand-surface-hover px-1 py-0.5 text-xs">reports.view</code> que se mencionan en este manual se activan o desactivan aquí, por rol).</>,
             <>
