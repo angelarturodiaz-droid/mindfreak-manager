@@ -333,7 +333,8 @@ export default async function InvoiceDetailPage({
         {flowIndex >= 0 ? (
           <ol className="grid grid-cols-2 gap-2 border-t border-brand-border pt-5 sm:grid-cols-4" aria-label="Avance de la factura">
             {FLOW.map((label, i) => {
-              // "Pagada" es el último paso: cuando se llega a él ya está completo (verde), no en curso.
+              // Cada paso completado se pinta en verde. "Pagada" es el último:
+              // cuando se llega a él ya está completo (verde), no en curso.
               const isPaid = invoice.status === "PAID";
               const done = i < flowIndex || (isPaid && i === flowIndex);
               const current = i === flowIndex && !isPaid;
@@ -345,7 +346,7 @@ export default async function InvoiceDetailPage({
                   className={`flex items-center gap-2.5 rounded-[var(--radius-md)] border px-3 py-2.5 ${
                     overdue
                       ? "border-brand-danger/40 bg-brand-danger-bg"
-                      : isPaid && i === flowIndex
+                      : done
                         ? "border-brand-success/40 bg-brand-success-bg"
                         : current
                         ? "border-brand-accent/40 bg-brand-accent-light"

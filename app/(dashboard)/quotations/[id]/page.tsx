@@ -258,14 +258,19 @@ export default async function QuotationDetailPage({
         {flowIndex >= 0 ? (
           <ol className="grid grid-cols-2 gap-2 border-t border-brand-border pt-5 sm:grid-cols-4" aria-label="Avance de la cotización">
             {FLOW.map((label, i) => {
-              const done = i < flowIndex;
-              const current = i === flowIndex;
+              // Pasos completados en verde; el último ("Proyecto") cuenta como completado al llegar.
+              const done = i < flowIndex || (i === flowIndex && i === FLOW.length - 1);
+              const current = i === flowIndex && !done;
               return (
                 <li
                   key={label}
                   aria-current={current ? "step" : undefined}
                   className={`flex items-center gap-2.5 rounded-[var(--radius-md)] border px-3 py-2.5 ${
-                    current ? "border-brand-accent/40 bg-brand-accent-light" : "border-brand-border bg-brand-surface"
+                    done
+                      ? "border-brand-success/40 bg-brand-success-bg"
+                      : current
+                        ? "border-brand-accent/40 bg-brand-accent-light"
+                        : "border-brand-border bg-brand-surface"
                   }`}
                 >
                   <span

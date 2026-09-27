@@ -387,8 +387,9 @@ export default async function ClientDetailPage({
             </p>
             <ol className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               {CLIENT_STAGE_FLOW.map((stage, i) => {
-                const done = i < currentStage;
-                const current = i === currentStage;
+                // Etapas completadas en verde; la última (Cliente) cuenta como completada al llegar.
+                const done = i < currentStage || (i === currentStage && i === CLIENT_STAGE_FLOW.length - 1);
+                const current = i === currentStage && !done;
                 const action = i > currentStage ? advanceAction(stage) : null;
                 const content = (
                   <>
@@ -424,8 +425,8 @@ export default async function ClientDetailPage({
                       </ActionBlock>
                     ) : (
                       <div
-                        className={`${base} ${current ? "border-brand-accent/40 bg-brand-accent-light" : "border-brand-border bg-brand-surface"}`}
-                        aria-current={current ? "step" : undefined}
+                        className={`${base} ${done ? "border-brand-success/40 bg-brand-success-bg" : current ? "border-brand-accent/40 bg-brand-accent-light" : "border-brand-border bg-brand-surface"}`}
+                        aria-current={i === currentStage ? "step" : undefined}
                       >
                         {content}
                       </div>

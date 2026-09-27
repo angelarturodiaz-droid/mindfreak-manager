@@ -586,8 +586,9 @@ export default async function ProjectDetailPage({
             </p>
             <ol className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {PROJECT_FLOW.map((step, i) => {
-                const done = i < currentStep;
-                const current = i === currentStep;
+                // Pasos completados en verde; el último (Completado) cuenta como completado al llegar.
+                const done = i < currentStep || (i === currentStep && i === PROJECT_FLOW.length - 1);
+                const current = i === currentStep && !done;
                 const circle = (
                   <span
                     className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
@@ -615,18 +616,18 @@ export default async function ProjectDetailPage({
                   "flex w-full items-center gap-2.5 rounded-[var(--radius-md)] border px-3 py-2.5 text-left";
                 return (
                   <li key={step}>
-                    {canUpdate && !current ? (
+                    {canUpdate && !current && i !== currentStep ? (
                       <ActionBlock
                         onAction={updateProjectStatusAction.bind(null, project.id, step)}
                         title={`Mover a ${PROJECT_STATUS_LABELS[step]}`}
-                        className={`${base} border-brand-border bg-brand-surface transition-colors hover:border-brand-accent/40 hover:bg-brand-accent-light`}
+                        className={`${base} ${done ? "border-brand-success/40 bg-brand-success-bg" : "border-brand-border bg-brand-surface"} transition-colors hover:border-brand-accent/40 hover:bg-brand-accent-light`}
                       >
                         {content}
                       </ActionBlock>
                     ) : (
                       <div
-                        className={`${base} ${current ? "border-brand-accent/40 bg-brand-accent-light" : "border-brand-border bg-brand-surface"}`}
-                        aria-current={current ? "step" : undefined}
+                        className={`${base} ${done ? "border-brand-success/40 bg-brand-success-bg" : current ? "border-brand-accent/40 bg-brand-accent-light" : "border-brand-border bg-brand-surface"}`}
+                        aria-current={i === currentStep ? "step" : undefined}
                       >
                         {content}
                       </div>

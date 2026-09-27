@@ -290,3 +290,9 @@ venues, Impresos y promocionales, Logística y servicios (plantas
 eléctricas, baños portátiles, WiFi, permisos…) y Hospedaje y viajes. Se
 editan o borran en Configuración. "Audio visuales" se unificó como
 "Audiovisuales".
+
+## General: pasos de avance en verde (2026-09-27)
+En Facturas, Cotizaciones, Proyectos y Clientes, cada paso completado se
+pinta en verde con ✓ (recuadro y círculo), el paso en curso en azul y los
+pendientes en gris. El último paso (Pagada, Proyecto, Completado, Cliente)
+queda en verde al alcanzarlo. Factura vencida: el paso en curso en rojo.

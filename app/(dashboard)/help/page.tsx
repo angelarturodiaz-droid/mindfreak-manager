@@ -109,6 +109,7 @@ const SECTIONS: Section[] = [
             <><strong>Etiquetas de tiempo</strong>: fechas legibles (24 sept 2026) con avisos como <em>Vence en 3 días</em> (ámbar) o <em>Vencida hace 2 días</em> (rojo).</>,
             <><strong>Fecha del día por defecto</strong>: al crear una factura, cotización, gasto, cobro, pago o movimiento de banco, la fecha ya viene con el día de hoy (hora de República Dominicana). Puedes cambiarla si hace falta.</>,
             <>Dentro de cada registro (proyecto, cliente, proveedor, factura…) el encabezado resume lo importante y las <strong>pestañas</strong> agrupan el resto de la información.</>,
+            <><strong>Pasos de avance</strong> (Facturas, Cotizaciones, Proyectos y Clientes): cada paso <strong>completado se pinta en verde</strong> con ✓, el paso en curso en azul y los que faltan en gris. Al llegar al último paso (Pagada, Proyecto, Completado o Cliente) también queda en verde, porque ya se completó. Si una factura está vencida, su paso en curso se ve en rojo.</>,
           ]}
         />
       </>
@@ -322,7 +323,7 @@ const SECTIONS: Section[] = [
             "Una factura vencida es la que pasó su fecha de vencimiento sin liquidarse — aparece en el Dashboard y en el reporte de Vencimientos.",
             "Se puede compartir un enlace de la factura sin dar acceso al sistema completo (botón de compartir en el detalle).",
             "El listado resume lo que hay por cobrar, lo vencido, lo que vence en 7 días y los borradores, y marca cada factura con su situación (Vence en 3 días / Vencida hace 2 días).",
-            <>En el detalle, los pasos <em>Borrador → Emitida → Pago parcial → Pagada</em> muestran el avance (en rojo si está vencida; cuando se termina de pagar, el último paso <em>Pagada</em> se marca en verde). En la columna derecha están el resumen con la barra de lo pagado, NCF/vencimiento (en borrador) y la <strong>Gestión de cobro</strong> con su historial.</>,
+            <>En el detalle, los pasos <em>Borrador → Emitida → Pago parcial → Pagada</em> muestran el avance (cada paso completado queda en verde con ✓, el paso en curso en azul y en rojo si está vencida; al terminar de pagar, <em>Pagada</em> también queda en verde). En la columna derecha están el resumen con la barra de lo pagado, NCF/vencimiento (en borrador) y la <strong>Gestión de cobro</strong> con su historial.</>,
           ]}
         />
       </>

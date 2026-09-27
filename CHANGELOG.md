@@ -1,5 +1,11 @@
 # CHANGELOG — Mindfreak Manager
 
+## Pasos de avance completados en verde (2026-09-27)
+
+- Facturas, Cotizaciones, Proyectos y Clientes: cada paso completado se
+  pinta en verde (antes solo el círculo); el último paso queda en verde al
+  alcanzarlo. Solo cambio visual.
+
 ## Catálogo de categorías y tipos de servicio para eventos (2026-09-27)
 
 - Migración `065_event_service_catalog.sql` (aplicada): 15 categorías de
