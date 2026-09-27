@@ -25,6 +25,8 @@ export const registerPaymentSchema = z.object({
   method: z.enum(PAYMENT_METHODS),
   reference: z.string().trim().optional().or(z.literal("")),
   notes: z.string().trim().optional().or(z.literal("")),
+  /** Solo cobros: categoría del movimiento de banco. Vacío = automática ("Cobro de factura"). */
+  category_id: z.string().uuid("Categoría inválida").optional().or(z.literal("")),
 });
 
 export type RegisterPaymentInput = z.infer<typeof registerPaymentSchema>;

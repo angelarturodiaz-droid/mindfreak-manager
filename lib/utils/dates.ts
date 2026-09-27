@@ -30,6 +30,21 @@ export function formatDate(dateISO: string | null | undefined): string {
     .replace(" de ", " ");
 }
 
+/** Fecha y hora de un timestamp en la zona de la empresa: "27 sept 2026, 12:49 p. m." */
+export function formatDateTime(timestamp: string | null | undefined): string {
+  if (!timestamp) return "—";
+  return new Intl.DateTimeFormat("es-DO", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: TIME_ZONE,
+  })
+    .format(new Date(timestamp))
+    .replace(" de ", " ");
+}
+
 /** "1 día" / "3 días" */
 export function pluralDays(n: number): string {
   return `${n} ${Math.abs(n) === 1 ? "día" : "días"}`;

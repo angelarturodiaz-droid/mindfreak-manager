@@ -4,7 +4,7 @@ import { todayISO } from "@/lib/utils/dates";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
-import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
+import { requirePermission, getCurrentUserCompanyIds, getCurrentUser } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
 import {
   invoiceHeaderSchema,
@@ -384,6 +384,79 @@ export async function issueInvoiceAction(invoiceId: string): Promise<void> {
     entityType: "invoice",
     entityId: invoiceId,
     newValues: { status: "ISSUED" },
+  });
+
+  revalidatePath(`/invoices/${invoiceId}`);
+  revalidatePath("/invoices");
+}
+
+/**
+ * Marca informativa "Enviada al cliente": guarda cuándo y quién la marcó.
+ * NO cambia el estado de la factura (Emitida / Pago parcial / Pagada /
+ * Vencida siguen igual). Solo para facturas ya emitidas: un borrador
+ * todavía puede cambiar y una cancelada ya no se envía.
+ */
+export async function markInvoiceSentAction(invoiceId: string): Promise<void> {
+  await requirePermission("invoices.create");
+  const supabase = await createSupabaseClient();
+
+  const { data: invoice } = await supabase
+    .from("invoices")
+    .select("status")
+    .eq("id", invoiceId)
+    .single();
+  if (!invoice) throw new Error("Factura no encontrada.");
+  if (invoice.status === "DRAFT") {
+    throw new Error("Primero emite la factura; un borrador todavía puede cambiar.");
+  }
+  if (invoice.status === "CANCELLED") {
+    throw new Error("Una factura cancelada no se puede marcar como enviada.");
+  }
+
+  const user = await getCurrentUser();
+  const sentAt = new Date().toISOString();
+  const { error } = await supabase
+    .from("invoices")
+    .update({ sent_to_client_at: sentAt, sent_to_client_by: user?.id ?? null })
+    .eq("id", invoiceId);
+  if (error) throw new Error(error.message);
+
+  await logAudit({
+    companyId: await getPrimaryCompanyId(),
+    action: "MARK_SENT",
+    entityType: "invoice",
+    entityId: invoiceId,
+    newValues: { sent_to_client_at: sentAt },
+  });
+
+  revalidatePath(`/invoices/${invoiceId}`);
+  revalidatePath("/invoices");
+}
+
+/** Quita la marca "Enviada al cliente" (por si se marcó por error). */
+export async function unmarkInvoiceSentAction(invoiceId: string): Promise<void> {
+  await requirePermission("invoices.create");
+  const supabase = await createSupabaseClient();
+
+  const { data: invoice } = await supabase
+    .from("invoices")
+    .select("sent_to_client_at")
+    .eq("id", invoiceId)
+    .single();
+  if (!invoice) throw new Error("Factura no encontrada.");
+
+  const { error } = await supabase
+    .from("invoices")
+    .update({ sent_to_client_at: null, sent_to_client_by: null })
+    .eq("id", invoiceId);
+  if (error) throw new Error(error.message);
+
+  await logAudit({
+    companyId: await getPrimaryCompanyId(),
+    action: "UNMARK_SENT",
+    entityType: "invoice",
+    entityId: invoiceId,
+    oldValues: { sent_to_client_at: invoice.sent_to_client_at },
   });
 
   revalidatePath(`/invoices/${invoiceId}`);

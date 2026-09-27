@@ -203,6 +203,21 @@ desmarcar. Permiso banks.reconcile.
   Compartir o PDF, después de emitir.
 - Diferencia con cotizaciones: la cotización sí pasa por "Enviada" porque
   el cliente debe aceptarla; la factura ya es un cobro acordado.
-- Pendiente de decisión del usuario: botón opcional "Marcar como enviada
-  al cliente" en facturas emitidas (fecha y usuario) para la gestión de
-  cobro, sin cambiar el flujo de estados.
+- Botón "Marcar como enviada al cliente" (2026-09-27): en facturas ya
+  emitidas (Emitida, Pago parcial, Pagada o Vencida). Guarda fecha, hora
+  y usuario; el detalle muestra "Enviada al cliente el … por …" y la
+  lista un sobre verde junto al número. Es solo una marca de control para
+  la gestión de cobro: NO cambia el estado. "Quitar marca de enviada" la
+  borra si fue un error. No aparece en borradores ni canceladas.
+
+## Módulo: Cobros — Categoría del cobro (2026-09-27)
+
+- El formulario "Registrar cobro" (detalle de la factura) tiene el campo
+  Categoría, con "Cobro de factura" seleccionada por defecto.
+- Para un cobro normal se deja así. Se cambia cuando el dinero debe
+  clasificarse distinto: Anticipo de cliente, Servicios, Reembolso…
+- Solo afecta la clasificación en Bancos y en el reporte "Ingresos y
+  egresos por categoría". Monto, balance y estado de la factura no cambian.
+- Después se puede cambiar en Bancos con el selector de la fila.
+- Pagos a proveedores: sin campo propio; heredan la categoría del gasto
+  (elegirla en el gasto antes de pagar, o cambiarla luego en Bancos).

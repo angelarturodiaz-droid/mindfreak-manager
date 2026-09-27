@@ -1,5 +1,20 @@
 # CHANGELOG — Mindfreak Manager
 
+## Categoría en cobros y "Marcar como enviada al cliente" (2026-09-27)
+
+- Migración `062_payment_category_invoice_sent.sql` (aplicada):
+  `register_customer_payment` acepta `p_category_id` opcional (null →
+  "Cobro de factura" por el trigger de 059; valida que la categoría sea de
+  la compañía). Se reemplazó la versión de 12 parámetros con los mismos
+  permisos (authenticated y service_role). `invoices.sent_to_client_at` y
+  `invoices.sent_to_client_by`.
+- Registrar cobro: campo Categoría ("Cobro de factura" por defecto).
+- Facturas emitidas: botón "Marcar como enviada al cliente" / "Quitar
+  marca de enviada"; marca con fecha, hora y usuario en el detalle y
+  sobre verde en la lista. No cambia el estado. Auditoría MARK_SENT /
+  UNMARK_SENT.
+- Manual (/help, MANUAL_NOTES) actualizado.
+
 ## Cuentas en dólares: tipo de cuenta y tasa en movimientos manuales (2026-09-23)
 
 - Migración `061_bank_account_kind.sql` (aplicada): `bank_accounts.account_kind`

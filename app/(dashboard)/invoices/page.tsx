@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, CalendarClock, Copy, FilePen, Plus, Receipt, Wallet } from "lucide-react";
+import { AlertTriangle, CalendarClock, Copy, FilePen, MailCheck, Plus, Receipt, Wallet } from "lucide-react";
 import { listInvoices, getInvoiceStats } from "@/features/invoices/queries";
 import { INVOICE_STATUSES } from "@/features/invoices/schema";
 import { listClientOptions } from "@/features/clients/queries";
@@ -65,6 +65,11 @@ export default async function InvoicesPage({
           {inv.duplicated_from_id && (
             <span title="Duplicada">
               <Copy size={12} className="text-brand-muted" aria-label="Duplicada" />
+            </span>
+          )}
+          {inv.sent_to_client_at && (
+            <span title="Enviada al cliente">
+              <MailCheck size={12} className="text-brand-success" aria-label="Enviada al cliente" />
             </span>
           )}
         </Link>

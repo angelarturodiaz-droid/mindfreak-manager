@@ -10,6 +10,7 @@ import {
   Clock,
   FileText,
   FolderKanban,
+  MailCheck,
 } from "lucide-react";
 import {
   getInvoice,
@@ -23,7 +24,10 @@ import {
   deleteInvoiceItemAction,
   issueInvoiceAction,
   cancelInvoiceAction,
+  markInvoiceSentAction,
+  unmarkInvoiceSentAction,
 } from "@/features/invoices/actions";
+import { listCategoryOptions } from "@/features/expense-categories/queries";
 import { ResponsibleSelector } from "./responsible-selector";
 import { AddCollectionHistoryForm } from "./add-collection-history-form";
 import { listPaymentsForInvoice, listBankAccounts } from "@/features/payments/queries";
@@ -45,7 +49,7 @@ import { ConfirmButton } from "@/components/ui/confirm-button";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Chip, ProgressBar, SectionHeader } from "@/components/ui/page-kit";
 import { relationName, relationRow } from "@/lib/utils/relation";
-import { dueLabel, formatDate } from "@/lib/utils/dates";
+import { dueLabel, formatDate, formatDateTime } from "@/lib/utils/dates";
 import { DownloadReceiptButton } from "@/components/payments/download-receipt-button";
 
 const COLLECTION_ACTION_LABELS: Record<string, string> = {
@@ -90,7 +94,7 @@ export default async function InvoiceDetailPage({
   }
   if (!invoice) notFound();
 
-  const [items, services, canEdit, canPay, projectItems, payments, bankAccounts, paymentTerms, defaultTaxRate, companyUsers, collectionHistory, taxRates] =
+  const [items, services, canEdit, canPay, projectItems, payments, bankAccounts, paymentTerms, defaultTaxRate, companyUsers, collectionHistory, taxRates, categories] =
     await Promise.all([
       listInvoiceItems(id),
       listActiveServices(),
@@ -104,6 +108,8 @@ export default async function InvoiceDetailPage({
       listCompanyUsersForSelect(),
       listCollectionHistory(id),
       listTaxRates(),
+      // Categorías para el cobro; si no se pueden leer, el cobro usa la automática.
+      listCategoryOptions().catch(() => []),
     ]);
 
   const clientData = invoice.clients as { name: string } | { name: string }[] | null;
@@ -119,6 +125,9 @@ export default async function InvoiceDetailPage({
   const project = Array.isArray(projectData) ? projectData[0] : projectData;
 
   const isEditable = invoice.status === "DRAFT";
+  // "Enviada al cliente": marca informativa, no cambia el estado.
+  const canMarkSent = canEdit && invoice.status !== "DRAFT" && invoice.status !== "CANCELLED";
+  const sentByName = relationRow<{ full_name: string | null }>(invoice.sent_by)?.full_name ?? null;
 
   const itemColumns: Column<ItemRow>[] = [
     { header: "Descripción", accessor: (item) => item.description },
@@ -229,6 +238,13 @@ export default async function InvoiceDetailPage({
               <Badge status={invoice.status}>{STATUS_LABELS[invoice.status] ?? invoice.status}</Badge>
               {due && (
                 <Chip tone={due.days < 0 ? "danger" : due.days <= 3 ? "warning" : "muted"}>{due.label}</Chip>
+              )}
+              {invoice.sent_to_client_at && (
+                <Chip tone="success">
+                  <MailCheck size={12} className="mr-1 shrink-0" aria-hidden="true" />
+                  Enviada al cliente el {formatDateTime(invoice.sent_to_client_at)}
+                  {sentByName ? ` por ${sentByName}` : ""}
+                </Chip>
               )}
               {invoice.duplicated_from_id && (
                 <Badge tone="neutral">
@@ -369,6 +385,22 @@ export default async function InvoiceDetailPage({
                 onAction={issueInvoiceAction.bind(null, invoice.id)}
               />
             )}
+            {canMarkSent && !invoice.sent_to_client_at && (
+              <ActionButton
+                label="Marcar como enviada al cliente"
+                icon={<MailCheck size={14} />}
+                successMessage="Factura marcada como enviada al cliente."
+                onAction={markInvoiceSentAction.bind(null, invoice.id)}
+              />
+            )}
+            {canMarkSent && invoice.sent_to_client_at && (
+              <ActionButton
+                label="Quitar marca de enviada"
+                variant="ghost"
+                successMessage="Se quitó la marca de enviada."
+                onAction={unmarkInvoiceSentAction.bind(null, invoice.id)}
+              />
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <InvoiceShareLinkButton invoiceId={invoice.id} />
@@ -440,6 +472,7 @@ export default async function InvoiceDetailPage({
                       balance={invoice.balance}
                       currency={invoice.currency}
                       bankAccounts={bankAccounts}
+                      categories={categories}
                     />
                   )}
                 </Card>

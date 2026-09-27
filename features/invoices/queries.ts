@@ -14,7 +14,7 @@ export async function listInvoices(filters: InvoiceListFilters = {}) {
   let query = supabase
     .from("invoices")
     .select(
-      "id, number, status, total, paid_amount, balance, currency, issue_date, due_date, duplicated_from_id, clients(name)",
+      "id, number, status, total, paid_amount, balance, currency, issue_date, due_date, duplicated_from_id, sent_to_client_at, clients(name)",
       { count: "exact" },
     )
     .order("issue_date", { ascending: false })
@@ -77,7 +77,7 @@ export async function getInvoice(id: string) {
   const { data, error } = await supabase
     .from("invoices")
     .select(
-      "*, clients(name), projects(number, name), payment_terms(name), profiles!responsible_user_id(full_name), duplicated_from:invoices!duplicated_from_id(number)",
+      "*, clients(name), projects(number, name), payment_terms(name), profiles!responsible_user_id(full_name), sent_by:profiles!sent_to_client_by(full_name), duplicated_from:invoices!duplicated_from_id(number)",
     )
     .eq("id", id)
     .single();

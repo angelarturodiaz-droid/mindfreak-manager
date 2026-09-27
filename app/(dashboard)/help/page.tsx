@@ -315,6 +315,7 @@ const SECTIONS: Section[] = [
           items={[
             <><strong>Borrador → Emitir</strong>: mientras está en Borrador puedes agregar o quitar líneas y editar NCF y vencimiento. El botón <strong>Emitir factura</strong> la hace oficial: ya no se edita, empieza a contar el vencimiento, aparece en Por cobrar y se le pueden registrar cobros.</>,
             <><strong>¿Y &ldquo;enviada&rdquo;?</strong> Las facturas no tienen estado &ldquo;Enviada&rdquo; (las cotizaciones sí, porque el cliente todavía tiene que aceptarlas). Para mandársela al cliente usa <strong>Compartir</strong> (enlace sin acceso al sistema) o el PDF, siempre <strong>después de emitirla</strong>, para que reciba la versión definitiva.</>,
+            <><strong>Marcar como enviada al cliente</strong>: después de mandarla, pulsa este botón en el detalle de la factura. Queda anotado <em>&ldquo;Enviada al cliente el 27 sept 2026, 12:49 p. m. por (tu nombre)&rdquo;</em> y en la lista aparece un sobre verde junto al número. Es solo una marca de control para la gestión de cobro (saber si el cliente ya la recibió): <strong>no cambia el estado</strong> de la factura, que sigue Emitida, Pago parcial, Pagada o Vencida según sus cobros. Solo aparece en facturas ya emitidas (no en borradores ni canceladas). Si la marcaste por error, usa <strong>Quitar marca de enviada</strong>.</>,
             "El balance pendiente baja automáticamente a medida que se registran cobros contra esa factura.",
             "Una factura vencida es la que pasó su fecha de vencimiento sin liquidarse — aparece en el Dashboard y en el reporte de Vencimientos.",
             "Se puede compartir un enlace de la factura sin dar acceso al sistema completo (botón de compartir en el detalle).",
@@ -347,6 +348,8 @@ const SECTIONS: Section[] = [
             "No se puede cobrar o pagar más del balance pendiente.",
             "La pantalla Cobros y pagos resume lo cobrado y pagado en el mes, el neto del mes y lo cobrado en el año, con dos pestañas: Cobros de clientes y Pagos a proveedores.",
             "Cada cobro o pago genera su movimiento en Bancos con la categoría asignada automáticamente (ver Bancos).",
+            <><strong>Categoría del cobro</strong>: al registrar un cobro en una factura, el campo <strong>Categoría</strong> viene con &ldquo;Cobro de factura&rdquo;. Déjalo así para un cobro normal, o elige otra si ese dinero se debe clasificar distinto (ej. Anticipo de cliente, Servicios, Reembolso). La categoría solo afecta cómo se ve el ingreso en Bancos y en el reporte de Ingresos y egresos por categoría; el monto, el balance y el estado de la factura se calculan igual. Si después quieres cambiarla, hazlo desde Bancos con el selector de la fila.</>,
+            <><strong>Pagos a proveedores</strong>: no tienen campo de categoría porque toman la <strong>categoría del gasto</strong>. Elígela en el gasto antes de pagar (o cámbiala luego en Bancos).</>,
           ]}
         />
       </>
@@ -410,7 +413,7 @@ const SECTIONS: Section[] = [
         <p className="text-sm font-medium text-brand-text">La categoría se asigna sola según el origen:</p>
         <Bullets
           items={[
-            <>Cobro de una factura → <strong>Cobro de factura</strong>.</>,
+            <>Cobro de una factura → <strong>Cobro de factura</strong>, o la categoría que elijas en el formulario de cobro (ej. Anticipo de cliente).</>,
             <>Pago a proveedor o gasto pagado → <strong>la categoría del gasto</strong> (Catering, Sonido, Alquiler…). Si el gasto no tiene categoría: Pago a suplidor u Otros gastos.</>,
             <>Transferencia hacia o desde una tarjeta → <strong>Pago de tarjeta de crédito</strong>; cualquier otra transferencia → <strong>Transferencia entre cuentas</strong>.</>,
             "Siempre puedes cambiar la categoría de cualquier movimiento con el selector de su fila: solo cambia la categoría, nunca el monto, la fecha ni la cuenta.",

@@ -13,6 +13,9 @@ export type ActionState = { error: string | null };
  * vive en la función Postgres `register_customer_payment` (transaccional,
  * ver F0-Arquitectura sección H). Este Server Action solo valida el form y
  * la llama — no reimplementa los pasos en JS para no romper la atomicidad.
+ *
+ * Categoría: opcional. Si el usuario no elige otra, el movimiento de banco
+ * queda como "Cobro de factura" (lo asigna la base de datos).
  */
 export async function registerPaymentAction(
   invoiceId: string,
@@ -30,6 +33,7 @@ export async function registerPaymentAction(
     method: String(formData.get("method") ?? "TRANSFER"),
     reference: String(formData.get("reference") ?? ""),
     notes: String(formData.get("notes") ?? ""),
+    category_id: String(formData.get("category_id") ?? ""),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -61,6 +65,8 @@ export async function registerPaymentAction(
     p_currency: invoice.currency,
     p_exchange_rate: invoice.exchange_rate,
     p_notes: parsed.data.notes || null,
+    // Vacío = null: la base de datos pone "Cobro de factura" automáticamente.
+    p_category_id: parsed.data.category_id || null,
   });
 
   if (error) {
@@ -70,6 +76,9 @@ export async function registerPaymentAction(
     }
     if (error.message.includes("invalid_status")) {
       return { error: "Esta factura no admite cobros en su estado actual." };
+    }
+    if (error.message.includes("category_not_found")) {
+      return { error: "La categoría elegida no existe. Recarga la página e inténtalo de nuevo." };
     }
     return { error: error.message };
   }
