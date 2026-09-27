@@ -5,9 +5,11 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { registerPaymentSchema } from "./schema";
 import type { ReceiptPdfData } from "@/lib/pdf/receipt-document";
+import { bankRuleState, overdraftConfirmed } from "@/lib/utils/bank-errors";
 import type { SupplierReceiptPdfData } from "@/lib/pdf/supplier-receipt-document";
 
-export type ActionState = { error: string | null };
+/** confirmOverdraft: ver features/banks/actions.ts (sobregiro por confirmar). */
+export type ActionState = { error: string | null; confirmOverdraft?: string };
 /**
  * Registrar un cobro. Toda la lógica multi-tabla (factura, banco, auditoría)
  * vive en la función Postgres `register_customer_payment` (transaccional,
@@ -144,9 +146,13 @@ export async function registerSupplierPaymentAction(
     p_exchange_rate: expense.exchange_rate,
     p_notes: parsed.data.notes || null,
     p_payee_bank_name: payeeBankName,
+    p_confirm_overdraft: overdraftConfirmed(formData),
   });
 
   if (error) {
+    // Fondos insuficientes / sobregiro por confirmar (reglas de cuentas, migración 063)
+    const rule = bankRuleState(error.message);
+    if (rule) return rule;
     if (error.message.includes("amount_exceeds_balance")) {
       return { error: "El monto supera el balance pendiente del gasto." };
     }

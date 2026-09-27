@@ -19,6 +19,7 @@ import {
   hasBankTransactions,
   transactionEffect,
 } from "@/features/banks/queries";
+import { cardPosition } from "@/features/banks/display";
 import { toggleBankAccountActiveAction, toggleReconciledAction } from "@/features/banks/actions";
 import { hasPermission } from "@/lib/auth/permissions";
 import { ManualTransactionForm } from "./manual-transaction-form";
@@ -143,8 +144,11 @@ export default async function BankAccountDetailPage({
   ]);
 
   const isCard = account.type === "CREDIT_CARD";
-  const debt = Math.max(0, -account.current_balance);
-  const usage = isCard && account.credit_limit ? (debt / account.credit_limit) * 100 : null;
+  const { debt, favor, available, usage } = cardPosition(
+    Number(account.current_balance),
+    account.credit_limit,
+    account.favor_increases_limit,
+  );
 
   // Saldo después de cada movimiento: la lista viene del más reciente al más
   // antiguo, así que se parte del balance actual y se va "deshaciendo".
@@ -292,6 +296,8 @@ export default async function BankAccountDetailPage({
               </Badge>
               <Badge tone="neutral">{account.currency}</Badge>
               {!account.is_active && <Badge tone="danger">Inactiva</Badge>}
+              {!isCard && account.allow_overdraft && <Badge tone="neutral">Sobregiro autorizado</Badge>}
+              {!isCard && account.current_balance < 0 && <Badge tone="danger">En sobregiro</Badge>}
             </div>
             <p className="mt-1 text-sm text-brand-muted">
               {account.bank_name ?? "Sin banco"}
@@ -315,12 +321,18 @@ export default async function BankAccountDetailPage({
               <p className={`text-2xl font-semibold tabular-nums ${debt > 0 ? "text-brand-danger" : "text-brand-text"}`}>
                 {formatMoney(debt, account.currency)}
               </p>
-              {account.credit_limit != null && (
+              {favor > 0 && (
+                <p className="mt-1 text-sm font-medium tabular-nums text-brand-success">
+                  Saldo a favor: {formatMoney(favor, account.currency)}
+                </p>
+              )}
+              {account.credit_limit != null && available != null && (
                 <div className="mt-2 flex flex-col gap-1">
                   <ProgressBar pct={usage ?? 0} danger={(usage ?? 0) >= 80} />
                   <p className="text-xs text-brand-muted">
-                    Disponible {formatMoney(account.credit_limit - debt, account.currency)} de{" "}
+                    Disponible {formatMoney(available, account.currency)} · límite{" "}
                     {formatMoney(account.credit_limit, account.currency)}
+                    {account.favor_increases_limit && favor > 0 ? " (incluye saldo a favor)" : ""}
                   </p>
                 </div>
               )}

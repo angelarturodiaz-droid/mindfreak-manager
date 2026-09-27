@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle, ChevronRight, CreditCard, Landmark, Plus, ShieldCheck, Wallet } from "lucide-react";
 import { listBankAccountsWithBalance } from "@/features/banks/queries";
+import { cardPosition } from "@/features/banks/display";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -41,8 +42,7 @@ function splitCurrencies(totals: Record<string, number>, base = "DOP") {
 
 function AccountCard({ a }: { a: AccountRow }) {
   const isCard = a.type === "CREDIT_CARD";
-  const debt = Math.max(0, -a.current_balance);
-  const usage = isCard && a.credit_limit ? (debt / a.credit_limit) * 100 : null;
+  const { debt, favor, available, usage } = cardPosition(a.current_balance, a.credit_limit, a.favor_increases_limit);
   return (
     <Link
       href={`/banks/${a.id}`}
@@ -85,15 +85,20 @@ function AccountCard({ a }: { a: AccountRow }) {
                 {formatMoney(debt, a.currency)}
               </p>
             </div>
-            {a.credit_limit != null && (
+            {available != null && (
               <div className="text-right">
                 <p className="text-xs text-brand-muted">Disponible</p>
                 <p className="text-sm font-medium tabular-nums text-brand-text">
-                  {formatMoney(a.credit_limit - debt, a.currency)}
+                  {formatMoney(available, a.currency)}
                 </p>
               </div>
             )}
           </div>
+          {favor > 0 && (
+            <p className="inline-flex w-fit items-center rounded-full bg-brand-success-bg px-2.5 py-0.5 text-xs font-medium text-brand-success">
+              Saldo a favor: {formatMoney(favor, a.currency)}
+            </p>
+          )}
           {usage !== null && (
             <>
               <ProgressBar pct={usage} danger={usage >= 80} />
@@ -105,7 +110,15 @@ function AccountCard({ a }: { a: AccountRow }) {
         </div>
       ) : (
         <div>
-          <p className="text-xs text-brand-muted">Balance actual</p>
+          <p className="flex flex-wrap items-center gap-1.5 text-xs text-brand-muted">
+            Balance actual
+            {a.current_balance < 0 && (
+              <span className="rounded-full bg-brand-danger-bg px-2 py-0.5 font-medium text-brand-danger">En sobregiro</span>
+            )}
+            {a.allow_overdraft && a.current_balance >= 0 && (
+              <span className="rounded-full bg-brand-surface-hover px-2 py-0.5 font-medium">Sobregiro autorizado</span>
+            )}
+          </p>
           <p
             className={`text-2xl font-semibold tracking-tight tabular-nums ${
               a.current_balance < 0 ? "text-brand-danger" : "text-brand-text"
@@ -138,10 +151,12 @@ export default async function BanksPage({
 
   const available = splitCurrencies(sumByCurrency(activeBanks, (a) => a.current_balance));
   const debt = splitCurrencies(sumByCurrency(activeCards, (a) => Math.max(0, -a.current_balance)));
+  const favorTotal = splitCurrencies(sumByCurrency(activeCards, (a) => Math.max(0, a.current_balance)));
+  const hasFavor = activeCards.some((a) => a.current_balance > 0);
   const creditLeft = splitCurrencies(
     sumByCurrency(
       activeCards.filter((a) => a.credit_limit != null),
-      (a) => (a.credit_limit ?? 0) - Math.max(0, -a.current_balance),
+      (a) => cardPosition(a.current_balance, a.credit_limit, a.favor_increases_limit).available ?? 0,
     ),
   );
   const debtTotal = activeCards.reduce((acc, a) => acc + Math.max(0, -a.current_balance), 0);
@@ -207,14 +222,21 @@ export default async function BanksPage({
               label="Deuda en tarjetas"
               value={debt.main}
               valueTone={debtTotal > 0 ? "danger" : undefined}
-              hint={debt.others.length ? `+ ${debt.others.join(" · ")}` : `${activeCards.length} tarjetas activas`}
+              hint={
+                [
+                  debt.others.length ? `+ ${debt.others.join(" · ")}` : `${activeCards.length} tarjetas activas`,
+                  hasFavor ? `Saldo a favor: ${[favorTotal.main, ...favorTotal.others].join(" · ")}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")
+              }
               icon={<CreditCard size={20} />}
               tone="red"
             />
             <StatCard
               label="Crédito disponible"
               value={creditLeft.main}
-              hint={creditLeft.others.length ? `+ ${creditLeft.others.join(" · ")}` : "Límite menos deuda"}
+              hint={creditLeft.others.length ? `+ ${creditLeft.others.join(" · ")}` : "Límite menos deuda (tarjetas con límite)"}
               icon={<ShieldCheck size={20} />}
               tone="violet"
             />

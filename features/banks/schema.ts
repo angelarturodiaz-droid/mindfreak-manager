@@ -2,7 +2,11 @@ import { z } from "zod";
 
 export const ACCOUNT_TYPES = ["BANK", "CREDIT_CARD"] as const;
 
-/** Tipo de cuenta bancaria (solo para type = BANK). Informativo. */
+/**
+ * Tipo de cuenta bancaria (solo para type = BANK). Define las reglas de
+ * fondos (migración 063): Ahorros nunca queda en negativo; Corriente
+ * tampoco, salvo que tenga sobregiro autorizado (allow_overdraft).
+ */
 export const ACCOUNT_KINDS = ["SAVINGS", "CHECKING"] as const;
 export const ACCOUNT_KIND_LABELS: Record<string, string> = {
   SAVINGS: "Ahorros",
@@ -19,6 +23,10 @@ export const bankAccountSchema = z.object({
   opening_balance_date: z.string().min(1, "La fecha es requerida"),
   credit_limit: z.coerce.number().min(0).optional(),
   account_kind: z.enum(ACCOUNT_KINDS).optional(),
+  /** Solo cuenta corriente: el banco autoriza sobregiro (saldo negativo con confirmación). */
+  allow_overdraft: z.boolean().default(false),
+  /** Solo tarjetas: el saldo a favor aumenta el poder de compra por encima del límite. */
+  favor_increases_limit: z.boolean().default(false),
 });
 
 export const bankAccountEditSchema = z.object({
@@ -30,6 +38,8 @@ export const bankAccountEditSchema = z.object({
   opening_balance: z.coerce.number().optional(),
   opening_balance_date: z.string().optional().or(z.literal("")),
   account_kind: z.enum(ACCOUNT_KINDS).optional(),
+  allow_overdraft: z.boolean().default(false),
+  favor_increases_limit: z.boolean().default(false),
 });
 
 export type BankAccountEditInput = z.infer<typeof bankAccountEditSchema>;

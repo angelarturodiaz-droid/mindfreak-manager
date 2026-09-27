@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useOverdraftConfirmAction } from "@/components/ui/overdraft-confirm";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { createManualTransactionAction, type ActionState } from "@/features/banks/actions";
@@ -25,7 +25,7 @@ export function ManualTransactionForm({
   categories: { id: string; name: string }[];
 }) {
   const createWithId = createManualTransactionAction.bind(null, bankAccountId);
-  const [state, formAction, pending] = useActionState(createWithId, initialState);
+  const [state, formAction, pending, confirmBox] = useOverdraftConfirmAction(createWithId, initialState);
 
   return (
     <form action={formAction} className="flex flex-wrap items-end gap-2">
@@ -67,6 +67,7 @@ export function ManualTransactionForm({
         Agregar movimiento
       </Button>
       {state.error && <p className="w-full text-sm text-brand-danger">{state.error}</p>}
+      {confirmBox}
       <p className="w-full text-xs text-brand-muted">
         ¿Falta una categoría?{" "}
         <Link href="/settings/expense-categories" className="text-brand-accent hover:underline">

@@ -5,6 +5,7 @@ import { updateBankAccountAction, type ActionState } from "@/features/banks/acti
 import { Input, Select } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
+import { AccountKindFields, CardFavorField } from "@/components/banks/account-rule-fields";
 
 const initialState: ActionState = { error: null };
 
@@ -20,6 +21,8 @@ export function BankAccountEditForm({
     account_number_masked: string | null;
     type: string;
     account_kind?: string | null;
+    allow_overdraft?: boolean | null;
+    favor_increases_limit?: boolean | null;
     credit_limit: number | null;
     opening_balance: number;
     opening_balance_date: string;
@@ -35,11 +38,11 @@ export function BankAccountEditForm({
     <form action={formAction} className="max-w-md space-y-4">
       <Input label="Nombre" name="name" defaultValue={account.name} required />
       {!isCard && (
-        <Select label="Tipo de cuenta" name="account_kind" defaultValue={account.account_kind ?? ""}>
-          <option value="">Sin indicar</option>
-          <option value="SAVINGS">Ahorros</option>
-          <option value="CHECKING">Corriente</option>
-        </Select>
+        <AccountKindFields
+          defaultKind={account.account_kind ?? ""}
+          defaultOverdraft={Boolean(account.allow_overdraft)}
+          allowEmpty
+        />
       )}
       <Select label="Banco" name="bank_name" defaultValue={account.bank_name ?? ""}>
         <option value="">Selecciona un banco…</option>
@@ -67,6 +70,7 @@ export function BankAccountEditForm({
           hint="Puedes actualizarlo cuando el banco te suba o baje el límite."
         />
       )}
+      {isCard && <CardFavorField defaultChecked={Boolean(account.favor_increases_limit)} />}
 
       <div className="grid grid-cols-2 gap-3">
         <MoneyInput

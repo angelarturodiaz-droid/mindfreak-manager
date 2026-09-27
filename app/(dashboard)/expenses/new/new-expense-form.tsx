@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
+import { useOverdraftConfirmAction } from "@/components/ui/overdraft-confirm";
 import Link from "next/link";
 import { createExpenseAction, type ActionState } from "@/features/expenses/actions";
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
@@ -31,7 +32,7 @@ export function NewExpenseForm({
   bankCatalog: Option[];
   baseCurrency: string;
 }) {
-  const [state, formAction, pending] = useActionState(createExpenseAction, initialState);
+  const [state, formAction, pending, confirmBox] = useOverdraftConfirmAction(createExpenseAction, initialState);
   const [paymentMethod, setPaymentMethod] = useState("");
 
   const isCard = paymentMethod === "CARD";
@@ -157,6 +158,8 @@ export function NewExpenseForm({
       <CurrencyExchangeFields baseCurrency={baseCurrency} />
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
+
+      {confirmBox}
 
       <div className="flex gap-3">
         <Button type="submit" loading={pending}>

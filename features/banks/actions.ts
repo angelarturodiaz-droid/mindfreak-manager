@@ -6,8 +6,14 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
 import { bankAccountSchema, bankAccountEditSchema, manualTransactionSchema, transferSchema } from "./schema";
+import { bankRuleState, overdraftConfirmed } from "@/lib/utils/bank-errors";
 
-export type ActionState = { error: string | null };
+/**
+ * confirmOverdraft: la operación dejaría una cuenta corriente con
+ * sobregiro autorizado en negativo; la pantalla muestra el mensaje y, si el
+ * usuario pulsa Continuar, reenvía el formulario con confirm_overdraft=1.
+ */
+export type ActionState = { error: string | null; confirmOverdraft?: string };
 
 async function getPrimaryCompanyId(): Promise<string> {
   const companyIds = await getCurrentUserCompanyIds();
@@ -33,9 +39,14 @@ export async function createBankAccountAction(
     opening_balance_date: String(formData.get("opening_balance_date") ?? ""),
     credit_limit: formData.get("credit_limit") ? String(formData.get("credit_limit")) : undefined,
     account_kind: formData.get("account_kind") ? String(formData.get("account_kind")) : undefined,
+    allow_overdraft: formData.get("allow_overdraft") === "on",
+    favor_increases_limit: formData.get("favor_increases_limit") === "on",
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+  }
+  if (parsed.data.type === "BANK" && !parsed.data.account_kind) {
+    return { error: "Elige el tipo de cuenta: Ahorros o Corriente." };
   }
 
   const companyId = await getPrimaryCompanyId();
@@ -63,6 +74,11 @@ export async function createBankAccountAction(
       opening_balance_date: parsed.data.opening_balance_date,
       credit_limit: parsed.data.type === "CREDIT_CARD" ? parsed.data.credit_limit ?? null : null,
       account_kind: parsed.data.type === "BANK" ? parsed.data.account_kind ?? null : null,
+      // Sobregiro: solo cuentas corrientes (las de ahorro nunca). Saldo a
+      // favor sobre el límite: solo tarjetas. Ver migración 063.
+      allow_overdraft:
+        parsed.data.type === "BANK" && parsed.data.account_kind === "CHECKING" && parsed.data.allow_overdraft,
+      favor_increases_limit: parsed.data.type === "CREDIT_CARD" && parsed.data.favor_increases_limit,
     })
     .select("id")
     .single();
@@ -182,10 +198,11 @@ export async function createManualTransactionAction(
       description: parsed.data.description || categoryName,
       category_id: parsed.data.category_id || null,
       reference: parsed.data.reference || null,
+      overdraft_confirmed: overdraftConfirmed(formData),
     })
     .select("id")
     .single();
-  if (error) return { error: error.message };
+  if (error) return bankRuleState(error.message) ?? { error: error.message };
 
   await logAudit({
     companyId,
@@ -234,9 +251,12 @@ export async function createTransferAction(
     p_transaction_date: parsed.data.transaction_date,
     p_description: parsed.data.description || null,
     p_exchange_rate: parsed.data.exchange_rate ?? null,
+    p_confirm_overdraft: overdraftConfirmed(formData),
   });
 
   if (error) {
+    const rule = bankRuleState(error.message);
+    if (rule) return rule;
     if (error.message.includes("invalid_accounts")) {
       return { error: "La cuenta origen y destino no pueden ser la misma." };
     }
@@ -345,6 +365,8 @@ export async function updateBankAccountAction(
       : undefined,
     opening_balance_date: String(formData.get("opening_balance_date") ?? ""),
     account_kind: formData.get("account_kind") ? String(formData.get("account_kind")) : undefined,
+    allow_overdraft: formData.get("allow_overdraft") === "on",
+    favor_increases_limit: formData.get("favor_increases_limit") === "on",
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -380,6 +402,10 @@ export async function updateBankAccountAction(
   };
   if (existing.type === "BANK") {
     updatePayload.account_kind = parsed.data.account_kind ?? null;
+    // Sobregiro solo en cuenta corriente; al pasarla a ahorro se apaga.
+    updatePayload.allow_overdraft = parsed.data.account_kind === "CHECKING" && parsed.data.allow_overdraft;
+  } else {
+    updatePayload.favor_increases_limit = parsed.data.favor_increases_limit;
   }
 
   if (canEditOpeningBalance) {

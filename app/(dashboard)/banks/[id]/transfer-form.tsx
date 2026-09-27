@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
+import { useOverdraftConfirmAction } from "@/components/ui/overdraft-confirm";
 import { ArrowRightLeft } from "lucide-react";
 import { createTransferAction, type ActionState } from "@/features/banks/actions";
 import { Input, Select } from "@/components/ui/field";
@@ -10,7 +11,15 @@ import { todayISO } from "@/lib/utils/dates";
 
 const initialState: ActionState = { error: null };
 
-type Account = { id: string; name: string; bank_name: string | null; currency: string; type: string };
+type Account = {
+  id: string;
+  name: string;
+  bank_name: string | null;
+  currency: string;
+  type: string;
+  /** Saldo actual (en tarjetas: negativo = deuda, positivo = saldo a favor). */
+  current_balance: number;
+};
 
 function fmt(amount: number, currency: string) {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency }).format(amount);
@@ -30,7 +39,7 @@ export function TransferForm({
   otherAccounts: Account[];
 }) {
   const createWithId = createTransferAction.bind(null, fromAccountId);
-  const [state, formAction, pending] = useActionState(createWithId, initialState);
+  const [state, formAction, pending, confirmBox] = useOverdraftConfirmAction(createWithId, initialState);
   const [toId, setToId] = useState("");
   const [amount, setAmount] = useState(0);
   const [rate, setRate] = useState(0);
@@ -53,6 +62,15 @@ export function TransferForm({
       ? fromCurrency === baseCurrency
         ? Math.round((amount / rate) * 100) / 100
         : Math.round(amount * rate * 100) / 100
+      : null;
+
+  // Pago a una tarjeta mayor que su deuda: no es error, el excedente queda
+  // como saldo a favor (reglas de la migración 063).
+  const amountIntoDestination = needsRate ? received : amount > 0 ? amount : null;
+  const cardDebt = to?.type === "CREDIT_CARD" ? Math.max(0, -to.current_balance) : null;
+  const cardExcess =
+    cardDebt !== null && amountIntoDestination !== null && amountIntoDestination > cardDebt
+      ? Math.round((amountIntoDestination - cardDebt) * 100) / 100
       : null;
 
   return (
@@ -116,7 +134,15 @@ export function TransferForm({
           )}
         </p>
       )}
+      {to && cardExcess !== null && (
+        <p className="w-full rounded-[var(--radius-md)] bg-brand-success-bg px-3 py-2 text-sm text-brand-text">
+          {cardDebt === 0
+            ? `La tarjeta ${to.name} no tiene deuda. Los ${fmt(cardExcess, to.currency)} quedarán como saldo a favor.`
+            : `La tarjeta no tiene suficiente deuda para aplicar el pago completo (debe ${fmt(cardDebt ?? 0, to.currency)}). El excedente de ${fmt(cardExcess, to.currency)} se registrará como saldo a favor.`}
+        </p>
+      )}
       {state.error && <p className="w-full text-sm text-brand-danger">{state.error}</p>}
+      {confirmBox}
     </form>
   );
 }

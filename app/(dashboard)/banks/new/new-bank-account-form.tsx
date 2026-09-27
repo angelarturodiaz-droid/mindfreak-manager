@@ -7,6 +7,7 @@ import { Input, Select } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 import { todayISO } from "@/lib/utils/dates";
+import { AccountKindFields, CardFavorField } from "@/components/banks/account-rule-fields";
 
 const initialState: ActionState = { error: null };
 
@@ -27,15 +28,7 @@ export function NewBankAccountForm({ bankCatalog }: { bankCatalog: { id: string;
         <option value="CREDIT_CARD">Tarjeta de crédito</option>
       </Select>
 
-      {!isCard && (
-        <Select label="Tipo de cuenta" name="account_kind" defaultValue="" required>
-          <option value="" disabled>
-            Selecciona…
-          </option>
-          <option value="SAVINGS">Ahorros</option>
-          <option value="CHECKING">Corriente</option>
-        </Select>
-      )}
+      {!isCard && <AccountKindFields />}
 
       <Input
         label="Nombre"
@@ -83,9 +76,10 @@ export function NewBankAccountForm({ bankCatalog }: { bankCatalog: { id: string;
           name="credit_limit"
           min={0}
           defaultValue=""
-          hint="Opcional"
+          hint="Opcional. Si lo indicas, no se podrán registrar compras que superen el crédito disponible."
         />
       )}
+      {isCard && <CardFavorField />}
 
       <Input
         label={isCard ? "Fecha de la deuda inicial" : "Fecha del balance inicial"}

@@ -4,7 +4,7 @@ export async function listBankAccountsWithBalance() {
   const supabase = await createClient();
   const { data: accounts, error } = await supabase
     .from("bank_accounts")
-    .select("id, name, bank_name, account_number_masked, currency, is_active, type, credit_limit, account_kind")
+    .select("id, name, bank_name, account_number_masked, currency, is_active, type, credit_limit, account_kind, allow_overdraft, favor_increases_limit")
     .order("name");
   if (error) throw new Error(error.message);
   if (!accounts || accounts.length === 0) return [];
@@ -75,7 +75,15 @@ export async function listOtherActiveAccounts(excludeId: string) {
     .neq("id", excludeId)
     .order("name");
   if (error) throw new Error(error.message);
-  return data;
+
+  // Saldo actual de cada cuenta, para avisar en el formulario de
+  // transferencia cuándo un pago a tarjeta deja saldo a favor.
+  const { data: balances, error: balError } = await supabase
+    .from("bank_account_balances")
+    .select("bank_account_id, current_balance");
+  if (balError) throw new Error(balError.message);
+  const balanceMap = new Map((balances ?? []).map((b) => [b.bank_account_id, Number(b.current_balance)]));
+  return data.map((a) => ({ ...a, current_balance: balanceMap.get(a.id) ?? 0 }));
 }
 
 export async function hasBankTransactions(accountId: string): Promise<boolean> {

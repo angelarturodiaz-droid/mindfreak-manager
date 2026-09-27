@@ -6,8 +6,10 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
 import { expenseSchema, calculateExpenseTotals } from "./schema";
+import { bankRuleState, overdraftConfirmed } from "@/lib/utils/bank-errors";
 
-export type ActionState = { error: string | null };
+/** confirmOverdraft: ver features/banks/actions.ts (sobregiro por confirmar). */
+export type ActionState = { error: string | null; confirmOverdraft?: string };
 
 async function getPrimaryCompanyId(): Promise<string> {
   const companyIds = await getCurrentUserCompanyIds();
@@ -73,8 +75,10 @@ export async function createExpenseAction(
       p_exchange_rate: parsed.data.exchange_rate,
       p_payment_method: parsed.data.payment_method || "TRANSFER",
       p_payee_bank_name: parsed.data.payee_bank_name || null,
+      p_confirm_overdraft: overdraftConfirmed(formData),
     });
-    if (error) return { error: error.message };
+    // Fondos insuficientes, crédito insuficiente o sobregiro por confirmar (migración 063)
+    if (error) return bankRuleState(error.message) ?? { error: error.message };
 
     await logAudit({
       companyId,

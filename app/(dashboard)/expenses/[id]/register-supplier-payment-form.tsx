@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useOverdraftConfirmAction } from "@/components/ui/overdraft-confirm";
 import { registerSupplierPaymentAction, type ActionState } from "@/features/payments/actions";
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
 import { Input, Select } from "@/components/ui/field";
@@ -36,7 +36,7 @@ export function RegisterSupplierPaymentForm({
     supplierId,
     projectId,
   );
-  const [state, formAction, pending] = useActionState(registerWithIds, initialState);
+  const [state, formAction, pending, confirmBox] = useOverdraftConfirmAction(registerWithIds, initialState);
 
   return (
     <form action={formAction} className="flex flex-wrap items-end gap-2">
@@ -86,6 +86,7 @@ export function RegisterSupplierPaymentForm({
         Registrar pago
       </Button>
       {state.error && <p className="w-full text-sm text-brand-danger">{state.error}</p>}
+      {confirmBox}
     </form>
   );
 }
