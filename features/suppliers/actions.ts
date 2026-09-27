@@ -7,6 +7,10 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
 import { supplierSchema, supplierContactSchema } from "./schema";
+import {
+  classificationFromNames,
+  resolveSupplierClassification,
+} from "@/features/supplier-service-types/classification";
 
 export type ActionState = { error: string | null };
 
@@ -22,13 +26,19 @@ function parseFormFields(formData: FormData) {
   return {
     name: String(formData.get("name") ?? ""),
     tax_id: String(formData.get("tax_id") ?? ""),
-    category: String(formData.get("category") ?? ""),
     email: String(formData.get("email") ?? ""),
     phone: String(formData.get("phone") ?? ""),
     address: String(formData.get("address") ?? ""),
     bank_name: String(formData.get("bank_name") ?? ""),
     bank_account_number: String(formData.get("bank_account_number") ?? ""),
-    service_type: String(formData.get("service_type") ?? ""),
+  };
+}
+
+/** Categoría y tipo de servicio elegidos en el formulario (ids del catálogo). */
+function classificationIds(formData: FormData) {
+  return {
+    categoryId: String(formData.get("category_id") ?? "") || null,
+    serviceTypeId: String(formData.get("service_type_id") ?? "") || null,
   };
 }
 
@@ -49,19 +59,22 @@ export async function createSupplierAction(
     data: { user },
   } = await supabase.auth.getUser();
 
+  const ids = classificationIds(formData);
+  const classification = await resolveSupplierClassification(supabase, companyId, ids.categoryId, ids.serviceTypeId);
+  if ("error" in classification) return { error: classification.error };
+
   const { data, error } = await supabase
     .from("suppliers")
     .insert({
       company_id: companyId,
       name: parsed.data.name,
       tax_id: parsed.data.tax_id || null,
-      category: parsed.data.category || null,
+      ...classification,
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
       address: parsed.data.address || null,
       bank_name: parsed.data.bank_name || null,
       bank_account_number: parsed.data.bank_account_number || null,
-      service_type: parsed.data.service_type || null,
       created_by: user?.id,
     })
     .select("id")
@@ -74,7 +87,7 @@ export async function createSupplierAction(
     action: "CREATE",
     entityType: "supplier",
     entityId: data.id,
-    newValues: parsed.data,
+    newValues: { ...parsed.data, ...classification },
   });
 
   revalidatePath("/suppliers");
@@ -94,37 +107,40 @@ export async function updateSupplierAction(
   }
 
   const supabase = await createSupabaseClient();
+  const companyId = await getPrimaryCompanyId();
   const { data: before } = await supabase
     .from("suppliers")
-    .select("name, tax_id, category, email, phone, address, bank_name, bank_account_number, service_type")
+    .select("name, tax_id, category, category_id, email, phone, address, bank_name, bank_account_number, service_type, service_type_id")
     .eq("id", supplierId)
     .single();
+
+  const ids = classificationIds(formData);
+  const classification = await resolveSupplierClassification(supabase, companyId, ids.categoryId, ids.serviceTypeId);
+  if ("error" in classification) return { error: classification.error };
 
   const { error } = await supabase
     .from("suppliers")
     .update({
       name: parsed.data.name,
       tax_id: parsed.data.tax_id || null,
-      category: parsed.data.category || null,
+      ...classification,
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
       address: parsed.data.address || null,
       bank_name: parsed.data.bank_name || null,
       bank_account_number: parsed.data.bank_account_number || null,
-      service_type: parsed.data.service_type || null,
     })
     .eq("id", supplierId);
 
   if (error) return { error: error.message };
 
-  const companyId = await getPrimaryCompanyId();
   await logAudit({
     companyId,
     action: "UPDATE",
     entityType: "supplier",
     entityId: supplierId,
     oldValues: before,
-    newValues: parsed.data,
+    newValues: { ...parsed.data, ...classification },
   });
 
   revalidatePath(`/suppliers/${supplierId}`);
@@ -242,6 +258,9 @@ export async function importSuppliersCsvAction(
 
   const errorDetails: { row: number; error: string }[] = [];
   let successCount = 0;
+  // Categoría / tipo de servicio del CSV: se enlazan con los catálogos de
+  // Configuración y se crean si no existen.
+  const catalogCache = {};
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -265,17 +284,24 @@ export async function importSuppliersCsvAction(
       continue;
     }
 
+    const classification = await classificationFromNames(
+      supabase,
+      companyId,
+      candidate.data.category ?? "",
+      candidate.data.service_type ?? "",
+      catalogCache,
+    );
+
     const { error } = await supabase.from("suppliers").insert({
       company_id: companyId,
       name: candidate.data.name,
       tax_id: candidate.data.tax_id || null,
-      category: candidate.data.category || null,
+      ...classification,
       email: candidate.data.email || null,
       phone: candidate.data.phone || null,
       address: candidate.data.address || null,
       bank_name: candidate.data.bank_name || null,
       bank_account_number: candidate.data.bank_account_number || null,
-      service_type: candidate.data.service_type || null,
       created_by: user?.id,
     });
 

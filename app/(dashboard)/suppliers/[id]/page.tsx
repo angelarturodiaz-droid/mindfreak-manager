@@ -21,6 +21,8 @@ import {
   deleteSupplierContactAction,
 } from "@/features/suppliers/actions";
 import { SupplierEditForm } from "./supplier-edit-form";
+import { listCategoryOptions } from "@/features/expense-categories/queries";
+import { listServiceTypeOptions } from "@/features/supplier-service-types/queries";
 import { NewSupplierContactForm } from "./new-contact-form";
 import { DocumentList } from "@/components/documents/document-list";
 import { UploadDocumentForm } from "@/components/documents/upload-document-form";
@@ -76,12 +78,14 @@ export default async function SupplierDetailPage({
   }
   if (!supplier) notFound();
 
-  const [contacts, documents, canManageDocs, bankCatalog, activity] = await Promise.all([
+  const [contacts, documents, canManageDocs, bankCatalog, activity, categories, serviceTypes] = await Promise.all([
     listSupplierContacts(id),
     listDocuments("supplier", id),
     hasPermission("documents.upload"),
     listBankCatalog(),
     getSupplierActivity(id),
+    listCategoryOptions(),
+    listServiceTypeOptions(),
   ]);
   const { totals } = activity;
   const tabCounts: Record<string, number> = {
@@ -317,7 +321,12 @@ export default async function SupplierDetailPage({
           <section>
             <SectionHeader title="Datos del proveedor" description="Nombre, RNC, contacto y cuenta bancaria." />
             <Card>
-              <SupplierEditForm supplier={supplier} bankCatalog={bankCatalog} />
+              <SupplierEditForm
+                supplier={supplier}
+                bankCatalog={bankCatalog}
+                categories={categories}
+                serviceTypes={serviceTypes}
+              />
             </Card>
           </section>
         </div>

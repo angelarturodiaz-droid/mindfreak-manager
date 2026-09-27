@@ -45,6 +45,11 @@ export default async function ImportSuppliersPage() {
           </code>{" "}
           (solo <code>name</code> es obligatorio).
         </p>
+        <p className="text-sm text-brand-muted">
+          <code>category</code> y <code>service_type</code> se enlazan con Configuración →
+          Categorías y Tipos de servicio (sin importar mayúsculas ni acentos); si no existen, se
+          crean.
+        </p>
       </div>
 
       <ImportForm />

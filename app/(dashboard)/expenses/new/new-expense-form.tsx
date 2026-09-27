@@ -14,6 +14,7 @@ import { todayISO } from "@/lib/utils/dates";
 const initialState: ActionState = { error: null };
 
 type Option = { id: string; name: string };
+type SupplierOption = Option & { category_id?: string | null };
 type ProjectOption = { id: string; number: string; name: string };
 type Account = { id: string; name: string; bank_name: string | null; type: string };
 
@@ -26,7 +27,7 @@ export function NewExpenseForm({
   baseCurrency,
 }: {
   categories: Option[];
-  suppliers: Option[];
+  suppliers: SupplierOption[];
   projects: ProjectOption[];
   accounts: Account[];
   bankCatalog: Option[];
@@ -34,6 +35,11 @@ export function NewExpenseForm({
 }) {
   const [state, formAction, pending, confirmBox] = useOverdraftConfirmAction(createExpenseAction, initialState);
   const [paymentMethod, setPaymentMethod] = useState("");
+  // Categoría sugerida por el proveedor: se llena sola al elegirlo, salvo
+  // que el usuario ya haya elegido una a mano.
+  const [categoryId, setCategoryId] = useState("");
+  const [categoryTouched, setCategoryTouched] = useState(false);
+  const [suggestedFrom, setSuggestedFrom] = useState<string | null>(null);
 
   const isCard = paymentMethod === "CARD";
   const relevantAccounts = accounts.filter((a) =>
@@ -45,7 +51,17 @@ export function NewExpenseForm({
       <Input label="Descripción" name="description" required />
       <Input label="Fecha" name="expense_date" type="date" required defaultValue={todayISO()} />
 
-      <Select label="Categoría" name="category_id" defaultValue="">
+      <Select
+        label="Categoría"
+        name="category_id"
+        value={categoryId}
+        onChange={(e) => {
+          setCategoryId(e.target.value);
+          setCategoryTouched(true);
+          setSuggestedFrom(null);
+        }}
+        hint={suggestedFrom ? `Sugerida por el proveedor ${suggestedFrom}. Puedes cambiarla.` : undefined}
+      >
         <option value="">Sin categoría</option>
         {categories.map((c) => (
           <option key={c.id} value={c.id}>
@@ -54,7 +70,21 @@ export function NewExpenseForm({
         ))}
       </Select>
 
-      <Select label="Proveedor" name="supplier_id" defaultValue="">
+      <Select
+        label="Proveedor"
+        name="supplier_id"
+        defaultValue=""
+        onChange={(e) => {
+          const supplier = suppliers.find((s) => s.id === e.target.value);
+          if (!categoryTouched && supplier?.category_id) {
+            setCategoryId(supplier.category_id);
+            setSuggestedFrom(supplier.name);
+          } else if (!categoryTouched) {
+            setCategoryId("");
+            setSuggestedFrom(null);
+          }
+        }}
+      >
         <option value="">Sin proveedor (gasto general)</option>
         {suppliers.map((s) => (
           <option key={s.id} value={s.id}>

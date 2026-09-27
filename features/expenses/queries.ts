@@ -89,7 +89,8 @@ export async function listActiveSuppliers() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("suppliers")
-    .select("id, name")
+    // category_id: para sugerir la categoría del gasto al elegir el proveedor
+    .select("id, name, category_id")
     .eq("is_active", true)
     .order("name");
   if (error) throw new Error(error.message);

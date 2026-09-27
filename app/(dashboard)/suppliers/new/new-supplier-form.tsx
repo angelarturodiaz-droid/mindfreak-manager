@@ -5,13 +5,18 @@ import Link from "next/link";
 import { createSupplierAction, type ActionState } from "@/features/suppliers/actions";
 import { Input, Select } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
+import { SupplierCategoryFields } from "@/components/suppliers/supplier-category-fields";
 
 const initialState: ActionState = { error: null };
 
 export function NewSupplierForm({
   bankCatalog,
+  categories,
+  serviceTypes,
 }: {
   bankCatalog: { id: string; name: string }[];
+  categories: { id: string; name: string }[];
+  serviceTypes: { id: string; name: string; category_id: string }[];
 }) {
   const [state, formAction, pending] = useActionState(
     createSupplierAction,
@@ -22,12 +27,7 @@ export function NewSupplierForm({
     <form action={formAction} className="max-w-md space-y-4">
       <Input label="Nombre" name="name" required />
       <Input label="RNC / Cédula" name="tax_id" />
-      <Input label="Categoría" name="category" placeholder="Ej. Catering, Sonido, Mobiliario…" />
-      <Input
-        label="Tipo de servicio"
-        name="service_type"
-        placeholder="Ej. Transporte, Renta de equipos…"
-      />
+      <SupplierCategoryFields categories={categories} serviceTypes={serviceTypes} />
       <Input label="Correo" name="email" type="email" />
       <Input label="Teléfono" name="phone" />
       <Input label="Dirección" name="address" />
