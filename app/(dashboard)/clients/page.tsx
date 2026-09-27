@@ -350,6 +350,9 @@ export default async function ClientsPage({
 
         {clients.length === 0 ? (
           <EmptyState
+            filtered={hasFilters}
+            clearHref="/clients"
+            what="clientes"
             icon={<Users size={28} />}
             title={hasFilters ? "No hay clientes que coincidan con este filtro." : "Aún no tienes clientes."}
             action={

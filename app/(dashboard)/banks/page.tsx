@@ -5,6 +5,7 @@ import { cardPosition } from "@/features/banks/display";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { NoResults } from "@/components/ui/no-results";
 import { IconBadge } from "@/components/ui/icon-badge";
 import {
   FilterPills,
@@ -279,9 +280,11 @@ export default async function BanksPage({
                 ]}
               />
             </div>
-            {banks.length === 0 ? (
+            {banks.length === 0 && (kindFilter || currencyFilter) ? (
+              <NoResults what="cuentas" clearHref="/banks" />
+            ) : banks.length === 0 ? (
               <p className="rounded-[var(--radius-lg)] border border-dashed border-brand-border p-6 text-center text-sm text-brand-muted">
-                {kindFilter || currencyFilter ? "No hay cuentas con este filtro." : "Sin cuentas bancarias todavía."}
+                Sin cuentas bancarias todavía.
               </p>
             ) : (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">

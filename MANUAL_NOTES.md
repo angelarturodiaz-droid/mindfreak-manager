@@ -314,3 +314,23 @@ sugerida y regreso al proveedor.
 Los montos nunca se parten en dos líneas (antes el signo "-" quedaba
 arriba). Si la tarjeta es angosta, el ícono pasa arriba y la letra se
 ajusta al ancho.
+
+## General: aviso de filtros sin resultados (2026-09-27)
+Cuando un filtro no encuentra nada se muestra un aviso amarillo "No se
+encontraron … con los filtros aplicados" con el botón "Limpiar filtros".
+Aplica a Clientes, Proveedores, Cotizaciones, Proyectos, Facturas, Gastos,
+Productos y servicios, Tareas, Bancos (lista y detalle de cuenta),
+Auditoría y Reportes.
+
+## General: volver al proyecto (2026-09-27)
+Desde un proyecto, los enlaces a facturas, cotizaciones, gastos,
+proveedores y al cliente, y los botones Nueva factura / Nuevo gasto,
+llevan "← Volver al proyecto" (regresa a la pestaña donde estabas). La
+factura creada desde el proyecto viene con el proyecto elegido y al
+crearla conserva el "volver". Las pestañas de cliente/proveedor también
+lo conservan.
+
+## Bancos: detalle del movimiento más compacto (2026-09-27)
+La columna Movimiento tiene ancho fijo: las descripciones largas bajan a
+una segunda línea (máximo 2; el texto completo al pasar el mouse) en vez
+de alargar la tabla hacia la derecha.

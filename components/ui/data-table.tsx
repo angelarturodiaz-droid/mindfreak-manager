@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { NoResults } from "./no-results";
 
 export interface Column<T> {
   header: string;
@@ -18,14 +19,23 @@ export function DataTable<T>({
   keyFor,
   emptyMessage = "Sin resultados.",
   maxWidth = "max-w-4xl",
+  filtered = false,
+  clearHref,
+  what,
 }: {
   columns: Column<T>[];
   rows: T[];
   keyFor: (row: T) => string;
   emptyMessage?: string;
   maxWidth?: string;
+  /** Hay filtros activos: si no hay filas se muestra el aviso "No se encontraron…". */
+  filtered?: boolean;
+  clearHref?: string;
+  /** Qué se lista, en plural, para el aviso (ej. "facturas"). */
+  what?: string;
 }) {
   if (rows.length === 0) {
+    if (filtered) return <NoResults what={what} clearHref={clearHref} />;
     return <p className="py-6 text-center text-sm text-brand-muted">{emptyMessage}</p>;
   }
 

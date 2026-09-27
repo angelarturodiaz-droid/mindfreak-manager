@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { safeReturnTo, returnToLabel } from "@/lib/utils/return-to";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
@@ -63,10 +64,14 @@ type Item = Awaited<ReturnType<typeof listQuotationItems>>[number];
 
 export default async function QuotationDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ return_to?: string }>;
 }) {
   const { id } = await params;
+  // Si se abrió desde un proyecto (o proveedor), "volver" regresa ahí.
+  const returnTo = safeReturnTo((await searchParams).return_to);
 
   let quotation;
   try {
@@ -167,10 +172,10 @@ export default async function QuotationDetailPage({
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
       <Link
-        href="/quotations"
+        href={returnTo ?? "/quotations"}
         className="inline-flex w-fit items-center gap-1 text-sm text-brand-muted hover:text-brand-text"
       >
-        <ArrowLeft size={14} /> Cotizaciones
+        <ArrowLeft size={14} /> {returnTo ? returnToLabel(returnTo) : "Cotizaciones"}
       </Link>
 
       <Card className="flex flex-col gap-5">

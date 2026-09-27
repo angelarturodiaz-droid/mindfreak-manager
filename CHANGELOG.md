@@ -1,5 +1,16 @@
 # CHANGELOG — Mindfreak Manager
 
+## Aviso de filtros sin resultados, volver al proyecto y movimientos compactos (2026-09-27)
+
+- `NoResults` (aviso "No se encontraron … con los filtros aplicados" +
+  Limpiar filtros) en DataTable/EmptyState (`filtered`, `clearHref`,
+  `what`) y en todos los listados, detalle de cuenta, auditoría y reportes.
+- Navegación desde un proyecto con `return_to` (`withReturnTo`,
+  `safeReturnTo`, `returnToLabel`): facturas, cotizaciones, gastos,
+  proveedores, cliente, Nueva factura (proyecto preseleccionado) y Nuevo
+  gasto.
+- Detalle de cuenta: columna Movimiento con ancho fijo y máximo 2 líneas.
+
 ## Filtros del reporte de flujo, gasto desde proyecto y montos sin cortes (2026-09-27)
 
 - Reporte "Ingresos y egresos por categoría": filtros nuevos Tipo

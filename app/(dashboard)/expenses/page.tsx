@@ -165,6 +165,9 @@ export default async function ExpensesPage({
 
         {expenses.length === 0 ? (
           <EmptyState
+            filtered={Boolean(params.status)}
+            clearHref="/expenses"
+            what="gastos"
             icon={<CreditCard size={28} />}
             title={params.status ? "No hay gastos con este estado." : "Aún no tienes gastos."}
             action={

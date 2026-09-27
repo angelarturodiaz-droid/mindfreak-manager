@@ -8,6 +8,7 @@ import { TASK_STATUSES } from "@/features/tasks/schema";
 import { Card } from "@/components/ui/card";
 import { FilterPills, StatCard, StatGrid, listHref } from "@/components/ui/page-kit";
 import { todayISO } from "@/lib/utils/dates";
+import { NoResults } from "@/components/ui/no-results";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente",
@@ -95,7 +96,11 @@ export default async function TasksPage({
             href: listHref("/tasks", { status: s }),
           }))}
         />
-        <TaskList tasks={tasks} revalidatePathValue="/tasks" />
+        {params.status && tasks.length === 0 ? (
+          <NoResults what="tareas" clearHref="/tasks" />
+        ) : (
+          <TaskList tasks={tasks} revalidatePathValue="/tasks" />
+        )}
       </section>
     </main>
   );

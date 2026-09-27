@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds, getCurrentUser } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
+import { safeReturnTo, withReturnTo } from "@/lib/utils/return-to";
 import {
   invoiceHeaderSchema,
   invoiceItemSchema,
@@ -215,7 +216,10 @@ export async function createInvoiceAction(
   });
 
   revalidatePath("/invoices");
-  redirect(`/invoices/${data.id}`);
+  // Creada desde un proyecto: la factura abre con "Volver al proyecto".
+  const returnTo = safeReturnTo(String(formData.get("return_to") ?? ""));
+  if (returnTo) revalidatePath(returnTo.split("?")[0]);
+  redirect(withReturnTo(`/invoices/${data.id}`, returnTo));
 }
 
 export async function updateInvoiceHeaderAction(

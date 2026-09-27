@@ -221,6 +221,9 @@ export default async function ServicesPage({
             keyFor={(s) => s.id}
             maxWidth="max-w-none"
             emptyMessage={hasFilters ? "No hay productos ni servicios con este filtro." : "Aún no tienes productos ni servicios."}
+            filtered={hasFilters}
+            clearHref="/services"
+            what="productos ni servicios"
           />
         </section>
 

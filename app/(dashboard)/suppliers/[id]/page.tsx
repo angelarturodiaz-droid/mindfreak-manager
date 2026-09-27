@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { safeReturnTo, returnToLabel, withReturnTo } from "@/lib/utils/return-to";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
@@ -64,10 +65,12 @@ export default async function SupplierDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; return_to?: string }>;
 }) {
   const { id } = await params;
-  const { tab } = await searchParams;
+  const { tab, return_to } = await searchParams;
+  // Si se abrió desde un proyecto, "volver" regresa ahí (y las pestañas lo conservan).
+  const returnTo = safeReturnTo(return_to);
   const activeTab = TABS.some((t) => t.key === tab) ? (tab as string) : "resumen";
 
   let supplier;
@@ -165,10 +168,10 @@ export default async function SupplierDetailPage({
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
       <Link
-        href="/suppliers"
+        href={returnTo ?? "/suppliers"}
         className="inline-flex w-fit items-center gap-1 text-sm text-brand-muted hover:text-brand-text"
       >
-        <ArrowLeft size={14} /> Proveedores
+        <ArrowLeft size={14} /> {returnTo ? returnToLabel(returnTo) : "Proveedores"}
       </Link>
 
       <Card className="flex flex-wrap items-start justify-between gap-4">
@@ -249,7 +252,7 @@ export default async function SupplierDetailPage({
           return (
             <Link
               key={t.key}
-              href={`/suppliers/${id}?tab=${t.key}`}
+              href={withReturnTo(`/suppliers/${id}?tab=${t.key}`, returnTo)}
               className={`inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm transition-colors ${
                 active ? "border-brand-accent font-medium text-brand-accent" : "border-transparent text-brand-muted hover:text-brand-text"
               }`}

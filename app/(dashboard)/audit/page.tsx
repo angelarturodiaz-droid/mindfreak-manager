@@ -146,7 +146,9 @@ export default async function AuditPage({
         columns={columns}
         rows={logs}
         keyFor={(log) => log.id}
-        emptyMessage="Sin registros que coincidan."
+        emptyMessage="Sin registros todavía."
+        filtered={Boolean(params.entity_type || params.action)}
+        clearHref="/audit"
         maxWidth="max-w-none"
       />
     </main>

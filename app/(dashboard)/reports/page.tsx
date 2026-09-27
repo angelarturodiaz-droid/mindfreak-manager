@@ -27,6 +27,7 @@ import { Chip, InitialsAvatar, SectionHeader, StatCard } from "@/components/ui/p
 import { relationName } from "@/lib/utils/relation";
 import { formatDate, pluralDays } from "@/lib/utils/dates";
 import { DataTable, type Column } from "@/components/ui/data-table";
+import { NoResults } from "@/components/ui/no-results";
 
 function formatMoney(amount: number, currency = "DOP") {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency }).format(amount);
@@ -214,6 +215,11 @@ function DateRangeFields({ from, to }: { from?: string; to?: string }) {
   );
 }
 
+/** ¿Hay algún filtro aplicado en el reporte? (todo menos el reporte y la vista) */
+function hasReportFilters(params: Params) {
+  return Object.entries(params).some(([k, v]) => k !== "report" && k !== "view" && Boolean(v));
+}
+
 function FilterBar({ report, children }: { report: string; children: React.ReactNode }) {
   return (
     <Card className="mb-5">
@@ -352,6 +358,9 @@ async function ProfitabilityReport({ params }: { params: Params }) {
         rows={profitability}
         keyFor={(p) => p.id}
         emptyMessage="Sin proyectos que coincidan con el filtro."
+        filtered={hasReportFilters(params)}
+        clearHref={`/reports?report=${params.report ?? ""}`}
+        what="proyectos"
         maxWidth="max-w-none"
       />
     </div>
@@ -673,6 +682,9 @@ async function ReceivableReport({ params }: { params: Params }) {
         rows={receivable}
         keyFor={(inv) => inv.id}
         emptyMessage="No hay facturas que coincidan con el filtro."
+        filtered={hasReportFilters(params)}
+        clearHref={`/reports?report=${params.report ?? ""}`}
+        what="facturas"
         maxWidth="max-w-none"
       />
     </div>
@@ -746,6 +758,9 @@ async function PayableReport({ params }: { params: Params }) {
         rows={payable}
         keyFor={(e) => e.id}
         emptyMessage="No hay gastos que coincidan con el filtro."
+        filtered={hasReportFilters(params)}
+        clearHref={`/reports?report=${params.report ?? ""}`}
+        what="gastos"
         maxWidth="max-w-none"
       />
     </div>
@@ -822,6 +837,9 @@ async function SalesByClientReport({ params }: { params: Params }) {
         rows={salesByClient}
         keyFor={(c) => c.clientId}
         emptyMessage="Sin facturación que coincida con el filtro."
+        filtered={hasReportFilters(params)}
+        clearHref={`/reports?report=${params.report ?? ""}`}
+        what="ventas"
         maxWidth="max-w-3xl"
       />
       {salesByClient.length > 0 && (
@@ -899,6 +917,9 @@ async function ExpensesByCategoryReport({ params }: { params: Params }) {
         rows={expensesByCategory}
         keyFor={(c) => c.categoryId}
         emptyMessage="Sin gastos que coincidan con el filtro."
+        filtered={hasReportFilters(params)}
+        clearHref={`/reports?report=${params.report ?? ""}`}
+        what="gastos"
         maxWidth="max-w-3xl"
       />
       {expensesByCategory.length > 0 && (
@@ -1118,9 +1139,11 @@ async function CashflowByCategoryReport({ params }: { params: Params }) {
         </p>
       </div>
 
-      {report.rows.length === 0 ? (
+      {report.rows.length === 0 && hasReportFilters(params) ? (
+        <NoResults what="movimientos" clearHref="/reports?report=flujo-categoria" />
+      ) : report.rows.length === 0 ? (
         <p className="rounded-[var(--radius-lg)] border border-dashed border-brand-border p-6 text-center text-sm text-brand-muted">
-          Sin movimientos que coincidan con el filtro.
+          Sin movimientos de banco todavía.
         </p>
       ) : !monthly ? (
         <>

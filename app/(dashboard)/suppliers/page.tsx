@@ -223,6 +223,9 @@ export default async function SuppliersPage({
 
         {suppliers.length === 0 ? (
           <EmptyState
+            filtered={hasFilters}
+            clearHref="/suppliers"
+            what="proveedores"
             icon={<Truck size={28} />}
             title={hasFilters ? "No hay proveedores que coincidan con este filtro." : "Aún no tienes proveedores."}
             action={

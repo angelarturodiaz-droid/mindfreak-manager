@@ -237,6 +237,9 @@ export default async function InvoicesPage({
 
         {invoices.length === 0 ? (
           <EmptyState
+            filtered={hasFilters}
+            clearHref="/invoices"
+            what="facturas"
             icon={<Receipt size={28} />}
             title={hasFilters ? "No hay facturas que coincidan con este filtro." : "Aún no tienes facturas."}
             action={

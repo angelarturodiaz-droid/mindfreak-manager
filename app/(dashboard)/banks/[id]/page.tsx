@@ -85,7 +85,7 @@ function TransactionOrigin({ t }: { t: TransactionRow }) {
   if (t.expense_id) {
     const desc = relationRow<{ description: string }>(t.expenses)?.description;
     return (
-      <Link href={`/expenses/${t.expense_id}`} className="block max-w-[12rem] truncate text-brand-accent hover:underline">
+      <Link href={`/expenses/${t.expense_id}`} className="line-clamp-2 block max-w-[11rem] break-words text-brand-accent hover:underline">
         Gasto: {desc ?? "ver"}
       </Link>
     );
@@ -94,7 +94,7 @@ function TransactionOrigin({ t }: { t: TransactionRow }) {
     const sp = relationRow<{ expense_id: string; expenses: unknown }>(t.supplier_payments);
     const desc = sp ? relationRow<{ description: string }>(sp.expenses)?.description : null;
     return sp?.expense_id ? (
-      <Link href={`/expenses/${sp.expense_id}`} className="block max-w-[12rem] truncate text-brand-accent hover:underline">
+      <Link href={`/expenses/${sp.expense_id}`} className="line-clamp-2 block max-w-[11rem] break-words text-brand-accent hover:underline">
         Pago: {desc ?? "ver gasto"}
       </Link>
     ) : (
@@ -185,7 +185,10 @@ export default async function BankAccountDetailPage({
       accessor: (t) => {
         const Icon = t.type === "TRANSFER" ? ArrowRightLeft : t.effect >= 0 ? ArrowDownLeft : ArrowUpRight;
         return (
-          <div className="flex min-w-[12rem] items-center gap-3">
+          // Ancho limitado: las descripciones largas bajan a una segunda línea
+          // (máx. 2 líneas, el texto completo queda en el tooltip) en vez de
+          // empujar la tabla hacia la derecha.
+          <div className="flex w-[14rem] items-center gap-3 sm:w-[16rem] xl:w-[20rem]">
             <span
               className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
                 t.type === "TRANSFER"
@@ -199,7 +202,9 @@ export default async function BankAccountDetailPage({
               <Icon size={15} />
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-brand-text">{t.description ?? "—"}</span>
+              <span className="line-clamp-2 break-words text-brand-text" title={t.description ?? undefined}>
+                {t.description ?? "—"}
+              </span>
               <span className="text-xs text-brand-muted">
                 {TYPE_LABELS[t.type] ?? t.type}
                 {t.reference ? ` · Ref. ${t.reference}` : ""}
@@ -490,7 +495,10 @@ export default async function BankAccountDetailPage({
           rows={filtered}
           keyFor={(t) => t.id}
           maxWidth="max-w-none"
-          emptyMessage={typeFilter || recFilter || catFilter ? "Sin movimientos con este filtro." : "Sin movimientos todavía."}
+          emptyMessage="Sin movimientos todavía."
+          filtered={Boolean(typeFilter || recFilter || catFilter)}
+          clearHref={`/banks/${id}`}
+          what="movimientos"
         />
       </section>
     </main>

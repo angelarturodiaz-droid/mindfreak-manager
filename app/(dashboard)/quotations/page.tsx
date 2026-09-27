@@ -221,6 +221,9 @@ export default async function QuotationsPage({
 
         {quotations.length === 0 ? (
           <EmptyState
+            filtered={hasFilters}
+            clearHref="/quotations"
+            what="cotizaciones"
             icon={<FileText size={28} />}
             title={hasFilters ? "No hay cotizaciones que coincidan con este filtro." : "Aún no tienes cotizaciones."}
             action={

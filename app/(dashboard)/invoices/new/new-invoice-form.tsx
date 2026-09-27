@@ -27,11 +27,17 @@ export function NewInvoiceForm({
   paymentTerms,
   taxRates,
   defaultClientId,
+  defaultProjectId,
+  returnTo = null,
 }: {
   clients: Client[];
   /** Cliente preseleccionado (ej. al venir desde el detalle del cliente). */
   defaultClientId?: string;
   projects: Project[];
+  /** Desde un proyecto: se abre en "Desde un proyecto" con ese proyecto elegido. */
+  defaultProjectId?: string;
+  /** A dónde volver (se conserva al crear la factura). */
+  returnTo?: string | null;
   baseCurrency: string;
   paymentTerms: { id: string; name: string; credit_days: number }[];
   taxRates: TaxRate[];
@@ -40,7 +46,7 @@ export function NewInvoiceForm({
     createInvoiceAction,
     initialState,
   );
-  const [useProject, setUseProject] = useState(false);
+  const [useProject, setUseProject] = useState(Boolean(defaultProjectId));
   const [paymentTermsId, setPaymentTermsId] = useState("");
   const [issueDate, setIssueDate] = useState(todayISO);
   const [manualDueDate, setManualDueDate] = useState("");
@@ -57,6 +63,7 @@ export function NewInvoiceForm({
 
   return (
     <form action={formAction} className="max-w-md space-y-4">
+      {returnTo && <input type="hidden" name="return_to" value={returnTo} />}
       <div className="flex gap-4 text-sm">
         <label className="flex items-center gap-1">
           <input
@@ -88,7 +95,7 @@ export function NewInvoiceForm({
           ))}
         </Select>
       ) : (
-        <Select label="Proyecto" name="project_id" required={useProject} defaultValue="">
+        <Select label="Proyecto" name="project_id" required={useProject} defaultValue={defaultProjectId ?? ""}>
           <option value="" disabled>
             Selecciona un proyecto…
           </option>
@@ -208,7 +215,7 @@ export function NewInvoiceForm({
         <Button type="submit" loading={pending}>
           Crear factura
         </Button>
-        <Link href="/invoices">
+        <Link href={returnTo ?? "/invoices"}>
           <Button type="button" variant="ghost">
             Cancelar
           </Button>

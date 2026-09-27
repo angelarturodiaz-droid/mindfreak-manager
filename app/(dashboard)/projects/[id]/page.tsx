@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { withReturnTo } from "@/lib/utils/return-to";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
@@ -321,7 +322,7 @@ export default async function ProjectDetailPage({
     {
       header: "Número",
       accessor: (q) => (
-        <Link href={`/quotations/${q.id}`} className="font-medium text-brand-accent hover:underline">
+        <Link href={withReturnTo(`/quotations/${q.id}`, `/projects/${project.id}?tab=ventas`)} className="font-medium text-brand-accent hover:underline">
           {q.number}
         </Link>
       ),
@@ -339,7 +340,7 @@ export default async function ProjectDetailPage({
     {
       header: "Número",
       accessor: (inv) => (
-        <Link href={`/invoices/${inv.id}`} className="font-medium text-brand-accent hover:underline">
+        <Link href={withReturnTo(`/invoices/${inv.id}`, `/projects/${project.id}?tab=ventas`)} className="font-medium text-brand-accent hover:underline">
           {inv.number}
         </Link>
       ),
@@ -367,7 +368,7 @@ export default async function ProjectDetailPage({
     {
       header: "Factura",
       accessor: (p) => (
-        <Link href={`/invoices/${p.invoice_id}`} className="text-brand-accent hover:underline">
+        <Link href={withReturnTo(`/invoices/${p.invoice_id}`, `/projects/${project.id}?tab=ventas`)} className="text-brand-accent hover:underline">
           {relationRow<{ number: string }>(p.invoices)?.number ?? "—"}
         </Link>
       ),
@@ -385,7 +386,7 @@ export default async function ProjectDetailPage({
     {
       header: "Descripción",
       accessor: (e) => (
-        <Link href={`/expenses/${e.id}`} className="text-brand-accent hover:underline">
+        <Link href={withReturnTo(`/expenses/${e.id}`, `/projects/${project.id}?tab=compras`)} className="text-brand-accent hover:underline">
           {e.description}
         </Link>
       ),
@@ -403,7 +404,7 @@ export default async function ProjectDetailPage({
     {
       header: "Proveedor",
       accessor: (s) => (
-        <Link href={`/suppliers/${s.supplierId}`} className="text-brand-accent hover:underline">
+        <Link href={withReturnTo(`/suppliers/${s.supplierId}`, `/projects/${project.id}?tab=compras`)} className="text-brand-accent hover:underline">
           {s.name}
         </Link>
       ),
@@ -421,7 +422,7 @@ export default async function ProjectDetailPage({
     {
       header: "Gasto",
       accessor: (p) => (
-        <Link href={`/expenses/${p.expense_id}`} className="text-brand-accent hover:underline">
+        <Link href={withReturnTo(`/expenses/${p.expense_id}`, `/projects/${project.id}?tab=compras`)} className="text-brand-accent hover:underline">
           Ver gasto
         </Link>
       ),
@@ -501,7 +502,7 @@ export default async function ProjectDetailPage({
                 <Building2 size={15} className="text-brand-muted" aria-hidden />
                 <dt className="sr-only">Cliente</dt>
                 <dd>
-                  <Link href={`/clients/${project.client_id}`} className="text-brand-text hover:text-brand-accent">
+                  <Link href={withReturnTo(`/clients/${project.client_id}`, `/projects/${project.id}`)} className="text-brand-text hover:text-brand-accent">
                     {clientName ?? "Sin cliente"}
                   </Link>
                 </dd>
@@ -539,7 +540,7 @@ export default async function ProjectDetailPage({
                   <FileText size={15} className="text-brand-muted" aria-hidden />
                   <dt className="sr-only">Cotización de origen</dt>
                   <dd>
-                    <Link href={`/quotations/${project.quotation_id}`} className="text-brand-accent hover:underline">
+                    <Link href={withReturnTo(`/quotations/${project.quotation_id}`, `/projects/${project.id}`)} className="text-brand-accent hover:underline">
                       Desde {quotationNumber}
                     </Link>
                   </dd>
@@ -814,7 +815,7 @@ export default async function ProjectDetailPage({
               title="Facturas"
               count={invoices.length}
               action={
-                <Link href="/invoices/new">
+                <Link href={`/invoices/new?project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}?tab=ventas`)}`}>
                   <Button variant="outline" size="sm" icon={<Plus size={14} />}>
                     Nueva factura
                   </Button>

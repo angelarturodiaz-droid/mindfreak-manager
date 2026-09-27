@@ -337,6 +337,9 @@ export default async function ProjectsPage({
 
         {projects.length === 0 ? (
           <EmptyState
+            filtered={Boolean(params.status || params.client)}
+            clearHref="/projects"
+            what="proyectos"
             icon={<CalendarDays size={28} />}
             title={
               params.status || params.client
