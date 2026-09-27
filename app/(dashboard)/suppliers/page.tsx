@@ -198,7 +198,7 @@ export default async function SuppliersPage({
             aria-label="Buscar proveedor por nombre"
             className="w-64"
           />
-          <AutoSubmitSelect name="status" defaultValue={status ?? ""} className="w-44" aria-label="Filtrar por estado">
+          <AutoSubmitSelect resetOthers={hasFilters && suppliers.length === 0} name="status" defaultValue={status ?? ""} className="w-44" aria-label="Filtrar por estado">
             <option value="">Activos e inactivos</option>
             <option value="active">Solo activos</option>
             <option value="inactive">Solo inactivos ({stats.inactive})</option>

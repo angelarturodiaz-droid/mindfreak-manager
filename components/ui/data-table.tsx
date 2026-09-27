@@ -22,6 +22,7 @@ export function DataTable<T>({
   filtered = false,
   clearHref,
   what,
+  noResultsHint,
 }: {
   columns: Column<T>[];
   rows: T[];
@@ -33,9 +34,11 @@ export function DataTable<T>({
   clearHref?: string;
   /** Qué se lista, en plural, para el aviso (ej. "facturas"). */
   what?: string;
+  /** Texto de ayuda del aviso (por defecto: elegir otra opción o limpiar). */
+  noResultsHint?: string;
 }) {
   if (rows.length === 0) {
-    if (filtered) return <NoResults what={what} clearHref={clearHref} />;
+    if (filtered) return <NoResults what={what} clearHref={clearHref} hint={noResultsHint} />;
     return <p className="py-6 text-center text-sm text-brand-muted">{emptyMessage}</p>;
   }
 

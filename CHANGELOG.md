@@ -1,5 +1,14 @@
 # CHANGELOG — Mindfreak Manager
 
+## Filtros: salir de un "sin resultados" sin limpiar (2026-09-27)
+
+- Con la lista vacía por filtros, elegir otra opción (botones o selects
+  con `AutoSubmitSelect resetOthers`) busca solo por esa opción, en
+  Facturas, Cotizaciones, Proyectos, Clientes, Proveedores, Productos y
+  servicios, Bancos (lista y detalle).
+- Detalle de cuenta: conteos de los botones según los otros filtros.
+- Aviso con texto de ayuda propio en Reportes y Auditoría.
+
 ## Aviso de filtros sin resultados, volver al proyecto y movimientos compactos (2026-09-27)
 
 - `NoResults` (aviso "No se encontraron … con los filtros aplicados" +

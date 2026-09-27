@@ -94,15 +94,18 @@ export default async function ClientsPage({
   ]);
   const aggregates = await getClientListAggregates(clients.map((c) => c.id));
 
+  const hasFilters = Boolean(stage || search || status);
+  // Filtro sin resultados: el siguiente filtro que se elija empieza de cero.
+  const noResults = hasFilters && clients.length === 0;
   const hrefWith = (next: { stage?: string }) => {
     const qs = new URLSearchParams();
     if (next.stage) qs.set("stage", next.stage);
-    if (search) qs.set("q", search);
-    if (status) qs.set("status", status);
+    // Sin resultados: elegir otra etapa busca solo por esa.
+    if (search && !noResults) qs.set("q", search);
+    if (status && !noResults) qs.set("status", status);
     const s = qs.toString();
     return s ? `/clients?${s}` : "/clients";
   };
-  const hasFilters = Boolean(stage || search || status);
 
   const columns: Column<ClientRow>[] = [
     {
@@ -321,6 +324,7 @@ export default async function ClientsPage({
               className="w-60"
             />
             <AutoSubmitSelect
+              resetOthers={noResults}
               name="status"
               defaultValue={status ?? ""}
               className="w-44"

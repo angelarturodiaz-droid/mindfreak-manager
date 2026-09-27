@@ -28,7 +28,8 @@ export function NoResults({
       <div>
         <p className="text-sm font-semibold text-brand-text">No se encontraron {what} con los filtros aplicados.</p>
         <p className="mt-1 text-sm text-brand-muted">
-          {hint ?? "Revisa los filtros (fechas, estado, cliente…) o quítalos para ver todo."}
+          {hint ??
+            "Elige otra opción en los filtros de arriba (se buscará solo por esa) o quítalos para ver todo."}
         </p>
       </div>
       {clearHref && (

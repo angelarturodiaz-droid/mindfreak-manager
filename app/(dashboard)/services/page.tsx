@@ -57,6 +57,8 @@ export default async function ServicesPage({
     .filter((m): m is number => m !== null);
   const avgMargin = margins.length ? margins.reduce((a, b) => a + b, 0) / margins.length : null;
   const hasFilters = Boolean(type || params.category || search);
+  // Filtro sin resultados: el siguiente filtro que se elija empieza de cero.
+  const noResults = hasFilters && filtered.length === 0;
 
   const columns: Column<ServiceRow>[] = [
     {
@@ -175,7 +177,8 @@ export default async function ServicesPage({
                 label: t ? (t === "SERVICIO" ? "Servicios" : "Productos") : "Todos",
                 count: t ? services.filter((s) => s.type === t).length : services.length,
                 active: type === t,
-                href: listHref("/services", { type: t, category: params.category, q: params.q }),
+                // Sin resultados: elegir otro tipo busca solo por ese.
+                href: listHref("/services", noResults ? { type: t } : { type: t, category: params.category, q: params.q }),
               }))}
             />
             <form action="/services" method="get" className="flex flex-wrap items-center gap-2">
@@ -190,6 +193,7 @@ export default async function ServicesPage({
                 className="w-44"
               />
               <AutoSubmitSelect
+                resetOthers={noResults}
                 name="category"
                 defaultValue={params.category ?? ""}
                 className="w-44"

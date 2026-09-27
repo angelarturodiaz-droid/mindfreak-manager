@@ -136,6 +136,9 @@ export default async function InvoicesPage({
     },
   ];
 
+  // Filtro sin resultados: el siguiente filtro que se elija empieza de cero.
+  const noResults = hasFilters && invoices.length === 0;
+
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -193,12 +196,14 @@ export default async function InvoicesPage({
               label: s ? STATUS_LABELS[s] ?? s : "Todas",
               count: s ? stats.byStatus[s] ?? 0 : stats.total,
               active: (params.status ?? undefined) === s,
-              href: listHref("/invoices", { status: s, client: params.client }),
+              // Sin resultados: elegir otro estado busca solo por ese (no arrastra el cliente).
+              href: listHref("/invoices", { status: s, client: noResults ? undefined : params.client }),
             }))}
           />
           <form action="/invoices" method="get" className="flex items-center gap-2">
             {params.status && <input type="hidden" name="status" value={params.status} />}
             <AutoSubmitSelect
+              resetOthers={noResults}
               name="client"
               defaultValue={params.client ?? ""}
               className="w-60"

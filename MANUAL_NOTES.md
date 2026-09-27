@@ -334,3 +334,12 @@ lo conservan.
 La columna Movimiento tiene ancho fijo: las descripciones largas bajan a
 una segunda línea (máximo 2; el texto completo al pasar el mouse) en vez
 de alargar la tabla hacia la derecha.
+
+### Filtros después de un "sin resultados" (2026-09-27)
+Con el aviso de "No se encontraron…" en pantalla, elegir otra opción en
+cualquier filtro busca solo por esa opción (no arrastra los filtros que
+dejaron la lista vacía); no hace falta pulsar Limpiar. Con resultados, los
+filtros se siguen combinando. En el detalle de cuenta de Bancos, los
+conteos de los botones consideran los demás filtros activos. En Reportes y
+Auditoría (que tienen botón Aplicar/Filtrar) se cambian los campos y se
+pulsa el botón.

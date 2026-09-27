@@ -149,6 +149,7 @@ export default async function AuditPage({
         emptyMessage="Sin registros todavía."
         filtered={Boolean(params.entity_type || params.action)}
         clearHref="/audit"
+        noResultsHint="Cambia la entidad o la acción y pulsa Filtrar, o limpia los filtros para ver todo."
         maxWidth="max-w-none"
       />
     </main>

@@ -79,10 +79,13 @@ export default async function ProjectsPage({
       getProjectStats(params.client),
     ]);
 
+  // Filtro sin resultados: el siguiente filtro que se elija empieza de cero.
+  const noResults = Boolean(params.status || params.client) && projects.length === 0;
   const statusHref = (status?: string) => {
     const qs = new URLSearchParams();
     if (status) qs.set("status", status);
-    if (params.client) qs.set("client", params.client);
+    // Sin resultados: elegir otro estado busca solo por ese (no arrastra el cliente).
+    if (params.client && !noResults) qs.set("client", params.client);
     const s = qs.toString();
     return s ? `/projects?${s}` : "/projects";
   };
@@ -290,6 +293,7 @@ export default async function ProjectsPage({
           <form action="/projects" method="get" className="flex items-center gap-2">
             {params.status && <input type="hidden" name="status" value={params.status} />}
             <AutoSubmitSelect
+              resetOthers={noResults}
               name="client"
               defaultValue={params.client ?? ""}
               className="w-60"

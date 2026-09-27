@@ -147,6 +147,8 @@ export default async function BanksPage({
     (a) => (!kindFilter || a.account_kind === kindFilter) && (!currencyFilter || a.currency === currencyFilter),
   );
   const cards = accounts.filter((a) => a.type === "CREDIT_CARD");
+  // Filtro sin resultados: el siguiente filtro que se elija empieza de cero.
+  const noResults = banks.length === 0 && Boolean(kindFilter || currencyFilter);
   const activeBanks = allBanks.filter((a) => a.is_active);
   const activeCards = cards.filter((a) => a.is_active);
 
@@ -256,26 +258,26 @@ export default async function BanksPage({
               <FilterPills
                 label="Filtrar por tipo de cuenta"
                 items={[
-                  { key: "all", label: "Todas", count: allBanks.length, active: !kindFilter, href: listHref("/banks", { currency: currencyFilter }) },
+                  { key: "all", label: "Todas", count: allBanks.length, active: !kindFilter, href: listHref("/banks", { currency: noResults ? undefined : currencyFilter }) },
                   ...(["SAVINGS", "CHECKING"] as const).map((k) => ({
                     key: k,
                     label: ACCOUNT_KIND_LABELS[k],
                     count: allBanks.filter((a) => a.account_kind === k).length,
                     active: kindFilter === k,
-                    href: listHref("/banks", { kind: k, currency: currencyFilter }),
+                    href: listHref("/banks", { kind: k, currency: noResults ? undefined : currencyFilter }),
                   })),
                 ]}
               />
               <FilterPills
                 label="Filtrar por moneda"
                 items={[
-                  { key: "all", label: "Todas las monedas", active: !currencyFilter, href: listHref("/banks", { kind: kindFilter }) },
+                  { key: "all", label: "Todas las monedas", active: !currencyFilter, href: listHref("/banks", { kind: noResults ? undefined : kindFilter }) },
                   ...(["DOP", "USD"] as const).map((c) => ({
                     key: c,
                     label: c,
                     count: allBanks.filter((a) => a.currency === c).length,
                     active: currencyFilter === c,
-                    href: listHref("/banks", { kind: kindFilter, currency: c }),
+                    href: listHref("/banks", { kind: noResults ? undefined : kindFilter, currency: c }),
                   })),
                 ]}
               />

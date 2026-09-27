@@ -359,6 +359,7 @@ async function ProfitabilityReport({ params }: { params: Params }) {
         keyFor={(p) => p.id}
         emptyMessage="Sin proyectos que coincidan con el filtro."
         filtered={hasReportFilters(params)}
+        noResultsHint="Cambia los filtros de arriba y pulsa Aplicar filtros, o límpialos para ver todo."
         clearHref={`/reports?report=${params.report ?? ""}`}
         what="proyectos"
         maxWidth="max-w-none"
@@ -683,6 +684,7 @@ async function ReceivableReport({ params }: { params: Params }) {
         keyFor={(inv) => inv.id}
         emptyMessage="No hay facturas que coincidan con el filtro."
         filtered={hasReportFilters(params)}
+        noResultsHint="Cambia los filtros de arriba y pulsa Aplicar filtros, o límpialos para ver todo."
         clearHref={`/reports?report=${params.report ?? ""}`}
         what="facturas"
         maxWidth="max-w-none"
@@ -759,6 +761,7 @@ async function PayableReport({ params }: { params: Params }) {
         keyFor={(e) => e.id}
         emptyMessage="No hay gastos que coincidan con el filtro."
         filtered={hasReportFilters(params)}
+        noResultsHint="Cambia los filtros de arriba y pulsa Aplicar filtros, o límpialos para ver todo."
         clearHref={`/reports?report=${params.report ?? ""}`}
         what="gastos"
         maxWidth="max-w-none"
@@ -838,6 +841,7 @@ async function SalesByClientReport({ params }: { params: Params }) {
         keyFor={(c) => c.clientId}
         emptyMessage="Sin facturación que coincida con el filtro."
         filtered={hasReportFilters(params)}
+        noResultsHint="Cambia los filtros de arriba y pulsa Aplicar filtros, o límpialos para ver todo."
         clearHref={`/reports?report=${params.report ?? ""}`}
         what="ventas"
         maxWidth="max-w-3xl"
@@ -918,6 +922,7 @@ async function ExpensesByCategoryReport({ params }: { params: Params }) {
         keyFor={(c) => c.categoryId}
         emptyMessage="Sin gastos que coincidan con el filtro."
         filtered={hasReportFilters(params)}
+        noResultsHint="Cambia los filtros de arriba y pulsa Aplicar filtros, o límpialos para ver todo."
         clearHref={`/reports?report=${params.report ?? ""}`}
         what="gastos"
         maxWidth="max-w-3xl"
@@ -1140,7 +1145,11 @@ async function CashflowByCategoryReport({ params }: { params: Params }) {
       </div>
 
       {report.rows.length === 0 && hasReportFilters(params) ? (
-        <NoResults what="movimientos" clearHref="/reports?report=flujo-categoria" />
+        <NoResults
+          what="movimientos"
+          clearHref="/reports?report=flujo-categoria"
+          hint="Cambia los filtros de arriba y pulsa Aplicar filtros, o límpialos para ver todo."
+        />
       ) : report.rows.length === 0 ? (
         <p className="rounded-[var(--radius-lg)] border border-dashed border-brand-border p-6 text-center text-sm text-brand-muted">
           Sin movimientos de banco todavía.

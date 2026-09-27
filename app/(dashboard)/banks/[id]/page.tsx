@@ -171,6 +171,16 @@ export default async function BankAccountDetailPage({
   );
 
   const uncategorized = rows.filter((t) => !t.category_id).length;
+  // Filtro sin resultados: el siguiente filtro que se elija empieza de cero
+  // (no arrastra los otros filtros, que son los que dejaban la lista vacía).
+  const noResults = filtered.length === 0 && Boolean(typeFilter || recFilter || catFilter);
+  const keep = <T,>(v: T) => (noResults ? undefined : v);
+  // Conteos de cada botón según los otros filtros activos (así un 0 avisa antes de hacer clic).
+  const matchRec = (t: TransactionRow) => !recFilter || (recFilter === "si" ? t.reconciled : !t.reconciled);
+  const matchCat = (t: TransactionRow) => !catFilter || (catFilter === "none" ? !t.category_id : t.category_id === catFilter);
+  const matchType = (t: TransactionRow) => !typeFilter || t.type === typeFilter;
+  const typeBase = noResults ? rows : rows.filter((t) => matchRec(t) && matchCat(t));
+  const recBase = noResults ? rows : rows.filter((t) => matchType(t) && matchCat(t));
   const month = todayISO().slice(0, 7);
   const monthRows = rows.filter((t) => t.transaction_date?.startsWith(month));
   const inMonth = monthRows.filter((t) => t.effect > 0).reduce((a, t) => a + t.effect, 0);
@@ -451,35 +461,35 @@ export default async function BankAccountDetailPage({
             items={TYPE_FILTERS.map((f) => ({
               key: f.key ?? "all",
               label: f.label,
-              count: f.key ? rows.filter((t) => t.type === f.key).length : rows.length,
+              count: f.key ? typeBase.filter((t) => t.type === f.key).length : typeBase.length,
               active: typeFilter === f.key,
-              href: listHref(`/banks/${id}`, { type: f.key, rec: recFilter, cat: catFilter }),
+              href: listHref(`/banks/${id}`, { type: f.key, rec: keep(recFilter), cat: keep(catFilter) }),
             }))}
           />
           <FilterPills
             label="Filtrar por conciliación"
             items={[
-              { key: "all", label: "Todos", active: !recFilter, href: listHref(`/banks/${id}`, { type: typeFilter, cat: catFilter }) },
+              { key: "all", label: "Todos", active: !recFilter, href: listHref(`/banks/${id}`, { type: keep(typeFilter), cat: keep(catFilter) }) },
               {
                 key: "no",
                 label: "Sin conciliar",
-                count: unreconciled,
+                count: recBase.filter((t) => !t.reconciled).length,
                 active: recFilter === "no",
-                href: listHref(`/banks/${id}`, { type: typeFilter, rec: "no", cat: catFilter }),
+                href: listHref(`/banks/${id}`, { type: keep(typeFilter), rec: "no", cat: keep(catFilter) }),
               },
               {
                 key: "si",
                 label: "Conciliados",
-                count: rows.length - unreconciled,
+                count: recBase.filter((t) => t.reconciled).length,
                 active: recFilter === "si",
-                href: listHref(`/banks/${id}`, { type: typeFilter, rec: "si", cat: catFilter }),
+                href: listHref(`/banks/${id}`, { type: keep(typeFilter), rec: "si", cat: keep(catFilter) }),
               },
             ]}
           />
           <form action={`/banks/${id}`} method="get">
             {typeFilter && <input type="hidden" name="type" value={typeFilter} />}
             {recFilter && <input type="hidden" name="rec" value={recFilter} />}
-            <AutoSubmitSelect name="cat" defaultValue={catFilter ?? ""} className="w-52" aria-label="Filtrar por categoría">
+            <AutoSubmitSelect resetOthers={noResults} name="cat" defaultValue={catFilter ?? ""} className="w-52" aria-label="Filtrar por categoría">
               <option value="">Todas las categorías</option>
               <option value="none">Sin categoría ({rows.filter((t) => !t.category_id).length})</option>
               {categories.map((c) => (
