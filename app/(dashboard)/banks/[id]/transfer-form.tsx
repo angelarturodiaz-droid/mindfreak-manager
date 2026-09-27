@@ -108,7 +108,11 @@ export function TransferForm({
               <strong>{fmt(received, to.currency)}</strong> en {to.name}.
             </>
           ) : (
-            <>Monedas distintas ({fromCurrency} → {to.currency}): indica el monto y la tasa del banco.</>
+            <>
+              Esta transferencia cambia de moneda ({fromCurrency} → {to.currency}). Escribe el monto y la
+              tasa que te da el banco (ej. 59.50 {baseCurrency} por 1 {foreign}) y aquí verás cuánto entra en{" "}
+              {to.name}.
+            </>
           )}
         </p>
       )}

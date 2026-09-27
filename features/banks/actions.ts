@@ -241,10 +241,16 @@ export async function createTransferAction(
       return { error: "La cuenta origen y destino no pueden ser la misma." };
     }
     if (error.message.includes("exchange_rate_required")) {
-      return { error: "Las cuentas tienen monedas distintas: indica la tasa de cambio." };
+      return {
+        error:
+          "Falta la tasa de cambio. Esta transferencia es entre cuentas de monedas distintas (pesos y dólares): escribe la tasa del banco, por ejemplo 59.50 pesos por 1 dólar, y el sistema calcula cuánto entra en la otra cuenta.",
+      };
     }
     if (error.message.includes("unsupported_currencies")) {
-      return { error: "Una de las dos cuentas debe estar en la moneda base de la empresa." };
+      return {
+        error:
+          "No se puede transferir directamente entre dos monedas extranjeras. Una de las dos cuentas tiene que estar en pesos (la moneda base de la empresa).",
+      };
     }
     return { error: error.message };
   }

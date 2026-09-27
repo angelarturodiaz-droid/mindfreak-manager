@@ -47,7 +47,7 @@ export const manualTransactionSchema = z
     reference: z.string().trim().max(100).optional().or(z.literal("")),
     // Solo en cuentas en otra moneda (ej. USD): unidades de moneda base por
     // 1 unidad de la moneda de la cuenta, para convertir en los reportes.
-    exchange_rate: z.coerce.number().positive("La tasa debe ser mayor a 0").optional(),
+    exchange_rate: z.coerce.number().positive("La tasa de cambio debe ser mayor a 0 (ej. 59.50).").optional(),
   })
   // Se permite guardar "Sin categoría" (queda en la alerta para clasificar
   // después), pero entonces la descripción es obligatoria.
@@ -63,5 +63,5 @@ export const transferSchema = z.object({
   description: z.string().trim().optional().or(z.literal("")),
   // Solo si las cuentas tienen monedas distintas: unidades de moneda base
   // por 1 unidad de la otra moneda (ej. 59.50 RD$ por US$).
-  exchange_rate: z.coerce.number().positive("La tasa debe ser mayor a 0").optional(),
+  exchange_rate: z.coerce.number().positive("La tasa de cambio debe ser mayor a 0 (ej. 59.50).").optional(),
 });

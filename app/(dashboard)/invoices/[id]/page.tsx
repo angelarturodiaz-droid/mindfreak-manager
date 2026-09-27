@@ -333,8 +333,10 @@ export default async function InvoiceDetailPage({
         {flowIndex >= 0 ? (
           <ol className="grid grid-cols-2 gap-2 border-t border-brand-border pt-5 sm:grid-cols-4" aria-label="Avance de la factura">
             {FLOW.map((label, i) => {
-              const done = i < flowIndex;
-              const current = i === flowIndex;
+              // "Pagada" es el último paso: cuando se llega a él ya está completo (verde), no en curso.
+              const isPaid = invoice.status === "PAID";
+              const done = i < flowIndex || (isPaid && i === flowIndex);
+              const current = i === flowIndex && !isPaid;
               const overdue = current && invoice.status === "OVERDUE";
               return (
                 <li
@@ -343,7 +345,9 @@ export default async function InvoiceDetailPage({
                   className={`flex items-center gap-2.5 rounded-[var(--radius-md)] border px-3 py-2.5 ${
                     overdue
                       ? "border-brand-danger/40 bg-brand-danger-bg"
-                      : current
+                      : isPaid && i === flowIndex
+                        ? "border-brand-success/40 bg-brand-success-bg"
+                        : current
                         ? "border-brand-accent/40 bg-brand-accent-light"
                         : "border-brand-border bg-brand-surface"
                   }`}
@@ -361,7 +365,7 @@ export default async function InvoiceDetailPage({
                   >
                     {done ? <Check size={14} /> : i + 1}
                   </span>
-                  <span className={`text-sm ${current ? "font-semibold text-brand-text" : done ? "text-brand-text" : "text-brand-muted"}`}>
+                  <span className={`text-sm ${current || (isPaid && i === flowIndex) ? "font-semibold text-brand-text" : done ? "text-brand-text" : "text-brand-muted"}`}>
                     {overdue ? "Emitida · vencida" : label}
                   </span>
                 </li>
