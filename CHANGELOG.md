@@ -1,5 +1,29 @@
 # CHANGELOG — Mindfreak Manager
 
+## Reglas de cuentas, tarjetas con saldo a favor y proveedores con catálogo (2026-09-27)
+
+- Migración `063_bank_account_rules.sql` (aplicada): trigger
+  `check_bank_transaction_funds` (BEFORE INSERT en bank_transactions)
+  valida fondos: ahorro y corriente sin sobregiro bloquean; corriente con
+  sobregiro exige `overdraft_confirmed`; tarjetas validan contra crédito
+  disponible. Columnas `bank_accounts.allow_overdraft`,
+  `favor_increases_limit`, `bank_transactions.overdraft_confirmed`.
+  `create_bank_transfer`, `register_supplier_payment` y
+  `create_card_expense` con `p_confirm_overdraft` (versiones anteriores
+  reemplazadas, mismos permisos). Probada en base local (13 casos).
+- UI: aviso Continuar/Cancelar de sobregiro en transferencia, movimiento
+  manual, pago a proveedor y gasto pagado; "Permitir sobregiro" (solo
+  corriente); opción de saldo a favor sobre el límite en tarjetas;
+  tarjetas muestran Deuda, Saldo a favor y Disponible; aviso de excedente
+  al pagar una tarjeta.
+- Migración `064_supplier_service_types.sql` (aplicada): catálogo de tipos
+  de servicio por categoría, `suppliers.category_id` / `service_type_id`,
+  datos existentes enlazados. Configuración → Tipos de servicio (con CSV).
+  Proveedor con selects; categoría sugerida al crear un gasto.
+- Factura pagada: el último paso del avance se ve en verde. Mensajes de
+  tasa de cambio más claros en transferencias.
+- Manual (/help, MANUAL_NOTES) actualizado.
+
 ## Categoría en cobros y "Marcar como enviada al cliente" (2026-09-27)
 
 - Migración `062_payment_category_invoice_sent.sql` (aplicada):

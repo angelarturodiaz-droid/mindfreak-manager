@@ -221,3 +221,60 @@ desmarcar. Permiso banks.reconcile.
 - Después se puede cambiar en Bancos con el selector de la fila.
 - Pagos a proveedores: sin campo propio; heredan la categoría del gasto
   (elegirla en el gasto antes de pagar, o cambiarla luego en Bancos).
+
+## Módulo: Bancos — Reglas por tipo de cuenta (2026-09-27)
+
+Solo hay tres tipos: Cuenta de ahorro, Cuenta corriente y Tarjeta de
+crédito (no se maneja Caja/Efectivo). La validación la hace la base de
+datos (trigger de la migración 063), así que aplica a cualquier pantalla:
+transferencias, pagos a proveedor, gastos pagados al crearlos y
+movimientos manuales. Las entradas de dinero nunca se bloquean.
+
+- **Ahorro**: nunca queda en negativo. Salida mayor al saldo → se bloquea:
+  "Fondos insuficientes. La cuenta de ahorro «X» tiene un saldo disponible
+  de RD$10,000.00 y la operación requiere RD$15,000.00. Las cuentas de
+  ahorro no permiten sobregiros." No se registra nada.
+- **Corriente sin sobregiro** (por defecto): igual que ahorro.
+- **Corriente con sobregiro autorizado** (Editar cuenta → Permitir
+  sobregiro): aviso "Fondos insuficientes… generará un sobregiro de
+  RD$5,000.00. ¿Desea continuar?" con Cancelar / Continuar. Solo con
+  Continuar se registra; la cuenta queda en negativo ("En sobregiro") y la
+  confirmación queda guardada en el movimiento.
+- Cuentas viejas sin tipo: se tratan como corriente sin sobregiro hasta que
+  se les asigne el tipo.
+- En una transferencia, si la salida no pasa la validación no se registra
+  ninguna de las dos partes.
+
+### Tarjetas de crédito
+- Se muestran Deuda, Saldo a favor y Disponible. Nunca "deuda negativa".
+- Pago mayor que la deuda: la deuda llega a 0 y el excedente queda como
+  saldo a favor. El formulario avisa antes: "La tarjeta no tiene
+  suficiente deuda para aplicar el pago completo. El excedente de RD$X se
+  registrará como saldo a favor."
+- Pago a tarjeta sin deuda (pago anticipado): permitido, todo es saldo a
+  favor. Ej.: pasar US$1,000 a la tarjeta en dólares → Saldo a favor
+  US$1,000.
+- Compras: consumen primero el saldo a favor; el excedente es deuda.
+- Disponible = límite − deuda. Si el banco permite que el saldo a favor
+  aumente el poder de compra, marcar en la tarjeta "El saldo a favor
+  aumenta el crédito disponible por encima del límite": disponible =
+  límite − deuda + saldo a favor. Por defecto apagado.
+- Compra mayor al disponible → "Crédito insuficiente…". Sin límite
+  configurado no se valida.
+
+## Módulo: Proveedores — Categoría y Tipo de servicio (2026-09-27)
+
+- Categoría del proveedor: de la lista de Configuración → Categorías.
+- Tipo de servicio: catálogo en Configuración → Tipos de servicio; cada
+  tipo pertenece a una categoría (Audiovisuales → Alquiler de sonido). En
+  el formulario del proveedor solo aparecen los tipos de la categoría
+  elegida.
+- Si no existe: agregarlo en Configuración → Tipos de servicio (uno por
+  uno o CSV con columnas categoria, tipo_servicio; si la categoría no
+  existe, se crea).
+- Los textos que ya tenían los proveedores se enlazaron con el catálogo
+  (se crearon "Audio visuales", "Renta de Sonido", etc.).
+- Nuevo gasto: al elegir el proveedor, la categoría se llena sola con la
+  del proveedor (se puede cambiar). El pago en Bancos hereda esa categoría.
+- Importación de proveedores por CSV: category / service_type se enlazan o
+  se crean en los catálogos.

@@ -173,10 +173,12 @@ const SECTIONS: Section[] = [
         <Bullets
           items={[
             "Igual que Clientes, cada proveedor puede tener varios contactos.",
-            "El tipo de servicio ayuda a clasificar gastos y pagos por categoría de proveedor.",
+            <><strong>Categoría y Tipo de servicio</strong>: al crear o editar un proveedor eliges su <strong>Categoría</strong> de la lista de Configuración → Categorías y luego su <strong>Tipo de servicio</strong>, que solo muestra los tipos de esa categoría. Ejemplo: <em>Sonus Eventos</em> → Categoría <em>Audiovisuales</em> → Tipo de servicio <em>Alquiler de sonido</em>.</>,
+            <>Si el tipo de servicio no está en la lista, agrégalo en <strong>Configuración → Tipos de servicio</strong> (uno por uno o en lote con un CSV) y recarga la página del proveedor.</>,
+            <>Al registrar un <strong>gasto nuevo</strong> y elegir el proveedor, la categoría del gasto se llena sola con la del proveedor (puedes cambiarla antes de guardar). Así el pago en Bancos también sale con esa categoría.</>,
             "El listado muestra, por proveedor, cuánto se le ha gastado y cuánto se le debe (por pagar), con búsqueda y filtro de activos/inactivos.",
             <>El detalle del proveedor tiene sus números (total gastado, pagado, por pagar y proyectos) y pestañas con sus <strong>Gastos</strong>, <strong>Pagos</strong> y <strong>Documentos</strong>.</>,
-            "Importación en lote por CSV disponible, igual que en Clientes.",
+            "Importación en lote por CSV disponible, igual que en Clientes. Las columnas category y service_type se enlazan con los catálogos de Configuración y, si no existen, se crean.",
           ]}
         />
       </>
@@ -320,7 +322,7 @@ const SECTIONS: Section[] = [
             "Una factura vencida es la que pasó su fecha de vencimiento sin liquidarse — aparece en el Dashboard y en el reporte de Vencimientos.",
             "Se puede compartir un enlace de la factura sin dar acceso al sistema completo (botón de compartir en el detalle).",
             "El listado resume lo que hay por cobrar, lo vencido, lo que vence en 7 días y los borradores, y marca cada factura con su situación (Vence en 3 días / Vencida hace 2 días).",
-            <>En el detalle, los pasos <em>Borrador → Emitida → Pago parcial → Pagada</em> muestran el avance (en rojo si está vencida). En la columna derecha están el resumen con la barra de lo pagado, NCF/vencimiento (en borrador) y la <strong>Gestión de cobro</strong> con su historial.</>,
+            <>En el detalle, los pasos <em>Borrador → Emitida → Pago parcial → Pagada</em> muestran el avance (en rojo si está vencida; cuando se termina de pagar, el último paso <em>Pagada</em> se marca en verde). En la columna derecha están el resumen con la barra de lo pagado, NCF/vencimiento (en borrador) y la <strong>Gestión de cobro</strong> con su historial.</>,
           ]}
         />
       </>
@@ -379,7 +381,9 @@ const SECTIONS: Section[] = [
         <Bullets
           items={[
             "Se organizan por categoría (Configuración → Categorías). Es la misma lista que usan los movimientos de Bancos, así que al pagar un gasto su movimiento bancario hereda esa misma categoría.",
+            "Al elegir el proveedor en un gasto nuevo, la categoría se sugiere sola con la categoría del proveedor.",
             "Un gasto con proveedor se liquida registrando un pago a proveedor contra él.",
+            <>Si pagas desde una cuenta sin fondos suficientes, el sistema no deja registrar el pago (ver <strong>Bancos → Reglas de cada tipo de cuenta</strong>). Si la cuenta es corriente con sobregiro autorizado, te pide confirmar.</>,
             "El listado resume lo que hay por pagar y lo gastado en el mes y el año; el detalle muestra la barra de lo pagado y sus recibos y comprobantes.",
           ]}
         />
@@ -439,11 +443,40 @@ const SECTIONS: Section[] = [
           ]}
         />
 
+        <p className="text-sm font-medium text-brand-text">Reglas de cada tipo de cuenta (fondos, sobregiro y tarjetas):</p>
+        <p className="text-sm text-brand-text">
+          El sistema maneja tres tipos: <strong>Cuenta de ahorro</strong>, <strong>Cuenta corriente</strong> y{" "}
+          <strong>Tarjeta de crédito</strong>. Antes de registrar cualquier salida de dinero (egreso, pago a
+          proveedor, gasto pagado, transferencia) revisa el saldo de la cuenta de origen. La revisión la hace
+          la base de datos, así que aplica desde cualquier pantalla.
+        </p>
+        <Bullets
+          items={[
+            <><strong>Ahorro</strong>: nunca puede quedar en negativo. Si la operación supera el saldo, se bloquea y no se registra nada. Ejemplo: saldo RD$10,000 y transferencia de RD$15,000 → <em>&ldquo;Fondos insuficientes. La cuenta de ahorro tiene un saldo disponible de RD$10,000.00 y la operación requiere RD$15,000.00. Las cuentas de ahorro no permiten sobregiros.&rdquo;</em> El saldo sigue en RD$10,000.</>,
+            <><strong>Corriente sin sobregiro</strong> (así viene por defecto): igual que ahorro, se bloquea si no hay fondos.</>,
+            <><strong>Corriente con sobregiro autorizado</strong>: si la operación deja la cuenta en negativo, aparece el aviso <em>&ldquo;Fondos insuficientes. Esta operación generará un sobregiro de RD$5,000.00. ¿Desea continuar?&rdquo;</em> con <strong>Cancelar</strong> y <strong>Continuar</strong>. Solo si pulsas Continuar se registra, la cuenta queda en negativo (se ve <em>En sobregiro</em>) y la confirmación queda guardada en el movimiento.</>,
+            <>Para activar el sobregiro: <strong>Editar cuenta → Tipo de cuenta: Corriente → marcar Permitir sobregiro</strong>. En cuentas de ahorro esa casilla aparece bloqueada.</>,
+            <>Las cuentas creadas antes que no tienen tipo se tratan como <strong>corriente sin sobregiro</strong> hasta que les pongas el tipo en Editar cuenta.</>,
+            "Las entradas de dinero (cobros, ingresos, transferencias recibidas) nunca se bloquean.",
+          ]}
+        />
+        <p className="text-sm font-medium text-brand-text">Tarjetas de crédito: deuda, saldo a favor y crédito disponible:</p>
+        <Bullets
+          items={[
+            <>La tarjeta muestra <strong>Deuda actual</strong> (lo que le debes al banco), <strong>Saldo a favor</strong> (dinero tuyo que el banco tiene en la tarjeta) y <strong>Disponible</strong> (lo que aún puedes comprar). Un saldo a favor <strong>nunca se muestra como deuda negativa</strong>.</>,
+            <><strong>Pagar la tarjeta</strong> primero baja la deuda; si pagas más de lo que debes, el excedente queda como saldo a favor. Ejemplo: deuda RD$600 y pago de RD$1,000 → deuda RD$0 y saldo a favor RD$400. Antes de transferir, el formulario te avisa: <em>&ldquo;La tarjeta no tiene suficiente deuda para aplicar el pago completo. El excedente de RD$400.00 se registrará como saldo a favor.&rdquo;</em></>,
+            <>También puedes pasar dinero a una tarjeta <strong>sin deuda</strong> (pago anticipado): todo queda como saldo a favor. Ejemplo: transferir US$1,000 a una tarjeta en dólares sin deuda → Saldo a favor US$1,000.</>,
+            <><strong>Compras con la tarjeta</strong>: primero consumen el saldo a favor y lo que exceda se vuelve deuda. Ejemplo: saldo a favor RD$400 y compra de RD$600 → saldo a favor RD$0 y deuda RD$200.</>,
+            <><strong>Crédito disponible</strong> = límite − deuda. Si tu banco deja que el saldo a favor aumente el poder de compra por encima del límite, marca en la tarjeta <em>&ldquo;El saldo a favor aumenta el crédito disponible por encima del límite&rdquo;</em>: entonces disponible = límite − deuda + saldo a favor (ej. límite 2,000 + 1,000 a favor = 3,000).</>,
+            <>Una compra que supere el crédito disponible se bloquea: <em>&ldquo;Crédito insuficiente. La operación supera el crédito disponible de RD$X.&rdquo;</em> Si la tarjeta no tiene límite configurado, no se valida.</>,
+          ]}
+        />
+
         <p className="text-sm font-medium text-brand-text">Crear una cuenta (incluida una cuenta en dólares):</p>
         <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-sm text-brand-text">
           <li>Ve a <strong>Bancos → Nueva cuenta o tarjeta</strong>.</li>
           <li>En <strong>Tipo</strong> elige <em>Cuenta bancaria</em> (o <em>Tarjeta de crédito</em>).</li>
-          <li>En <strong>Tipo de cuenta</strong> elige <em>Ahorros</em> o <em>Corriente</em> (solo para cuentas bancarias).</li>
+          <li>En <strong>Tipo de cuenta</strong> elige <em>Ahorros</em> o <em>Corriente</em> (solo para cuentas bancarias). Si es corriente y el banco te autorizó sobregiro, marca <strong>Permitir sobregiro</strong>.</li>
           <li>Ponle un <strong>Nombre</strong> que la identifique, ej. <em>Popular Ahorros USD</em>, y elige el banco.</li>
           <li>En <strong>Moneda</strong> elige <em>DOP (pesos)</em> o <em>USD (dólares)</em>. <strong>No se puede cambiar después</strong>, para no alterar los movimientos ya registrados.</li>
           <li>En <strong>Balance inicial</strong> escribe el saldo que tiene hoy, en la moneda de la cuenta, con su fecha.</li>
@@ -468,7 +501,8 @@ const SECTIONS: Section[] = [
         <Bullets
           items={[
             <><strong>Entre bancos</strong> (ej. de Banreservas a Popular): la cuenta de origen baja y la de destino sube por el mismo monto. Queda con la categoría <em>Transferencia entre cuentas</em>.</>,
-            <><strong>Pagar una tarjeta de crédito</strong>: desde tu cuenta de banco elige la tarjeta como destino. El banco baja y la <strong>deuda de la tarjeta baja</strong> por lo pagado. Queda con la categoría <em>Pago de tarjeta de crédito</em>.</>,
+            <><strong>Pagar una tarjeta de crédito</strong>: desde tu cuenta de banco elige la tarjeta como destino. El banco baja y la <strong>deuda de la tarjeta baja</strong> por lo pagado (si pagas de más, el excedente queda como saldo a favor). Queda con la categoría <em>Pago de tarjeta de crédito</em>.</>,
+            <>La cuenta de origen tiene que tener fondos (o sobregiro autorizado y confirmado); si no, la transferencia no se registra en ninguna de las dos cuentas.</>,
             <>Una transferencia <strong>no es ingreso ni gasto</strong>: solo mueve tu propio dinero. Por eso el reporte de Ingresos y egresos la excluye por defecto.</>,
             <>Las dos partes quedan <strong>enlazadas</strong>: en la columna Origen de cada una verás <em>A Popular</em> o <em>Desde Banreservas</em>, con enlace a la otra cuenta.</>,
           ]}
@@ -600,6 +634,7 @@ const SECTIONS: Section[] = [
         <Bullets
           items={[
             <><strong>Categorías</strong> — una sola lista para los gastos y para los ingresos y egresos de Bancos. Se crean una por una o <strong>en lote desde un CSV</strong> (botón Importar, con plantilla descargable: columnas <em>nombre</em> y <em>descripcion</em>). Si una categoría ya existe con el mismo nombre (sin importar mayúsculas ni acentos) no se duplica. Al borrar una categoría en uso, sus gastos y movimientos quedan Sin categoría; no se borran.</>,
+            <><strong>Tipos de servicio</strong> — qué hace cada proveedor, dentro de su categoría (ej. Audiovisuales → Alquiler de sonido). Se agregan uno por uno o <strong>en lote desde un CSV</strong> (plantilla con columnas <em>categoria</em> y <em>tipo_servicio</em>; si la categoría no existe se crea). Al borrar un tipo en uso, sus proveedores quedan sin tipo de servicio; no se borran.</>,
             <><strong>Usuarios</strong> — quién tiene acceso al sistema y con qué rol.</>,
             <><strong>Roles</strong> — qué puede hacer cada rol (los permisos como <code className="rounded bg-brand-surface-hover px-1 py-0.5 text-xs">quotations.approve</code> o <code className="rounded bg-brand-surface-hover px-1 py-0.5 text-xs">reports.view</code> que se mencionan en este manual se activan o desactivan aquí, por rol).</>,
             <>
