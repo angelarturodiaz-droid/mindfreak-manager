@@ -278,3 +278,15 @@ movimientos manuales. Las entradas de dinero nunca se bloquean.
   del proveedor (se puede cambiar). El pago en Bancos hereda esa categoría.
 - Importación de proveedores por CSV: category / service_type se enlazan o
   se crean en los catálogos.
+
+### Catálogo inicial para eventos (migración 065)
+15 categorías de proveedores con 67 tipos de servicio listos para usar:
+Audiovisuales (alquiler de sonido, pantallas LED, microfonía, DJ,
+streaming…), Iluminación, Escenografía y montaje (tarimas, truss,
+carpas…), Mobiliario y menaje, Decoración, Catering y alimentos (buffet,
+bar, meseros…), Entretenimiento, Fotografía y video, Personal de eventos
+(protocolo, seguridad, valet…), Transporte y combustible, Locales y
+venues, Impresos y promocionales, Logística y servicios (plantas
+eléctricas, baños portátiles, WiFi, permisos…) y Hospedaje y viajes. Se
+editan o borran en Configuración. "Audio visuales" se unificó como
+"Audiovisuales".

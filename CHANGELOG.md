@@ -1,5 +1,11 @@
 # CHANGELOG — Mindfreak Manager
 
+## Catálogo de categorías y tipos de servicio para eventos (2026-09-27)
+
+- Migración `065_event_service_catalog.sql` (aplicada): 15 categorías de
+  proveedores de eventos y 67 tipos de servicio, sin duplicar lo existente;
+  "Audio visuales" renombrada a "Audiovisuales".
+
 ## Reglas de cuentas, tarjetas con saldo a favor y proveedores con catálogo (2026-09-27)
 
 - Migración `063_bank_account_rules.sql` (aplicada): trigger
