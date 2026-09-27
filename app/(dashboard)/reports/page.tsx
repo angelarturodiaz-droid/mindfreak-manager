@@ -10,6 +10,8 @@ import {
   getExpensesByCategoryReport,
   getReceivablesDashboard,
   getCashflowByCategoryReport,
+  CASHFLOW_ORIGINS,
+  type CashflowOrigin,
   listBankAccountsForFilter,
   listClientsForFilter,
   listSuppliersForFilter,
@@ -93,6 +95,8 @@ type Params = {
   bank_account_id?: string;
   include_transfers?: string;
   view?: string;
+  origin?: string;
+  direction?: string;
 };
 
 export default async function ReportsPage({
@@ -916,16 +920,26 @@ function monthLabel(ym: string) {
 async function CashflowByCategoryReport({ params }: { params: Params }) {
   const includeTransfers = params.include_transfers === "1";
   const monthly = params.view === "mensual";
-  const [report, accounts, projects] = await Promise.all([
+  const origin = params.origin && params.origin in CASHFLOW_ORIGINS ? (params.origin as CashflowOrigin) : undefined;
+  const direction = params.direction === "in" || params.direction === "out" ? params.direction : undefined;
+  const [report, accounts, projects, clients, suppliers, categories] = await Promise.all([
     getCashflowByCategoryReport({
       from: params.from,
       to: params.to,
       bankAccountId: params.bank_account_id,
       projectId: params.project_id,
+      clientId: params.client_id,
+      supplierId: params.supplier_id,
+      categoryId: params.category_id,
+      origin,
+      direction,
       includeTransfers,
     }),
     listBankAccountsForFilter(),
     listProjectsForFilter(),
+    listClientsForFilter(),
+    listSuppliersForFilter(),
+    listExpenseCategoriesForFilter(),
   ]);
   type Row = (typeof report.rows)[number];
   const volume = report.rows.reduce((a, r) => a + r.ingresos + r.egresos, 0);
@@ -933,7 +947,18 @@ async function CashflowByCategoryReport({ params }: { params: Params }) {
   const viewHref = (view?: string) => {
     const qs = new URLSearchParams();
     qs.set("report", "flujo-categoria");
-    for (const k of ["from", "to", "bank_account_id", "project_id", "include_transfers"] as const) {
+    for (const k of [
+      "from",
+      "to",
+      "bank_account_id",
+      "project_id",
+      "client_id",
+      "supplier_id",
+      "category_id",
+      "origin",
+      "direction",
+      "include_transfers",
+    ] as const) {
       const v = params[k];
       if (v) qs.set(k, v);
     }
@@ -992,9 +1017,48 @@ async function CashflowByCategoryReport({ params }: { params: Params }) {
         </Select>
         <Select label="Proyecto" name="project_id" defaultValue={params.project_id ?? ""}>
           <option value="">Todos</option>
+          <option value="none">Sin proyecto (generales de la empresa)</option>
           {projects.map((p) => (
             <option key={p.id} value={p.id}>
               {p.number} — {p.name}
+            </option>
+          ))}
+        </Select>
+        <Select label="Tipo" name="direction" defaultValue={direction ?? ""}>
+          <option value="">Ingresos y egresos</option>
+          <option value="in">Solo ingresos (entradas)</option>
+          <option value="out">Solo egresos (salidas)</option>
+        </Select>
+        <Select label="Origen" name="origin" defaultValue={origin ?? ""}>
+          <option value="">Todos</option>
+          {Object.entries(CASHFLOW_ORIGINS).map(([key, label]) => (
+            <option key={key} value={key}>
+              {label}
+            </option>
+          ))}
+        </Select>
+        <Select label="Cliente" name="client_id" defaultValue={params.client_id ?? ""}>
+          <option value="">Todos</option>
+          {clients.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </Select>
+        <Select label="Proveedor" name="supplier_id" defaultValue={params.supplier_id ?? ""}>
+          <option value="">Todos</option>
+          {suppliers.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </Select>
+        <Select label="Categoría" name="category_id" defaultValue={params.category_id ?? ""}>
+          <option value="">Todas</option>
+          <option value="none">Sin categoría</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
             </option>
           ))}
         </Select>

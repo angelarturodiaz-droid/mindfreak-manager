@@ -318,7 +318,7 @@ export default async function BankAccountDetailPage({
           {isCard ? (
             <>
               <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">Deuda actual</p>
-              <p className={`text-2xl font-semibold tabular-nums ${debt > 0 ? "text-brand-danger" : "text-brand-text"}`}>
+              <p className={`whitespace-nowrap text-2xl font-semibold tabular-nums ${debt > 0 ? "text-brand-danger" : "text-brand-text"}`}>
                 {formatMoney(debt, account.currency)}
               </p>
               {favor > 0 && (
@@ -341,7 +341,7 @@ export default async function BankAccountDetailPage({
             <>
               <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">Balance actual</p>
               <p
-                className={`text-3xl font-semibold tracking-tight tabular-nums ${
+                className={`whitespace-nowrap text-3xl font-semibold tracking-tight tabular-nums ${
                   account.current_balance < 0 ? "text-brand-danger" : "text-brand-primary"
                 }`}
               >

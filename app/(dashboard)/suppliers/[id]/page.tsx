@@ -336,7 +336,9 @@ export default async function SupplierDetailPage({
             title="Gastos"
             count={activity.expenses.length}
             action={
-              <Link href="/expenses/new">
+              <Link
+                href={`/expenses/new?supplier_id=${id}&return_to=${encodeURIComponent(`/suppliers/${id}?tab=gastos`)}`}
+              >
                 <Button variant="outline" size="sm" icon={<Plus size={14} />}>
                   Nuevo gasto
                 </Button>

@@ -296,3 +296,21 @@ En Facturas, Cotizaciones, Proyectos y Clientes, cada paso completado se
 pinta en verde con ✓ (recuadro y círculo), el paso en curso en azul y los
 pendientes en gris. El último paso (Pagada, Proyecto, Completado, Cliente)
 queda en verde al alcanzarlo. Factura vencida: el paso en curso en rojo.
+
+## Reportes: filtros de Ingresos y egresos por categoría (2026-09-27)
+Además de fechas, cuenta y proyecto: Proyecto "Sin proyecto" (lo general de
+la empresa), Tipo (solo ingresos / solo egresos), Origen (cobros de
+clientes, pagos a proveedores, gastos sin proveedor, movimientos manuales,
+transferencias), Cliente, Proveedor y Categoría (incluye "Sin categoría").
+Elegir Origen "Transferencias" las incluye aunque la casilla esté apagada.
+
+## Gastos: nuevo gasto desde un proyecto o proveedor (2026-09-27)
+El botón "Nuevo gasto" dentro de un proyecto abre el formulario con el
+proyecto elegido; al guardar o cancelar se vuelve al proyecto (pestaña
+Gastos y proveedores). Desde un proveedor: proveedor elegido, categoría
+sugerida y regreso al proveedor.
+
+## General: montos en tarjetas de resumen (2026-09-27)
+Los montos nunca se parten en dos líneas (antes el signo "-" quedaba
+arriba). Si la tarjeta es angosta, el ícono pasa arriba y la letra se
+ajusta al ancho.

@@ -7,6 +7,7 @@ import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissi
 import { logAudit } from "@/lib/audit/log";
 import { expenseSchema, calculateExpenseTotals } from "./schema";
 import { bankRuleState, overdraftConfirmed } from "@/lib/utils/bank-errors";
+import { safeReturnTo } from "@/lib/utils/return-to";
 
 /** confirmOverdraft: ver features/banks/actions.ts (sobregiro por confirmar). */
 export type ActionState = { error: string | null; confirmOverdraft?: string };
@@ -90,7 +91,10 @@ export async function createExpenseAction(
 
     revalidatePath("/expenses");
     revalidatePath("/banks");
-    redirect(`/expenses/${data}`);
+    // Creado desde un proyecto o proveedor: vuelve ahí (ver return_to).
+    const returnTo = safeReturnTo(String(formData.get("return_to") ?? ""));
+    if (returnTo) revalidatePath(returnTo.split("?")[0]);
+    redirect(returnTo ?? `/expenses/${data}`);
   }
 
   const {
@@ -131,7 +135,9 @@ export async function createExpenseAction(
   });
 
   revalidatePath("/expenses");
-  redirect(`/expenses/${data.id}`);
+  const returnTo = safeReturnTo(String(formData.get("return_to") ?? ""));
+  if (returnTo) revalidatePath(returnTo.split("?")[0]);
+  redirect(returnTo ?? `/expenses/${data.id}`);
 }
 
 export async function updateExpenseAction(

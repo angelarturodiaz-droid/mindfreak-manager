@@ -81,7 +81,7 @@ function AccountCard({ a }: { a: AccountRow }) {
           <div className="flex items-end justify-between gap-2">
             <div>
               <p className="text-xs text-brand-muted">Deuda actual</p>
-              <p className={`text-xl font-semibold tabular-nums ${debt > 0 ? "text-brand-danger" : "text-brand-text"}`}>
+              <p className={`whitespace-nowrap text-xl font-semibold tabular-nums ${debt > 0 ? "text-brand-danger" : "text-brand-text"}`}>
                 {formatMoney(debt, a.currency)}
               </p>
             </div>
@@ -120,7 +120,7 @@ function AccountCard({ a }: { a: AccountRow }) {
             )}
           </p>
           <p
-            className={`text-2xl font-semibold tracking-tight tabular-nums ${
+            className={`whitespace-nowrap text-2xl font-semibold tracking-tight tabular-nums ${
               a.current_balance < 0 ? "text-brand-danger" : "text-brand-text"
             }`}
           >

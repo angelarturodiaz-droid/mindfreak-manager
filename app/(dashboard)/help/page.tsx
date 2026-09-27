@@ -383,6 +383,7 @@ const SECTIONS: Section[] = [
           items={[
             "Se organizan por categoría (Configuración → Categorías). Es la misma lista que usan los movimientos de Bancos, así que al pagar un gasto su movimiento bancario hereda esa misma categoría.",
             "Al elegir el proveedor en un gasto nuevo, la categoría se sugiere sola con la categoría del proveedor.",
+            <><strong>Gasto desde un proyecto</strong>: en el proyecto, pestaña <em>Gastos y proveedores</em>, el botón <strong>Nuevo gasto</strong> abre el formulario con ese proyecto ya elegido. Al guardar (o cancelar) vuelves al proyecto y el gasto aparece en su lista. Lo mismo desde un proveedor: el proveedor viene elegido, con su categoría sugerida, y al guardar vuelves al proveedor.</>,
             "Un gasto con proveedor se liquida registrando un pago a proveedor contra él.",
             <>Si pagas desde una cuenta sin fondos suficientes, el sistema no deja registrar el pago (ver <strong>Bancos → Reglas de cada tipo de cuenta</strong>). Si la cuenta es corriente con sobregiro autorizado, te pide confirmar.</>,
             "El listado resume lo que hay por pagar y lo gastado en el mes y el año; el detalle muestra la barra de lo pagado y sus recibos y comprobantes.",
@@ -593,7 +594,7 @@ const SECTIONS: Section[] = [
             <><strong>Cuentas por pagar</strong> — gastos pendientes de pago a proveedores.</>,
             <><strong>Ventas por cliente</strong> — total facturado, agrupado por cliente.</>,
             <><strong>Gastos por categoría</strong> — total gastado, agrupado por categoría.</>,
-            <><strong>Ingresos y egresos por categoría</strong> (sección Bancos) — el flujo real de dinero de tus cuentas agrupado por categoría: ingresos, egresos y neto, con vista <em>Por mes</em>. Se filtra por fecha, cuenta y proyecto. Las transferencias entre tus cuentas se excluyen por defecto (no son ingreso ni gasto) y se pueden incluir con la casilla. La fila <em>Sin categoría</em> muestra lo que falta clasificar.</>,
+            <><strong>Ingresos y egresos por categoría</strong> (sección Bancos) — el flujo real de dinero de tus cuentas agrupado por categoría: ingresos, egresos y neto, con vista <em>Por mes</em>. Filtros: fechas, cuenta, <strong>proyecto</strong> (incluye <em>Sin proyecto</em> para ver lo general de la empresa, ej. pagos a suplidores que no son de un evento), <strong>tipo</strong> (solo ingresos o solo egresos), <strong>origen</strong> (cobros de clientes, pagos a proveedores, gastos sin proveedor, movimientos manuales o transferencias), <strong>cliente</strong>, <strong>proveedor</strong> y <strong>categoría</strong>. Ejemplo: Origen <em>Movimientos manuales</em> + Tipo <em>Solo egresos</em> + Proyecto <em>Sin proyecto</em> muestra los egresos manuales generales. Las transferencias entre tus cuentas se excluyen por defecto (no son ingreso ni gasto) y se pueden incluir con la casilla. La fila <em>Sin categoría</em> muestra lo que falta clasificar.</>,
           ]}
         />
         <p className="text-sm text-brand-muted">

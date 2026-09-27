@@ -125,9 +125,9 @@ function MetricCard({
   const color =
     tone === "danger" ? "text-brand-danger" : tone === "warning" ? "text-brand-warning" : "text-brand-text";
   return (
-    <Card className="flex flex-col gap-1.5">
+    <Card className="@container flex min-w-0 flex-col gap-1.5">
       <p className="text-sm font-medium text-brand-muted">{label}</p>
-      <p className={`text-xl font-semibold tracking-tight tabular-nums ${color}`}>{value}</p>
+      <p className={`whitespace-nowrap text-base @[12rem]:text-lg @[15rem]:text-xl font-semibold tracking-tight tabular-nums ${color}`}>{value}</p>
       {hint && <p className="text-xs text-brand-muted">{hint}</p>}
     </Card>
   );

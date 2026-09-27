@@ -25,6 +25,9 @@ export function NewExpenseForm({
   accounts,
   bankCatalog,
   baseCurrency,
+  defaultProjectId = "",
+  defaultSupplierId = "",
+  returnTo = null,
 }: {
   categories: Option[];
   suppliers: SupplierOption[];
@@ -32,14 +35,21 @@ export function NewExpenseForm({
   accounts: Account[];
   bankCatalog: Option[];
   baseCurrency: string;
+  /** Viene de un proyecto o proveedor: se preselecciona y al guardar/cancelar se vuelve ahí. */
+  defaultProjectId?: string;
+  defaultSupplierId?: string;
+  returnTo?: string | null;
 }) {
   const [state, formAction, pending, confirmBox] = useOverdraftConfirmAction(createExpenseAction, initialState);
   const [paymentMethod, setPaymentMethod] = useState("");
   // Categoría sugerida por el proveedor: se llena sola al elegirlo, salvo
   // que el usuario ya haya elegido una a mano.
-  const [categoryId, setCategoryId] = useState("");
+  const defaultSupplier = suppliers.find((s) => s.id === defaultSupplierId);
+  const [categoryId, setCategoryId] = useState(defaultSupplier?.category_id ?? "");
   const [categoryTouched, setCategoryTouched] = useState(false);
-  const [suggestedFrom, setSuggestedFrom] = useState<string | null>(null);
+  const [suggestedFrom, setSuggestedFrom] = useState<string | null>(
+    defaultSupplier?.category_id ? defaultSupplier.name : null,
+  );
 
   const isCard = paymentMethod === "CARD";
   const relevantAccounts = accounts.filter((a) =>
@@ -48,6 +58,7 @@ export function NewExpenseForm({
 
   return (
     <form action={formAction} className="max-w-md space-y-4">
+      {returnTo && <input type="hidden" name="return_to" value={returnTo} />}
       <Input label="Descripción" name="description" required />
       <Input label="Fecha" name="expense_date" type="date" required defaultValue={todayISO()} />
 
@@ -73,7 +84,7 @@ export function NewExpenseForm({
       <Select
         label="Proveedor"
         name="supplier_id"
-        defaultValue=""
+        defaultValue={defaultSupplierId}
         onChange={(e) => {
           const supplier = suppliers.find((s) => s.id === e.target.value);
           if (!categoryTouched && supplier?.category_id) {
@@ -107,7 +118,7 @@ export function NewExpenseForm({
         ))}
       </Select>
 
-      <Select label="Proyecto/Evento" name="project_id" defaultValue="">
+      <Select label="Proyecto/Evento" name="project_id" defaultValue={defaultProjectId}>
         <option value="">Sin proyecto (gasto general de la empresa)</option>
         {projects.map((p) => (
           <option key={p.id} value={p.id}>
@@ -195,7 +206,7 @@ export function NewExpenseForm({
         <Button type="submit" loading={pending}>
           Crear gasto
         </Button>
-        <Link href="/expenses">
+        <Link href={returnTo ?? "/expenses"}>
           <Button type="button" variant="ghost">
             Cancelar
           </Button>

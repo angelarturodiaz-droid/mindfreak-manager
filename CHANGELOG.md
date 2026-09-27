@@ -1,5 +1,17 @@
 # CHANGELOG — Mindfreak Manager
 
+## Filtros del reporte de flujo, gasto desde proyecto y montos sin cortes (2026-09-27)
+
+- Reporte "Ingresos y egresos por categoría": filtros nuevos Tipo
+  (entradas/salidas), Origen (cobros, pagos a proveedores, gastos sin
+  proveedor, manuales, transferencias), Cliente, Proveedor, Categoría y
+  Proyecto "Sin proyecto".
+- Nuevo gasto desde un proyecto/proveedor: viene preseleccionado y al
+  guardar/cancelar vuelve (`return_to` validado con `safeReturnTo`).
+- StatCard/MetricCard y montos grandes: `whitespace-nowrap` + tamaño según
+  el ancho de la tarjeta (container queries); el ícono pasa arriba en
+  tarjetas angostas.
+
 ## Pasos de avance completados en verde (2026-09-27)
 
 - Facturas, Cotizaciones, Proyectos y Clientes: cada paso completado se

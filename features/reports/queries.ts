@@ -400,11 +400,29 @@ export async function listBankAccountsForFilter() {
   return data;
 }
 
+/** Origen del movimiento de banco, para filtrar el reporte de flujo por categoría. */
+export const CASHFLOW_ORIGINS = {
+  cobros: "Cobros de clientes",
+  proveedores: "Pagos a proveedores",
+  gastos: "Gastos sin proveedor",
+  manuales: "Movimientos manuales",
+  transferencias: "Transferencias entre cuentas",
+} as const;
+export type CashflowOrigin = keyof typeof CASHFLOW_ORIGINS;
+
 export type CashflowByCategoryFilters = {
   from?: string;
   to?: string;
   bankAccountId?: string;
+  /** Id de proyecto, o "none" = sin proyecto (gastos/ingresos generales de la empresa). */
   projectId?: string;
+  clientId?: string;
+  supplierId?: string;
+  /** Id de categoría, o "none" = sin categoría. */
+  categoryId?: string;
+  origin?: CashflowOrigin;
+  /** "in" = solo entradas de dinero, "out" = solo salidas. */
+  direction?: "in" | "out";
   /** Las transferencias entre cuentas propias no son ingreso ni gasto: fuera por defecto. */
   includeTransfers?: boolean;
 };
@@ -437,11 +455,44 @@ export async function getCashflowByCategoryReport(filters: CashflowByCategoryFil
     .from("bank_transactions")
     .select("type, amount, exchange_rate, transaction_date, category_id, expense_categories(name)");
 
-  if (!filters.includeTransfers) query = query.neq("type", "TRANSFER");
+  // Elegir "Transferencias" como origen las incluye aunque la casilla esté apagada.
+  const includeTransfers = filters.includeTransfers || filters.origin === "transferencias";
+  if (!includeTransfers) query = query.neq("type", "TRANSFER");
   if (filters.from) query = query.gte("transaction_date", filters.from);
   if (filters.to) query = query.lte("transaction_date", filters.to);
   if (filters.bankAccountId) query = query.eq("bank_account_id", filters.bankAccountId);
-  if (filters.projectId) query = query.eq("project_id", filters.projectId);
+  if (filters.projectId === "none") query = query.is("project_id", null);
+  else if (filters.projectId) query = query.eq("project_id", filters.projectId);
+  if (filters.clientId) query = query.eq("client_id", filters.clientId);
+  if (filters.supplierId) query = query.eq("supplier_id", filters.supplierId);
+  if (filters.categoryId === "none") query = query.is("category_id", null);
+  else if (filters.categoryId) query = query.eq("category_id", filters.categoryId);
+
+  switch (filters.origin) {
+    case "cobros":
+      query = query.not("customer_payment_id", "is", null);
+      break;
+    case "proveedores":
+      query = query.not("supplier_id", "is", null);
+      break;
+    case "gastos":
+      query = query.not("expense_id", "is", null).is("supplier_id", null);
+      break;
+    case "manuales":
+      query = query
+        .is("customer_payment_id", null)
+        .is("supplier_payment_id", null)
+        .is("expense_id", null)
+        .neq("type", "TRANSFER");
+      break;
+    case "transferencias":
+      query = query.eq("type", "TRANSFER");
+      break;
+  }
+
+  // Entradas: ingresos y transferencias recibidas. Salidas: egresos y transferencias enviadas.
+  if (filters.direction === "in") query = query.or("type.eq.INCOME,and(type.eq.TRANSFER,amount.gt.0)");
+  if (filters.direction === "out") query = query.or("type.eq.EXPENSE,and(type.eq.TRANSFER,amount.lt.0)");
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);

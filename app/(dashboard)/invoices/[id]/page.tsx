@@ -309,14 +309,14 @@ export default async function InvoiceDetailPage({
           <div className="grid grid-cols-2 gap-6 text-left sm:text-right">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">Total</p>
-              <p className="text-xl font-semibold tracking-tight tabular-nums text-brand-primary">
+              <p className="whitespace-nowrap text-xl font-semibold tracking-tight tabular-nums text-brand-primary">
                 {formatMoney(invoice.total, invoice.currency)}
               </p>
             </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">Balance</p>
               <p
-                className={`text-xl font-semibold tracking-tight tabular-nums ${
+                className={`whitespace-nowrap text-xl font-semibold tracking-tight tabular-nums ${
                   invoice.balance > 0 && isOpen
                     ? invoice.status === "OVERDUE"
                       ? "text-brand-danger"

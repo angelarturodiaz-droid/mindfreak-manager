@@ -33,17 +33,23 @@ export function StatCard({
         : valueTone === "success"
           ? "text-brand-success"
           : "text-brand-text";
+  // El monto nunca se parte en dos líneas (antes "-RD$15,000.00" quedaba con
+  // el signo arriba y los números abajo). La tarjeta se adapta a su propio
+  // ancho (container queries): en tarjetas angostas el ícono va arriba y la
+  // letra baja un poco; en anchas, ícono al lado y letra grande.
   return (
-    <Card className="flex min-w-0 items-start gap-4">
-      <IconBadge icon={icon} tone={tone} size="lg" />
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-brand-muted">{label}</p>
-        <p
-          className={`mt-0.5 break-words text-xl font-semibold tracking-tight tabular-nums sm:text-2xl ${valueColor}`}
-        >
-          {value}
-        </p>
-        {hint && <p className="mt-0.5 text-xs text-brand-muted">{hint}</p>}
+    <Card className="@container min-w-0">
+      <div className="flex flex-col gap-3 @[17rem]:flex-row @[17rem]:items-start @[17rem]:gap-4">
+        <IconBadge icon={icon} tone={tone} size="lg" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-brand-muted">{label}</p>
+          <p
+            className={`mt-0.5 whitespace-nowrap text-base font-semibold tracking-tight tabular-nums @[11rem]:text-lg @[14rem]:text-xl @[22rem]:text-2xl ${valueColor}`}
+          >
+            {value}
+          </p>
+          {hint && <p className="mt-0.5 text-xs text-brand-muted">{hint}</p>}
+        </div>
       </div>
     </Card>
   );
@@ -160,9 +166,14 @@ export function MetricCard({
           ? "text-brand-success"
           : "text-brand-text";
   return (
-    <Card className="flex min-w-0 flex-col gap-2">
+    <Card className="@container flex min-w-0 flex-col gap-2">
       <p className="text-sm font-medium text-brand-muted">{label}</p>
-      <p className={`break-words text-xl font-semibold tracking-tight tabular-nums ${color}`}>{value}</p>
+      {/* El monto no se parte en dos líneas; la letra se ajusta al ancho de la tarjeta. */}
+      <p
+        className={`whitespace-nowrap text-base font-semibold tracking-tight tabular-nums @[12rem]:text-lg @[15rem]:text-xl ${color}`}
+      >
+        {value}
+      </p>
       {pct !== undefined && pct !== null && <ProgressBar pct={pct} danger={tone === "danger" || pct > 100} />}
       {hint && <p className="text-xs text-brand-muted">{hint}</p>}
     </Card>

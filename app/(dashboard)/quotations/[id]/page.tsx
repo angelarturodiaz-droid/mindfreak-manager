@@ -249,7 +249,7 @@ export default async function QuotationDetailPage({
           </div>
           <div className="text-left sm:text-right">
             <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">Total</p>
-            <p className="text-2xl font-semibold tracking-tight tabular-nums text-brand-primary">
+            <p className="whitespace-nowrap text-2xl font-semibold tracking-tight tabular-nums text-brand-primary">
               {formatMoney(quotation.total, quotation.currency)}
             </p>
           </div>

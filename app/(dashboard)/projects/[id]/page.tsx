@@ -197,10 +197,10 @@ function MetricCard({
   danger?: boolean;
 }) {
   return (
-    <Card className="flex flex-col gap-2">
+    <Card className="@container flex min-w-0 flex-col gap-2">
       <p className="text-sm font-medium text-brand-muted">{label}</p>
       <p
-        className={`text-xl font-semibold tracking-tight tabular-nums ${danger ? "text-brand-danger" : "text-brand-text"}`}
+        className={`whitespace-nowrap text-base @[12rem]:text-lg @[15rem]:text-xl font-semibold tracking-tight tabular-nums ${danger ? "text-brand-danger" : "text-brand-text"}`}
       >
         {value}
       </p>
@@ -835,7 +835,9 @@ export default async function ProjectDetailPage({
               title="Gastos"
               count={expenses.length}
               action={
-                <Link href="/expenses/new">
+                <Link
+                  href={`/expenses/new?project_id=${id}&return_to=${encodeURIComponent(`/projects/${id}?tab=compras`)}`}
+                >
                   <Button variant="outline" size="sm" icon={<Plus size={14} />}>
                     Nuevo gasto
                   </Button>
