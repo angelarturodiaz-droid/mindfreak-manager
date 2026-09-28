@@ -5,6 +5,7 @@ import { Trash2, KeyRound } from "lucide-react";
 import { deleteUserAction } from "@/features/users/actions";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toaster";
+import { isNavigationSignal } from "@/lib/utils/navigation-signal";
 
 export function DeleteUserButton({ userId, userName }: { userId: string; userName: string }) {
   const [open, setOpen] = useState(false);
@@ -24,6 +25,8 @@ export function DeleteUserButton({ userId, userName }: { userId: string; userNam
         toast.success(`${userName} fue eliminado`);
         reset();
       } catch (e) {
+        // redirect() del servidor: la acción salió bien, no es un error.
+        if (isNavigationSignal(e)) return;
         toast.error(e instanceof Error ? e.message : "No se pudo eliminar.");
         setCode("");
       }

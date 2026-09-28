@@ -5,6 +5,7 @@ import { revokeTrustedDeviceAction, revokeAllTrustedDevicesAction } from "@/feat
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/toaster";
+import { isNavigationSignal } from "@/lib/utils/navigation-signal";
 
 export type TrustedDeviceRow = {
   id: string;
@@ -29,6 +30,8 @@ export function TrustedDevicesList({ initialDevices }: { initialDevices: Trusted
         await revokeTrustedDeviceAction(id);
         setDevices((prev) => prev.filter((d) => d.id !== id));
       } catch (e) {
+        // redirect() del servidor: la acción salió bien, no es un error.
+        if (isNavigationSignal(e)) return;
         toast.error(e instanceof Error ? e.message : "No se pudo revocar.");
       }
     });
@@ -41,6 +44,8 @@ export function TrustedDevicesList({ initialDevices }: { initialDevices: Trusted
         await revokeAllTrustedDevicesAction();
         setDevices([]);
       } catch (e) {
+        // redirect() del servidor: la acción salió bien, no es un error.
+        if (isNavigationSignal(e)) return;
         toast.error(e instanceof Error ? e.message : "No se pudo revocar.");
       }
     });

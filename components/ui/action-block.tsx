@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import type { ReactNode } from "react";
 import { toast } from "./toaster";
+import { isNavigationSignal } from "@/lib/utils/navigation-signal";
 
 /**
  * Bloque clicable (ej. un paso de un flujo) que invoca un Server Action.
@@ -34,6 +35,8 @@ export function ActionBlock({
           try {
             await onAction();
           } catch (err) {
+            // redirect() del servidor: la acción salió bien, no es un error.
+            if (isNavigationSignal(err)) return;
             toast.error(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
           }
         })

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { updateUserRolesAction, toggleUserActiveAction } from "@/features/users/actions";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toaster";
+import { isNavigationSignal } from "@/lib/utils/navigation-signal";
 
 const ROLE_LABELS: Record<string, string> = {
   ADMIN: "Administrador",
@@ -41,6 +42,8 @@ export function UserRoleEditor({
         await updateUserRolesAction(userId, selected);
         toast.success("Roles actualizados");
       } catch (e) {
+        // redirect() del servidor: la acción salió bien, no es un error.
+        if (isNavigationSignal(e)) return;
         toast.error(e instanceof Error ? e.message : "No se pudo guardar.");
       }
     });
@@ -51,6 +54,8 @@ export function UserRoleEditor({
       try {
         await toggleUserActiveAction(userId, isActive);
       } catch (e) {
+        // redirect() del servidor: la acción salió bien, no es un error.
+        if (isNavigationSignal(e)) return;
         toast.error(e instanceof Error ? e.message : "No se pudo actualizar.");
       }
     });

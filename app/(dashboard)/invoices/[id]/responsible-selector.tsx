@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { setInvoiceResponsibleAction } from "@/features/invoices/actions";
 import { Select } from "@/components/ui/field";
 import { toast } from "@/components/ui/toaster";
+import { isNavigationSignal } from "@/lib/utils/navigation-signal";
 
 type User = { id: string; full_name: string | null; email: string };
 
@@ -24,6 +25,8 @@ export function ResponsibleSelector({
         await setInvoiceResponsibleAction(invoiceId, value || null);
         toast.success("Responsable actualizado");
       } catch (e) {
+        // redirect() del servidor: la acción salió bien, no es un error.
+        if (isNavigationSignal(e)) return;
         toast.error(e instanceof Error ? e.message : "No se pudo actualizar.");
       }
     });

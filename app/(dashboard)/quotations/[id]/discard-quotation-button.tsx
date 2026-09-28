@@ -12,6 +12,7 @@ export function DiscardQuotationButton({ quotationId }: { quotationId: string })
       confirmTitle="¿Descartar esta cotización en borrador?"
       confirmMessage="Se eliminará por completo, no quedará registro."
       onConfirm={() => discardQuotationAction(quotationId)}
+      successMessage="Cotización en borrador descartada."
     />
   );
 }

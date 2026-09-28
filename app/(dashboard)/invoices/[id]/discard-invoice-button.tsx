@@ -12,6 +12,7 @@ export function DiscardInvoiceButton({ invoiceId }: { invoiceId: string }) {
       confirmTitle="¿Descartar esta factura en borrador?"
       confirmMessage="Se eliminará por completo, no quedará registro."
       onConfirm={() => discardInvoiceAction(invoiceId)}
+      successMessage="Factura en borrador descartada."
     />
   );
 }

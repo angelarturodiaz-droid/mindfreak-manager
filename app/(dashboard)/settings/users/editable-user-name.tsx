@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Pencil, Check, X } from "lucide-react";
 import { updateUserNameAction } from "@/features/users/actions";
 import { toast } from "@/components/ui/toaster";
+import { isNavigationSignal } from "@/lib/utils/navigation-signal";
 
 export function EditableUserName({ userId, fullName }: { userId: string; fullName: string | null }) {
   const [editing, setEditing] = useState(false);
@@ -16,6 +17,8 @@ export function EditableUserName({ userId, fullName }: { userId: string; fullNam
         await updateUserNameAction(userId, value);
         setEditing(false);
       } catch (e) {
+        // redirect() del servidor: la acción salió bien, no es un error.
+        if (isNavigationSignal(e)) return;
         toast.error(e instanceof Error ? e.message : "No se pudo guardar.");
       }
     });

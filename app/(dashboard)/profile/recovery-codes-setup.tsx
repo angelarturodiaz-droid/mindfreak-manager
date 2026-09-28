@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { generateRecoveryCodesAction } from "@/features/profile/actions";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toaster";
+import { isNavigationSignal } from "@/lib/utils/navigation-signal";
 
 export type RecoveryCodesStatus = {
   total: number;
@@ -34,6 +35,8 @@ export function RecoveryCodesSetup({
         setConfirmed(false);
         setStatus({ total: result.length, remaining: result.length, generatedAt: new Date().toISOString() });
       } catch (e) {
+        // redirect() del servidor: la acción salió bien, no es un error.
+        if (isNavigationSignal(e)) return;
         toast.error(e instanceof Error ? e.message : "No se pudieron generar los códigos.");
       }
     });

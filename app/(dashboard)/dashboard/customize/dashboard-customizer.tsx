@@ -7,6 +7,7 @@ import { saveDashboardWidgetsAction } from "@/features/dashboard-widgets/actions
 import { WIDGET_LABELS, type WidgetInstance, type WidgetSize } from "@/features/dashboard-widgets/registry";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toaster";
+import { isNavigationSignal } from "@/lib/utils/navigation-signal";
 
 const SIZE_LABELS: Record<WidgetSize, string> = { sm: "Chico", md: "Mediano", lg: "Grande" };
 
@@ -42,6 +43,8 @@ export function DashboardCustomizer({ initialWidgets }: { initialWidgets: Widget
         toast.success("Dashboard actualizado");
         router.push("/dashboard");
       } catch (e) {
+        // redirect() del servidor: la acción salió bien, no es un error.
+        if (isNavigationSignal(e)) return;
         toast.error(e instanceof Error ? e.message : "No se pudo guardar.");
       }
     });

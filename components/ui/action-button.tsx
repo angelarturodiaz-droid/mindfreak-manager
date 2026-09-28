@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import type { ReactNode } from "react";
 import { Button } from "./button";
 import { toast } from "./toaster";
+import { isNavigationSignal } from "@/lib/utils/navigation-signal";
 
 /**
  * Botón para invocar un Server Action simple (sin confirmación) desde un
@@ -45,6 +46,11 @@ export function ActionButton({
         await onAction();
         if (successMessage) toast.success(successMessage);
       } catch (err) {
+        // redirect() del servidor: la acción salió bien, no es un error.
+        if (isNavigationSignal(err)) {
+          if (successMessage) toast.success(successMessage);
+          return;
+        }
         toast.error(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
       }
     });

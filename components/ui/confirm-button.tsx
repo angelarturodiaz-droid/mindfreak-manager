@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Modal } from "./modal";
 import { Button } from "./button";
 import { toast } from "./toaster";
+import { isNavigationSignal } from "@/lib/utils/navigation-signal";
 
 /**
  * Botón para acciones destructivas: muestra un modal de confirmación propio
@@ -25,6 +26,7 @@ export function ConfirmButton({
   size = "sm",
   icon,
   onConfirm,
+  successMessage,
 }: {
   label: string;
   confirmTitle: string;
@@ -34,6 +36,8 @@ export function ConfirmButton({
   size?: "sm" | "md";
   icon?: React.ReactNode;
   onConfirm: () => void | Promise<void>;
+  /** Mensaje de éxito (toast) al terminar, también si la acción navega a otra pantalla. */
+  successMessage?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -43,7 +47,14 @@ export function ConfirmButton({
       try {
         await onConfirm();
         setOpen(false);
+        if (successMessage) toast.success(successMessage);
       } catch (err) {
+        // redirect() del servidor: la acción salió bien, no es un error.
+        if (isNavigationSignal(err)) {
+          setOpen(false);
+          if (successMessage) toast.success(successMessage);
+          return;
+        }
         // No cerramos el modal: así el usuario ve el toast y puede reintentar.
         toast.error(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
       }

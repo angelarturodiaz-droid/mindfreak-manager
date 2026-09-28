@@ -1,5 +1,13 @@
 # CHANGELOG — Mindfreak Manager
 
+## Sin "NEXT_REDIRECT" en los avisos (2026-09-27)
+
+- Acciones que terminan llevando a otra pantalla (ej. Descartar borrador de
+  factura/cotización) mostraban el toast de error "NEXT_REDIRECT". Es la
+  señal interna de Next.js para redirigir, no un error. `isNavigationSignal`
+  la ignora en todos los botones con toasts; Descartar borrador muestra
+  "Factura/Cotización en borrador descartada."
+
 ## Filtros: salir de un "sin resultados" sin limpiar (2026-09-27)
 
 - Con la lista vacía por filtros, elegir otra opción (botones o selects

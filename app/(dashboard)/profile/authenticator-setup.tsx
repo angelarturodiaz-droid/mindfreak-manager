@@ -9,6 +9,7 @@ import {
 } from "@/features/profile/actions";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toaster";
+import { isNavigationSignal } from "@/lib/utils/navigation-signal";
 
 type Factor = { id: string; status: string };
 
@@ -24,6 +25,8 @@ export function AuthenticatorSetup({ initialFactor }: { initialFactor: Factor | 
         const result = await enrollMfaAction();
         setEnrolling(result);
       } catch (e) {
+        // redirect() del servidor: la acción salió bien, no es un error.
+        if (isNavigationSignal(e)) return;
         toast.error(e instanceof Error ? e.message : "No se pudo iniciar la activación.");
       }
     });
@@ -39,6 +42,8 @@ export function AuthenticatorSetup({ initialFactor }: { initialFactor: Factor | 
         setCode("");
         toast.success("Autenticador activado");
       } catch (e) {
+        // redirect() del servidor: la acción salió bien, no es un error.
+        if (isNavigationSignal(e)) return;
         toast.error(e instanceof Error ? e.message : "Código incorrecto.");
       }
     });
@@ -61,6 +66,8 @@ export function AuthenticatorSetup({ initialFactor }: { initialFactor: Factor | 
         setFactor(null);
         toast.success("Autenticador desactivado");
       } catch (e) {
+        // redirect() del servidor: la acción salió bien, no es un error.
+        if (isNavigationSignal(e)) return;
         toast.error(e instanceof Error ? e.message : "No se pudo desactivar.");
       }
     });

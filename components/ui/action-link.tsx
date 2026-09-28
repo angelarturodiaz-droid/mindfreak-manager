@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { toast } from "./toaster";
+import { isNavigationSignal } from "@/lib/utils/navigation-signal";
 
 /**
  * Como ActionButton, pero renderizado como texto/link simple (para tablas
@@ -26,6 +27,8 @@ export function ActionLink({
       try {
         await onAction();
       } catch (err) {
+        // redirect() del servidor: la acción salió bien, no es un error.
+        if (isNavigationSignal(err)) return;
         toast.error(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
       }
     });

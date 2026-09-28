@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Pencil, Check, X, ShieldCheck, ShieldAlert, KeyRound } from "lucide-react";
 import { updateUserEmailAction, resendEmailVerificationAction } from "@/features/users/actions";
 import { toast } from "@/components/ui/toaster";
+import { isNavigationSignal } from "@/lib/utils/navigation-signal";
 
 export function EditableUserEmail({
   userId,
@@ -50,6 +51,8 @@ export function EditableUserEmail({
         );
         reset();
       } catch (e) {
+        // redirect() del servidor: la acción salió bien, no es un error.
+        if (isNavigationSignal(e)) return;
         toast.error(e instanceof Error ? e.message : "No se pudo guardar.");
         setCode("");
       }
@@ -62,6 +65,8 @@ export function EditableUserEmail({
         await resendEmailVerificationAction(email);
         toast.success("Correo de verificación reenviado");
       } catch (e) {
+        // redirect() del servidor: la acción salió bien, no es un error.
+        if (isNavigationSignal(e)) return;
         toast.error(e instanceof Error ? e.message : "No se pudo reenviar.");
       }
     });
