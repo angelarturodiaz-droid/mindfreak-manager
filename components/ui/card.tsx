@@ -58,7 +58,7 @@ export function KpiCard({
         )}
       </div>
       <p
-        className={`whitespace-nowrap text-lg font-semibold tracking-tight tabular-nums @[14rem]:text-xl @[18rem]:text-2xl ${danger ? "text-brand-danger" : "text-brand-text"}`}
+        className={`whitespace-nowrap text-base font-semibold tracking-tight tabular-nums @[12rem]:text-lg @[14rem]:text-xl @[18rem]:text-2xl ${danger ? "text-brand-danger" : "text-brand-text"}`}
       >
         {value}
       </p>

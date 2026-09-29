@@ -73,8 +73,27 @@ export const DEFAULT_WIDGETS: WidgetInstance[] = [
  */
 export const NEW_WIDGETS_SHOWN_BY_DEFAULT = ["disponible_bancos_dop", "disponible_bancos_usd"];
 
+/**
+ * Ancho de cada tamaño en la cuadrícula del Dashboard (1 → 2 → 4 → 5 → 6
+ * columnas según el ancho de la pantalla). Grande ocupa toda la fila.
+ */
 export const SIZE_COLS: Record<WidgetSize, string> = {
   sm: "col-span-1",
-  md: "col-span-2",
-  lg: "col-span-4",
+  md: "col-span-1 sm:col-span-2",
+  lg: "col-span-full",
 };
+
+export const DASHBOARD_GRID =
+  "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6";
+
+/**
+ * La lista guardada del usuario + los widgets del catálogo que todavía no
+ * tiene (al final, ocultos) — así se pueden mostrar al organizar.
+ */
+export function withMissingWidgets(saved: WidgetInstance[]): WidgetInstance[] {
+  const savedTypes = new Set(saved.map((w) => w.type));
+  const missing = WIDGET_REGISTRY.filter((w) => !savedTypes.has(w.type)).map(
+    (w): WidgetInstance => ({ type: w.type, visible: false, size: w.defaultSize }),
+  );
+  return [...saved, ...missing];
+}

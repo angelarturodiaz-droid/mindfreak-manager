@@ -357,3 +357,14 @@ pulsa el botón.
   crédito (con conteos según la moneda elegida). Vista Tarjetas (hasta 4
   por fila, más compactas) o Lista (tabla, una fila por cuenta) para cuando
   haya muchas cuentas.
+
+## Dashboard: organizar con el mouse (2026-09-28)
+- Botón "Organizar" en el Dashboard: los cuadros se arrastran con el mouse
+  a otra posición (en celular, flechas ← →), C/M/G cambia el tamaño (Grande
+  = toda la fila), el ojo lo oculta y "Cuadros ocultos" permite volver a
+  mostrarlos. Guardar lo deja por usuario (misma preferencia que
+  "Personalizar Dashboard"); Cancelar descarta. Mientras se organiza, los
+  cuadros no abren enlaces.
+- Cuadrícula más ancha: 4 columnas en laptop, 5 en pantallas grandes y 6 en
+  muy grandes, para que no haya que bajar tanto. Mediano = 2 columnas,
+  Grande = toda la fila.

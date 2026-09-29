@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { getUserDashboardWidgets } from "@/features/dashboard-widgets/queries";
-import { WIDGET_REGISTRY, type WidgetInstance } from "@/features/dashboard-widgets/registry";
+import { withMissingWidgets } from "@/features/dashboard-widgets/registry";
 import { DashboardCustomizer } from "./dashboard-customizer";
 
 export default async function CustomizeDashboardPage() {
@@ -16,14 +16,7 @@ export default async function CustomizeDashboardPage() {
   // lista (ej. uno agregado después) aparece al final, oculto por
   // defecto — así el catálogo puede crecer sin romper configuraciones ya
   // guardadas.
-  const savedTypes = new Set(saved.map((w) => w.type));
-  const missing: WidgetInstance[] = WIDGET_REGISTRY.filter((w) => !savedTypes.has(w.type)).map((w) => ({
-    type: w.type,
-    visible: false,
-    size: w.defaultSize,
-  }));
-
-  const initialWidgets = [...saved, ...missing];
+  const initialWidgets = withMissingWidgets(saved);
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">

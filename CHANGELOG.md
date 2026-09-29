@@ -1,5 +1,15 @@
 # CHANGELOG — Mindfreak Manager
 
+## Dashboard: organizar arrastrando con el mouse (2026-09-28)
+
+- `DashboardBoard` (app/(dashboard)/dashboard/dashboard-board.tsx): modo
+  "Organizar" en el propio Dashboard — arrastrar y soltar (HTML5), flechas
+  ← →, tamaño C/M/G, ocultar y volver a mostrar; guarda con
+  `saveDashboardWidgetsAction` (sin cambios de BD ni de lógica).
+- Cuadrícula `DASHBOARD_GRID` hasta 5/6 columnas (xl/2xl); `lg` =
+  `col-span-full`. `withMissingWidgets()` compartido con Personalizar.
+- KpiCard: el monto empieza en text-base en cuadros angostos.
+
 ## Bancos: filtro de tarjetas de crédito y vista Lista (2026-09-28)
 
 - Filtro de tipo con "Tarjetas de crédito" (muestra solo tarjetas); el

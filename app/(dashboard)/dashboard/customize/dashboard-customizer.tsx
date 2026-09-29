@@ -55,7 +55,8 @@ export function DashboardCustomizer({ initialWidgets }: { initialWidgets: Widget
       <p className="text-sm text-brand-muted">
         Arrastra para reordenar. Marca cuáles quieres ver, y de qué tamaño.
         Se guarda por tu usuario — nadie más lo ve así, y sigue igual la
-        próxima vez que entres.
+        próxima vez que entres. También puedes mover los cuadros directamente
+        en el Dashboard con el botón <strong>Organizar</strong>.
       </p>
 
       <ul className="flex max-w-2xl flex-col gap-2">

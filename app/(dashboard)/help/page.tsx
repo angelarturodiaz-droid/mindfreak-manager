@@ -78,9 +78,21 @@ const SECTIONS: Section[] = [
             <><strong>Disponible en bancos (pesos)</strong> y <strong>(dólares)</strong>: el dinero que hay hoy en las cuentas de ahorro y corrientes, cada moneda por separado (no incluye tarjetas de crédito). Al hacer clic abre Bancos.</>,
             "Todos los números son en vivo — no es un corte histórico, se recalculan en cada visita.",
             <>
-              Puedes elegir qué tarjetas ver y en qué orden desde{" "}
-              <strong>Personalizar Dashboard</strong> (botón arriba a la
-              derecha).
+              <strong>Organizar</strong> (botón a la derecha, junto a los accesos
+              rápidos): los cuadros quedan con borde punteado y se pueden{" "}
+              <strong>arrastrar con el mouse</strong> a otro lugar (en celular,
+              con las flechas ← →). Cada cuadro tiene <strong>C / M / G</strong>{" "}
+              para el tamaño (Chico, Mediano, Grande = toda la fila) y un ojo para
+              ocultarlo; abajo aparecen los <strong>cuadros ocultos</strong> con
+              un + para volver a mostrarlos. <strong>Guardar</strong> lo deja así
+              para tu usuario; <strong>Cancelar</strong> deja todo como estaba.
+              Mientras organizas, los cuadros no abren nada al hacer clic.
+            </>,
+            "En pantallas grandes caben 5 o 6 cuadros chicos por fila, para ver más sin bajar. Si algo queda muy abajo, súbelo con Organizar o hazlo más chico.",
+            <>
+              <strong>Personalizar Dashboard</strong> sigue disponible: muestra
+              todos los cuadros en una lista para elegir cuáles ver, su tamaño y
+              el orden.
             </>,
             "Las tarjetas de proyectos activos y cotizaciones pendientes son atajos: llevan directo al listado filtrado.",
           ]}
