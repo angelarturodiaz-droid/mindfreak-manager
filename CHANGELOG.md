@@ -1,5 +1,12 @@
 # CHANGELOG — Mindfreak Manager
 
+## Bancos: filtro de tarjetas de crédito y vista Lista (2026-09-28)
+
+- Filtro de tipo con "Tarjetas de crédito" (muestra solo tarjetas); el
+  filtro de moneda aplica también a tarjetas.
+- Vista "Lista" (`?view=lista`, tabla) y tarjetas más compactas (hasta 4
+  por fila) para muchas cuentas.
+
 ## Dinero disponible en bancos: pesos y dólares por separado (2026-09-28)
 
 - Bancos: tarjetas "Disponible en pesos" y "Disponible en dólares" (solo

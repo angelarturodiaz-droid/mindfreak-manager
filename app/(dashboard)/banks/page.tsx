@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { AlertTriangle, ChevronRight, CreditCard, DollarSign, Landmark, Plus, ShieldCheck, Wallet } from "lucide-react";
+import { AlertTriangle, ChevronRight, CreditCard, DollarSign, LayoutGrid, Landmark, List, Plus, ShieldCheck, Wallet } from "lucide-react";
 import { listBankAccountsWithBalance } from "@/features/banks/queries";
 import { availableCash, cardPosition, type CashSummary } from "@/features/banks/display";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { DataTable, type Column } from "@/components/ui/data-table";
 import { NoResults } from "@/components/ui/no-results";
 import { IconBadge } from "@/components/ui/icon-badge";
 import {
@@ -58,7 +59,7 @@ function AccountCard({ a }: { a: AccountRow }) {
   return (
     <Link
       href={`/banks/${a.id}`}
-      className={`group flex flex-col gap-4 rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface p-5 shadow-[var(--shadow-sm)] transition-shadow hover:shadow-[var(--shadow-md)] ${
+      className={`group flex min-w-0 flex-col gap-3 rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface p-4 shadow-[var(--shadow-sm)] transition-shadow hover:shadow-[var(--shadow-md)] ${
         a.is_active ? "" : "opacity-60"
       }`}
     >
@@ -132,7 +133,7 @@ function AccountCard({ a }: { a: AccountRow }) {
             )}
           </p>
           <p
-            className={`whitespace-nowrap text-2xl font-semibold tracking-tight tabular-nums ${
+            className={`whitespace-nowrap text-xl font-semibold tracking-tight tabular-nums ${
               a.current_balance < 0 ? "text-brand-danger" : "text-brand-text"
             }`}
           >
@@ -144,22 +145,102 @@ function AccountCard({ a }: { a: AccountRow }) {
   );
 }
 
+/** Vista "Lista": una fila por cuenta, para cuando hay muchas cuentas. */
+function AccountsTable({ rows }: { rows: AccountRow[] }) {
+  const columns: Column<AccountRow>[] = [
+    {
+      header: "Cuenta",
+      accessor: (a) => {
+        const isCard = a.type === "CREDIT_CARD";
+        return (
+          <Link href={`/banks/${a.id}`} className="group flex min-w-[14rem] items-center gap-3">
+            <IconBadge icon={isCard ? <CreditCard size={15} /> : <Landmark size={15} />} tone={isCard ? "violet" : "blue"} size="sm" />
+            <span className="min-w-0">
+              <span className="block truncate font-medium text-brand-text group-hover:text-brand-accent">{a.name}</span>
+              <span className="block truncate text-xs text-brand-muted">
+                {a.bank_name ?? "Sin banco"}
+                {a.account_number_masked ? ` · ${a.account_number_masked}` : ""}
+              </span>
+            </span>
+          </Link>
+        );
+      },
+    },
+    {
+      header: "Tipo",
+      accessor: (a) => (
+        <span className="whitespace-nowrap text-brand-muted">
+          {a.type === "CREDIT_CARD" ? "Tarjeta de crédito" : a.account_kind ? ACCOUNT_KIND_LABELS[a.account_kind] : "Sin tipo"}
+        </span>
+      ),
+    },
+    { header: "Moneda", accessor: (a) => <Badge tone="neutral">{a.currency}</Badge> },
+    {
+      header: "Saldo / Deuda",
+      className: "text-right",
+      accessor: (a) => {
+        if (a.type === "CREDIT_CARD") {
+          const { debt, favor } = cardPosition(a.current_balance, a.credit_limit, a.favor_increases_limit);
+          return favor > 0 ? (
+            <span className="whitespace-nowrap font-medium tabular-nums text-brand-success">A favor {formatMoney(favor, a.currency)}</span>
+          ) : (
+            <span className={`whitespace-nowrap font-medium tabular-nums ${debt > 0 ? "text-brand-danger" : "text-brand-text"}`}>
+              Deuda {formatMoney(debt, a.currency)}
+            </span>
+          );
+        }
+        return (
+          <span className={`whitespace-nowrap font-semibold tabular-nums ${a.current_balance < 0 ? "text-brand-danger" : "text-brand-text"}`}>
+            {formatMoney(a.current_balance, a.currency)}
+          </span>
+        );
+      },
+    },
+    {
+      header: "Estado",
+      accessor: (a) => (
+        <span className="flex flex-wrap gap-1">
+          {!a.is_active && <Badge tone="neutral">Inactiva</Badge>}
+          {a.type === "BANK" && a.current_balance < 0 && <Badge tone="danger">En sobregiro</Badge>}
+          {a.uncategorized_count > 0 && <Badge tone="warning">{a.uncategorized_count} sin categoría</Badge>}
+          {a.is_active && a.current_balance >= 0 && a.uncategorized_count === 0 && <span className="text-xs text-brand-muted">—</span>}
+        </span>
+      ),
+    },
+  ];
+  return <DataTable columns={columns} rows={rows} keyFor={(a) => a.id} maxWidth="max-w-none" />;
+}
+
 export default async function BanksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ kind?: string; currency?: string }>;
+  searchParams: Promise<{ kind?: string; currency?: string; view?: string }>;
 }) {
   const params = await searchParams;
-  const kindFilter = params.kind === "SAVINGS" || params.kind === "CHECKING" ? params.kind : undefined;
+  // Tipo: Ahorros / Corriente / Tarjetas de crédito (CARD).
+  const kindFilter =
+    params.kind === "SAVINGS" || params.kind === "CHECKING" || params.kind === "CARD" ? params.kind : undefined;
+  // Vista: tarjetas (por defecto) o lista compacta para muchas cuentas.
+  const listView = params.view === "lista";
   const currencyFilter = params.currency === "DOP" || params.currency === "USD" ? params.currency : undefined;
   const accounts = await listBankAccountsWithBalance();
   const allBanks = accounts.filter((a) => a.type !== "CREDIT_CARD");
-  const banks = allBanks.filter(
-    (a) => (!kindFilter || a.account_kind === kindFilter) && (!currencyFilter || a.currency === currencyFilter),
-  );
   const cards = accounts.filter((a) => a.type === "CREDIT_CARD");
+  const showBanks = kindFilter !== "CARD";
+  const showCards = !kindFilter || kindFilter === "CARD";
+  const banks = allBanks.filter(
+    (a) =>
+      (!kindFilter || kindFilter === "CARD" || a.account_kind === kindFilter) &&
+      (!currencyFilter || a.currency === currencyFilter),
+  );
+  const cardsShown = cards.filter((a) => !currencyFilter || a.currency === currencyFilter);
   // Filtro sin resultados: el siguiente filtro que se elija empieza de cero.
-  const noResults = banks.length === 0 && Boolean(kindFilter || currencyFilter);
+  const noResults =
+    Boolean(kindFilter || currencyFilter) &&
+    (showBanks ? banks.length : 0) + (showCards ? cardsShown.length : 0) === 0;
+  // Conteos de los botones según el otro filtro (tipo ↔ moneda).
+  const byCurrency = (a: AccountRow) => !currencyFilter || noResults || a.currency === currencyFilter;
+  const view = listView ? "lista" : undefined;
   const activeCards = cards.filter((a) => a.is_active);
 
   // Dinero disponible: solo cuentas bancarias (ahorro y corriente), por
@@ -272,65 +353,116 @@ export default async function BanksPage({
             tarjetas de crédito no cuentan como dinero disponible. Una cuenta en sobregiro resta.
           </p>
 
-          <section>
-            <SectionHeader title="Cuentas bancarias" count={banks.length} />
-            <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <FilterPills
                 label="Filtrar por tipo de cuenta"
                 items={[
-                  { key: "all", label: "Todas", count: allBanks.length, active: !kindFilter, href: listHref("/banks", { currency: noResults ? undefined : currencyFilter }) },
+                  {
+                    key: "all",
+                    label: "Todas",
+                    count: accounts.filter(byCurrency).length,
+                    active: !kindFilter,
+                    href: listHref("/banks", { currency: noResults ? undefined : currencyFilter, view }),
+                  },
                   ...(["SAVINGS", "CHECKING"] as const).map((k) => ({
                     key: k,
                     label: ACCOUNT_KIND_LABELS[k],
-                    count: allBanks.filter((a) => a.account_kind === k).length,
+                    count: allBanks.filter((a) => a.account_kind === k && byCurrency(a)).length,
                     active: kindFilter === k,
-                    href: listHref("/banks", { kind: k, currency: noResults ? undefined : currencyFilter }),
+                    href: listHref("/banks", { kind: k, currency: noResults ? undefined : currencyFilter, view }),
                   })),
+                  {
+                    key: "CARD",
+                    label: "Tarjetas de crédito",
+                    count: cards.filter(byCurrency).length,
+                    active: kindFilter === "CARD",
+                    href: listHref("/banks", { kind: "CARD", currency: noResults ? undefined : currencyFilter, view }),
+                  },
                 ]}
               />
               <FilterPills
                 label="Filtrar por moneda"
                 items={[
-                  { key: "all", label: "Todas las monedas", active: !currencyFilter, href: listHref("/banks", { kind: noResults ? undefined : kindFilter }) },
+                  { key: "all", label: "Todas las monedas", active: !currencyFilter, href: listHref("/banks", { kind: noResults ? undefined : kindFilter, view }) },
                   ...(["DOP", "USD"] as const).map((c) => ({
                     key: c,
                     label: c,
-                    count: allBanks.filter((a) => a.currency === c).length,
+                    count: (kindFilter === "CARD" ? cards : kindFilter ? allBanks.filter((a) => a.account_kind === kindFilter) : accounts).filter(
+                      (a) => a.currency === c,
+                    ).length,
                     active: currencyFilter === c,
-                    href: listHref("/banks", { kind: noResults ? undefined : kindFilter, currency: c }),
+                    href: listHref("/banks", { kind: noResults ? undefined : kindFilter, currency: c, view }),
                   })),
                 ]}
               />
             </div>
-            {banks.length === 0 && (kindFilter || currencyFilter) ? (
-              <NoResults what="cuentas" clearHref="/banks" />
-            ) : banks.length === 0 ? (
-              <p className="rounded-[var(--radius-lg)] border border-dashed border-brand-border p-6 text-center text-sm text-brand-muted">
-                Sin cuentas bancarias todavía.
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {banks.map((a) => (
-                  <AccountCard key={a.id} a={a} />
-                ))}
-              </div>
-            )}
-          </section>
+            <nav aria-label="Vista" className="flex gap-1 rounded-full border border-brand-border bg-brand-surface p-1">
+              {[
+                { key: undefined, label: "Tarjetas", icon: <LayoutGrid size={14} /> },
+                { key: "lista", label: "Lista", icon: <List size={14} /> },
+              ].map((v) => {
+                const active = (v.key === "lista") === listView;
+                return (
+                  <Link
+                    key={v.label}
+                    href={listHref("/banks", { kind: kindFilter, currency: currencyFilter, view: v.key })}
+                    aria-current={active ? "page" : undefined}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${
+                      active ? "bg-brand-primary text-white" : "text-brand-muted hover:text-brand-text"
+                    }`}
+                  >
+                    {v.icon}
+                    {v.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
 
-          <section>
-            <SectionHeader title="Tarjetas de crédito" count={cards.length} />
-            {cards.length === 0 ? (
-              <p className="rounded-[var(--radius-lg)] border border-dashed border-brand-border p-6 text-center text-sm text-brand-muted">
-                Sin tarjetas registradas todavía.
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {cards.map((a) => (
-                  <AccountCard key={a.id} a={a} />
-                ))}
-              </div>
-            )}
-          </section>
+          {noResults ? (
+            <NoResults what="cuentas ni tarjetas" clearHref={listHref("/banks", { view })} />
+          ) : (
+            <>
+              {showBanks && (
+                <section>
+                  <SectionHeader title="Cuentas bancarias" count={banks.length} />
+                  {banks.length === 0 ? (
+                    <p className="rounded-[var(--radius-lg)] border border-dashed border-brand-border p-6 text-center text-sm text-brand-muted">
+                      {currencyFilter ? `Sin cuentas bancarias en ${currencyFilter}.` : "Sin cuentas bancarias todavía."}
+                    </p>
+                  ) : listView ? (
+                    <AccountsTable rows={banks} />
+                  ) : (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                      {banks.map((a) => (
+                        <AccountCard key={a.id} a={a} />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {showCards && (
+                <section>
+                  <SectionHeader title="Tarjetas de crédito" count={cardsShown.length} />
+                  {cardsShown.length === 0 ? (
+                    <p className="rounded-[var(--radius-lg)] border border-dashed border-brand-border p-6 text-center text-sm text-brand-muted">
+                      {currencyFilter ? `Sin tarjetas en ${currencyFilter}.` : "Sin tarjetas registradas todavía."}
+                    </p>
+                  ) : listView ? (
+                    <AccountsTable rows={cardsShown} />
+                  ) : (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                      {cardsShown.map((a) => (
+                        <AccountCard key={a.id} a={a} />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+            </>
+          )}
         </>
       )}
     </main>

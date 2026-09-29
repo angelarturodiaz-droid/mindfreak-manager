@@ -353,3 +353,7 @@ pulsa el botón.
   tarjetas" y "Crédito disponible"). Una corriente en sobregiro resta.
 - Dashboard: widgets nuevos "Disponible en bancos (pesos)" y "(dólares)",
   visibles al inicio para todos (se pueden ocultar en Personalizar).
+- Filtro de tipo en Bancos: Todas / Ahorros / Corriente / Tarjetas de
+  crédito (con conteos según la moneda elegida). Vista Tarjetas (hasta 4
+  por fila, más compactas) o Lista (tabla, una fila por cuenta) para cuando
+  haya muchas cuentas.
