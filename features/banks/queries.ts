@@ -107,3 +107,51 @@ export function transactionEffect(type: string, amount: number): number {
   if (type === "TRANSFER") return Number(amount);
   return 0;
 }
+
+/** Lo necesario para mostrar "cuánto hay disponible" al elegir una cuenta en un pago. */
+export type AccountFunds = {
+  currency: string;
+  type: string;
+  account_kind: string | null;
+  allow_overdraft: boolean;
+  credit_limit: number | null;
+  favor_increases_limit: boolean;
+  /** Saldo actual (tarjetas: negativo = deuda, positivo = saldo a favor). */
+  balance: number;
+};
+
+/**
+ * Saldo de cada cuenta activa, por id — solo para mostrarlo en los
+ * formularios de pago. Si el usuario no puede leer los saldos, devuelve {}
+ * y el formulario simplemente no muestra el dato.
+ */
+export async function getAccountFunds(): Promise<Record<string, AccountFunds>> {
+  try {
+    const supabase = await createClient();
+    const [{ data: accounts, error }, { data: balances, error: balError }] = await Promise.all([
+      supabase
+        .from("bank_accounts")
+        .select("id, currency, type, account_kind, allow_overdraft, credit_limit, favor_increases_limit")
+        .eq("is_active", true),
+      supabase.from("bank_account_balances").select("bank_account_id, current_balance"),
+    ]);
+    if (error || balError || !accounts) return {};
+    const balanceMap = new Map((balances ?? []).map((b) => [b.bank_account_id, Number(b.current_balance)]));
+    return Object.fromEntries(
+      accounts.map((a) => [
+        a.id,
+        {
+          currency: a.currency,
+          type: a.type,
+          account_kind: a.account_kind ?? null,
+          allow_overdraft: Boolean(a.allow_overdraft),
+          credit_limit: a.credit_limit == null ? null : Number(a.credit_limit),
+          favor_increases_limit: Boolean(a.favor_increases_limit),
+          balance: balanceMap.get(a.id) ?? 0,
+        },
+      ]),
+    );
+  } catch {
+    return {};
+  }
+}

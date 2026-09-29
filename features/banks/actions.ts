@@ -6,14 +6,15 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
 import { bankAccountSchema, bankAccountEditSchema, manualTransactionSchema, transferSchema } from "./schema";
-import { bankRuleState, overdraftConfirmed } from "@/lib/utils/bank-errors";
+import { bankRuleState, overdraftConfirmed, type MoneyActionState } from "@/lib/utils/bank-errors";
+import { formatMoney } from "@/lib/utils/money";
 
 /**
  * confirmOverdraft: la operación dejaría una cuenta corriente con
  * sobregiro autorizado en negativo; la pantalla muestra el mensaje y, si el
  * usuario pulsa Continuar, reenvía el formulario con confirm_overdraft=1.
  */
-export type ActionState = { error: string | null; confirmOverdraft?: string };
+export type ActionState = MoneyActionState;
 
 async function getPrimaryCompanyId(): Promise<string> {
   const companyIds = await getCurrentUserCompanyIds();
@@ -214,7 +215,11 @@ export async function createManualTransactionAction(
 
   revalidatePath(`/banks/${bankAccountId}`);
   revalidatePath("/banks");
-  return { error: null };
+  return {
+    error: null,
+    success: `${parsed.data.type === "INCOME" ? "Ingreso" : "Gasto"} de ${formatMoney(parsed.data.amount, account.currency)} registrado.`,
+    successId: Date.now(),
+  };
 }
 
 /**
@@ -278,7 +283,21 @@ export async function createTransferAction(
   revalidatePath(`/banks/${fromAccountId}`);
   revalidatePath(`/banks/${parsed.data.to_bank_account_id}`);
   revalidatePath("/banks");
-  return { error: null };
+
+  const { data: pair } = await supabase
+    .from("bank_accounts")
+    .select("id, name, currency")
+    .in("id", [fromAccountId, parsed.data.to_bank_account_id]);
+  const from = pair?.find((a) => a.id === fromAccountId);
+  const to = pair?.find((a) => a.id === parsed.data.to_bank_account_id);
+  return {
+    error: null,
+    successTitle: "Transferencia realizada",
+    success: `Se transfirieron ${formatMoney(parsed.data.amount, from?.currency ?? "DOP")}${
+      from && to ? ` de ${from.name} a ${to.name}` : ""
+    }. Los saldos de las dos cuentas ya están actualizados.`,
+    successId: Date.now(),
+  };
 }
 
 /**

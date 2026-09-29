@@ -1,5 +1,21 @@
 # CHANGELOG — Mindfreak Manager
 
+## Ventanas al mover dinero y saldo disponible al pagar (2026-09-28)
+
+- `ResultDialog` (components/ui/result-dialog.tsx). `useOverdraftConfirmAction`
+  ahora muestra ventanas: sobregiro (Cancelar/Continuar), bloqueo
+  (`blocked`/`blockedTitle`) y éxito (`success`, o toast con
+  `successAs: "toast"`); devuelve `formKey` (= `successId`) para limpiar el
+  formulario tras cada éxito.
+- `bankRuleState` devuelve `blocked` en vez de `error` para fondos/crédito
+  insuficiente. `MoneyActionState` (lib/utils/bank-errors.ts) es el tipo de
+  estado de banks/payments/expenses actions.
+- Transferencia, movimiento manual y pago a proveedor devuelven mensaje de
+  éxito; pago mayor a lo pendiente → ventana.
+- `getAccountFunds()` + `AccountFundsHint`: disponible de la cuenta elegida
+  en Registrar pago (con aviso si no alcanza) y en Nuevo gasto.
+- Sin cambios de base de datos ni de reglas.
+
 ## Dashboard compacto con indicadores (2026-09-28)
 
 - Se descartó el modo "Organizar" en el Dashboard (ca2d500): el usuario

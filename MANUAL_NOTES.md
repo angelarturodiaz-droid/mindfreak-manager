@@ -372,3 +372,16 @@ pulsa el botón.
 - Tamaño en Personalizar: solo aplica a gráficos y listas (Grande = 2 de 3
   columnas). Mover cuadros sigue siendo desde Personalizar (se probó
   arrastrar en el propio Dashboard y se descartó).
+
+## Ventanas al mover dinero y saldo disponible al pagar (2026-09-28)
+- Fondos o crédito insuficiente (y "monto mayor a lo pendiente" en el pago
+  de un gasto): ventana roja con el detalle y Cerrar, en lugar del texto
+  rojo debajo del formulario. No se registra nada.
+- Sobregiro autorizado: ventana amarilla Cancelar / Continuar (misma regla).
+- Transferencia realizada y pago a proveedor registrado: ventana verde con
+  monto y cuentas. Movimiento manual: aviso corto. El formulario queda en
+  blanco después de cada operación (antes se quedaba el monto).
+- Registrar pago de un gasto y Nuevo gasto: al elegir la cuenta aparece lo
+  disponible (tarjeta: crédito disponible y deuda). En Registrar pago avisa
+  si el monto no alcanza o si dejaría la cuenta en sobregiro. Solo
+  informativo; la validación sigue en la base de datos.

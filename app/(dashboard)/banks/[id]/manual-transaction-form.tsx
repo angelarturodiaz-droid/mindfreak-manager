@@ -25,10 +25,13 @@ export function ManualTransactionForm({
   categories: { id: string; name: string }[];
 }) {
   const createWithId = createManualTransactionAction.bind(null, bankAccountId);
-  const [state, formAction, pending, confirmBox] = useOverdraftConfirmAction(createWithId, initialState);
+  // Éxito: aviso corto y el formulario queda en blanco (key). Sin fondos: ventana.
+  const [state, formAction, pending, dialogs, formKey] = useOverdraftConfirmAction(createWithId, initialState, {
+    successAs: "toast",
+  });
 
   return (
-    <form action={formAction} className="flex flex-wrap items-end gap-2">
+    <form key={formKey} action={formAction} className="flex flex-wrap items-end gap-2">
       <Select label="Tipo" name="type" defaultValue="INCOME">
         <option value="INCOME">Ingreso</option>
         <option value="EXPENSE">Gasto</option>
@@ -67,7 +70,7 @@ export function ManualTransactionForm({
         Agregar movimiento
       </Button>
       {state.error && <p className="w-full text-sm text-brand-danger">{state.error}</p>}
-      {confirmBox}
+      {dialogs}
       <p className="w-full text-xs text-brand-muted">
         ¿Falta una categoría?{" "}
         <Link href="/settings/expense-categories" className="text-brand-accent hover:underline">

@@ -6,11 +6,11 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
 import { expenseSchema, calculateExpenseTotals } from "./schema";
-import { bankRuleState, overdraftConfirmed } from "@/lib/utils/bank-errors";
+import { bankRuleState, overdraftConfirmed, type MoneyActionState } from "@/lib/utils/bank-errors";
 import { safeReturnTo } from "@/lib/utils/return-to";
 
 /** confirmOverdraft: ver features/banks/actions.ts (sobregiro por confirmar). */
-export type ActionState = { error: string | null; confirmOverdraft?: string };
+export type ActionState = MoneyActionState;
 
 async function getPrimaryCompanyId(): Promise<string> {
   const companyIds = await getCurrentUserCompanyIds();

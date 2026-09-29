@@ -19,6 +19,7 @@ import { UploadDocumentForm } from "@/components/documents/upload-document-form"
 import { listDocuments } from "@/features/documents/queries";
 import { listBankCatalog } from "@/features/bank-catalog/queries";
 import { getCompany } from "@/features/settings/queries";
+import { getAccountFunds } from "@/features/banks/queries";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { MetricCard, SectionHeader } from "@/components/ui/page-kit";
@@ -61,7 +62,7 @@ export default async function ExpenseDetailPage({
   }
   if (!expense) notFound();
 
-  const [categories, suppliers, projects, canEdit, canPay, payments, bankAccounts, documents, bankCatalog, company] =
+  const [categories, suppliers, projects, canEdit, canPay, payments, bankAccounts, documents, bankCatalog, company, funds] =
     await Promise.all([
       listExpenseCategories(),
       listActiveSuppliers(),
@@ -73,6 +74,7 @@ export default async function ExpenseDetailPage({
       listDocuments("expense", id),
       listBankCatalog(),
       getCompany(),
+      getAccountFunds(),
     ]);
 
   const category = expense.expense_categories as { name: string } | null;
@@ -263,6 +265,7 @@ export default async function ExpenseDetailPage({
                     currency={expense.currency}
                     bankAccounts={bankAccounts}
                     bankCatalog={bankCatalog}
+                    funds={funds}
                   />
                 )}
               </Card>

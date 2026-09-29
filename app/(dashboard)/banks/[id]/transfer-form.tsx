@@ -39,10 +39,18 @@ export function TransferForm({
   otherAccounts: Account[];
 }) {
   const createWithId = createTransferAction.bind(null, fromAccountId);
-  const [state, formAction, pending, confirmBox] = useOverdraftConfirmAction(createWithId, initialState);
+  const [state, formAction, pending, dialogs, formKey] = useOverdraftConfirmAction(createWithId, initialState);
   const [toId, setToId] = useState("");
   const [amount, setAmount] = useState(0);
   const [rate, setRate] = useState(0);
+  // Después de cada transferencia exitosa el formulario queda en blanco.
+  const [seenKey, setSeenKey] = useState(formKey);
+  if (seenKey !== formKey) {
+    setSeenKey(formKey);
+    setToId("");
+    setAmount(0);
+    setRate(0);
+  }
 
   if (otherAccounts.length === 0) {
     return (
@@ -74,7 +82,7 @@ export function TransferForm({
       : null;
 
   return (
-    <form action={formAction} className="flex flex-wrap items-end gap-2">
+    <form key={formKey} action={formAction} className="flex flex-wrap items-end gap-2">
       <Select
         label="Cuenta destino"
         name="to_bank_account_id"
@@ -142,7 +150,7 @@ export function TransferForm({
         </p>
       )}
       {state.error && <p className="w-full text-sm text-brand-danger">{state.error}</p>}
-      {confirmBox}
+      {dialogs}
     </form>
   );
 }

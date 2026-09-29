@@ -9,6 +9,7 @@ import {
 import { listBankCatalog } from "@/features/bank-catalog/queries";
 import { getCompany } from "@/features/settings/queries";
 import { safeReturnTo } from "@/lib/utils/return-to";
+import { getAccountFunds } from "@/features/banks/queries";
 import { NewExpenseForm } from "./new-expense-form";
 
 export default async function NewExpensePage({
@@ -17,13 +18,14 @@ export default async function NewExpensePage({
   searchParams: Promise<{ project_id?: string; supplier_id?: string; return_to?: string }>;
 }) {
   const params = await searchParams;
-  const [categories, suppliers, projects, accounts, bankCatalog, company] = await Promise.all([
+  const [categories, suppliers, projects, accounts, bankCatalog, company, funds] = await Promise.all([
     listExpenseCategories(),
     listActiveSuppliers(),
     listProjectsForSelect(),
     listActiveAccountsForSelect(),
     listBankCatalog(),
     getCompany(),
+    getAccountFunds(),
   ]);
 
   // Gasto creado desde un proyecto o proveedor: se preselecciona y, al
@@ -65,6 +67,7 @@ export default async function NewExpensePage({
         defaultProjectId={project?.id}
         defaultSupplierId={supplier?.id}
         returnTo={returnTo}
+        funds={funds}
       />
     </main>
   );

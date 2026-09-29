@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useOverdraftConfirmAction } from "@/components/ui/overdraft-confirm";
+import { AccountFundsHint } from "@/components/banks/account-funds-hint";
+import type { AccountFunds } from "@/features/banks/queries";
 import Link from "next/link";
 import { createExpenseAction, type ActionState } from "@/features/expenses/actions";
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
@@ -28,6 +30,7 @@ export function NewExpenseForm({
   defaultProjectId = "",
   defaultSupplierId = "",
   returnTo = null,
+  funds = {},
 }: {
   categories: Option[];
   suppliers: SupplierOption[];
@@ -39,9 +42,12 @@ export function NewExpenseForm({
   defaultProjectId?: string;
   defaultSupplierId?: string;
   returnTo?: string | null;
+  /** Saldo de cada cuenta, para mostrar cuánto hay disponible en la elegida. */
+  funds?: Record<string, AccountFunds>;
 }) {
-  const [state, formAction, pending, confirmBox] = useOverdraftConfirmAction(createExpenseAction, initialState);
+  const [state, formAction, pending, dialogs] = useOverdraftConfirmAction(createExpenseAction, initialState);
   const [paymentMethod, setPaymentMethod] = useState("");
+  const [accountId, setAccountId] = useState("");
   // Categoría sugerida por el proveedor: se llena sola al elegirlo, salvo
   // que el usuario ya haya elegido una a mano.
   const defaultSupplier = suppliers.find((s) => s.id === defaultSupplierId);
@@ -136,7 +142,10 @@ export function NewExpenseForm({
         label="Método de pago"
         name="payment_method"
         defaultValue=""
-        onChange={(e) => setPaymentMethod(e.target.value)}
+        onChange={(e) => {
+          setPaymentMethod(e.target.value);
+          setAccountId("");
+        }}
       >
         <option value="">Sin especificar</option>
         {PAYMENT_METHODS.map((m) => (
@@ -152,7 +161,8 @@ export function NewExpenseForm({
             label="Tarjeta"
             name="bank_account_id"
             required
-            defaultValue=""
+            value={accountId}
+            onChange={(e) => setAccountId(e.target.value)}
             hint="El gasto queda pagado de inmediato y la deuda de la tarjeta sube sola."
           >
             <option value="" disabled>
@@ -179,7 +189,8 @@ export function NewExpenseForm({
           <Select
             label="Banco (opcional)"
             name="bank_account_id"
-            defaultValue=""
+            value={accountId}
+            onChange={(e) => setAccountId(e.target.value)}
             hint={
               relevantAccounts.length === 0
                 ? "Sin cuentas bancarias todavía — se puede pagar después desde el detalle del gasto."
@@ -196,11 +207,13 @@ export function NewExpenseForm({
         )
       )}
 
+      {accountId && <AccountFundsHint funds={funds[accountId]} />}
+
       <CurrencyExchangeFields baseCurrency={baseCurrency} />
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
 
-      {confirmBox}
+      {dialogs}
 
       <div className="flex gap-3">
         <Button type="submit" loading={pending}>

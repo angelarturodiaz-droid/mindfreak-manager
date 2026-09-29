@@ -482,6 +482,9 @@ const SECTIONS: Section[] = [
             <>Para activar el sobregiro: <strong>Editar cuenta → Tipo de cuenta: Corriente → marcar Permitir sobregiro</strong>. En cuentas de ahorro esa casilla aparece bloqueada.</>,
             <>Las cuentas creadas antes que no tienen tipo se tratan como <strong>corriente sin sobregiro</strong> hasta que les pongas el tipo en Editar cuenta.</>,
             "Las entradas de dinero (cobros, ingresos, transferencias recibidas) nunca se bloquean.",
+            <><strong>Cómo se ve</strong>: si no hay fondos o crédito, aparece una <strong>ventana roja</strong> (&ldquo;Fondos insuficientes&rdquo; o &ldquo;Crédito insuficiente&rdquo;) con el detalle y el botón <strong>Cerrar</strong>; no se registró nada y puedes cambiar el monto o la cuenta. Si es un sobregiro autorizado, la ventana es <strong>amarilla</strong> con <strong>Cancelar</strong> / <strong>Continuar</strong>.</>,
+            <><strong>Saber antes de pagar</strong>: al elegir la cuenta en <strong>Registrar pago</strong> de un gasto o en <strong>Nuevo gasto</strong>, debajo aparece un recuadro con lo <strong>disponible en la cuenta</strong> (en tarjetas, el crédito disponible y la deuda). En Registrar pago además avisa si el monto no alcanza (rojo) o si dejaría la cuenta en sobregiro (amarillo). Es solo un aviso: la validación real se hace al guardar.</>,
+            <><strong>Al terminar</strong>: una transferencia o un pago a proveedor muestran una <strong>ventana verde</strong> (&ldquo;Transferencia realizada&rdquo; / &ldquo;Pago registrado&rdquo;) con el monto y las cuentas; un movimiento manual muestra un aviso corto arriba a la derecha. En todos los casos el formulario <strong>queda en blanco</strong> para la siguiente operación.</>,
           ]}
         />
         <p className="text-sm font-medium text-brand-text">Tarjetas de crédito: deuda, saldo a favor y crédito disponible:</p>

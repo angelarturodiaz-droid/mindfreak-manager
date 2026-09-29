@@ -5,11 +5,12 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { registerPaymentSchema } from "./schema";
 import type { ReceiptPdfData } from "@/lib/pdf/receipt-document";
-import { bankRuleState, overdraftConfirmed } from "@/lib/utils/bank-errors";
+import { bankRuleState, overdraftConfirmed, type MoneyActionState } from "@/lib/utils/bank-errors";
+import { formatMoney } from "@/lib/utils/money";
 import type { SupplierReceiptPdfData } from "@/lib/pdf/supplier-receipt-document";
 
 /** confirmOverdraft: ver features/banks/actions.ts (sobregiro por confirmar). */
-export type ActionState = { error: string | null; confirmOverdraft?: string };
+export type ActionState = MoneyActionState;
 /**
  * Registrar un cobro. Toda la lógica multi-tabla (factura, banco, auditoría)
  * vive en la función Postgres `register_customer_payment` (transaccional,
@@ -154,7 +155,11 @@ export async function registerSupplierPaymentAction(
     const rule = bankRuleState(error.message);
     if (rule) return rule;
     if (error.message.includes("amount_exceeds_balance")) {
-      return { error: "El monto supera el balance pendiente del gasto." };
+      return {
+        error: null,
+        blockedTitle: "Monto mayor a lo pendiente",
+        blocked: "El monto que escribiste es mayor a lo que falta por pagar de este gasto. Revisa el monto e inténtalo de nuevo.",
+      };
     }
     if (error.message.includes("invalid_status")) {
       return { error: "Este gasto no admite pagos en su estado actual." };
@@ -165,7 +170,20 @@ export async function registerSupplierPaymentAction(
   revalidatePath(`/expenses/${expenseId}`);
   revalidatePath("/expenses");
   revalidatePath("/payments");
-  return { error: null };
+
+  const { data: account } = await supabase
+    .from("bank_accounts")
+    .select("name")
+    .eq("id", parsed.data.bank_account_id)
+    .single();
+  return {
+    error: null,
+    successTitle: "Pago registrado",
+    success: `Se registró el pago de ${formatMoney(parsed.data.amount, expense.currency)}${
+      account ? ` desde ${account.name}` : ""
+    }. Ya se ve en el gasto y en Bancos.`,
+    successId: Date.now(),
+  };
 }
 
 async function getPrimaryCompanyId(): Promise<string> {
