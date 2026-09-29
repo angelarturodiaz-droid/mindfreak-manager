@@ -343,3 +343,13 @@ filtros se siguen combinando. En el detalle de cuenta de Bancos, los
 conteos de los botones consideran los demás filtros activos. En Reportes y
 Auditoría (que tienen botón Aplicar/Filtrar) se cambian los campos y se
 pulsa el botón.
+
+## Bancos y Dashboard: dinero disponible (2026-09-28)
+- Bancos (arriba): "Disponible en pesos" y "Disponible en dólares" = suma de
+  las cuentas de ahorro y corrientes ACTIVAS de cada moneda. Dos totales
+  separados: los dólares no se convierten ni se suman a los pesos.
+  Desglose debajo: Ahorros · Corriente · (Sin tipo) · N cuentas.
+- Tarjetas de crédito no cuentan como disponible (tienen "Deuda en
+  tarjetas" y "Crédito disponible"). Una corriente en sobregiro resta.
+- Dashboard: widgets nuevos "Disponible en bancos (pesos)" y "(dólares)",
+  visibles al inicio para todos (se pueden ocultar en Personalizar).

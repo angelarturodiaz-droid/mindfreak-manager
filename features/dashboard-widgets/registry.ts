@@ -16,6 +16,8 @@ export type WidgetDef = {
 };
 
 export const WIDGET_REGISTRY: WidgetDef[] = [
+  { type: "disponible_bancos_dop", label: "Disponible en bancos (pesos)", category: "Bancos", defaultSize: "sm" },
+  { type: "disponible_bancos_usd", label: "Disponible en bancos (dólares)", category: "Bancos", defaultSize: "sm" },
   { type: "total_por_cobrar", label: "Total por cobrar", category: "Cobros", defaultSize: "sm" },
   { type: "total_vencido", label: "Total vencido", category: "Cobros", defaultSize: "sm" },
   { type: "vence_hoy", label: "Vence hoy", category: "Cobros", defaultSize: "sm" },
@@ -43,6 +45,8 @@ export type WidgetInstance = { type: string; visible: boolean; size: WidgetSize 
 
 /** Layout que ve un usuario que nunca ha personalizado su Dashboard — refleja el Dashboard "de fábrica" que ya existía. */
 export const DEFAULT_WIDGETS: WidgetInstance[] = [
+  { type: "disponible_bancos_dop", visible: true, size: "sm" },
+  { type: "disponible_bancos_usd", visible: true, size: "sm" },
   { type: "ingresos_mes", visible: true, size: "sm" },
   { type: "ultimos_cobros", visible: true, size: "sm" },
   { type: "gastos_mes", visible: true, size: "sm" },
@@ -61,6 +65,13 @@ export const DEFAULT_WIDGETS: WidgetInstance[] = [
   { type: "tareas_pendientes", visible: false, size: "md" },
   { type: "rentabilidad_proyectos", visible: false, size: "md" },
 ];
+
+/**
+ * Widgets nuevos que deben aparecer (visibles, al inicio) también a quien
+ * ya había personalizado su Dashboard antes de que existieran. Si luego los
+ * oculta en "Personalizar", se respeta.
+ */
+export const NEW_WIDGETS_SHOWN_BY_DEFAULT = ["disponible_bancos_dop", "disponible_bancos_usd"];
 
 export const SIZE_COLS: Record<WidgetSize, string> = {
   sm: "col-span-1",

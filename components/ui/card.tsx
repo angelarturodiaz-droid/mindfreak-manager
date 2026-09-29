@@ -29,9 +29,12 @@ export function KpiCard({
   trend,
   danger,
   icon,
+  hint,
 }: {
   label: string;
   value: string;
+  /** Texto chico debajo del valor (ej. desglose). */
+  hint?: ReactNode;
   /** Ej. "+12.4%" o "-3.1%" respecto al período anterior */
   trend?: string;
   danger?: boolean;
@@ -39,7 +42,7 @@ export function KpiCard({
 }) {
   const trendPositive = trend?.startsWith("+");
   return (
-    <Card className="flex h-full flex-col gap-3 transition-shadow hover:shadow-[var(--shadow-md)]">
+    <Card className="@container flex h-full min-w-0 flex-col gap-3 transition-shadow hover:shadow-[var(--shadow-md)]">
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-medium text-brand-muted">{label}</p>
         {icon && (
@@ -55,10 +58,11 @@ export function KpiCard({
         )}
       </div>
       <p
-        className={`text-2xl font-semibold tracking-tight ${danger ? "text-brand-danger" : "text-brand-text"}`}
+        className={`whitespace-nowrap text-lg font-semibold tracking-tight tabular-nums @[14rem]:text-xl @[18rem]:text-2xl ${danger ? "text-brand-danger" : "text-brand-text"}`}
       >
         {value}
       </p>
+      {hint && <p className="-mt-2 text-xs text-brand-muted">{hint}</p>}
       {trend && (
         <p
           className={`text-xs font-medium ${

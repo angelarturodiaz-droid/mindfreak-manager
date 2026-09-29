@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { AlertTriangle, ChevronRight, CreditCard, Landmark, Plus, ShieldCheck, Wallet } from "lucide-react";
+import { AlertTriangle, ChevronRight, CreditCard, DollarSign, Landmark, Plus, ShieldCheck, Wallet } from "lucide-react";
 import { listBankAccountsWithBalance } from "@/features/banks/queries";
-import { cardPosition } from "@/features/banks/display";
+import { availableCash, cardPosition, type CashSummary } from "@/features/banks/display";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -24,6 +24,17 @@ function formatMoney(amount: number, currency: string) {
 }
 
 type AccountRow = Awaited<ReturnType<typeof listBankAccountsWithBalance>>[number];
+
+/** "Ahorros RD$X · Corriente RD$Y · 3 cuentas" para la tarjeta de disponible. */
+function cashHint(c: CashSummary, currency: string) {
+  if (c.count === 0) return `Sin cuentas en ${currency === "USD" ? "dólares" : "pesos"}`;
+  const parts: string[] = [];
+  if (c.savings !== 0) parts.push(`Ahorros ${formatMoney(c.savings, currency)}`);
+  if (c.checking !== 0) parts.push(`Corriente ${formatMoney(c.checking, currency)}`);
+  if (c.other !== 0) parts.push(`Sin tipo ${formatMoney(c.other, currency)}`);
+  parts.push(c.count === 1 ? "1 cuenta" : `${c.count} cuentas`);
+  return parts.join(" · ");
+}
 
 /** Suma por moneda: { DOP: 1000, USD: 50 } */
 function sumByCurrency(rows: AccountRow[], value: (a: AccountRow) => number) {
@@ -149,10 +160,12 @@ export default async function BanksPage({
   const cards = accounts.filter((a) => a.type === "CREDIT_CARD");
   // Filtro sin resultados: el siguiente filtro que se elija empieza de cero.
   const noResults = banks.length === 0 && Boolean(kindFilter || currencyFilter);
-  const activeBanks = allBanks.filter((a) => a.is_active);
   const activeCards = cards.filter((a) => a.is_active);
 
-  const available = splitCurrencies(sumByCurrency(activeBanks, (a) => a.current_balance));
+  // Dinero disponible: solo cuentas bancarias (ahorro y corriente), por
+  // moneda y sin mezclar pesos con dólares. Las tarjetas van aparte.
+  const cashDop = availableCash(accounts, "DOP");
+  const cashUsd = availableCash(accounts, "USD");
   const debt = splitCurrencies(sumByCurrency(activeCards, (a) => Math.max(0, -a.current_balance)));
   const favorTotal = splitCurrencies(sumByCurrency(activeCards, (a) => Math.max(0, a.current_balance)));
   const hasFavor = activeCards.some((a) => a.current_balance > 0);
@@ -215,11 +228,20 @@ export default async function BanksPage({
 
           <StatGrid>
             <StatCard
-              label="Disponible en bancos"
-              value={available.main}
-              hint={available.others.length ? `+ ${available.others.join(" · ")}` : `${activeBanks.length} cuentas activas`}
+              label="Disponible en pesos"
+              value={formatMoney(cashDop.total, "DOP")}
+              valueTone={cashDop.total < 0 ? "danger" : undefined}
+              hint={cashHint(cashDop, "DOP")}
               icon={<Wallet size={20} />}
               tone="green"
+            />
+            <StatCard
+              label="Disponible en dólares"
+              value={formatMoney(cashUsd.total, "USD")}
+              valueTone={cashUsd.total < 0 ? "danger" : undefined}
+              hint={cashHint(cashUsd, "USD")}
+              icon={<DollarSign size={20} />}
+              tone="blue"
             />
             <StatCard
               label="Deuda en tarjetas"
@@ -243,14 +265,12 @@ export default async function BanksPage({
               icon={<ShieldCheck size={20} />}
               tone="violet"
             />
-            <StatCard
-              label="Cuentas y tarjetas"
-              value={String(activeBanks.length + activeCards.length)}
-              hint={`${accounts.length - activeBanks.length - activeCards.length} inactivas`}
-              icon={<Landmark size={20} />}
-              tone="blue"
-            />
           </StatGrid>
+          <p className="-mt-3 text-xs text-brand-muted">
+            <strong className="font-medium text-brand-text">Disponible</strong> = suma de las cuentas de ahorro y
+            corrientes activas. Los pesos y los dólares se muestran por separado (no se suman entre sí) y las
+            tarjetas de crédito no cuentan como dinero disponible. Una cuenta en sobregiro resta.
+          </p>
 
           <section>
             <SectionHeader title="Cuentas bancarias" count={banks.length} />

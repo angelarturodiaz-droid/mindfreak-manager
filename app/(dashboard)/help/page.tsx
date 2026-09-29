@@ -75,6 +75,7 @@ const SECTIONS: Section[] = [
         </p>
         <Bullets
           items={[
+            <><strong>Disponible en bancos (pesos)</strong> y <strong>(dólares)</strong>: el dinero que hay hoy en las cuentas de ahorro y corrientes, cada moneda por separado (no incluye tarjetas de crédito). Al hacer clic abre Bancos.</>,
             "Todos los números son en vivo — no es un corte histórico, se recalculan en cada visita.",
             <>
               Puedes elegir qué tarjetas ver y en qué orden desde{" "}
@@ -488,7 +489,7 @@ const SECTIONS: Section[] = [
         <Bullets
           items={[
             <>En la lista de Bancos puedes filtrar las cuentas por <strong>tipo</strong> (Ahorros / Corriente) y por <strong>moneda</strong> (DOP / USD). Las cuentas creadas antes quedan como <em>sin indicar</em>: complétalas desde <strong>Editar cuenta</strong>.</>,
-            <>El total <strong>Disponible en bancos</strong> muestra los pesos como monto principal y los dólares aparte, sin mezclarlos.</>,
+            <><strong>Cuánto dinero tiene la empresa</strong>: arriba en Bancos, <strong>Disponible en pesos</strong> suma todas las cuentas de ahorro y corrientes activas en RD$, y <strong>Disponible en dólares</strong> hace lo mismo con las cuentas en US$. Son dos totales separados: los dólares <strong>no</strong> se convierten ni se suman a los pesos. Debajo de cada total ves el desglose (Ahorros · Corriente · cantidad de cuentas). Las <strong>tarjetas de crédito no cuentan</strong> como dinero disponible (tienen sus propias tarjetas: Deuda y Crédito disponible). Una cuenta corriente en sobregiro resta del total.</>,
             <><strong>Movimientos manuales en cuentas en dólares</strong>: el formulario pide la <strong>Tasa</strong> (pesos por 1 dólar). El movimiento se guarda en dólares en la cuenta, y la tasa sirve para que los reportes lo conviertan a pesos. Ejemplo: intereses de US$10 a tasa 59.50 cuentan como RD$595 en el reporte de Ingresos y egresos.</>,
             "Cobros, pagos y transferencias en dólares ya guardan su propia tasa, así que también se convierten bien en los reportes.",
           ]}

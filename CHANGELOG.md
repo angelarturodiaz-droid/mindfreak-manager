@@ -1,5 +1,15 @@
 # CHANGELOG — Mindfreak Manager
 
+## Dinero disponible en bancos: pesos y dólares por separado (2026-09-28)
+
+- Bancos: tarjetas "Disponible en pesos" y "Disponible en dólares" (solo
+  cuentas de ahorro y corrientes activas; sin tarjetas; sin mezclar
+  monedas) con desglose Ahorros/Corriente. Se quitó "Cuentas y tarjetas".
+- Dashboard: widgets `disponible_bancos_dop` y `disponible_bancos_usd`
+  (visibles por defecto, también para quien ya había personalizado).
+- `availableCash()` en features/banks/display.ts. KpiCard con `hint` y
+  monto sin cortes.
+
 ## Sin "NEXT_REDIRECT" en los avisos (2026-09-27)
 
 - Acciones que terminan llevando a otra pantalla (ej. Descartar borrador de

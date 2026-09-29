@@ -2,6 +2,8 @@ import { getDashboardKPIs, getFinancialFlowSeries } from "@/features/dashboard/q
 import { getReceivablesDashboard, getProjectsProfitabilityReport } from "@/features/reports/queries";
 import { listAllPayments, listAllSupplierPayments } from "@/features/payments/queries";
 import { listTasks } from "@/features/tasks/queries";
+import { listBankAccountsWithBalance } from "@/features/banks/queries";
+import { availableCash } from "@/features/banks/display";
 
 /**
  * Se piden todas las fuentes de datos de una sola vez (en paralelo),
@@ -11,7 +13,7 @@ import { listTasks } from "@/features/tasks/queries";
  * por widget.
  */
 export async function getDashboardWidgetBundle() {
-  const [kpis, flow, receivables, recentPayments, recentSupplierPayments, pendingTasks, profitability] =
+  const [kpis, flow, receivables, recentPayments, recentSupplierPayments, pendingTasks, profitability, bankAccounts] =
     await Promise.all([
       getDashboardKPIs(),
       getFinancialFlowSeries(6),
@@ -20,9 +22,13 @@ export async function getDashboardWidgetBundle() {
       listAllSupplierPayments(),
       listTasks({ status: "PENDING" }),
       getProjectsProfitabilityReport(),
+      // Sin permiso de Bancos simplemente queda vacío (no rompe el Dashboard).
+      listBankAccountsWithBalance().catch(() => []),
     ]);
 
   return {
+    // Dinero disponible en cuentas de ahorro y corrientes, pesos y dólares por separado.
+    bankCash: { dop: availableCash(bankAccounts, "DOP"), usd: availableCash(bankAccounts, "USD") },
     kpis,
     flow,
     receivables,

@@ -11,6 +11,8 @@ import {
   AlertTriangle,
   Clock,
   ListChecks,
+  Wallet,
+  DollarSign,
 } from "lucide-react";
 import { KpiCard, Card } from "@/components/ui/card";
 import { FinancialFlowChart } from "@/app/(dashboard)/dashboard/financial-flow-chart";
@@ -18,6 +20,20 @@ import type { DashboardWidgetBundle } from "@/features/dashboard-widgets/bundle"
 
 function money(amount: number) {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(amount);
+}
+
+function moneyIn(amount: number, currency: string) {
+  return new Intl.NumberFormat("es-DO", { style: "currency", currency }).format(amount);
+}
+
+/** "Ahorros RD$X · Corriente RD$Y" (solo lo que tenga saldo). */
+function cashBreakdown(c: { savings: number; checking: number; other: number; count: number }, currency: string) {
+  if (c.count === 0) return `Sin cuentas en ${currency === "USD" ? "dólares" : "pesos"}`;
+  const parts: string[] = [];
+  if (c.savings !== 0) parts.push(`Ahorros ${moneyIn(c.savings, currency)}`);
+  if (c.checking !== 0) parts.push(`Corriente ${moneyIn(c.checking, currency)}`);
+  if (c.other !== 0) parts.push(`Sin tipo ${moneyIn(c.other, currency)}`);
+  return parts.length ? parts.join(" · ") : `${c.count} cuenta${c.count === 1 ? "" : "s"}`;
 }
 
 function percent(value: number | null) {
@@ -76,9 +92,33 @@ function WidgetCard({
 }
 
 export function renderWidget(type: string, data: DashboardWidgetBundle): React.ReactNode {
-  const { kpis, flow, receivables, recentPayments, recentSupplierPayments, pendingTasks, topProjects } = data;
+  const { kpis, flow, receivables, recentPayments, recentSupplierPayments, pendingTasks, topProjects, bankCash } = data;
 
   switch (type) {
+    case "disponible_bancos_dop":
+      return (
+        <Link href="/banks">
+          <KpiCard
+            label="Disponible en bancos (pesos)"
+            value={moneyIn(bankCash.dop.total, "DOP")}
+            danger={bankCash.dop.total < 0}
+            hint={cashBreakdown(bankCash.dop, "DOP")}
+            icon={<Wallet size={16} />}
+          />
+        </Link>
+      );
+    case "disponible_bancos_usd":
+      return (
+        <Link href="/banks">
+          <KpiCard
+            label="Disponible en bancos (dólares)"
+            value={moneyIn(bankCash.usd.total, "USD")}
+            danger={bankCash.usd.total < 0}
+            hint={cashBreakdown(bankCash.usd, "USD")}
+            icon={<DollarSign size={16} />}
+          />
+        </Link>
+      );
     case "total_por_cobrar":
       return <KpiCard label="Total por cobrar" value={money(receivables.totalPorCobrar)} icon={<ArrowDownCircle size={16} />} />;
     case "total_vencido":
