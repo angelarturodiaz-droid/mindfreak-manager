@@ -358,13 +358,17 @@ pulsa el botón.
   por fila, más compactas) o Lista (tabla, una fila por cuenta) para cuando
   haya muchas cuentas.
 
-## Dashboard: organizar con el mouse (2026-09-28)
-- Botón "Organizar" en el Dashboard: los cuadros se arrastran con el mouse
-  a otra posición (en celular, flechas ← →), C/M/G cambia el tamaño (Grande
-  = toda la fila), el ojo lo oculta y "Cuadros ocultos" permite volver a
-  mostrarlos. Guardar lo deja por usuario (misma preferencia que
-  "Personalizar Dashboard"); Cancelar descarta. Mientras se organiza, los
-  cuadros no abren enlaces.
-- Cuadrícula más ancha: 4 columnas en laptop, 5 en pantallas grandes y 6 en
-  muy grandes, para que no haya que bajar tanto. Mediano = 2 columnas,
-  Grande = toda la fila.
+## Dashboard compacto con indicadores (2026-09-28)
+- Dos zonas: franja de indicadores compactos arriba (hasta 5 por fila, con
+  anillo de % o ícono y una línea de detalle) y paneles de gráficos/listas
+  debajo en 3 columnas. Cada zona sigue el orden de Personalizar.
+- Anillos: Ventas = cobrado este mes / facturado este mes; Gastos = gastos /
+  ventas; Margen = utilidad / ventas; Por cobrar y Total vencido = vencido /
+  por cobrar. Solo se usan datos que ya calculaba el Dashboard.
+- Flujo financiero en área (cobros verde, pagos rojo) con totales de 6
+  meses, neto y variación de cobros vs. mes anterior.
+- Nuevo panel "Por cobrar según vencimiento" (barras: vencido, hoy, 7, 8–15
+  y 16–30 días), visible por defecto al lado del gráfico.
+- Tamaño en Personalizar: solo aplica a gráficos y listas (Grande = 2 de 3
+  columnas). Mover cuadros sigue siendo desde Personalizar (se probó
+  arrastrar en el propio Dashboard y se descartó).

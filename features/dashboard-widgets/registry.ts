@@ -28,6 +28,7 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
   { type: "margen_mes", label: "Margen del mes", category: "Rentabilidad", defaultSize: "sm" },
   { type: "proyectos_activos", label: "Proyectos activos", category: "Operaciones", defaultSize: "sm" },
   { type: "flujo_financiero", label: "Gráfico: Flujo financiero", category: "Gráficos", defaultSize: "lg" },
+  { type: "cobros_por_vencer", label: "Gráfico: Por cobrar según vencimiento", category: "Gráficos", defaultSize: "sm" },
   { type: "facturas_vencidas", label: "Facturas vencidas", category: "Cobros", defaultSize: "md" },
   { type: "facturas_proximas", label: "Facturas próximas a vencer", category: "Cobros", defaultSize: "md" },
   { type: "cotizaciones_pendientes", label: "Cotizaciones pendientes", category: "Ventas", defaultSize: "md" },
@@ -58,6 +59,7 @@ export const DEFAULT_WIDGETS: WidgetInstance[] = [
   { type: "proyectos_activos", visible: true, size: "sm" },
   { type: "cotizaciones_pendientes", visible: true, size: "sm" },
   { type: "flujo_financiero", visible: true, size: "lg" },
+  { type: "cobros_por_vencer", visible: true, size: "sm" },
   { type: "total_vencido", visible: false, size: "sm" },
   { type: "vence_hoy", visible: false, size: "sm" },
   { type: "facturas_vencidas", visible: false, size: "md" },
@@ -71,20 +73,41 @@ export const DEFAULT_WIDGETS: WidgetInstance[] = [
  * ya había personalizado su Dashboard antes de que existieran. Si luego los
  * oculta en "Personalizar", se respeta.
  */
-export const NEW_WIDGETS_SHOWN_BY_DEFAULT = ["disponible_bancos_dop", "disponible_bancos_usd"];
+export const NEW_WIDGETS_SHOWN_BY_DEFAULT: { type: string; size: WidgetSize; after?: string }[] = [
+  { type: "disponible_bancos_dop", size: "sm" },
+  { type: "disponible_bancos_usd", size: "sm" },
+  // Al lado del gráfico de flujo.
+  { type: "cobros_por_vencer", size: "sm", after: "flujo_financiero" },
+];
 
 /**
- * Ancho de cada tamaño en la cuadrícula del Dashboard (1 → 2 → 4 → 5 → 6
- * columnas según el ancho de la pantalla). Grande ocupa toda la fila.
+ * Dos zonas en el Dashboard:
+ * - "kpi": indicadores compactos en una franja arriba (el tamaño no aplica).
+ * - "panel": gráficos y listas en una cuadrícula de 3 columnas debajo.
+ *   Chico/Mediano = 1 columna; Grande = 2 columnas.
  */
-export const SIZE_COLS: Record<WidgetSize, string> = {
-  sm: "col-span-1",
-  md: "col-span-1 sm:col-span-2",
-  lg: "col-span-full",
-};
+export type WidgetKind = "kpi" | "panel";
 
-export const DASHBOARD_GRID =
-  "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6";
+export const PANEL_TYPES = new Set([
+  "flujo_financiero",
+  "cobros_por_vencer",
+  "facturas_vencidas",
+  "facturas_proximas",
+  "ultimos_cobros",
+  "ultimos_pagos",
+  "tareas_pendientes",
+  "rentabilidad_proyectos",
+]);
+
+export function widgetKind(type: string): WidgetKind {
+  return PANEL_TYPES.has(type) ? "panel" : "kpi";
+}
+
+export const PANEL_COLS: Record<WidgetSize, string> = {
+  sm: "lg:col-span-1",
+  md: "lg:col-span-1",
+  lg: "lg:col-span-2",
+};
 
 /**
  * La lista guardada del usuario + los widgets del catálogo que todavía no

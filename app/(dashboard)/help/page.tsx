@@ -78,22 +78,29 @@ const SECTIONS: Section[] = [
             <><strong>Disponible en bancos (pesos)</strong> y <strong>(dólares)</strong>: el dinero que hay hoy en las cuentas de ahorro y corrientes, cada moneda por separado (no incluye tarjetas de crédito). Al hacer clic abre Bancos.</>,
             "Todos los números son en vivo — no es un corte histórico, se recalculan en cada visita.",
             <>
-              <strong>Organizar</strong> (botón a la derecha, junto a los accesos
-              rápidos): los cuadros quedan con borde punteado y se pueden{" "}
-              <strong>arrastrar con el mouse</strong> a otro lugar (en celular,
-              con las flechas ← →). Cada cuadro tiene <strong>C / M / G</strong>{" "}
-              para el tamaño (Chico, Mediano, Grande = toda la fila) y un ojo para
-              ocultarlo; abajo aparecen los <strong>cuadros ocultos</strong> con
-              un + para volver a mostrarlos. <strong>Guardar</strong> lo deja así
-              para tu usuario; <strong>Cancelar</strong> deja todo como estaba.
-              Mientras organizas, los cuadros no abren nada al hacer clic.
+              <strong>Diseño en dos zonas</strong>: arriba una franja de{" "}
+              <strong>indicadores</strong> compactos (hasta 5 por fila) y debajo
+              los <strong>gráficos y listas</strong> en 3 columnas. Cada indicador
+              trae una línea de detalle y, cuando aplica, un anillo con un %:
+              Ventas = cuánto se cobró este mes frente a lo facturado; Gastos = %
+              de las ventas; Margen = utilidad sobre ventas; Por cobrar / Total
+              vencido = qué parte de lo pendiente ya está vencida.
             </>,
-            "En pantallas grandes caben 5 o 6 cuadros chicos por fila, para ver más sin bajar. Si algo queda muy abajo, súbelo con Organizar o hazlo más chico.",
             <>
-              <strong>Personalizar Dashboard</strong> sigue disponible: muestra
-              todos los cuadros en una lista para elegir cuáles ver, su tamaño y
-              el orden.
+              <strong>Flujo financiero</strong>: cobros (verde) y pagos (rojo) de
+              los últimos 6 meses, con los totales, el neto y cuánto subieron o
+              bajaron los cobros de este mes frente al anterior.{" "}
+              <strong>Por cobrar según vencimiento</strong>: barras con lo
+              vencido, lo que vence hoy, próximos 7 días, 8 a 15 y 16 a 30 días.
             </>,
+            <>
+              <strong>Personalizar</strong> (arriba a la derecha): elige qué ver y
+              en qué orden (arrastrando en la lista). Los indicadores siguen ese
+              orden en la franja de arriba; los gráficos y listas, debajo. Para
+              gráficos y listas el tamaño decide el ancho: Chico o Mediano = 1
+              columna, Grande = 2 columnas.
+            </>,
+            "Cada panel tiene \"Ver ›\" para abrir el módulo correspondiente, y los indicadores llevan al listado relacionado.",
             "Las tarjetas de proyectos activos y cotizaciones pendientes son atajos: llevan directo al listado filtrado.",
           ]}
         />

@@ -1,14 +1,15 @@
 # CHANGELOG — Mindfreak Manager
 
-## Dashboard: organizar arrastrando con el mouse (2026-09-28)
+## Dashboard compacto con indicadores (2026-09-28)
 
-- `DashboardBoard` (app/(dashboard)/dashboard/dashboard-board.tsx): modo
-  "Organizar" en el propio Dashboard — arrastrar y soltar (HTML5), flechas
-  ← →, tamaño C/M/G, ocultar y volver a mostrar; guarda con
-  `saveDashboardWidgetsAction` (sin cambios de BD ni de lógica).
-- Cuadrícula `DASHBOARD_GRID` hasta 5/6 columnas (xl/2xl); `lg` =
-  `col-span-full`. `withMissingWidgets()` compartido con Personalizar.
-- KpiCard: el monto empieza en text-base en cuadros angostos.
+- Se descartó el modo "Organizar" en el Dashboard (ca2d500): el usuario
+  prefirió un diseño compacto; mover sigue en Personalizar.
+- Zonas: `widgetKind()` (kpi | panel) y `PANEL_COLS` en registry.
+  Indicadores en `KpiTile` (anillo `RingGauge` o ícono) y paneles `Panel`,
+  `BarRow`, `MiniList` en components/dashboard-widgets/parts.tsx.
+- Widget nuevo `cobros_por_vencer` (por defecto al lado del flujo;
+  `NEW_WIDGETS_SHOWN_BY_DEFAULT` ahora acepta `after`).
+- Gráfico de flujo como área con degradado; sin cambios de consultas ni BD.
 
 ## Bancos: filtro de tarjetas de crédito y vista Lista (2026-09-28)
 
