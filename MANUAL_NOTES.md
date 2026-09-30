@@ -399,3 +399,10 @@ pulsa el botón.
 - Proveedor → Guardar cambios: aviso verde + "Guardado"; las listas de
   categoría/tipo ya no vuelven a la primera opción después de guardar.
 - Crear categoría o tipo de servicio: aviso verde de confirmación.
+
+## Catálogo completo cargado (2026-09-29)
+- 81 categorías (eventos + administrativas y de dinero: TSS, capacitación,
+  software, caja chica, aportes de capital, saldo inicial, ajustes
+  bancarios, etc.) y 176 tipos de servicio, según el archivo del usuario.
+- "Fotografia" se unió a "Fotografía y video"; "Incendio" (prueba) se borró
+  y sus proveedores pasaron a Salud y emergencias / Prevención de incendios.

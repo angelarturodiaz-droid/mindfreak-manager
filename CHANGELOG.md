@@ -1,5 +1,16 @@
 # CHANGELOG — Mindfreak Manager
 
+## Catálogo de categorías y tipos de servicio completo (2026-09-29)
+
+- Datos (no esquema): Configuración → Categorías / Tipos de servicio quedan
+  iguales al archivo del usuario `categorias-y-tipos-de-servicio_1.csv`
+  (81 categorías, 176 tipos). Script: `supabase/data/2026-09-29_catalogo_eventos.sql`.
+- Renombres: Decoracion → Decoración, Locales y venues → Locales para
+  eventos, Coffee break → Pausa de café, Merchandising → Artículos
+  promocionales. Fotografia unida a Fotografía y video (1 gasto, 2
+  movimientos). Incendio (prueba) borrada: sus 2 proveedores pasan a Salud y
+  emergencias / Prevención de incendios.
+
 ## Catálogos sin repetidos y guardar proveedor (2026-09-29)
 
 - Migración 066: `public.catalog_key(text)` (immutable) e índices únicos
