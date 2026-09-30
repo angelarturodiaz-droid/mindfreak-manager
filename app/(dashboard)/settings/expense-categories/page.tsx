@@ -4,11 +4,38 @@ import { DeleteExpenseCategoryButton } from "./delete-expense-category-button";
 import { ImportCategoriesForm } from "./import-categories-form";
 import { Card } from "@/components/ui/card";
 import { DataTable, type Column } from "@/components/ui/data-table";
+import Link from "next/link";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/field";
+import { Pagination } from "@/components/ui/pagination";
+import { PAGE_SIZE, parsePage } from "@/lib/utils/pagination";
+import { normalizeCatalogName } from "@/features/supplier-service-types/classification";
 
 type CategoryRow = Awaited<ReturnType<typeof listExpenseCategoriesWithUsage>>[number];
 
-export default async function ExpenseCategoriesSettingsPage() {
-  const categories = await listExpenseCategoriesWithUsage();
+export default async function ExpenseCategoriesSettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}) {
+  const params = await searchParams;
+  const search = (params.q ?? "").trim();
+  const all = await listExpenseCategoriesWithUsage();
+
+  // Búsqueda (sin importar mayúsculas ni acentos) y páginas de 25, igual que
+  // los demás listados, para no tener que bajar tanto.
+  const needle = normalizeCatalogName(search);
+  const filtered = needle
+    ? all.filter(
+        (c) =>
+          normalizeCatalogName(c.name).includes(needle) ||
+          normalizeCatalogName(c.description ?? "").includes(needle),
+      )
+    : all;
+  const total = filtered.length;
+  const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const page = Math.min(parsePage(params.page), lastPage);
+  const categories = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const columns: Column<CategoryRow>[] = [
     { header: "Nombre", accessor: (c) => <span className="font-medium text-brand-text">{c.name}</span> },
@@ -55,13 +82,44 @@ export default async function ExpenseCategoriesSettingsPage() {
         </Card>
       </div>
 
-      <DataTable
-        columns={columns}
-        rows={categories}
-        keyFor={(c) => c.id}
-        maxWidth="max-w-4xl"
-        emptyMessage="Sin categorías todavía."
-      />
+      <section className="flex max-w-4xl flex-col gap-3">
+        <form action="/settings/expense-categories" method="get" className="flex flex-wrap items-center gap-2">
+          <Input
+            type="search"
+            name="q"
+            icon={<Search size={15} />}
+            defaultValue={search}
+            placeholder="Buscar categoría…"
+            aria-label="Buscar categoría por nombre o descripción"
+            className="w-64"
+          />
+          {search && (
+            <Link href="/settings/expense-categories" className="px-2 text-sm text-brand-accent hover:underline">
+              Limpiar
+            </Link>
+          )}
+          <span className="ml-auto text-sm text-brand-muted">
+            {search ? `${total} de ${all.length} categorías` : `${all.length} categorías`}
+          </span>
+        </form>
+        <DataTable
+          columns={columns}
+          rows={categories}
+          keyFor={(c) => c.id}
+          maxWidth="max-w-4xl"
+          emptyMessage="Sin categorías todavía."
+          filtered={Boolean(search)}
+          clearHref="/settings/expense-categories"
+          what="categorías"
+        />
+        <Pagination
+          basePath="/settings/expense-categories"
+          page={page}
+          pageSize={PAGE_SIZE}
+          total={total}
+          params={{ q: search || undefined }}
+        />
+      </section>
     </div>
   );
 }

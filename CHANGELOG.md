@@ -1,5 +1,11 @@
 # CHANGELOG — Mindfreak Manager
 
+## Categorías y Tipos de servicio paginados (2026-09-29)
+
+- Configuración → Categorías y → Tipos de servicio: páginas de 25
+  (`Pagination`, `?page=`), buscador `?q=` (normalizado sin acentos) y, en
+  tipos, filtro `?category=`; contador total y aviso de sin resultados.
+
 ## Catálogo de categorías y tipos de servicio completo (2026-09-29)
 
 - Datos (no esquema): Configuración → Categorías / Tipos de servicio quedan

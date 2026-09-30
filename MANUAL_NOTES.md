@@ -406,3 +406,7 @@ pulsa el botón.
   bancarios, etc.) y 176 tipos de servicio, según el archivo del usuario.
 - "Fotografia" se unió a "Fotografía y video"; "Incendio" (prueba) se borró
   y sus proveedores pasaron a Salud y emergencias / Prevención de incendios.
+
+## Categorías y Tipos de servicio: páginas y buscador (2026-09-29)
+- Ambas listas de 25 en 25 (Anterior/Siguiente), con buscador y contador.
+  Tipos de servicio además filtra por categoría.
