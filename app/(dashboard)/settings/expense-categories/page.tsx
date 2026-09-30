@@ -5,8 +5,7 @@ import { ImportCategoriesForm } from "./import-categories-form";
 import { Card } from "@/components/ui/card";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import Link from "next/link";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/field";
+import { LiveSearchInput } from "@/components/ui/live-search-input";
 import { Pagination } from "@/components/ui/pagination";
 import { PAGE_SIZE, parsePage } from "@/lib/utils/pagination";
 import { normalizeCatalogName } from "@/features/supplier-service-types/classification";
@@ -84,15 +83,7 @@ export default async function ExpenseCategoriesSettingsPage({
 
       <section className="flex max-w-4xl flex-col gap-3">
         <form action="/settings/expense-categories" method="get" className="flex flex-wrap items-center gap-2">
-          <Input
-            type="search"
-            name="q"
-            icon={<Search size={15} />}
-            defaultValue={search}
-            placeholder="Buscar categoría…"
-            aria-label="Buscar categoría por nombre o descripción"
-            className="w-64"
-          />
+          <LiveSearchInput defaultValue={search} placeholder="Buscar categoría…" ariaLabel="Buscar categoría por nombre o descripción" />
           {search && (
             <Link href="/settings/expense-categories" className="px-2 text-sm text-brand-accent hover:underline">
               Limpiar

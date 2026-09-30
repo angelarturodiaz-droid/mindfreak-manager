@@ -6,8 +6,7 @@ import { ImportServiceTypesForm } from "./import-service-types-form";
 import { DeleteServiceTypeButton } from "./delete-service-type-button";
 import { Card } from "@/components/ui/card";
 import { DataTable, type Column } from "@/components/ui/data-table";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/field";
+import { LiveSearchInput } from "@/components/ui/live-search-input";
 import { AutoSubmitSelect } from "@/components/ui/auto-submit-select";
 import { Pagination } from "@/components/ui/pagination";
 import { PAGE_SIZE, parsePage } from "@/lib/utils/pagination";
@@ -87,15 +86,7 @@ export default async function ServiceTypesSettingsPage({
 
       <section className="flex max-w-4xl flex-col gap-3">
         <form action="/settings/service-types" method="get" className="flex flex-wrap items-center gap-2">
-          <Input
-            type="search"
-            name="q"
-            icon={<Search size={15} />}
-            defaultValue={search}
-            placeholder="Buscar tipo de servicio…"
-            aria-label="Buscar tipo de servicio o categoría"
-            className="w-64"
-          />
+          <LiveSearchInput defaultValue={search} placeholder="Buscar tipo de servicio…" ariaLabel="Buscar tipo de servicio o categoría" />
           <AutoSubmitSelect
             resetOthers={hasFilters && total === 0}
             name="category"

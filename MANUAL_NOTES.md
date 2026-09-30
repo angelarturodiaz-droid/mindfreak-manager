@@ -410,3 +410,7 @@ pulsa el botón.
 ## Categorías y Tipos de servicio: páginas y buscador (2026-09-29)
 - Ambas listas de 25 en 25 (Anterior/Siguiente), con buscador y contador.
   Tipos de servicio además filtra por categoría.
+
+## Buscador en vivo (2026-09-29)
+- Categorías y Tipos de servicio: la lista se filtra mientras escribes (sin
+  Enter). Componente reutilizable `LiveSearchInput` para otros listados.
