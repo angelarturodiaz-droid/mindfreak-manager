@@ -3,7 +3,6 @@ import {
   ChevronRight,
   Mail,
   Phone,
-  Search,
   Sparkles,
   Target,
   Upload,
@@ -36,7 +35,7 @@ import { Button } from "@/components/ui/button";
 import { ActionLink } from "@/components/ui/action-link";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/field";
+import { LiveSearchInput } from "@/components/ui/live-search-input";
 import { IconBadge, type IconBadgeTone } from "@/components/ui/icon-badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -314,15 +313,7 @@ export default async function ClientsPage({
 
           <form action="/clients" method="get" className="flex flex-wrap items-center gap-2">
             {stage && <input type="hidden" name="stage" value={stage} />}
-            <Input
-              type="search"
-              name="q"
-              icon={<Search size={15} />}
-              defaultValue={search}
-              placeholder="Buscar por nombre…"
-              aria-label="Buscar cliente por nombre"
-              className="w-60"
-            />
+            <LiveSearchInput defaultValue={search ?? ""} placeholder="Buscar por nombre…" ariaLabel="Buscar cliente por nombre" className="w-60" />
             <AutoSubmitSelect
               resetOthers={noResults}
               name="status"

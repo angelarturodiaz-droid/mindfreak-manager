@@ -5,7 +5,8 @@
 - `LiveSearchInput` (components/ui/live-search-input.tsx): actualiza `?q=`
   a los 300 ms de dejar de escribir (router.replace, vuelve a página 1,
   conserva los demás filtros). Usado en Configuración → Categorías y Tipos
-  de servicio. Se vacía solo si otro enlace (Limpiar) quita `?q=`.
+  de servicio, Clientes, Proveedores y Productos y servicios (todos los
+  buscadores del sistema). Se vacía solo si otro enlace (Limpiar) quita `?q=`.
 
 ## Categorías y Tipos de servicio paginados (2026-09-29)
 

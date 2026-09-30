@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarCheck, ChevronRight, Landmark, Mail, Phone, Plus, Search, Truck, Upload, Wallet } from "lucide-react";
+import { CalendarCheck, ChevronRight, Landmark, Mail, Phone, Plus, Truck, Upload, Wallet } from "lucide-react";
 import {
   listSuppliers,
   getSupplierStats,
@@ -8,7 +8,7 @@ import {
 import { deactivateSupplierAction } from "@/features/suppliers/actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/field";
+import { LiveSearchInput } from "@/components/ui/live-search-input";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ConfirmButton } from "@/components/ui/confirm-button";
@@ -189,15 +189,7 @@ export default async function SuppliersPage({
 
       <section className="flex flex-col gap-4">
         <form action="/suppliers" method="get" className="flex flex-wrap items-center gap-2">
-          <Input
-            type="search"
-            name="q"
-            icon={<Search size={15} />}
-            defaultValue={search}
-            placeholder="Buscar por nombre…"
-            aria-label="Buscar proveedor por nombre"
-            className="w-64"
-          />
+          <LiveSearchInput defaultValue={search ?? ""} placeholder="Buscar por nombre…" ariaLabel="Buscar proveedor por nombre" className="w-64" />
           <AutoSubmitSelect resetOthers={hasFilters && suppliers.length === 0} name="status" defaultValue={status ?? ""} className="w-44" aria-label="Filtrar por estado">
             <option value="">Activos e inactivos</option>
             <option value="active">Solo activos</option>

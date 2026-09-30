@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { ChevronRight, Layers, Package, Percent, Search, Wrench } from "lucide-react";
+import { ChevronRight, Layers, Package, Percent, Wrench } from "lucide-react";
 import { listServiceCategories, listServices } from "@/features/services/queries";
 import { listTaxRates } from "@/features/tax-rates/queries";
 import { NewCategoryForm } from "./new-category-form";
 import { NewServiceForm } from "./new-service-form";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/field";
+import { LiveSearchInput } from "@/components/ui/live-search-input";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { AutoSubmitSelect } from "@/components/ui/auto-submit-select";
 import { Chip, FilterPills, StatCard, StatGrid, listHref } from "@/components/ui/page-kit";
@@ -183,15 +183,7 @@ export default async function ServicesPage({
             />
             <form action="/services" method="get" className="flex flex-wrap items-center gap-2">
               {type && <input type="hidden" name="type" value={type} />}
-              <Input
-                type="search"
-                name="q"
-                icon={<Search size={15} />}
-                defaultValue={params.q}
-                placeholder="Buscar…"
-                aria-label="Buscar por nombre"
-                className="w-44"
-              />
+              <LiveSearchInput defaultValue={params.q ?? ""} placeholder="Buscar…" ariaLabel="Buscar por nombre" className="w-44" />
               <AutoSubmitSelect
                 resetOthers={noResults}
                 name="category"

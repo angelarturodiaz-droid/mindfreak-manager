@@ -412,5 +412,6 @@ pulsa el botón.
   Tipos de servicio además filtra por categoría.
 
 ## Buscador en vivo (2026-09-29)
-- Categorías y Tipos de servicio: la lista se filtra mientras escribes (sin
-  Enter). Componente reutilizable `LiveSearchInput` para otros listados.
+- Todos los buscadores (Clientes, Proveedores, Productos y servicios,
+  Categorías y Tipos de servicio) filtran mientras escribes (sin Enter).
+  Componente `LiveSearchInput`: usarlo en cualquier buscador nuevo.
