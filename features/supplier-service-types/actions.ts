@@ -7,7 +7,7 @@ import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissi
 import { logAudit } from "@/lib/audit/log";
 import { normalizeCatalogName } from "./classification";
 
-export type ActionState = { error: string | null };
+export type ActionState = { error: string | null; success?: string; successId?: number };
 
 async function getPrimaryCompanyId(): Promise<string> {
   const companyIds = await getCurrentUserCompanyIds();
@@ -35,13 +35,21 @@ export async function createServiceTypeAction(
   const companyId = await getPrimaryCompanyId();
   const supabase = await createSupabaseClient();
 
+  // Sin repetidos en toda la empresa: un tipo de servicio vive en una sola categoría.
   const { data: existing } = await supabase
     .from("supplier_service_types")
-    .select("name")
-    .eq("company_id", companyId)
-    .eq("category_id", categoryId);
-  if ((existing ?? []).some((t) => normalizeCatalogName(t.name) === normalizeCatalogName(name))) {
-    return { error: `"${name}" ya existe en esa categoría.` };
+    .select("name, category_id, expense_categories(name)")
+    .eq("company_id", companyId);
+  const same = (existing ?? []).find((t) => normalizeCatalogName(t.name) === normalizeCatalogName(name));
+  if (same) {
+    const cat = same.expense_categories as { name: string } | { name: string }[] | null;
+    const catName = Array.isArray(cat) ? cat[0]?.name : cat?.name;
+    return {
+      error:
+        same.category_id === categoryId
+          ? `"${same.name}" ya existe en esta categoría. No se puede repetir.`
+          : `"${same.name}" ya existe en la categoría "${catName ?? "otra"}". Un tipo de servicio solo puede estar en una categoría.`,
+    };
   }
 
   const { data, error } = await supabase
@@ -49,7 +57,10 @@ export async function createServiceTypeAction(
     .insert({ company_id: companyId, category_id: categoryId, name })
     .select("id")
     .single();
-  if (error) return { error: error.message };
+  if (error) {
+    if (error.code === "23505") return { error: `"${name}" ya existe. No se puede repetir.` };
+    return { error: error.message };
+  }
 
   await logAudit({
     companyId,
@@ -60,7 +71,7 @@ export async function createServiceTypeAction(
   });
 
   revalidateAll();
-  return { error: null };
+  return { error: null, success: `Tipo de servicio "${name}" creado.`, successId: Date.now() };
 }
 
 export async function deleteServiceTypeAction(serviceTypeId: string): Promise<void> {
@@ -109,14 +120,20 @@ export async function importServiceTypesCsvAction(
   const typeIdx = header.findIndex((h) =>
     ["tipo servicio", "tipo de servicio", "servicio", "nombre", "service type", "name"].includes(h),
   );
+  const descIdx = header.findIndex((h) =>
+    ["descripcion categoria", "descripcion", "description"].includes(h),
+  );
   if (catIdx === -1 || typeIdx === -1) {
     return { error: 'El CSV debe tener las columnas "categoria" y "tipo_servicio" (descarga la plantilla).' };
   }
-  const rows = table
-    .slice(1)
-    .map((r) => ({ category: r[catIdx] ?? "", name: r[typeIdx] ?? "" }))
-    .filter((r) => r.category && r.name);
-  if (rows.length === 0) return { error: "No se encontró ningún tipo de servicio en el archivo." };
+  const allRows = table.slice(1).map((r) => ({
+    category: r[catIdx] ?? "",
+    name: r[typeIdx] ?? "",
+    description: descIdx !== -1 ? (r[descIdx] ?? "") : "",
+  }));
+  // Filas con categoría y tipo vacío: solo crean la categoría (si falta).
+  const rows = allRows.filter((r) => r.category && r.name);
+  if (allRows.every((r) => !r.category)) return { error: "No se encontró ninguna categoría en el archivo." };
 
   const companyId = await getPrimaryCompanyId();
   const supabase = await createSupabaseClient();
@@ -129,18 +146,23 @@ export async function importServiceTypesCsvAction(
   if (typeError) return { error: typeError.message };
 
   const categoryMap = new Map((categories ?? []).map((c) => [normalizeCatalogName(c.name), c.id]));
-  const seen = new Set((types ?? []).map((t) => `${t.category_id}|${normalizeCatalogName(t.name)}`));
+  // Un tipo de servicio no se repite en toda la empresa (en ninguna categoría).
+  const seen = new Set((types ?? []).map((t) => normalizeCatalogName(t.name)));
   const categoriesCreated: string[] = [];
   const toInsert: { company_id: string; category_id: string; name: string }[] = [];
   let skipped = 0;
 
-  for (const r of rows) {
+  for (const r of allRows.filter((x) => x.category)) {
     const catKey = normalizeCatalogName(r.category);
     let categoryId = categoryMap.get(catKey);
     if (!categoryId) {
       const { data, error } = await supabase
         .from("expense_categories")
-        .insert({ company_id: companyId, name: r.category, description: "Creada al importar tipos de servicio" })
+        .insert({
+          company_id: companyId,
+          name: r.category,
+          description: r.description || "Creada al importar tipos de servicio",
+        })
         .select("id")
         .single();
       if (error || !data) return { error: error?.message ?? "No se pudo crear la categoría." };
@@ -148,7 +170,8 @@ export async function importServiceTypesCsvAction(
       categoryMap.set(catKey, categoryId);
       categoriesCreated.push(r.category);
     }
-    const key = `${categoryId}|${normalizeCatalogName(r.name)}`;
+    if (!r.name) continue;
+    const key = normalizeCatalogName(r.name);
     if (seen.has(key)) {
       skipped++;
       continue;

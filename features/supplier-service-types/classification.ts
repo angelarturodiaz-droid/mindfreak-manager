@@ -74,7 +74,10 @@ export async function classificationFromNames(
   companyId: string,
   categoryName: string,
   serviceTypeName: string,
-  cache: { categories?: Map<string, { id: string; name: string }>; types?: Map<string, { id: string; name: string }> },
+  cache: {
+    categories?: Map<string, { id: string; name: string }>;
+    types?: Map<string, { id: string; name: string; category_id?: string }>;
+  },
 ): Promise<SupplierClassification> {
   const catText = categoryName.trim();
   const typeText = serviceTypeName.trim();
@@ -110,15 +113,18 @@ export async function classificationFromNames(
       .from("supplier_service_types")
       .select("id, name, category_id")
       .eq("company_id", companyId);
-    cache.types = new Map((data ?? []).map((t) => [`${t.category_id}|${normalizeCatalogName(t.name)}`, t]));
+    // Los tipos de servicio no se repiten en la empresa: se buscan solo por nombre.
+    cache.types = new Map((data ?? []).map((t) => [normalizeCatalogName(t.name), t]));
   }
-  const key = `${category.id}|${normalizeCatalogName(typeText)}`;
+  const key = normalizeCatalogName(typeText);
   let serviceType = cache.types.get(key);
+  // Ya existe pero en otra categoría: se deja solo el texto (no se mezcla con otra categoría).
+  if (serviceType && serviceType.category_id && serviceType.category_id !== category.id) return result;
   if (!serviceType) {
     const { data } = await supabase
       .from("supplier_service_types")
       .insert({ company_id: companyId, category_id: category.id, name: typeText })
-      .select("id, name")
+      .select("id, name, category_id")
       .single();
     if (!data) return result;
     serviceType = data;

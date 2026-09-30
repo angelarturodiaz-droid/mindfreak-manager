@@ -41,9 +41,12 @@ export function ImportServiceTypesForm() {
         </a>
       </form>
       <p className="text-xs text-brand-muted">
-        Columnas: <span className="font-medium">categoria</span> y{" "}
-        <span className="font-medium">tipo_servicio</span>. Si la categoría no existe se crea en
-        Categorías. Los tipos que ya existen en esa categoría se omiten.
+        Columnas: <span className="font-medium">categoria</span>,{" "}
+        <span className="font-medium">tipo_servicio</span> y (opcional){" "}
+        <span className="font-medium">descripcion_categoria</span>. Si la categoría no existe se crea
+        en Categorías (una fila con tipo vacío crea solo la categoría). Lo que ya existe se omite: no
+        se repiten nombres aunque cambien mayúsculas, acentos o espacios, y un tipo de servicio solo
+        puede estar en una categoría.
       </p>
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}

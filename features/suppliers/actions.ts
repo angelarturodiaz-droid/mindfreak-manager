@@ -12,7 +12,7 @@ import {
   resolveSupplierClassification,
 } from "@/features/supplier-service-types/classification";
 
-export type ActionState = { error: string | null };
+export type ActionState = { error: string | null; success?: string; successId?: number };
 
 async function getPrimaryCompanyId(): Promise<string> {
   const companyIds = await getCurrentUserCompanyIds();
@@ -145,7 +145,7 @@ export async function updateSupplierAction(
 
   revalidatePath(`/suppliers/${supplierId}`);
   revalidatePath("/suppliers");
-  return { error: null };
+  return { error: null, success: "Cambios del proveedor guardados.", successId: Date.now() };
 }
 
 /** Desactivar proveedor (soft delete — nunca se borra físicamente). */

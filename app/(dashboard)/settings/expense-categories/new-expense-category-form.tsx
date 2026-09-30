@@ -5,11 +5,13 @@ import { Plus } from "lucide-react";
 import { createExpenseCategoryAction, type ActionState } from "@/features/expense-categories/actions";
 import { Input } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
+import { useSuccessToast } from "@/components/ui/use-success-toast";
 
 const initialState: ActionState = { error: null };
 
 export function NewExpenseCategoryForm() {
   const [state, formAction, pending] = useActionState(createExpenseCategoryAction, initialState);
+  useSuccessToast(state);
 
   return (
     <form action={formAction} className="flex flex-wrap items-end gap-2">

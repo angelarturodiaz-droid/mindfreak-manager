@@ -6,7 +6,7 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
 
-export type ActionState = { error: string | null };
+export type ActionState = { error: string | null; success?: string; successId?: number };
 
 export async function createExpenseCategoryAction(
   _prevState: ActionState,
@@ -23,12 +23,23 @@ export async function createExpenseCategoryAction(
   const companyId = companyIds[0];
 
   const supabase = await createSupabaseClient();
+  // Sin repetidos: "Decoracion" = "Decoración" (mayúsculas, acentos y espacios no cuentan).
+  const { data: existing } = await supabase
+    .from("expense_categories")
+    .select("name")
+    .eq("company_id", companyId);
+  const same = (existing ?? []).find((c) => normalizeName(c.name) === normalizeName(name));
+  if (same) return { error: `Ya existe la categoría "${same.name}". No se puede repetir.` };
+
   const { data, error } = await supabase
     .from("expense_categories")
     .insert({ company_id: companyId, name, description: description || null })
     .select("id")
     .single();
-  if (error) return { error: error.message };
+  if (error) {
+    if (error.code === "23505") return { error: `Ya existe una categoría llamada "${name}". No se puede repetir.` };
+    return { error: error.message };
+  }
 
   await logAudit({
     companyId,
@@ -39,7 +50,7 @@ export async function createExpenseCategoryAction(
   });
 
   revalidatePath("/settings/expense-categories");
-  return { error: null };
+  return { error: null, success: `Categoría "${name}" creada.`, successId: Date.now() };
 }
 
 export async function deleteExpenseCategoryAction(categoryId: string): Promise<void> {

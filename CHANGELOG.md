@@ -1,5 +1,20 @@
 # CHANGELOG — Mindfreak Manager
 
+## Catálogos sin repetidos y guardar proveedor (2026-09-29)
+
+- Migración 066: `public.catalog_key(text)` (immutable) e índices únicos
+  `expense_categories (company_id, catalog_key(name))` y
+  `supplier_service_types (company_id, catalog_key(name))`.
+- Crear categoría / tipo: validación previa con nombre normalizado y mensaje
+  claro (23505 también traducido); aviso de éxito (`useSuccessToast`).
+- Importar tipos: `descripcion_categoria`, filas solo-categoría y dedupe de
+  tipos por nombre en toda la empresa. `classificationFromNames` busca tipos
+  solo por nombre (si está en otra categoría, deja el texto sin enlazar).
+- Proveedor: `updateSupplierAction` devuelve `success`/`successId`; el form
+  se re-arma con `key` y `SupplierCategoryFields` se sincroniza en el evento
+  `reset` del formulario (React 19 hace form.reset() tras la acción y los
+  select controlados quedaban mostrando la primera opción).
+
 ## Ventanas al mover dinero y saldo disponible al pagar (2026-09-28)
 
 - `ResultDialog` (components/ui/result-dialog.tsx). `useOverdraftConfirmAction`

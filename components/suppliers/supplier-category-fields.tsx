@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Select } from "@/components/ui/field";
 
@@ -32,8 +32,24 @@ export function SupplierCategoryFields({
   const [serviceTypeId, setServiceTypeId] = useState(defaultServiceTypeId);
   const typesForCategory = serviceTypes.filter((t) => t.category_id === categoryId);
 
+  // Al guardar, React limpia el formulario (form.reset): las listas volvían
+  // a la primera opción aunque aquí seguía el valor elegido. Se sincroniza
+  // con los valores de partida para que lo que se ve sea lo que se envía.
+  const anchor = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const form = anchor.current?.closest("form");
+    if (!form) return;
+    const onReset = () => {
+      setCategoryId(defaultCategoryId);
+      setServiceTypeId(defaultServiceTypeId);
+    };
+    form.addEventListener("reset", onReset);
+    return () => form.removeEventListener("reset", onReset);
+  }, [defaultCategoryId, defaultServiceTypeId]);
+
   return (
     <>
+      <span ref={anchor} hidden />
       <Select
         label="Categoría"
         name="category_id"

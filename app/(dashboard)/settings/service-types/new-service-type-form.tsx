@@ -5,11 +5,13 @@ import { Plus } from "lucide-react";
 import { createServiceTypeAction, type ActionState } from "@/features/supplier-service-types/actions";
 import { Input, Select } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
+import { useSuccessToast } from "@/components/ui/use-success-toast";
 
 const initialState: ActionState = { error: null };
 
 export function NewServiceTypeForm({ categories }: { categories: { id: string; name: string }[] }) {
   const [state, formAction, pending] = useActionState(createServiceTypeAction, initialState);
+  useSuccessToast(state);
 
   return (
     <form action={formAction} className="flex flex-wrap items-end gap-2">

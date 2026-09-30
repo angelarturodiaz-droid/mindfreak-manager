@@ -385,3 +385,17 @@ pulsa el botón.
   disponible (tarjeta: crédito disponible y deuda). En Registrar pago avisa
   si el monto no alcanza o si dejaría la cuenta en sobregiro. Solo
   informativo; la validación sigue en la base de datos.
+
+## Categorías y tipos de servicio sin repetidos; guardar proveedor (2026-09-29)
+- No hay lista aparte de "categorías de eventos": proveedores, gastos y
+  Bancos usan la misma lista de Configuración → Categorías.
+- Categorías: nombre único por empresa. Tipos de servicio: nombre único en
+  toda la empresa (un tipo vive en una sola categoría). "Decoracion" =
+  "Decoración" = " decoración " (mayúsculas, acentos y espacios no cuentan).
+  Se valida en la pantalla, en la importación y en la base de datos
+  (migración 066, índices únicos con `catalog_key(name)`).
+- Importar tipos de servicio: columna opcional `descripcion_categoria` (para
+  categorías nuevas); fila con tipo vacío = solo crea la categoría.
+- Proveedor → Guardar cambios: aviso verde + "Guardado"; las listas de
+  categoría/tipo ya no vuelven a la primera opción después de guardar.
+- Crear categoría o tipo de servicio: aviso verde de confirmación.

@@ -5,6 +5,8 @@ import { updateSupplierAction, type ActionState } from "@/features/suppliers/act
 import { Input, Select } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { SupplierCategoryFields } from "@/components/suppliers/supplier-category-fields";
+import { useSuccessToast } from "@/components/ui/use-success-toast";
+import { CheckCircle2 } from "lucide-react";
 
 const initialState: ActionState = { error: null };
 
@@ -34,9 +36,13 @@ export function SupplierEditForm({
 }) {
   const updateWithId = updateSupplierAction.bind(null, supplier.id);
   const [state, formAction, pending] = useActionState(updateWithId, initialState);
+  useSuccessToast(state);
 
+  // key: después de guardar, el formulario se vuelve a armar con los datos
+  // ya guardados (antes las listas volvían a mostrar el valor anterior hasta
+  // refrescar la página).
   return (
-    <form action={formAction} className="space-y-4">
+    <form key={state.successId ?? 0} action={formAction} className="space-y-4">
       <Input label="Nombre" name="name" defaultValue={supplier.name} required />
       <Input label="RNC / Cédula" name="tax_id" defaultValue={supplier.tax_id ?? ""} />
       <SupplierCategoryFields
@@ -71,9 +77,16 @@ export function SupplierEditForm({
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
 
-      <Button type="submit" loading={pending}>
-        Guardar cambios
-      </Button>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button type="submit" loading={pending}>
+          Guardar cambios
+        </Button>
+        {state.success && !pending && (
+          <span className="flex items-center gap-1 text-sm text-brand-success">
+            <CheckCircle2 size={15} /> Guardado
+          </span>
+        )}
+      </div>
     </form>
   );
 }
