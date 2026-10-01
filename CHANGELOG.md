@@ -1,5 +1,12 @@
 # CHANGELOG — Mindfreak Manager
 
+## Corrección: adjuntar acuse firmado (2026-09-30)
+
+- Migración 070: `documents_entity_type_check` ahora admite
+  `delivery_receipt`. Antes, "Adjuntar acuse firmado" fallaba con
+  "new row for relation documents violates check constraint" (la 067 no
+  había ampliado esa lista).
+
 ## Enlaces con el dominio de producción (`APP_URL`) (2026-09-30)
 
 - `lib/utils/app-url.ts` (`getAppUrl()`): los enlaces que salen del sistema
