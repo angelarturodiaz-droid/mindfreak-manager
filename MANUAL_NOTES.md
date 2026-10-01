@@ -457,3 +457,12 @@ pulsa el botón.
   project_survey_answers por pregunta.
 - Permisos: surveys.view (todos), surveys.send (Admin, Gerente, Ventas,
   Operaciones), surveys.manage (Admin, Gerente).
+
+## Dominio de producción y enlaces (2026-09-30)
+- Dominio: https://business.mindfreakevents.com. Los enlaces que se envían
+  (encuesta, invitaciones, recuperar contraseña) se arman con la variable
+  APP_URL (lib/utils/app-url.ts); sin ella usan la dirección actual.
+- Al desplegar: APP_URL en Cloudflare (Variables and Secrets), dominio
+  propio en el Worker, Site URL + Redirect URLs en Supabase, hostname en
+  Turnstile, SMTP_FROM del dominio. Detalle en README → "Dominio de
+  producción y APP_URL" y en claude/checklist-produccion.md.

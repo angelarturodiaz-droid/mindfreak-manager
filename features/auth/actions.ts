@@ -1,5 +1,6 @@
 "use server";
 
+import { getAppUrl } from "@/lib/utils/app-url";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
@@ -308,10 +309,8 @@ export async function requestPasswordReset(
     return { error: "El correo es requerido." };
   }
 
-  const headersList = await headers();
-  const origin =
-    headersList.get("origin") ??
-    `${headersList.get("x-forwarded-proto") ?? "https"}://${headersList.get("host")}`;
+  // Dominio público (APP_URL) para que el enlace del correo no apunte a localhost.
+  const origin = await getAppUrl();
 
   const supabase = await createClient();
   // redirectTo apunta a la ruta que canjea el token del correo por una

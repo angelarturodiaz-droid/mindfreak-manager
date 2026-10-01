@@ -1,7 +1,7 @@
 "use server";
 
+import { getAppUrl } from "@/lib/utils/app-url";
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
@@ -59,10 +59,8 @@ export async function createUserAction(
     return { error: e instanceof Error ? e.message : "No se pudo inicializar el cliente admin." };
   }
 
-  const headersList = await headers();
-  const origin =
-    headersList.get("origin") ??
-    `${headersList.get("x-forwarded-proto") ?? "https"}://${headersList.get("host")}`;
+  // Dominio público (APP_URL) para que el enlace del correo no apunte a localhost.
+  const origin = await getAppUrl();
 
   const { data: created, error: createError } = await adminClient.auth.admin.inviteUserByEmail(parsed.data.email, {
     data: { full_name: parsed.data.full_name },
@@ -423,10 +421,8 @@ export async function resendEmailVerificationAction(email: string): Promise<void
     throw new Error(e instanceof Error ? e.message : "No se pudo inicializar el cliente admin.");
   }
 
-  const headersList = await headers();
-  const origin =
-    headersList.get("origin") ??
-    `${headersList.get("x-forwarded-proto") ?? "https"}://${headersList.get("host")}`;
+  // Dominio público (APP_URL) para que el enlace del correo no apunte a localhost.
+  const origin = await getAppUrl();
 
   const { error } = await adminClient.auth.admin.inviteUserByEmail(email, {
     redirectTo: `${origin}/auth/confirm?next=/update-password`,

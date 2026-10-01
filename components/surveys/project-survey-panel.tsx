@@ -1,4 +1,4 @@
-import { headers } from "next/headers";
+import { getAppUrl } from "@/lib/utils/app-url";
 import {
   Ban,
   CalendarCheck,
@@ -79,10 +79,7 @@ export async function ProjectSurveyPanel({
   const history = surveys.slice(1);
   const answers = latest && latest.responded_at ? await listSurveyAnswers(latest.id) : [];
 
-  const h = await headers();
-  const origin = h.get("x-forwarded-host")
-    ? `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host")}`
-    : `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  const origin = await getAppUrl();
   const linkOf = (token: string) => `${origin}/encuesta/${token}`;
 
   const recipientLine = recipient.email

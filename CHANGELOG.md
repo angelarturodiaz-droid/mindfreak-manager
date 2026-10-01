@@ -1,5 +1,17 @@
 # CHANGELOG — Mindfreak Manager
 
+## Enlaces con el dominio de producción (`APP_URL`) (2026-09-30)
+
+- `lib/utils/app-url.ts` (`getAppUrl()`): los enlaces que salen del sistema
+  (encuesta por correo/WhatsApp/copiar enlace, invitación de usuarios,
+  recuperación de contraseña) usan la variable `APP_URL`
+  (`https://business.mindfreakevents.com` en producción) en vez del dominio
+  de la petición, para que nunca salgan con `localhost` ni `*.workers.dev`.
+  Sin la variable, se comporta como antes.
+- `.env.example` y README ("Dominio de producción y `APP_URL`") con los
+  pasos del despliegue: dominio en Cloudflare, variables, Site URL y
+  Redirect URLs de Supabase, Turnstile y SMTP.
+
 ## Encuesta de satisfacción del cliente (2026-09-30)
 
 - Migración 069: envío por WhatsApp. `project_surveys.recipient_phone`,

@@ -1,7 +1,7 @@
 "use server";
 
 import { randomBytes } from "node:crypto";
-import { headers } from "next/headers";
+import { getAppUrl } from "@/lib/utils/app-url";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
@@ -48,9 +48,9 @@ async function currentUserId(): Promise<string | null> {
   return user?.id ?? null;
 }
 
+/** Dominio público para el enlace de la encuesta (APP_URL; ver lib/utils/app-url.ts). */
 async function appOrigin(): Promise<string> {
-  const h = await headers();
-  return h.get("origin") ?? `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  return getAppUrl();
 }
 
 function newToken(): string {
