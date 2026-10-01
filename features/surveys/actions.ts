@@ -9,7 +9,7 @@ import { logAudit } from "@/lib/audit/log";
 import { sendMail } from "@/lib/mail/send";
 import { surveyEmailHtml } from "@/lib/mail/survey-email";
 import { resolveSurveyRecipient } from "./queries";
-import { fillPlaceholders, questionSchema, settingsSchema, type SurveyQuestionSnapshot } from "./schema";
+import { fillPlaceholders, questionSchema, settingsSchema, whatsappUrl, type SurveyQuestionSnapshot } from "./schema";
 import { z } from "zod";
 
 /**
@@ -29,6 +29,8 @@ export type SurveyActionState = {
   link?: string | null;
   /** El correo no salió (o no hay correo): mostrar el aviso en amarillo. */
   warning?: boolean;
+  /** Enlace wa.me con el mensaje listo (cuando se eligió WhatsApp). */
+  whatsappUrl?: string | null;
   successId?: number;
 };
 
@@ -81,21 +83,91 @@ async function buildSnapshot(): Promise<SurveyQuestionSnapshot[]> {
   }));
 }
 
-export type RecipientInput = { name: string; email: string };
+export type RecipientInput = { name: string; email: string; phone?: string };
 
 /**
  * Destinatario escrito por el usuario (viene prellenado con el contacto del
  * proyecto o del cliente, pero se puede cambiar antes de enviar). Correo
  * vacío = sin correo (se comparte el enlace).
  */
-function parseRecipient(input: RecipientInput | undefined): { name: string | null; email: string | null } | { error: string } | undefined {
+type Recipient = { name: string | null; email: string | null; phone?: string | null };
+
+function parseRecipient(input: RecipientInput | undefined): Recipient | { error: string } | undefined {
   if (!input) return undefined;
   const name = input.name.trim().slice(0, 150) || null;
   const email = input.email.trim().toLowerCase() || null;
   if (email && !z.string().email().safeParse(email).success) {
     return { error: "El correo del destinatario no es válido." };
   }
-  return { name, email };
+  const phone = input.phone === undefined ? undefined : input.phone.trim().slice(0, 40) || null;
+  if (phone && phone.replace(/\D/g, "").length < 7) return { error: "El teléfono de WhatsApp no es válido." };
+  return { name, email, phone };
+}
+
+/**
+ * Registra que la encuesta se compartió por WhatsApp (lo envía la persona
+ * desde su WhatsApp con el enlace wa.me) y devuelve ese enlace.
+ */
+async function shareByWhatsapp(surveyId: string, phone?: string | null): Promise<SurveyActionState> {
+  const supabase = await createClient();
+  const { data: s } = await supabase
+    .from("project_surveys")
+    .select("id, company_id, project_id, status, token, recipient_name, recipient_phone, sent_at, whatsapp_sent_at, whatsapp_count, projects(name), clients(name)")
+    .eq("id", surveyId)
+    .single();
+  if (!s) return { error: "No se encontró la encuesta." };
+  if (s.status === "CANCELLED") return { error: "La encuesta está cancelada." };
+  if (s.status === "ANSWERED") return { error: "El cliente ya respondió esta encuesta. Reábrela si necesitas que la responda de nuevo." };
+
+  const [{ data: company }, { data: settings }] = await Promise.all([
+    supabase.from("companies").select("name").single(),
+    supabase.from("survey_settings").select("whatsapp_message").maybeSingle(),
+  ]);
+  const project = (Array.isArray(s.projects) ? s.projects[0] : s.projects) as { name: string } | null;
+  const client = (Array.isArray(s.clients) ? s.clients[0] : s.clients) as { name: string } | null;
+  const link = surveyLink(await appOrigin(), s.token);
+  const finalPhone = phone === undefined ? s.recipient_phone : phone;
+  const text = fillPlaceholders(
+    settings?.whatsapp_message ?? "Hola {contacto}, ¿nos ayudas con esta breve encuesta? {enlace}",
+    {
+      empresa: company?.name ?? "",
+      proyecto: project?.name ?? null,
+      cliente: client?.name ?? "",
+      contacto: s.recipient_name?.split(" ")[0] ?? "",
+      enlace: link,
+    },
+  ).replace(/Hola ,/, "Hola,");
+
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("project_surveys")
+    .update({
+      recipient_phone: finalPhone,
+      status: "SENT",
+      sent_at: s.sent_at ?? now,
+      sent_by: await currentUserId(),
+      whatsapp_sent_at: s.whatsapp_sent_at ?? now,
+      whatsapp_last_sent_at: now,
+      whatsapp_count: (s.whatsapp_count ?? 0) + 1,
+      last_send_error: null,
+    })
+    .eq("id", s.id);
+  if (error) return { error: error.message };
+
+  await logAudit({
+    companyId: s.company_id,
+    action: "SURVEY_WHATSAPP",
+    entityType: "project",
+    entityId: s.project_id,
+    newValues: { survey_id: s.id, phone: finalPhone },
+  });
+
+  return {
+    error: null,
+    success: "Se abrió WhatsApp con el mensaje y el enlace. Solo falta tocar Enviar en el chat.",
+    link,
+    whatsappUrl: whatsappUrl(finalPhone, text),
+  };
 }
 
 /** Manda (o reenvía) el correo de una encuesta y actualiza fechas/estado. */
@@ -210,7 +282,7 @@ async function deliverSurvey(surveyId: string, opts: { isResend: boolean; isRemi
 /** Crea una encuesta para el proyecto (sin enviarla). Devuelve su id. */
 async function createSurvey(
   projectId: string,
-  override?: { name: string | null; email: string | null },
+  override?: Recipient,
 ): Promise<{ id: string } | { error: string }> {
   const supabase = await createClient();
   const { data: project } = await supabase
@@ -237,6 +309,7 @@ async function createSurvey(
       contact_id: override && override.email !== recipient.email ? null : recipient.contactId,
       recipient_name: override ? override.name : recipient.name,
       recipient_email: override ? override.email : recipient.email,
+      recipient_phone: override?.phone !== undefined ? override.phone : recipient.phone,
       token: newToken(),
       status: "PENDING",
       questions,
@@ -272,13 +345,20 @@ export async function completeProjectAction(
 ): Promise<SurveyActionState> {
   await requirePermission("projects.update");
   const sendSurvey = formData.get("send_survey") === "on";
+  const byEmail = formData.get("by_email") === "on";
+  const byWhatsapp = formData.get("by_whatsapp") === "on";
+  if (sendSurvey && !byEmail && !byWhatsapp) return { error: "Elige cómo enviar la encuesta: correo, WhatsApp o ambos." };
   const recipient = sendSurvey
     ? parseRecipient({
         name: String(formData.get("recipient_name") ?? ""),
         email: String(formData.get("recipient_email") ?? ""),
+        phone: String(formData.get("recipient_phone") ?? ""),
       })
     : undefined;
   if (recipient && "error" in recipient) return { error: recipient.error };
+  if (sendSurvey && byEmail && recipient && !recipient.email) {
+    return { error: "Escribe el correo del destinatario o desmarca «Correo»." };
+  }
 
   const supabase = await createClient();
   const { data: project } = await supabase.from("projects").select("status, company_id").eq("id", projectId).single();
@@ -322,15 +402,38 @@ export async function completeProjectAction(
       successId: Date.now(),
     };
   }
-  const sent = await deliverSurvey(created.id, { isResend: false });
+  const res = await sendThroughChannels(created.id, byEmail, byWhatsapp, recipient?.phone);
   revalidateProject(projectId);
   return {
+    ...res,
     error: null,
-    success: sent.error ? `Proyecto finalizado. ${sent.error}` : `Proyecto finalizado. ${sent.success ?? ""}`.trim(),
-    link: sent.link ?? null,
-    warning: Boolean(sent.error || sent.warning),
+    success: res.error ? `Proyecto finalizado. ${res.error}` : `Proyecto finalizado. ${res.success ?? ""}`.trim(),
+    warning: Boolean(res.error || res.warning),
     successId: Date.now(),
   };
+}
+
+/** Envía por correo y/o registra WhatsApp; junta los mensajes. */
+async function sendThroughChannels(
+  surveyId: string,
+  byEmail: boolean,
+  byWhatsapp: boolean,
+  phone?: string | null,
+): Promise<SurveyActionState> {
+  const mail = byEmail ? await deliverSurvey(surveyId, { isResend: false }) : null;
+  const wa = byWhatsapp ? await shareByWhatsapp(surveyId, phone) : null;
+  if (mail && wa) {
+    if (wa.error) return { ...mail, error: mail.error ?? wa.error };
+    const mailOk = !mail.error && !mail.warning;
+    return {
+      error: null,
+      success: mailOk ? `${mail.success} Se abrió WhatsApp con el mensaje.` : `${mail.error ?? mail.success} Se abrió WhatsApp con el mensaje.`,
+      warning: !mailOk,
+      link: wa.link,
+      whatsappUrl: wa.whatsappUrl,
+    };
+  }
+  return (mail ?? wa)!;
 }
 
 async function hasSendPermission(): Promise<boolean> {
@@ -343,13 +446,20 @@ async function hasSendPermission(): Promise<boolean> {
 }
 
 /** Crea y envía una encuesta nueva desde la pestaña "Satisfacción". */
-export async function sendNewSurveyAction(projectId: string, input?: RecipientInput): Promise<SurveyActionState> {
+export async function sendNewSurveyAction(
+  projectId: string,
+  input?: RecipientInput & { byEmail?: boolean; byWhatsapp?: boolean },
+): Promise<SurveyActionState> {
   await requirePermission("surveys.send");
   const recipient = parseRecipient(input);
   if (recipient && "error" in recipient) return { error: recipient.error };
+  const byEmail = input?.byEmail ?? true;
+  const byWhatsapp = input?.byWhatsapp ?? false;
+  if (!byEmail && !byWhatsapp) return { error: "Elige cómo enviar la encuesta: correo, WhatsApp o ambos." };
+  if (byEmail && recipient && !recipient.email) return { error: "Escribe el correo del destinatario o desmarca «Correo»." };
   const created = await createSurvey(projectId, recipient);
   if ("error" in created) return { error: created.error };
-  const sent = await deliverSurvey(created.id, { isResend: false });
+  const sent = await sendThroughChannels(created.id, byEmail, byWhatsapp, recipient?.phone);
   revalidateProject(projectId);
   return { ...sent, successId: Date.now() };
 }
@@ -396,6 +506,20 @@ export async function resendSurveyAction(
     }
   }
   const res = await deliverSurvey(surveyId, { isResend: true });
+  revalidateProject(projectId);
+  return { ...res, successId: Date.now() };
+}
+
+/** Compartir por WhatsApp una encuesta ya creada (mismo enlace). */
+export async function shareSurveyWhatsappAction(
+  surveyId: string,
+  projectId: string,
+  input: { phone: string },
+): Promise<SurveyActionState> {
+  await requirePermission("surveys.send");
+  const phone = input.phone.trim().slice(0, 40) || null;
+  if (phone && phone.replace(/\D/g, "").length < 7) return { error: "El teléfono de WhatsApp no es válido." };
+  const res = await shareByWhatsapp(surveyId, phone);
   revalidateProject(projectId);
   return { ...res, successId: Date.now() };
 }
@@ -475,6 +599,7 @@ export async function updateSurveySettingsAction(_prev: SurveyActionState, formD
     survey_title: String(formData.get("survey_title") ?? ""),
     survey_intro: String(formData.get("survey_intro") ?? ""),
     thank_you_message: String(formData.get("thank_you_message") ?? ""),
+    whatsapp_message: String(formData.get("whatsapp_message") ?? ""),
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
 

@@ -17,8 +17,14 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { listProjectSurveys, listSurveyAnswers, resolveSurveyRecipient } from "@/features/surveys/queries";
 import { SURVEY_STATUS_LABELS, SURVEY_STATUS_TONE, npsCategory } from "@/features/surveys/schema";
-import { cancelSurveyAction, reopenSurveyAction, resendSurveyAction, sendNewSurveyAction } from "@/features/surveys/actions";
-import { CopySurveyLinkButton, SurveyActionButton, SurveySendButton } from "./survey-action-button";
+import {
+  cancelSurveyAction,
+  reopenSurveyAction,
+  resendSurveyAction,
+  sendNewSurveyAction,
+  shareSurveyWhatsappAction,
+} from "@/features/surveys/actions";
+import { CopySurveyLinkButton, SurveyActionButton, SurveySendButton, SurveyWhatsappButton } from "./survey-action-button";
 import { relationRow } from "@/lib/utils/relation";
 
 function fmt(date: string | null | undefined, withTime = true): string | null {
@@ -81,7 +87,9 @@ export async function ProjectSurveyPanel({
 
   const recipientLine = recipient.email
     ? `${recipient.name ? `${recipient.name} · ` : ""}${recipient.email}`
-    : "El cliente no tiene correo registrado (podrás copiar el enlace).";
+    : recipient.phone
+      ? `${recipient.name ? `${recipient.name} · ` : ""}WhatsApp ${recipient.phone}`
+      : "El cliente no tiene correo ni teléfono registrado (podrás copiar el enlace).";
 
   if (!latest) {
     return (
@@ -113,6 +121,8 @@ export async function ProjectSurveyPanel({
               variant="secondary"
               defaultName={recipient.name ?? ""}
               defaultEmail={recipient.email ?? ""}
+              defaultPhone={recipient.phone ?? ""}
+              chooseChannel
             />
           )}
         </Card>
@@ -128,11 +138,19 @@ export async function ProjectSurveyPanel({
   const timeline: { label: string; value: string | null; who?: string | null }[] = [
     { label: "Creada", value: fmt(latest.created_at), who: createdBy },
     {
-      label: latest.send_count > 1 ? `Enviada (${latest.send_count} veces)` : "Enviada",
+      label: latest.send_count > 1 ? `Enviada (${latest.send_count} correos)` : "Enviada",
       value: fmt(latest.sent_at),
       who: sentBy,
     },
-    ...(latest.send_count > 1 ? [{ label: "Último envío", value: fmt(latest.last_sent_at) }] : []),
+    ...(latest.send_count > 1 ? [{ label: "Último correo", value: fmt(latest.last_sent_at) }] : []),
+    ...(latest.whatsapp_count > 0
+      ? [
+          {
+            label: latest.whatsapp_count > 1 ? `Por WhatsApp (${latest.whatsapp_count} veces)` : "Por WhatsApp",
+            value: fmt(latest.whatsapp_last_sent_at),
+          },
+        ]
+      : []),
     { label: "Abierta por el cliente", value: fmt(latest.first_opened_at) },
     { label: "Respondida", value: fmt(latest.responded_at) },
     ...(latest.reopened_at ? [{ label: "Reabierta", value: fmt(latest.reopened_at) }] : []),
@@ -155,6 +173,8 @@ export async function ProjectSurveyPanel({
             icon={<Send size={14} />}
             defaultName={latest.recipient_name ?? recipient.name ?? ""}
             defaultEmail={latest.recipient_email ?? recipient.email ?? ""}
+            defaultPhone={latest.recipient_phone ?? recipient.phone ?? ""}
+            chooseChannel
             warning={`Este proyecto ya tiene una encuesta ${SURVEY_STATUS_LABELS[latest.status].toLowerCase()}. Se creará una nueva con un enlace distinto.`}
           />
         )}
@@ -169,9 +189,9 @@ export async function ProjectSurveyPanel({
             </div>
             <p className="inline-flex items-center gap-1.5 text-sm text-brand-muted">
               <Mail size={14} aria-hidden />
-              {latest.recipient_email
-                ? `${latest.recipient_name ? `${latest.recipient_name} · ` : ""}${latest.recipient_email}`
-                : "Sin correo — comparte el enlace"}
+              {[latest.recipient_name, latest.recipient_email, latest.recipient_phone ? `WhatsApp ${latest.recipient_phone}` : null]
+                .filter(Boolean)
+                .join(" · ") || "Sin correo ni teléfono — comparte el enlace"}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -179,12 +199,19 @@ export async function ProjectSurveyPanel({
             {canSend && isOpen && (
               <SurveySendButton
                 action={resendSurveyAction.bind(null, latest.id, projectId)}
-                label={latest.status === "PENDING" ? "Enviar correo" : "Reenviar"}
-                title={latest.status === "PENDING" ? "Enviar la encuesta por correo" : "Reenviar la encuesta"}
+                label={latest.send_count > 0 ? "Reenviar correo" : "Enviar por correo"}
+                title={latest.send_count > 0 ? "Reenviar la encuesta por correo" : "Enviar la encuesta por correo"}
                 submitLabel={latest.status === "PENDING" ? "Enviar" : "Reenviar"}
                 icon={<RefreshCw size={14} />}
                 defaultName={latest.recipient_name ?? ""}
                 defaultEmail={latest.recipient_email ?? ""}
+              />
+            )}
+            {canSend && isOpen && (
+              <SurveyWhatsappButton
+                action={shareSurveyWhatsappAction.bind(null, latest.id, projectId)}
+                defaultPhone={latest.recipient_phone ?? recipient.phone ?? ""}
+                label={latest.whatsapp_count > 0 ? "Reenviar por WhatsApp" : "Enviar por WhatsApp"}
               />
             )}
             {canSend && isOpen && (

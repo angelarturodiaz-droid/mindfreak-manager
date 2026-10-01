@@ -436,6 +436,10 @@ pulsa el botón.
 - Destinatario: contacto del proyecto → contacto principal del cliente con
   correo → correo del cliente. Sin correo: queda Pendiente y se copia el
   enlace.
+- Enviar por: Correo, WhatsApp o ambos (el correo no es obligatorio).
+  WhatsApp abre el chat del cliente con el mensaje y el enlace (wa.me); al
+  abrirlo la encuesta queda Enviada. Se puede reenviar por cualquier canal
+  en cualquier orden, con el mismo enlace.
 - Destinatario editable (nombre y correo) en Finalizar proyecto, Enviar
   encuesta y Reenviar (reenviar a otro correo usa el mismo enlace).
 - Enlace público /encuesta/{token}: sin sesión, una sola respuesta, no

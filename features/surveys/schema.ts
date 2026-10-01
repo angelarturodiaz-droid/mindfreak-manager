@@ -103,18 +103,49 @@ export const settingsSchema = z.object({
   survey_title: z.string().trim().min(3, "Escribe el título de la encuesta.").max(120),
   survey_intro: z.string().trim().max(800).optional().or(z.literal("")),
   thank_you_message: z.string().trim().min(3, "Escribe el mensaje de gracias.").max(500),
+  whatsapp_message: z
+    .string()
+    .trim()
+    .min(3, "Escribe el mensaje de WhatsApp.")
+    .max(1000)
+    .refine((t) => t.includes("{enlace}"), "El mensaje de WhatsApp debe incluir {enlace}."),
 });
 
 /** Reemplaza {cliente}, {proyecto}, {empresa} y {contacto} en los textos configurables. */
 export function fillPlaceholders(
   text: string,
-  values: { cliente?: string | null; proyecto?: string | null; empresa?: string | null; contacto?: string | null },
+  values: {
+    cliente?: string | null;
+    proyecto?: string | null;
+    empresa?: string | null;
+    contacto?: string | null;
+    enlace?: string | null;
+  },
 ): string {
   return text
+    .replaceAll("{enlace}", values.enlace ?? "")
     .replaceAll("{cliente}", values.cliente ?? "")
     .replaceAll("{proyecto}", values.proyecto ?? "tu evento")
     .replaceAll("{empresa}", values.empresa ?? "")
     .replaceAll("{contacto}", values.contacto ?? "");
+}
+
+/**
+ * Teléfono para wa.me: solo dígitos y con código de país. Los números
+ * dominicanos de 10 dígitos (809/829/849) llevan el 1 delante. Vacío o muy
+ * corto = sin número (WhatsApp deja elegir el chat).
+ */
+export function whatsappPhone(phone: string | null | undefined): string | null {
+  let d = (phone ?? "").replace(/\D/g, "");
+  if (d.startsWith("00")) d = d.slice(2);
+  if (d.length === 10 && /^(809|829|849)/.test(d)) d = `1${d}`;
+  return d.length >= 8 ? d : null;
+}
+
+/** Enlace que abre WhatsApp (web o app) con el mensaje ya escrito. */
+export function whatsappUrl(phone: string | null | undefined, text: string): string {
+  const p = whatsappPhone(phone);
+  return `https://wa.me/${p ?? ""}?text=${encodeURIComponent(text)}`;
 }
 
 /** Etiqueta del NPS: Promotor (9–10), Pasivo (7–8), Detractor (0–6). */

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition, type ReactNode } from "react";
-import { Check, Copy, Mail } from "lucide-react";
+import { Check, Copy, MessageCircle } from "lucide-react";
+import { RecipientFields, defaultRecipient, prepareWhatsappWindow, type RecipientValues } from "./recipient-fields";
 import { Input } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -96,8 +97,9 @@ export function CopySurveyLinkButton({ link }: { link: string }) {
 }
 
 /**
- * Enviar / reenviar la encuesta con el destinatario editable: viene
- * prellenado (contacto del proyecto o del cliente) y se puede cambiar.
+ * Enviar la encuesta (nueva) o reenviar el correo, con el destinatario
+ * editable. En una encuesta nueva se elige el canal: correo, WhatsApp o
+ * ambos. Viene prellenado con el contacto del proyecto o del cliente.
  */
 export function SurveySendButton({
   action,
@@ -108,9 +110,11 @@ export function SurveySendButton({
   variant = "outline",
   defaultName,
   defaultEmail,
+  defaultPhone = "",
+  chooseChannel = false,
   warning,
 }: {
-  action: (input: { name: string; email: string }) => Promise<SurveyActionState>;
+  action: (input: { name: string; email: string; phone?: string; byEmail?: boolean; byWhatsapp?: boolean }) => Promise<SurveyActionState>;
   label: string;
   title: string;
   submitLabel: string;
@@ -118,20 +122,36 @@ export function SurveySendButton({
   variant?: "primary" | "secondary" | "outline";
   defaultName: string;
   defaultEmail: string;
+  defaultPhone?: string;
+  /** Encuesta nueva: permite elegir correo y/o WhatsApp. Si no, solo correo. */
+  chooseChannel?: boolean;
   /** Aviso amarillo (ej. ya hay una encuesta respondida). */
   warning?: string;
 }) {
+  const initial = (): RecipientValues =>
+    chooseChannel
+      ? defaultRecipient({ name: defaultName, email: defaultEmail, phone: defaultPhone })
+      : { name: defaultName, email: defaultEmail, phone: defaultPhone, byEmail: true, byWhatsapp: false };
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState(defaultName);
-  const [email, setEmail] = useState(defaultEmail);
+  const [value, setValue] = useState<RecipientValues>(initial);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   function send() {
     setError(null);
+    if (!value.byEmail && !value.byWhatsapp) {
+      setError("Elige cómo enviar la encuesta: correo, WhatsApp o ambos.");
+      return;
+    }
+    const wa = prepareWhatsappWindow(value.byWhatsapp);
     startTransition(async () => {
       try {
-        const res = await action({ name, email });
+        const res = await action(
+          chooseChannel
+            ? { name: value.name, email: value.email, phone: value.phone, byEmail: value.byEmail, byWhatsapp: value.byWhatsapp }
+            : { name: value.name, email: value.email },
+        );
+        wa.go(res.error ? null : res.whatsappUrl);
         if (res.error) {
           setError(res.error);
           return;
@@ -140,6 +160,7 @@ export function SurveySendButton({
         if (res.warning) toast.warning(res.success ?? "", { duration: 9000 });
         else if (res.success) toast.success(res.success);
       } catch (err) {
+        wa.go(null);
         setError(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
       }
     });
@@ -153,8 +174,7 @@ export function SurveySendButton({
         variant={variant}
         icon={icon}
         onClick={() => {
-          setName(defaultName);
-          setEmail(defaultEmail);
+          setValue(initial());
           setError(null);
           setOpen(true);
         }}
@@ -172,16 +192,7 @@ export function SurveySendButton({
           {warning && (
             <p className="rounded-[var(--radius-md)] bg-brand-warning-bg px-3 py-2 text-xs text-brand-text">{warning}</p>
           )}
-          <Input label="Nombre del destinatario" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej. María Fernández" />
-          <Input
-            label="Correo"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="cliente@empresa.com"
-            icon={<Mail size={14} />}
-            hint={email.trim() ? "Puedes cambiarlo si la encuesta debe ir a otra persona." : "Sin correo: se creará el enlace para copiarlo."}
-          />
+          <RecipientFields value={value} onChange={setValue} showChannels={chooseChannel} />
           {error && <p className="text-sm text-brand-danger">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
@@ -189,6 +200,88 @@ export function SurveySendButton({
             </Button>
             <Button type="submit" loading={pending}>
               {submitLabel}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </>
+  );
+}
+
+/** Compartir por WhatsApp una encuesta ya creada (mismo enlace). */
+export function SurveyWhatsappButton({
+  action,
+  defaultPhone,
+  label = "WhatsApp",
+}: {
+  action: (input: { phone: string }) => Promise<SurveyActionState>;
+  defaultPhone: string;
+  label?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [phone, setPhone] = useState(defaultPhone);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function share() {
+    setError(null);
+    const wa = prepareWhatsappWindow(true);
+    startTransition(async () => {
+      try {
+        const res = await action({ phone });
+        wa.go(res.error ? null : res.whatsappUrl);
+        if (res.error) {
+          setError(res.error);
+          return;
+        }
+        setOpen(false);
+        toast.success(res.success ?? "Se abrió WhatsApp.");
+      } catch (err) {
+        wa.go(null);
+        setError(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
+      }
+    });
+  }
+
+  return (
+    <>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        icon={<MessageCircle size={14} />}
+        onClick={() => {
+          setPhone(defaultPhone);
+          setError(null);
+          setOpen(true);
+        }}
+      >
+        {label}
+      </Button>
+      <Modal open={open} onClose={() => !pending && setOpen(false)} title="Enviar por WhatsApp">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            share();
+          }}
+          className="flex flex-col gap-4"
+        >
+          <Input
+            label="WhatsApp"
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="809-555-0000"
+            icon={<MessageCircle size={14} />}
+            hint={phone.trim() ? "Se abrirá WhatsApp con el mensaje y el enlace; solo tocas Enviar." : "Sin número: WhatsApp te deja elegir el chat."}
+          />
+          {error && <p className="text-sm text-brand-danger">{error}</p>}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
+              Cancelar
+            </Button>
+            <Button type="submit" loading={pending} icon={<MessageCircle size={14} />}>
+              Abrir WhatsApp
             </Button>
           </div>
         </form>

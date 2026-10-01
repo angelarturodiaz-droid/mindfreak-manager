@@ -2,10 +2,10 @@
 
 import { useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Mail, Smile } from "lucide-react";
+import { AlertTriangle, Smile } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/field";
+import { RecipientFields, defaultRecipient, prepareWhatsappWindow } from "./recipient-fields";
 import { toast } from "@/components/ui/toaster";
 import { completeProjectAction } from "@/features/surveys/actions";
 import { SURVEY_STATUS_LABELS } from "@/features/surveys/schema";
@@ -25,6 +25,7 @@ export function CompleteProjectStep({
   sendByDefault,
   recipientName,
   recipientEmail,
+  recipientPhone,
   existing,
 }: {
   projectId: string;
@@ -35,6 +36,7 @@ export function CompleteProjectStep({
   sendByDefault: boolean;
   recipientName: string | null;
   recipientEmail: string | null;
+  recipientPhone: string | null;
   /** Encuesta ya enviada o respondida de este proyecto (para avisar duplicados). */
   existing: { status: string; date: string | null } | null;
 }) {
@@ -42,26 +44,34 @@ export function CompleteProjectStep({
   const [open, setOpen] = useState(false);
   const [send, setSend] = useState(canSend && sendByDefault && !existing);
   const [pending, startTransition] = useTransition();
-  const [name, setName] = useState(recipientName ?? "");
-  const [email, setEmail] = useState(recipientEmail ?? "");
+  const initial = () => defaultRecipient({ name: recipientName, email: recipientEmail, phone: recipientPhone });
+  const [recipient, setRecipient] = useState(initial);
 
   function openDialog() {
     setSend(canSend && sendByDefault && !existing);
-    setName(recipientName ?? "");
-    setEmail(recipientEmail ?? "");
+    setRecipient(initial());
     setOpen(true);
   }
 
   function finish() {
     const fd = new FormData();
     if (send) {
+      if (!recipient.byEmail && !recipient.byWhatsapp) {
+        toast.error("Elige cómo enviar la encuesta: correo, WhatsApp o ambos.");
+        return;
+      }
       fd.set("send_survey", "on");
-      fd.set("recipient_name", name);
-      fd.set("recipient_email", email);
+      fd.set("recipient_name", recipient.name);
+      fd.set("recipient_email", recipient.email);
+      fd.set("recipient_phone", recipient.phone);
+      if (recipient.byEmail) fd.set("by_email", "on");
+      if (recipient.byWhatsapp) fd.set("by_whatsapp", "on");
     }
+    const wa = prepareWhatsappWindow(send && recipient.byWhatsapp);
     startTransition(async () => {
       try {
         const res = await completeProjectAction(projectId, { error: null }, fd);
+        wa.go(res.error ? null : res.whatsappUrl);
         if (res.error) {
           toast.error(res.error);
           return;
@@ -75,6 +85,7 @@ export function CompleteProjectStep({
         }
         if (send) router.push(`/projects/${projectId}?tab=satisfaccion`);
       } catch (err) {
+        wa.go(null);
         toast.error(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
       }
     });
@@ -122,31 +133,13 @@ export function CompleteProjectStep({
                   ¿Deseas enviar la encuesta de satisfacción al cliente?
                 </span>
                 <span className="text-xs text-brand-muted">
-                  Se enviará al correo de abajo; puedes cambiarlo antes de finalizar.
+                  Por correo, por WhatsApp o ambos; puedes cambiar los datos antes de finalizar.
                 </span>
               </span>
             </label>
           ) : null}
 
-          {canSend && send && (
-            <div className="flex flex-col gap-3">
-              <Input
-                label="Nombre del destinatario"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ej. María Fernández"
-              />
-              <Input
-                label="Correo"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="cliente@empresa.com"
-                icon={<Mail size={14} />}
-                hint={email.trim() ? undefined : "Sin correo: se creará el enlace para copiarlo."}
-              />
-            </div>
-          )}
+          {canSend && send && <RecipientFields value={recipient} onChange={setRecipient} />}
 
           {!canSend ? (
             <p className="rounded-[var(--radius-md)] bg-brand-background px-3 py-2 text-xs text-brand-muted">

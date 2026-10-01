@@ -18,6 +18,7 @@ type Settings = {
   survey_title: string;
   survey_intro: string;
   thank_you_message: string;
+  whatsapp_message: string;
 };
 
 function Toggle({ name, defaultChecked, label, hint, disabled }: { name: string; defaultChecked: boolean; label: string; hint?: string; disabled?: boolean }) {
@@ -116,12 +117,21 @@ export function SurveySettingsForm({ settings, canManage }: { settings: Settings
         <div>
           <h3 className="font-semibold text-brand-text">Textos</h3>
           <p className="text-xs text-brand-muted">
-            Puedes usar {"{cliente}"}, {"{proyecto}"}, {"{empresa}"} y {"{contacto}"}; se reemplazan por los datos de cada
-            proyecto.
+            Puedes usar {"{cliente}"}, {"{proyecto}"}, {"{empresa}"} y {"{contacto}"} (y {"{enlace}"} en WhatsApp); se
+            reemplazan por los datos de cada proyecto.
           </p>
         </div>
         <Input label="Asunto del correo" name="email_subject" required defaultValue={settings.email_subject} disabled={!canManage} />
         <Textarea label="Mensaje del correo" name="email_message" required rows={3} defaultValue={settings.email_message} disabled={!canManage} />
+        <Textarea
+          label="Mensaje de WhatsApp"
+          name="whatsapp_message"
+          required
+          rows={3}
+          defaultValue={settings.whatsapp_message}
+          disabled={!canManage}
+          hint="Debe incluir {enlace}, que se reemplaza por el enlace de la encuesta."
+        />
         <Input label="Título de la encuesta" name="survey_title" required defaultValue={settings.survey_title} disabled={!canManage} />
         <Textarea
           label="Introducción de la encuesta"

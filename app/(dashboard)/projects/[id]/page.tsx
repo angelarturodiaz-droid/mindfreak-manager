@@ -639,6 +639,7 @@ export default async function ProjectDetailPage({
                         sendByDefault={surveySettings?.send_by_default ?? true}
                         recipientName={surveyRecipient?.name ?? null}
                         recipientEmail={surveyRecipient?.email ?? null}
+                        recipientPhone={surveyRecipient?.phone ?? null}
                         existing={
                           activeSurvey
                             ? { status: activeSurvey.status, date: activeSurvey.responded_at ?? activeSurvey.sent_at }

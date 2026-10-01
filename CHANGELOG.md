@@ -2,6 +2,13 @@
 
 ## Encuesta de satisfacción del cliente (2026-09-30)
 
+- Migración 069: envío por WhatsApp. `project_surveys.recipient_phone`,
+  `whatsapp_sent_at`, `whatsapp_last_sent_at`, `whatsapp_count`;
+  `survey_settings.whatsapp_message` (con {enlace}). Canal a elegir: correo,
+  WhatsApp o ambos (enlace wa.me con el mensaje; teléfono dominicano de 10
+  dígitos → +1). Acción `shareSurveyWhatsappAction`, auditoría
+  SURVEY_WHATSAPP.
+
 - Migración 068: `survey_questions` (preguntas configurables, tipo, opciones,
   obligatoria, activa, indicador RATING/NPS/RECOMMENDATION/COMMENT/
   TESTIMONIAL_CONSENT/RESPONDENT_NAME), `survey_settings` (envío por
