@@ -25,6 +25,10 @@
   SMTP falla o no hay correo, la encuesta queda Pendiente con el error y el
   enlace para copiar.
 - Configuración → Encuesta de satisfacción (preguntas y textos).
+- Destinatario editable: nombre y correo vienen prellenados (contacto del
+  proyecto → contacto principal → correo del cliente) y se pueden cambiar
+  al finalizar, al enviar y al reenviar (auditoría SURVEY_RECIPIENT_CHANGED;
+  si cambia el correo se quita el vínculo al contacto).
 
 ## Entregas y acuses de recibo (2026-09-30)
 

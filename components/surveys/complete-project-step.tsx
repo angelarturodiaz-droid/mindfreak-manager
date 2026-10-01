@@ -2,9 +2,10 @@
 
 import { useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Mail, MailX, Smile } from "lucide-react";
+import { AlertTriangle, Mail, Smile } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/field";
 import { toast } from "@/components/ui/toaster";
 import { completeProjectAction } from "@/features/surveys/actions";
 import { SURVEY_STATUS_LABELS } from "@/features/surveys/schema";
@@ -41,15 +42,23 @@ export function CompleteProjectStep({
   const [open, setOpen] = useState(false);
   const [send, setSend] = useState(canSend && sendByDefault && !existing);
   const [pending, startTransition] = useTransition();
+  const [name, setName] = useState(recipientName ?? "");
+  const [email, setEmail] = useState(recipientEmail ?? "");
 
   function openDialog() {
     setSend(canSend && sendByDefault && !existing);
+    setName(recipientName ?? "");
+    setEmail(recipientEmail ?? "");
     setOpen(true);
   }
 
   function finish() {
     const fd = new FormData();
-    if (send) fd.set("send_survey", "on");
+    if (send) {
+      fd.set("send_survey", "on");
+      fd.set("recipient_name", name);
+      fd.set("recipient_email", email);
+    }
     startTransition(async () => {
       try {
         const res = await completeProjectAction(projectId, { error: null }, fd);
@@ -112,26 +121,39 @@ export function CompleteProjectStep({
                   <Smile size={15} className="text-brand-accent" aria-hidden />
                   ¿Deseas enviar la encuesta de satisfacción al cliente?
                 </span>
-                {recipientEmail ? (
-                  <span className="inline-flex items-center gap-1.5 text-xs text-brand-muted">
-                    <Mail size={12} aria-hidden />
-                    Se enviará a {recipientName ? `${recipientName} · ` : ""}
-                    {recipientEmail}
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 text-xs text-brand-warning">
-                    <MailX size={12} aria-hidden />
-                    El cliente no tiene correo: se creará el enlace para que lo copies y lo envíes por otra vía.
-                  </span>
-                )}
+                <span className="text-xs text-brand-muted">
+                  Se enviará al correo de abajo; puedes cambiarlo antes de finalizar.
+                </span>
               </span>
             </label>
-          ) : (
+          ) : null}
+
+          {canSend && send && (
+            <div className="flex flex-col gap-3">
+              <Input
+                label="Nombre del destinatario"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ej. María Fernández"
+              />
+              <Input
+                label="Correo"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="cliente@empresa.com"
+                icon={<Mail size={14} />}
+                hint={email.trim() ? undefined : "Sin correo: se creará el enlace para copiarlo."}
+              />
+            </div>
+          )}
+
+          {!canSend ? (
             <p className="rounded-[var(--radius-md)] bg-brand-background px-3 py-2 text-xs text-brand-muted">
               No tienes permiso para enviar encuestas de satisfacción; un administrador puede enviarla después desde la
               pestaña Satisfacción.
             </p>
-          )}
+          ) : null}
 
           {existing && canSend && (
             <div className="flex gap-2 rounded-[var(--radius-md)] bg-brand-warning-bg px-3 py-2 text-xs text-brand-text">

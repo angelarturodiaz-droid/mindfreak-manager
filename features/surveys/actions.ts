@@ -10,6 +10,7 @@ import { sendMail } from "@/lib/mail/send";
 import { surveyEmailHtml } from "@/lib/mail/survey-email";
 import { resolveSurveyRecipient } from "./queries";
 import { fillPlaceholders, questionSchema, settingsSchema, type SurveyQuestionSnapshot } from "./schema";
+import { z } from "zod";
 
 /**
  * Encuesta de satisfacción (migración 068).
@@ -78,6 +79,23 @@ async function buildSnapshot(): Promise<SurveyQuestionSnapshot[]> {
     required: q.is_required,
     metric: q.metric,
   }));
+}
+
+export type RecipientInput = { name: string; email: string };
+
+/**
+ * Destinatario escrito por el usuario (viene prellenado con el contacto del
+ * proyecto o del cliente, pero se puede cambiar antes de enviar). Correo
+ * vacío = sin correo (se comparte el enlace).
+ */
+function parseRecipient(input: RecipientInput | undefined): { name: string | null; email: string | null } | { error: string } | undefined {
+  if (!input) return undefined;
+  const name = input.name.trim().slice(0, 150) || null;
+  const email = input.email.trim().toLowerCase() || null;
+  if (email && !z.string().email().safeParse(email).success) {
+    return { error: "El correo del destinatario no es válido." };
+  }
+  return { name, email };
 }
 
 /** Manda (o reenvía) el correo de una encuesta y actualiza fechas/estado. */
@@ -190,7 +208,10 @@ async function deliverSurvey(surveyId: string, opts: { isResend: boolean; isRemi
 }
 
 /** Crea una encuesta para el proyecto (sin enviarla). Devuelve su id. */
-async function createSurvey(projectId: string): Promise<{ id: string } | { error: string }> {
+async function createSurvey(
+  projectId: string,
+  override?: { name: string | null; email: string | null },
+): Promise<{ id: string } | { error: string }> {
   const supabase = await createClient();
   const { data: project } = await supabase
     .from("projects")
@@ -212,9 +233,10 @@ async function createSurvey(projectId: string): Promise<{ id: string } | { error
       company_id: project.company_id,
       project_id: project.id,
       client_id: project.client_id,
-      contact_id: recipient.contactId,
-      recipient_name: recipient.name,
-      recipient_email: recipient.email,
+      // Si el usuario cambió el correo, ya no es el del contacto guardado.
+      contact_id: override && override.email !== recipient.email ? null : recipient.contactId,
+      recipient_name: override ? override.name : recipient.name,
+      recipient_email: override ? override.email : recipient.email,
       token: newToken(),
       status: "PENDING",
       questions,
@@ -250,6 +272,13 @@ export async function completeProjectAction(
 ): Promise<SurveyActionState> {
   await requirePermission("projects.update");
   const sendSurvey = formData.get("send_survey") === "on";
+  const recipient = sendSurvey
+    ? parseRecipient({
+        name: String(formData.get("recipient_name") ?? ""),
+        email: String(formData.get("recipient_email") ?? ""),
+      })
+    : undefined;
+  if (recipient && "error" in recipient) return { error: recipient.error };
 
   const supabase = await createClient();
   const { data: project } = await supabase.from("projects").select("status, company_id").eq("id", projectId).single();
@@ -283,7 +312,7 @@ export async function completeProjectAction(
     };
   }
 
-  const created = await createSurvey(projectId);
+  const created = await createSurvey(projectId, recipient);
   if ("error" in created) {
     revalidateProject(projectId);
     return {
@@ -314,9 +343,11 @@ async function hasSendPermission(): Promise<boolean> {
 }
 
 /** Crea y envía una encuesta nueva desde la pestaña "Satisfacción". */
-export async function sendNewSurveyAction(projectId: string): Promise<SurveyActionState> {
+export async function sendNewSurveyAction(projectId: string, input?: RecipientInput): Promise<SurveyActionState> {
   await requirePermission("surveys.send");
-  const created = await createSurvey(projectId);
+  const recipient = parseRecipient(input);
+  if (recipient && "error" in recipient) return { error: recipient.error };
+  const created = await createSurvey(projectId, recipient);
   if ("error" in created) return { error: created.error };
   const sent = await deliverSurvey(created.id, { isResend: false });
   revalidateProject(projectId);
@@ -324,8 +355,46 @@ export async function sendNewSurveyAction(projectId: string): Promise<SurveyActi
 }
 
 /** Reenvía el mismo enlace (no crea otra encuesta). */
-export async function resendSurveyAction(surveyId: string, projectId: string): Promise<SurveyActionState> {
+export async function resendSurveyAction(
+  surveyId: string,
+  projectId: string,
+  input?: RecipientInput,
+): Promise<SurveyActionState> {
   await requirePermission("surveys.send");
+  const recipient = parseRecipient(input);
+  if (recipient && "error" in recipient) return { error: recipient.error };
+  if (recipient) {
+    // Corregir el destinatario antes de reenviar (mismo enlace).
+    const supabase = await createClient();
+    const { data: current } = await supabase
+      .from("project_surveys")
+      .select("company_id, status, recipient_email, recipient_name")
+      .eq("id", surveyId)
+      .single();
+    if (!current) return { error: "No se encontró la encuesta." };
+    if (current.status !== "PENDING" && current.status !== "SENT") {
+      return { error: "Solo se puede cambiar el destinatario de una encuesta pendiente o enviada." };
+    }
+    if (current.recipient_email !== recipient.email || current.recipient_name !== recipient.name) {
+      const { error } = await supabase
+        .from("project_surveys")
+        .update({
+          recipient_name: recipient.name,
+          recipient_email: recipient.email,
+          ...(current.recipient_email !== recipient.email ? { contact_id: null } : {}),
+        })
+        .eq("id", surveyId);
+      if (error) return { error: error.message };
+      await logAudit({
+        companyId: current.company_id,
+        action: "SURVEY_RECIPIENT_CHANGED",
+        entityType: "project",
+        entityId: projectId,
+        oldValues: { email: current.recipient_email, name: current.recipient_name },
+        newValues: { survey_id: surveyId, email: recipient.email, name: recipient.name },
+      });
+    }
+  }
   const res = await deliverSurvey(surveyId, { isResend: true });
   revalidateProject(projectId);
   return { ...res, successId: Date.now() };

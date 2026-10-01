@@ -436,6 +436,8 @@ pulsa el botón.
 - Destinatario: contacto del proyecto → contacto principal del cliente con
   correo → correo del cliente. Sin correo: queda Pendiente y se copia el
   enlace.
+- Destinatario editable (nombre y correo) en Finalizar proyecto, Enviar
+  encuesta y Reenviar (reenviar a otro correo usa el mismo enlace).
 - Enlace público /encuesta/{token}: sin sesión, una sola respuesta, no
   expone IDs. Las preguntas se copian al crear la encuesta.
 - Pestaña "Satisfacción del cliente" en el proyecto: estado, fechas,

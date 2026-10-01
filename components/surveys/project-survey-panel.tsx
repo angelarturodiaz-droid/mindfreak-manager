@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { listProjectSurveys, listSurveyAnswers, resolveSurveyRecipient } from "@/features/surveys/queries";
 import { SURVEY_STATUS_LABELS, SURVEY_STATUS_TONE, npsCategory } from "@/features/surveys/schema";
 import { cancelSurveyAction, reopenSurveyAction, resendSurveyAction, sendNewSurveyAction } from "@/features/surveys/actions";
-import { CopySurveyLinkButton, SurveyActionButton } from "./survey-action-button";
+import { CopySurveyLinkButton, SurveyActionButton, SurveySendButton } from "./survey-action-button";
 import { relationRow } from "@/lib/utils/relation";
 
 function fmt(date: string | null | undefined, withTime = true): string | null {
@@ -104,11 +104,15 @@ export async function ProjectSurveyPanel({
             <Mail size={13} aria-hidden /> {recipientLine}
           </p>
           {canSend && (
-            <SurveyActionButton
+            <SurveySendButton
               action={sendNewSurveyAction.bind(null, projectId)}
               label="Enviar encuesta"
+              title="Enviar encuesta de satisfacción"
+              submitLabel="Enviar encuesta"
               icon={<Send size={14} />}
               variant="secondary"
+              defaultName={recipient.name ?? ""}
+              defaultEmail={recipient.email ?? ""}
             />
           )}
         </Card>
@@ -143,15 +147,15 @@ export async function ProjectSurveyPanel({
           <p className="text-sm text-brand-muted">Encuesta que responde el cliente al cerrar el evento.</p>
         </div>
         {canSend && !isOpen && (
-          <SurveyActionButton
+          <SurveySendButton
             action={sendNewSurveyAction.bind(null, projectId)}
             label="Enviar otra encuesta"
+            title="¿Enviar otra encuesta?"
+            submitLabel="Sí, enviar otra"
             icon={<Send size={14} />}
-            confirm={{
-              title: "¿Enviar otra encuesta?",
-              message: `Este proyecto ya tiene una encuesta ${SURVEY_STATUS_LABELS[latest.status].toLowerCase()}. Se creará una nueva con un enlace distinto y se le enviará a ${recipient.email ?? "el cliente"}.`,
-              label: "Sí, enviar otra",
-            }}
+            defaultName={latest.recipient_name ?? recipient.name ?? ""}
+            defaultEmail={latest.recipient_email ?? recipient.email ?? ""}
+            warning={`Este proyecto ya tiene una encuesta ${SURVEY_STATUS_LABELS[latest.status].toLowerCase()}. Se creará una nueva con un enlace distinto.`}
           />
         )}
       </header>
@@ -173,10 +177,14 @@ export async function ProjectSurveyPanel({
           <div className="flex flex-wrap gap-2">
             {isOpen && <CopySurveyLinkButton link={linkOf(latest.token)} />}
             {canSend && isOpen && (
-              <SurveyActionButton
+              <SurveySendButton
                 action={resendSurveyAction.bind(null, latest.id, projectId)}
                 label={latest.status === "PENDING" ? "Enviar correo" : "Reenviar"}
+                title={latest.status === "PENDING" ? "Enviar la encuesta por correo" : "Reenviar la encuesta"}
+                submitLabel={latest.status === "PENDING" ? "Enviar" : "Reenviar"}
                 icon={<RefreshCw size={14} />}
+                defaultName={latest.recipient_name ?? ""}
+                defaultEmail={latest.recipient_email ?? ""}
               />
             )}
             {canSend && isOpen && (
