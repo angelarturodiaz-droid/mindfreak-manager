@@ -1,5 +1,46 @@
 # CHANGELOG — Mindfreak Manager
 
+## Encuesta de satisfacción del cliente (2026-09-30)
+
+- Migración 068: `survey_questions` (preguntas configurables, tipo, opciones,
+  obligatoria, activa, indicador RATING/NPS/RECOMMENDATION/COMMENT/
+  TESTIMONIAL_CONSENT/RESPONDENT_NAME), `survey_settings` (envío por
+  defecto, demora y recordatorios preparados, textos), `project_surveys`
+  (token aleatorio de 256 bits, estado PENDING/SENT/ANSWERED/CANCELLED,
+  copia de las preguntas, fechas de envío/apertura/respuesta, indicadores
+  calculados) y `project_survey_answers`. Permisos `surveys.view|send|manage`.
+- Acceso público solo por las funciones `get_public_survey` y
+  `submit_public_survey` (SECURITY DEFINER, por token; validan obligatorias,
+  rangos y opciones; una sola respuesta salvo reapertura; auditoría
+  SURVEY_RESPONSE y notificación `survey_answered`).
+- Página pública `/encuesta/[token]` (fuera del panel, sin sesión,
+  mobile-first, colores y logo de la empresa); `/encuesta/` agregado a las
+  rutas públicas del proxy.
+- Proyecto: el paso Completado abre "Finalizar proyecto" con la opción de
+  enviar la encuesta (`completeProjectAction`); pestaña "Satisfacción del
+  cliente" con estado, fechas, calificación, NPS, comentarios, respuestas,
+  reenviar/copiar enlace/cancelar/reabrir. Auditoría SURVEY_CREATED/SENT/
+  RESENT/CANCELLED/REOPENED.
+- Correo con branding (`lib/mail/survey-email.ts`, vía `sendMail`). Si el
+  SMTP falla o no hay correo, la encuesta queda Pendiente con el error y el
+  enlace para copiar.
+- Configuración → Encuesta de satisfacción (preguntas y textos).
+
+## Entregas y acuses de recibo (2026-09-30)
+
+- Migración 067: `delivery_receipts` (ACU-0001, cliente, proyecto opcional,
+  tipo DOCUMENTS/EQUIPMENT/MATERIALS/OTHER, estado DRAFT → ISSUED → SIGNED,
+  CANCELLED; destinatario, referencia, textos, ejemplares, entregado/recibido
+  por) y `delivery_receipt_items` (No., descripción, referencia, cantidad),
+  con RLS y permisos `deliveries.view|create|cancel`.
+- El acuse firmado se guarda en `documents` (entity_type `delivery_receipt`).
+- `features/deliveries` (schema, queries, actions), PDF
+  `lib/pdf/delivery-receipt-document.tsx` (formato del modelo del usuario,
+  render en el navegador), pantallas `/deliveries`, `/deliveries/new`,
+  `/deliveries/[id]`, `/deliveries/[id]/edit`, pestaña Entregas en el
+  cliente y menú Comercial → Entregas y acuses. `safeReturnTo` acepta
+  `/clients/…` ("Volver al cliente").
+
 ## Buscador que filtra mientras escribes (2026-09-29)
 
 - `LiveSearchInput` (components/ui/live-search-input.tsx): actualiza `?q=`

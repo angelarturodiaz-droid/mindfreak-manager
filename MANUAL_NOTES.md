@@ -415,3 +415,39 @@ pulsa el botón.
 - Todos los buscadores (Clientes, Proveedores, Productos y servicios,
   Categorías y Tipos de servicio) filtran mientras escribes (sin Enter).
   Componente `LiveSearchInput`: usarlo en cualquier buscador nuevo.
+
+## Entregas y acuses de recibo (2026-09-30)
+- Comercial → Entregas y acuses (y cliente → pestaña Entregas). Registra lo
+  entregado a un cliente (documentos, equipos, materiales, otros) y genera el
+  acuse con el formato de Mindfreak (ACU-0001) para imprimir y firmar a mano.
+- Flujo: Borrador → Pendiente de firma → Firmado (al adjuntar el acuse
+  firmado, PDF o foto). Anulado conserva el historial. Editar mientras no
+  esté firmado; Duplicar; Descartar borrador.
+- Textos del modelo automáticos (párrafo de entrada, nota del pie según
+  ejemplares); se pueden cambiar por acuse. Mínimo 8 filas en la tabla del
+  PDF, total entregado = suma de cantidades.
+- Permisos: deliveries.view (todos), deliveries.create (Admin, Gerente,
+  Ventas, Operaciones), deliveries.cancel (Admin, Gerente).
+
+## Encuesta de satisfacción del cliente (2026-09-30)
+- Al hacer clic en Completado en el avance del proyecto se abre "Finalizar
+  proyecto" con "¿Deseas enviar la encuesta de satisfacción al cliente?"
+  (activada por defecto; se desmarca sola si ya hay una enviada/respondida).
+- Destinatario: contacto del proyecto → contacto principal del cliente con
+  correo → correo del cliente. Sin correo: queda Pendiente y se copia el
+  enlace.
+- Enlace público /encuesta/{token}: sin sesión, una sola respuesta, no
+  expone IDs. Las preguntas se copian al crear la encuesta.
+- Pestaña "Satisfacción del cliente" en el proyecto: estado, fechas,
+  calificación general (promedio 1–5), NPS, recomendación, testimonio,
+  comentarios y respuestas; Reenviar, Copiar enlace, Cancelar, Reabrir,
+  Enviar otra.
+- Configuración → Encuesta de satisfacción: preguntas (CRUD, orden,
+  obligatoria, activa, indicador) y textos con {cliente} {proyecto}
+  {empresa} {contacto}. Demora y recordatorios automáticos: guardados para
+  una fase siguiente; hoy se envía al finalizar.
+- Datos listos para reportes: project_surveys (overall_rating, nps_score,
+  recommendation, testimonial_consent, responded_at) y
+  project_survey_answers por pregunta.
+- Permisos: surveys.view (todos), surveys.send (Admin, Gerente, Ventas,
+  Operaciones), surveys.manage (Admin, Gerente).

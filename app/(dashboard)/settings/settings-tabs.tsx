@@ -13,6 +13,7 @@ const TABS = [
   { href: "/settings/system", label: "Sistema" },
   { href: "/settings/notifications", label: "Notificaciones" },
   { href: "/settings/documents", label: "Documentos" },
+  { href: "/settings/surveys", label: "Encuesta de satisfacción" },
   { href: "/settings/security", label: "Seguridad" },
   { href: "/settings/users", label: "Usuarios" },
   { href: "/settings/roles", label: "Roles y permisos" },

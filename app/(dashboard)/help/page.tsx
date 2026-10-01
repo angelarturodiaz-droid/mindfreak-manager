@@ -16,6 +16,8 @@ import {
   Settings,
   ShieldCheck,
   ListFilter,
+  PackageCheck,
+  Smile,
 } from "lucide-react";
 import { IconBadge, type IconBadgeTone } from "@/components/ui/icon-badge";
 import { Card } from "@/components/ui/card";
@@ -172,9 +174,88 @@ const SECTIONS: Section[] = [
             </>,
             "Desactivar un cliente no borra su historial de cotizaciones, proyectos o facturas, ni cambia su Etapa — solo lo marca como Inactivo y lo puedes Reactivar cuando quieras.",
             "El listado se puede filtrar por etapa, por estado (activos / inactivos) y buscar por nombre. Muestra, por cliente, sus proyectos activos y lo que tiene por cobrar.",
-            <>En el detalle del cliente, la <strong>Etapa comercial</strong> se ve como pasos: haz clic en la siguiente etapa para avanzar. Debajo están sus números (cotizado aprobado, facturado, por cobrar, vencido y proyectos activos) y pestañas con sus <strong>Cotizaciones</strong>, <strong>Facturas</strong>, <strong>Proyectos</strong> y <strong>Documentos</strong>.</>,
+            <>En el detalle del cliente, la <strong>Etapa comercial</strong> se ve como pasos: haz clic en la siguiente etapa para avanzar. Debajo están sus números (cotizado aprobado, facturado, por cobrar, vencido y proyectos activos) y pestañas con sus <strong>Cotizaciones</strong>, <strong>Facturas</strong>, <strong>Proyectos</strong>, <strong>Entregas</strong> (acuses de recibo) y <strong>Documentos</strong>.</>,
             <>Desde el cliente, <strong>Nueva cotización</strong> y <strong>Nueva factura</strong> abren el formulario con ese cliente ya elegido.</>,
             "Se pueden importar clientes en lote desde un archivo CSV (botón Importar CSV).",
+          ]}
+        />
+      </>
+    ),
+  },
+  {
+    id: "entregas",
+    label: "Entregas y acuses",
+    icon: PackageCheck,
+    tone: "violet",
+    summary: "Registrar lo que se entrega a un cliente, imprimir el acuse y adjuntarlo firmado.",
+    content: (
+      <>
+        <p className="text-sm text-brand-text">
+          Para dejar constancia de lo que se le entrega a un cliente: <strong>documentos</strong> (facturas,
+          certificaciones, RPE…), <strong>equipos</strong>, <strong>materiales</strong> u <strong>otros artículos</strong>.
+          Cada entrega genera un <strong>acuse de recibo</strong> con el formato de Mindfreak (número ACU-0001, destinatario,
+          fecha, referencia, tabla numerada y recuadros de firma <em>Entregado por</em> / <em>Recibido por</em> con espacio
+          para el sello), que se imprime, se firma a mano y luego se adjunta firmado. Menú: <strong>Comercial → Entregas y
+          acuses</strong>, o desde el cliente en la pestaña <strong>Entregas</strong>.
+        </p>
+        <StatusRow
+          items={[
+            { label: "Borrador", tone: "warning" },
+            { label: "Pendiente de firma", tone: "info" },
+            { label: "Firmado", tone: "success" },
+            { label: "Anulado", tone: "danger" },
+          ]}
+        />
+        <Bullets
+          items={[
+            <><strong>Nuevo acuse</strong>: eliges el cliente (y si quieres el proyecto), qué se entrega, la fecha y el lugar. El <strong>destinatario</strong> se llena con el nombre del cliente; puedes poner el nombre completo de la institución, sus <strong>siglas</strong> (van en el recuadro «Recibido por»), el <strong>departamento</strong> y una <strong>referencia</strong> (ej. número de orden de compra).</>,
+            <><strong>Líneas</strong>: una por cada cosa entregada, con descripción, referencia (en equipos, el número de serie) y cantidad. Se numeran 01, 02, 03… y abajo sale el <strong>total entregado</strong>. Las flechas cambian el orden y la papelera quita la línea. En acuses de documentos la columna de cantidad no sale en el PDF si todo es 1.</>,
+            <><strong>Textos del acuse</strong> (opcional): subtítulo, párrafo de entrada, nota, ejemplares y quién entrega (nombre y cédula). Si los dejas vacíos se usan los textos del modelo, que se arman solos con el destinatario, el tipo y la referencia.</>,
+            <><strong>Imprimir / descargar PDF</strong>: abre el acuse en otra pestaña para imprimirlo o guardarlo. Un borrador sale con la marca de agua «BORRADOR» y uno anulado con «ANULADO».</>,
+            <><strong>Pasos</strong>: Borrador → <strong>Marcar como pendiente de firma</strong> (cuando ya lo imprimiste y lo entregaste) → <strong>Adjuntar acuse firmado</strong> (PDF escaneado o foto; opcional: quién lo recibió, cargo y fecha/hora). Al adjuntarlo el acuse queda <strong>Firmado</strong> y el archivo se guarda en el acuse (no se puede borrar; se puede subir otra copia). Los pasos completados se ven en verde.</>,
+            <>Mientras no esté firmado se puede <strong>Editar</strong> (si ya lo imprimiste, vuelve a imprimirlo) o <strong>Volver a borrador</strong>. Un borrador se puede <strong>Descartar</strong>. <strong>Duplicar</strong> crea uno nuevo en borrador con la fecha de hoy y las mismas líneas. <strong>Anular</strong> (solo Admin y Gerente) lo deja en el historial como anulado.</>,
+            <>En el <strong>cliente → pestaña Entregas</strong> está el historial de todo lo entregado a ese cliente, con su estado y quién lo recibió; <strong>Nuevo acuse</strong> abre el formulario con el cliente ya elegido y al guardar vuelves al cliente.</>,
+            "El listado se filtra por estado, cliente y tipo, y el buscador (número, referencia o destinatario) filtra mientras escribes. Arriba: total de acuses, pendientes de firma, firmados (y cuántos este mes) y borradores.",
+            "Permisos: ver (todos los roles); crear, editar, imprimir y adjuntar el firmado (Admin, Gerente, Ventas y Operaciones); anular (Admin y Gerente).",
+          ]}
+        />
+      </>
+    ),
+  },
+  {
+    id: "encuesta",
+    label: "Encuesta de satisfacción",
+    icon: Smile,
+    tone: "teal",
+    summary: "Encuesta al cliente al cerrar el evento: se envía sola, el cliente responde sin cuenta y las respuestas quedan en el proyecto.",
+    content: (
+      <>
+        <p className="text-sm text-brand-text">
+          Al finalizar un proyecto el sistema pregunta <strong>«¿Deseas enviar la encuesta de satisfacción al cliente?»</strong>.
+          Si dices que sí, se le manda al cliente un correo con el logo y los colores de la empresa y un botón
+          <strong> Responder encuesta</strong>. El cliente la contesta desde el celular o la computadora, <strong>sin iniciar
+          sesión</strong>, en una página propia del ERP (no es Google Forms). Las respuestas quedan en el proyecto, en la
+          pestaña <strong>Satisfacción del cliente</strong>.
+        </p>
+        <StatusRow
+          items={[
+            { label: "Pendiente", tone: "warning" },
+            { label: "Enviada", tone: "info" },
+            { label: "Respondida", tone: "success" },
+            { label: "Cancelada", tone: "danger" },
+          ]}
+        />
+        <Bullets
+          items={[
+            <><strong>Al finalizar</strong>: en el proyecto, en «Avance del proyecto», haz clic en <strong>Completado</strong>. Sale la ventana <strong>Finalizar proyecto</strong> con la encuesta <strong>activada por defecto</strong> y a quién se le enviará; puedes desactivarla antes de confirmar. El proyecto se finaliza aunque el correo falle.</>,
+            <><strong>A quién</strong>: al contacto del proyecto; si no tiene correo, al contacto principal del cliente con correo; si no, al correo del cliente. Si no hay ningún correo, la encuesta se crea igual como <strong>Pendiente</strong> y puedes <strong>Copiar enlace</strong> para mandarlo por WhatsApp.</>,
+            <><strong>El enlace</strong> es único y secreto (ej. /encuesta/x7Fk…); no muestra datos internos. Se puede responder <strong>una sola vez</strong>: si se abre de nuevo, dice que ya fue respondida.</>,
+            <><strong>Pestaña Satisfacción del cliente</strong>: estado, a quién se envió, fechas (creada, enviada, abierta por el cliente, respondida) y quién la envió. Cuando el cliente responde: <strong>calificación general</strong> (promedio de las preguntas de 1 a 5), <strong>NPS</strong> (si está activa la pregunta de 0 a 10: Promotor, Pasivo o Detractor), si nos <strong>recomendaría</strong>, si <strong>autoriza testimonio</strong>, los <strong>comentarios</strong> y todas las respuestas.</>,
+            <><strong>Acciones</strong>: <strong>Reenviar</strong> (mismo enlace, sirve de recordatorio), <strong>Copiar enlace</strong>, <strong>Cancelar</strong> (el enlace deja de aceptar respuestas), <strong>Reabrir</strong> (para que el cliente responda de nuevo; las respuestas nuevas reemplazan las anteriores) y <strong>Enviar otra encuesta</strong> (con aviso, para no duplicar). Si el proyecto ya tiene una encuesta enviada o respondida, la ventana de finalizar lo advierte y deja la opción desmarcada.</>,
+            <>Cuando el cliente responde, llega una <strong>notificación</strong> (campana) al encargado del proyecto y a quien la envió.</>,
+            <><strong>Configuración → Encuesta de satisfacción</strong>: las <strong>preguntas</strong> (agregar, editar, subir/bajar, obligatoria u opcional, desactivar, eliminar; si una ya tiene respuestas se desactiva en vez de borrarse) con su tipo (1 a 5, 0 a 10, texto corto, párrafo, opción única, varias opciones, Sí/No) y el <strong>indicador</strong> al que cuenta; si se ofrece <strong>por defecto</strong>; y los <strong>textos</strong> del correo y de la página, con {"{cliente}"}, {"{proyecto}"}, {"{empresa}"} y {"{contacto}"}. Los cambios aplican a las encuestas nuevas; las ya enviadas conservan sus preguntas.</>,
+            "Todo queda en la auditoría del proyecto: creada, enviada, reenviada, cancelada, reabierta y respondida.",
+            "Permisos: ver (todos los roles); enviar, reenviar, cancelar y reabrir (Admin, Gerente, Ventas y Operaciones); configurar preguntas y textos (Admin y Gerente).",
           ]}
         />
       </>

@@ -18,6 +18,7 @@ import {
   Receipt,
   RotateCcw,
   ShoppingCart,
+  Smile,
   TrendingUp,
   UserRound,
   XCircle,
@@ -57,6 +58,9 @@ import { NewActivityForm } from "./new-activity-form";
 import { ActivityItem } from "./activity-item";
 import { updateProjectStatusAction, deleteProjectItemAction } from "@/features/projects/actions";
 import { hasPermission } from "@/lib/auth/permissions";
+import { CompleteProjectStep } from "@/components/surveys/complete-project-step";
+import { ProjectSurveyPanel } from "@/components/surveys/project-survey-panel";
+import { getSurveySettings, listProjectSurveys, resolveSurveyRecipient } from "@/features/surveys/queries";
 import { relationName, relationRow } from "@/lib/utils/relation";
 import { ProjectEditForm } from "./project-edit-form";
 import { NewProjectItemForm } from "./new-item-form";
@@ -125,6 +129,7 @@ const TABS = [
   { key: "tareas", label: "Tareas", icon: CheckSquare },
   { key: "documentos", label: "Documentos", icon: FolderOpen },
   { key: "actividades", label: "Actividades", icon: MessageSquare },
+  { key: "satisfaccion", label: "Satisfacción del cliente", icon: Smile },
 ] as const;
 
 /** Enlaces viejos (?tab=facturas, ?tab=gastos…) siguen funcionando. */
@@ -284,6 +289,14 @@ export default async function ProjectDetailPage({
   const eventTime = formatEventTime(project.event_time);
   const isCancelled = project.status === "CANCELLED";
   const currentStep = PROJECT_FLOW.indexOf(project.status as (typeof PROJECT_FLOW)[number]);
+
+  // Cierre del proyecto: datos para "¿Deseas enviar la encuesta de satisfacción?"
+  const showCloseDialog = canUpdate && !isCancelled && project.status !== "COMPLETED";
+  const canSendSurvey = await hasPermission("surveys.send");
+  const [surveySettings, surveyRecipient, projectSurveys] = showCloseDialog
+    ? await Promise.all([getSurveySettings(), resolveSurveyRecipient(id), listProjectSurveys(id)])
+    : [null, null, []];
+  const activeSurvey = projectSurveys.find((s) => s.status === "SENT" || s.status === "ANSWERED");
 
   const linesTotal = items.reduce((sum, i) => sum + i.subtotal, 0);
   const estimatedCostTotal = items.reduce((sum, i) => sum + i.estimated_cost, 0);
@@ -617,7 +630,24 @@ export default async function ProjectDetailPage({
                   "flex w-full items-center gap-2.5 rounded-[var(--radius-md)] border px-3 py-2.5 text-left";
                 return (
                   <li key={step}>
-                    {canUpdate && !current && i !== currentStep ? (
+                    {canUpdate && !current && i !== currentStep && step === "COMPLETED" ? (
+                      <CompleteProjectStep
+                        projectId={project.id}
+                        title={`Mover a ${PROJECT_STATUS_LABELS[step]}`}
+                        className={`${base} ${done ? "border-brand-success/40 bg-brand-success-bg" : "border-brand-border bg-brand-surface"} transition-colors hover:border-brand-accent/40 hover:bg-brand-accent-light`}
+                        canSend={canSendSurvey}
+                        sendByDefault={surveySettings?.send_by_default ?? true}
+                        recipientName={surveyRecipient?.name ?? null}
+                        recipientEmail={surveyRecipient?.email ?? null}
+                        existing={
+                          activeSurvey
+                            ? { status: activeSurvey.status, date: activeSurvey.responded_at ?? activeSurvey.sent_at }
+                            : null
+                        }
+                      >
+                        {content}
+                      </CompleteProjectStep>
+                    ) : canUpdate && !current && i !== currentStep ? (
                       <ActionBlock
                         onAction={updateProjectStatusAction.bind(null, project.id, step)}
                         title={`Mover a ${PROJECT_STATUS_LABELS[step]}`}
@@ -934,6 +964,8 @@ export default async function ProjectDetailPage({
             </ul>
           )}
         </section>
+      ) : activeTab === "satisfaccion" ? (
+        <ProjectSurveyPanel projectId={id} projectStatus={project.status} canSend={canSendSurvey} />
       ) : (
         <div className="rounded-[var(--radius-lg)] border border-dashed border-brand-border p-8 text-center">
           <p className="text-sm text-brand-muted">Pestaña no encontrada.</p>
