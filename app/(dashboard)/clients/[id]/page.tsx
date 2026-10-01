@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   Mail,
   MapPin,
+  PackageCheck,
   Phone,
   Plus,
   Receipt,
@@ -46,6 +47,15 @@ import { NewContactForm } from "./new-contact-form";
 import { DocumentList } from "@/components/documents/document-list";
 import { UploadDocumentForm } from "@/components/documents/upload-document-form";
 import { listDocuments } from "@/features/documents/queries";
+import { listDeliveriesForClient } from "@/features/deliveries/queries";
+import {
+  DELIVERY_STATUS_LABELS,
+  DELIVERY_STATUS_TONE,
+  DELIVERY_TYPE_LABELS,
+  formatTotal,
+  totalQuantity,
+} from "@/features/deliveries/schema";
+import { formatDate } from "@/lib/utils/dates";
 import { hasPermission } from "@/lib/auth/permissions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -80,6 +90,7 @@ const TABS = [
   { key: "cotizaciones", label: "Cotizaciones", icon: FileText },
   { key: "facturas", label: "Facturas", icon: Receipt },
   { key: "proyectos", label: "Proyectos", icon: FolderKanban },
+  { key: "entregas", label: "Entregas", icon: PackageCheck },
   { key: "documentos", label: "Documentos", icon: FolderOpen },
 ] as const;
 
@@ -138,6 +149,7 @@ type Activity = Awaited<ReturnType<typeof getClientActivity>>;
 type QuotationRow = Activity["quotations"][number];
 type InvoiceRow = Activity["invoices"][number];
 type ProjectRow = Activity["projects"][number];
+type DeliveryRow = Awaited<ReturnType<typeof listDeliveriesForClient>>[number];
 
 export default async function ClientDetailPage({
   params,
@@ -160,17 +172,22 @@ export default async function ClientDetailPage({
   }
   if (!client) notFound();
 
-  const [contacts, activity, documents, canManageDocs] = await Promise.all([
+  const [contacts, activity, documents, canManageDocs, canViewDeliveries, canCreateDeliveries] = await Promise.all([
     listClientContacts(id),
     getClientActivity(id),
     activeTab === "documentos" ? listDocuments("client", id) : null,
     hasPermission("documents.upload"),
+    hasPermission("deliveries.view"),
+    hasPermission("deliveries.create"),
   ]);
+  // Historial de entregas (acuses de recibo) del cliente.
+  const deliveries = canViewDeliveries ? await listDeliveriesForClient(id).catch(() => []) : [];
   const { totals } = activity;
   const tabCounts: Record<string, number | undefined> = {
     cotizaciones: activity.quotations.length,
     facturas: activity.invoices.length,
     proyectos: activity.projects.length,
+    entregas: deliveries.length,
   };
 
   const currentStage = CLIENT_STAGE_FLOW.indexOf(client.stage as (typeof CLIENT_STAGE_FLOW)[number]);
@@ -237,6 +254,40 @@ export default async function ClientDetailPage({
           {formatMoney(inv.balance, inv.currency)}
         </span>
       ),
+    },
+  ];
+
+  const deliveryReturn = `/clients/${id}?tab=entregas`;
+  const deliveryColumns: Column<DeliveryRow>[] = [
+    {
+      header: "Número",
+      accessor: (d) => (
+        <Link href={withReturnTo(`/deliveries/${d.id}`, deliveryReturn)} className="font-medium text-brand-accent hover:underline">
+          {d.number}
+        </Link>
+      ),
+    },
+    { header: "Fecha", accessor: (d) => <span className="whitespace-nowrap text-brand-muted">{formatDate(d.delivery_date)}</span> },
+    {
+      header: "Qué se entregó",
+      accessor: (d) => {
+        const items = (d.delivery_receipt_items as { quantity: number }[] | null) ?? [];
+        return (
+          <span className="whitespace-nowrap">
+            {DELIVERY_TYPE_LABELS[d.delivery_type] ?? d.delivery_type}
+            <span className="text-brand-muted"> · {formatTotal(totalQuantity(items.map((x) => ({ quantity: Number(x.quantity) }))))}</span>
+          </span>
+        );
+      },
+    },
+    { header: "Referencia", accessor: (d) => <span className="line-clamp-2 max-w-72 text-brand-muted">{d.reference ?? "—"}</span> },
+    {
+      header: "Estado",
+      accessor: (d) => <Badge tone={DELIVERY_STATUS_TONE[d.status]}>{DELIVERY_STATUS_LABELS[d.status] ?? d.status}</Badge>,
+    },
+    {
+      header: "Recibido por",
+      accessor: (d) => <span className="text-brand-muted">{d.received_by_name ?? "—"}</span>,
     },
   ];
 
@@ -614,6 +665,30 @@ export default async function ClientDetailPage({
             rows={activity.projects}
             keyFor={(p) => p.id}
             emptyMessage="Este cliente no tiene proyectos todavía."
+            maxWidth="max-w-none"
+          />
+        </section>
+      ) : activeTab === "entregas" ? (
+        <section>
+          <SectionHeader
+            title="Entregas y acuses de recibo"
+            count={deliveries.length}
+            description="Todo lo que se le ha entregado a este cliente, con su acuse firmado."
+            action={
+              canCreateDeliveries ? (
+                <Link href={withReturnTo(`/deliveries/new?client=${client.id}`, `/clients/${client.id}?tab=entregas`)}>
+                  <Button variant="outline" size="sm" icon={<Plus size={14} />}>
+                    Nuevo acuse
+                  </Button>
+                </Link>
+              ) : undefined
+            }
+          />
+          <DataTable
+            columns={deliveryColumns}
+            rows={deliveries}
+            keyFor={(d) => d.id}
+            emptyMessage={canViewDeliveries ? "Este cliente no tiene entregas registradas todavía." : "No tienes permiso para ver las entregas."}
             maxWidth="max-w-none"
           />
         </section>

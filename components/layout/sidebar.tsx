@@ -9,6 +9,7 @@ import {
   FileText,
   CalendarDays,
   Package,
+  PackageCheck,
   Truck,
   CheckSquare,
   Receipt,
@@ -35,6 +36,7 @@ const NAV_GROUPS: NavGroup[] = [
     tone: "violet",
     items: [
       { href: "/clients", label: "Clientes", icon: Users },
+      { href: "/deliveries", label: "Entregas y acuses", icon: PackageCheck },
       { href: "/quotations", label: "Cotizaciones", icon: FileText },
       { href: "/projects", label: "Proyectos", icon: CalendarDays },
     ],
