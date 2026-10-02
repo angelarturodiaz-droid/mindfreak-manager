@@ -309,17 +309,18 @@ const SECTIONS: Section[] = [
           items={[
             { label: "Borrador", status: "DRAFT" },
             { label: "Enviada", status: "SENT" },
-            { label: "Vista", status: "VIEWED" },
             { label: "Negociando", status: "NEGOTIATING" },
             { label: "Aprobada", status: "APPROVED" },
             { label: "Rechazada", status: "REJECTED" },
-            { label: "Vencida", status: "EXPIRED" },
+            { label: "Expirada", status: "EXPIRED" },
             { label: "Cancelada", status: "CANCELLED" },
           ]}
         />
         <Bullets
           items={[
             "Mientras está en Borrador se puede editar libremente; una vez enviada, los cambios importantes quedan registrados.",
+            <><strong>Negociando</strong>: si el cliente pide cambios después de enviada, pulsa <strong>Pasar a negociación</strong>; así puedes editar líneas y precios. Luego <strong>Marcar como enviada de nuevo</strong>, o directamente Aprobar o Rechazar.</>,
+            <><strong>Expirada</strong> se calcula sola: una cotización Enviada o Negociando cuya fecha de validez ya pasó se ve como Expirada en la lista, el filtro y el detalle. <strong>Se puede aprobar igual</strong> si el cliente acepta tarde (o duplicarla con fecha nueva).</>,
             <>
               Aprobar una cotización requiere el permiso{" "}
               <code className="rounded bg-brand-surface-hover px-1 py-0.5 text-xs">

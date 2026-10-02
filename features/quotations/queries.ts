@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { PAGE_SIZE, pageRange } from "@/lib/utils/pagination";
+import { todayISO } from "@/lib/utils/dates";
+import { effectiveQuotationStatus } from "./expired";
 
 export type QuotationListFilters = {
   status?: string;
@@ -20,12 +22,22 @@ export async function listQuotations(filters: QuotationListFilters = {}) {
     .order("number", { ascending: false })
     .range(from, to);
 
-  if (filters.status) query = query.eq("status", filters.status);
+  // "Expirada" se calcula por la validez (ver expired.ts). Enviada, Vista y En
+  // negociación excluyen las ya expiradas para que los conteos cuadren.
+  const today = todayISO();
+  if (filters.status === "EXPIRED") {
+    query = query.or(`status.eq.EXPIRED,and(status.in.(SENT,VIEWED,NEGOTIATING),valid_until.lt.${today})`);
+  } else if (filters.status === "SENT" || filters.status === "VIEWED" || filters.status === "NEGOTIATING") {
+    query = query.eq("status", filters.status).or(`valid_until.is.null,valid_until.gte.${today}`);
+  } else if (filters.status) {
+    query = query.eq("status", filters.status);
+  }
   if (filters.clientId) query = query.eq("client_id", filters.clientId);
 
   const { data, error, count } = await query;
   if (error) throw new Error(error.message);
-  return { rows: data, total: count ?? 0, pageSize: PAGE_SIZE };
+  const rows = (data ?? []).map((q) => ({ ...q, display_status: effectiveQuotationStatus(q, today) }));
+  return { rows, total: count ?? 0, pageSize: PAGE_SIZE };
 }
 
 /**
@@ -34,17 +46,19 @@ export async function listQuotations(filters: QuotationListFilters = {}) {
  */
 export async function getQuotationStats(clientId?: string) {
   const supabase = await createClient();
-  let query = supabase.from("quotations").select("status, total, exchange_rate");
+  let query = supabase.from("quotations").select("status, total, exchange_rate, valid_until");
   if (clientId) query = query.eq("client_id", clientId);
   const { data, error } = await query;
   if (error) throw new Error(error.message);
 
+  const today = todayISO();
   const byStatus: Record<string, number> = {};
   let followUpCount = 0;
   let followUpValue = 0;
   let approvedValue = 0;
   for (const q of data ?? []) {
-    byStatus[q.status] = (byStatus[q.status] ?? 0) + 1;
+    const shown = effectiveQuotationStatus(q, today);
+    byStatus[shown] = (byStatus[shown] ?? 0) + 1;
     const value = Number(q.total) * Number(q.exchange_rate ?? 1);
     if (["SENT", "VIEWED", "NEGOTIATING"].includes(q.status)) {
       followUpCount += 1;

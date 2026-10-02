@@ -13,6 +13,7 @@ import {
   CalendarDays,
   Clock,
   FolderKanban,
+  Handshake,
 } from "lucide-react";
 import {
   getQuotation,
@@ -25,6 +26,7 @@ import {
   approveQuotationAction,
   rejectQuotationAction,
   cancelQuotationAction,
+  negotiateQuotationAction,
 } from "@/features/quotations/actions";
 import { hasPermission } from "@/lib/auth/permissions";
 import { getDefaultTaxRate, listTaxRates } from "@/features/tax-rates/queries";
@@ -35,6 +37,7 @@ import { DuplicateQuotationButton } from "./duplicate-quotation-button";
 import { DiscardQuotationButton } from "./discard-quotation-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { effectiveQuotationStatus } from "@/features/quotations/expired";
 import { Card } from "@/components/ui/card";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { ActionButton } from "@/components/ui/action-button";
@@ -99,6 +102,8 @@ export default async function QuotationDetailPage({
     : duplicatedFromData?.number;
 
   const isEditable = quotation.status === "DRAFT" || quotation.status === "NEGOTIATING";
+  // Expirada por la fecha de validez (ver features/quotations/expired.ts); se puede aprobar igual.
+  const shownStatus = effectiveQuotationStatus(quotation);
 
   const columns: Column<Item>[] = [
     { header: "Descripción", accessor: (item) => item.description },
@@ -185,8 +190,8 @@ export default async function QuotationDetailPage({
               <h1 className="text-2xl font-semibold tracking-tight text-brand-primary">
                 {quotation.number}
               </h1>
-              <Badge status={quotation.status}>
-                {STATUS_LABELS[quotation.status] ?? quotation.status}
+              <Badge status={shownStatus}>
+                {STATUS_LABELS[shownStatus] ?? shownStatus}
               </Badge>
               {quotation.duplicated_from_id && (
                 <Badge tone="neutral">
@@ -308,6 +313,20 @@ export default async function QuotationDetailPage({
               <ActionButton
                 label="Marcar como enviada"
                 variant="primary"
+                icon={<Send size={14} />}
+                onAction={sendQuotationAction.bind(null, quotation.id)}
+              />
+            )}
+            {(quotation.status === "SENT" || quotation.status === "VIEWED") && canUpdate && (
+              <ActionButton
+                label="Pasar a negociación"
+                icon={<Handshake size={14} />}
+                onAction={negotiateQuotationAction.bind(null, quotation.id)}
+              />
+            )}
+            {quotation.status === "NEGOTIATING" && canUpdate && (
+              <ActionButton
+                label="Marcar como enviada de nuevo"
                 icon={<Send size={14} />}
                 onAction={sendQuotationAction.bind(null, quotation.id)}
               />

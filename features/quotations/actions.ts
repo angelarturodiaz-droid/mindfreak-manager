@@ -383,6 +383,20 @@ export async function approveQuotationAction(quotationId: string): Promise<void>
   });
 }
 
+/**
+ * Enviada → En negociación: el cliente pidió cambios. Permite editar líneas
+ * y precios; luego se marca como enviada de nuevo, se aprueba o se rechaza.
+ */
+export async function negotiateQuotationAction(quotationId: string): Promise<void> {
+  const supabase = await createSupabaseClient();
+  const { data: q } = await supabase.from("quotations").select("status").eq("id", quotationId).single();
+  if (!q) throw new Error("No se encontró la cotización.");
+  if (q.status !== "SENT" && q.status !== "VIEWED") {
+    throw new Error("Solo una cotización enviada puede pasar a negociación.");
+  }
+  await changeQuotationStatus(quotationId, "NEGOTIATING", "quotations.update");
+}
+
 export async function rejectQuotationAction(quotationId: string): Promise<void> {
   await changeQuotationStatus(quotationId, "REJECTED", "quotations.approve");
 }

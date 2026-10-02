@@ -472,3 +472,8 @@ pulsa el botón.
   con balance y fecha de vencimiento pasada). Se ve en la lista y su
   filtro, el detalle, la ficha del cliente y el reporte de Cuentas por
   cobrar. Regla única en features/invoices/overdue.ts.
+
+## Estados de cotizaciones (2026-10-01)
+- Expirada = calculada (Enviada o Negociando con validez vencida); se puede
+  aprobar igual. Pasar a negociación permite editar después de enviada.
+  "Vista" no se ofrece en filtros (no se registran aperturas).

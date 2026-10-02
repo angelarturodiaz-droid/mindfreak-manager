@@ -1,5 +1,16 @@
 # CHANGELOG — Mindfreak Manager
 
+## Estados de cotizaciones (2026-10-01)
+
+- "Expirada" calculada por la validez (`features/quotations/expired.ts`):
+  Enviada/Vista/Negociando con `valid_until` < hoy (o EXPIRED guardado).
+  Lista, filtro, conteos y detalle; Enviada/Negociando excluyen las
+  expiradas. Se puede aprobar o rechazar igual. Sin cambios en la base.
+- Nuevo botón "Pasar a negociación" (`negotiateQuotationAction`, Enviada →
+  NEGOTIATING, permite editar líneas) y "Marcar como enviada de nuevo".
+- "Vista" fuera de los filtros (no hay forma de detectar si el cliente
+  abrió la cotización); el estado sigue existiendo en la base.
+
 ## Facturas vencidas calculadas por fecha (2026-10-01)
 
 - Problema: nada cambiaba el estado de una factura a OVERDUE, así que el

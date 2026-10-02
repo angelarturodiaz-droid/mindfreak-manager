@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CheckCircle2, Copy, FilePen, FileText, Percent, Plus, Send } from "lucide-react";
 import { listQuotations, getQuotationStats } from "@/features/quotations/queries";
-import { QUOTATION_STATUSES } from "@/features/quotations/schema";
+import { QUOTATION_FILTER_STATUSES } from "@/features/quotations/expired";
 import { listClientOptions } from "@/features/clients/queries";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -117,7 +117,7 @@ export default async function QuotationsPage({
     },
     {
       header: "Estado",
-      accessor: (q) => <Badge status={q.status}>{STATUS_LABELS[q.status] ?? q.status}</Badge>,
+      accessor: (q) => <Badge status={q.display_status}>{STATUS_LABELS[q.display_status] ?? q.display_status}</Badge>,
     },
   ];
 
@@ -175,7 +175,7 @@ export default async function QuotationsPage({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <FilterPills
             label="Filtrar por estado"
-            items={[undefined, ...QUOTATION_STATUSES].map((s) => ({
+            items={[undefined, ...QUOTATION_FILTER_STATUSES].map((s) => ({
               key: s ?? "all",
               label: s ? STATUS_LABELS[s] ?? s : "Todas",
               count: s ? stats.byStatus[s] ?? 0 : stats.total,
