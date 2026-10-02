@@ -430,6 +430,7 @@ const SECTIONS: Section[] = [
             "Una factura vencida es la que pasó su fecha de vencimiento sin liquidarse — aparece en el Dashboard y en el reporte de Vencimientos.",
             "Se puede compartir un enlace de la factura sin dar acceso al sistema completo (botón de compartir en el detalle).",
             "El listado resume lo que hay por cobrar, lo vencido, lo que vence en 7 días y los borradores, y marca cada factura con su situación (Vence en 3 días / Vencida hace 2 días).",
+            <><strong>Vencida</strong> se calcula sola por la fecha: una factura Emitida o con Pago parcial, con balance pendiente y fecha de vencimiento ya pasada, aparece como <strong>Vencida</strong> (etiqueta roja) en la lista, el filtro, el detalle, la ficha del cliente y el reporte de Cuentas por cobrar. Sigue aceptando pagos; al pagarla completa pasa a Pagada. Los borradores no cuentan como vencidos.</>,
             <>En el detalle, los pasos <em>Borrador → Emitida → Pago parcial → Pagada</em> muestran el avance (cada paso completado queda en verde con ✓, el paso en curso en azul y en rojo si está vencida; al terminar de pagar, <em>Pagada</em> también queda en verde). En la columna derecha están el resumen con la barra de lo pagado, NCF/vencimiento (en borrador) y la <strong>Gestión de cobro</strong> con su historial.</>,
           ]}
         />

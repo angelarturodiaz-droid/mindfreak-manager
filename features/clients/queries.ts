@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { PAGE_SIZE, pageRange } from "@/lib/utils/pagination";
+import { todayISO } from "@/lib/utils/dates";
+import { isInvoiceOverdue } from "@/features/invoices/overdue";
 
 export type ClientListFilters = {
   stage?: "LEAD" | "PROSPECT" | "CLIENT";
@@ -148,13 +150,14 @@ export async function getClientActivity(clientId: string) {
   const porCobrar = inv
     .filter((x) => OPEN_INVOICE_STATUSES.includes(x.status))
     .reduce((acc, x) => acc + base(x.balance, x.exchange_rate), 0);
+  const today = todayISO();
   const vencido = inv
-    .filter((x) => x.status === "OVERDUE")
+    .filter((x) => isInvoiceOverdue(x, today))
     .reduce((acc, x) => acc + base(x.balance, x.exchange_rate), 0);
 
   return {
     quotations: q,
-    invoices: inv,
+    invoices: inv.map((x) => ({ ...x, overdue: isInvoiceOverdue(x, today) })),
     projects: proj,
     totals: {
       cotizaciones: q.length,

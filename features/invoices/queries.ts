@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { PAGE_SIZE, pageRange } from "@/lib/utils/pagination";
+import { todayISO } from "@/lib/utils/dates";
+import { effectiveInvoiceStatus } from "./overdue";
 
 export type InvoiceListFilters = {
   status?: string;
@@ -21,12 +23,26 @@ export async function listInvoices(filters: InvoiceListFilters = {}) {
     .order("number", { ascending: false })
     .range(from, to);
 
-  if (filters.status) query = query.eq("status", filters.status);
+  // "Vencida" se calcula por fecha (ver overdue.ts): abiertas con balance y
+  // vencimiento pasado. Emitida / Pago parcial excluyen las que ya vencieron
+  // para que los conteos de los filtros cuadren.
+  const today = todayISO();
+  if (filters.status === "OVERDUE") {
+    query = query
+      .in("status", ["ISSUED", "PARTIALLY_PAID", "OVERDUE"])
+      .gt("balance", 0)
+      .or(`status.eq.OVERDUE,due_date.lt.${today}`);
+  } else if (filters.status === "ISSUED" || filters.status === "PARTIALLY_PAID") {
+    query = query.eq("status", filters.status).or(`due_date.is.null,due_date.gte.${today},balance.lte.0`);
+  } else if (filters.status) {
+    query = query.eq("status", filters.status);
+  }
   if (filters.clientId) query = query.eq("client_id", filters.clientId);
 
   const { data, error, count } = await query;
   if (error) throw new Error(error.message);
-  return { rows: data, total: count ?? 0, pageSize: PAGE_SIZE };
+  const rows = (data ?? []).map((inv) => ({ ...inv, display_status: effectiveInvoiceStatus(inv, today) }));
+  return { rows, total: count ?? 0, pageSize: PAGE_SIZE };
 }
 
 /**
@@ -56,7 +72,8 @@ export async function getInvoiceStats(clientId?: string) {
   let dueSoon = 0;
   let dueSoonCount = 0;
   for (const inv of data ?? []) {
-    byStatus[inv.status] = (byStatus[inv.status] ?? 0) + 1;
+    const shown = effectiveInvoiceStatus(inv, today);
+    byStatus[shown] = (byStatus[shown] ?? 0) + 1;
     if (!["ISSUED", "PARTIALLY_PAID", "OVERDUE"].includes(inv.status)) continue;
     const bal = Number(inv.balance) * Number(inv.exchange_rate ?? 1);
     if (bal <= 0) continue;

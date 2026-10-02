@@ -1,5 +1,21 @@
 # CHANGELOG — Mindfreak Manager
 
+## Facturas vencidas calculadas por fecha (2026-10-01)
+
+- Problema: nada cambiaba el estado de una factura a OVERDUE, así que el
+  filtro "Vencida" salía vacío aunque la tarjeta "Vencido" contara facturas
+  con fecha pasada (igual el total "Vencido" del cliente y el filtro del
+  reporte de Cuentas por cobrar).
+- `features/invoices/overdue.ts` (`isInvoiceOverdue`, `effectiveInvoiceStatus`):
+  vencida = Emitida/Pago parcial (u OVERDUE heredado) con balance > 0 y
+  `due_date` < hoy (zona RD). Sin cambios en la base ni en los estados
+  guardados.
+- Lista de facturas: filtro y conteo "Vencida" por fecha; Emitida y Pago
+  parcial excluyen las vencidas para que los conteos cuadren; etiqueta
+  "Vencida". Detalle de factura, ficha del cliente (etiqueta, total
+  Vencido, balance en rojo) y reporte de Cuentas por cobrar con la misma
+  regla.
+
 ## Corrección: adjuntar acuse firmado (2026-09-30)
 
 - Migración 070: `documents_entity_type_check` ahora admite

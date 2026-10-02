@@ -466,3 +466,9 @@ pulsa el botón.
   propio en el Worker, Site URL + Redirect URLs en Supabase, hostname en
   Turnstile, SMTP_FROM del dominio. Detalle en README → "Dominio de
   producción y APP_URL" y en claude/checklist-produccion.md.
+
+## Facturas vencidas (2026-10-01)
+- "Vencida" no es un estado guardado: se calcula (Emitida o Pago parcial,
+  con balance y fecha de vencimiento pasada). Se ve en la lista y su
+  filtro, el detalle, la ficha del cliente y el reporte de Cuentas por
+  cobrar. Regla única en features/invoices/overdue.ts.

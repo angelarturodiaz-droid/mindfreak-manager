@@ -232,7 +232,13 @@ export default async function ClientDetailPage({
     },
     { header: "Emitida", accessor: (inv) => <span className="text-brand-muted">{inv.issue_date}</span> },
     { header: "Vence", accessor: (inv) => <span className="text-brand-muted">{inv.due_date ?? "—"}</span> },
-    { header: "Estado", accessor: (inv) => <Badge status={inv.status}>{INVOICE_STATUS_LABELS[inv.status] ?? inv.status}</Badge> },
+    {
+      header: "Estado",
+      accessor: (inv) => {
+        const st = inv.overdue ? "OVERDUE" : inv.status;
+        return <Badge status={st}>{INVOICE_STATUS_LABELS[st] ?? st}</Badge>;
+      },
+    },
     {
       header: "Total",
       className: "text-right",
@@ -244,7 +250,7 @@ export default async function ClientDetailPage({
       accessor: (inv) => (
         <span
           className={`tabular-nums ${
-            inv.status === "OVERDUE"
+            inv.overdue
               ? "font-medium text-brand-danger"
               : inv.balance > 0 && inv.status !== "CANCELLED" && inv.status !== "DRAFT"
                 ? "font-medium text-brand-warning"

@@ -45,6 +45,7 @@ import { DuplicateInvoiceButton } from "./duplicate-invoice-button";
 import { DiscardInvoiceButton } from "./discard-invoice-button";
 import { ActionButton } from "@/components/ui/action-button";
 import { Badge } from "@/components/ui/badge";
+import { isInvoiceOverdue } from "@/features/invoices/overdue";
 import { Card } from "@/components/ui/card";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { DataTable, type Column } from "@/components/ui/data-table";
@@ -210,6 +211,9 @@ export default async function InvoiceDetailPage({
 
   const ptName = invoice.payment_terms_id ? relationName(invoice.payment_terms) : null;
   const isOpen = ["ISSUED", "PARTIALLY_PAID", "OVERDUE"].includes(invoice.status);
+  // Vencida por fecha (no hay estado guardado que lo marque; ver features/invoices/overdue.ts).
+  const overdueNow = isInvoiceOverdue(invoice);
+  const shownStatus = overdueNow ? "OVERDUE" : invoice.status;
   const due = invoice.due_date && isOpen ? dueLabel(invoice.due_date) : null;
   const paidPct = invoice.total > 0 ? (invoice.paid_amount / invoice.total) * 100 : 0;
   const FLOW = ["Borrador", "Emitida", "Pago parcial", "Pagada"];
@@ -240,7 +244,7 @@ export default async function InvoiceDetailPage({
               <h1 className="text-2xl font-semibold tracking-tight text-brand-primary">
                 {invoice.number}
               </h1>
-              <Badge status={invoice.status}>{STATUS_LABELS[invoice.status] ?? invoice.status}</Badge>
+              <Badge status={shownStatus}>{STATUS_LABELS[shownStatus] ?? shownStatus}</Badge>
               {due && (
                 <Chip tone={due.days < 0 ? "danger" : due.days <= 3 ? "warning" : "muted"}>{due.label}</Chip>
               )}
@@ -323,7 +327,7 @@ export default async function InvoiceDetailPage({
               <p
                 className={`whitespace-nowrap text-xl font-semibold tracking-tight tabular-nums ${
                   invoice.balance > 0 && isOpen
-                    ? invoice.status === "OVERDUE"
+                    ? overdueNow
                       ? "text-brand-danger"
                       : "text-brand-warning"
                     : "text-brand-text"
@@ -343,7 +347,7 @@ export default async function InvoiceDetailPage({
               const isPaid = invoice.status === "PAID";
               const done = i < flowIndex || (isPaid && i === flowIndex);
               const current = i === flowIndex && !isPaid;
-              const overdue = current && invoice.status === "OVERDUE";
+              const overdue = current && overdueNow;
               return (
                 <li
                   key={label}

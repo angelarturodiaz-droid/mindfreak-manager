@@ -122,7 +122,7 @@ export default async function InvoicesPage({
         return (
           <span
             className={`whitespace-nowrap tabular-nums ${
-              open ? (inv.status === "OVERDUE" ? "font-medium text-brand-danger" : "font-medium text-brand-warning") : "text-brand-muted"
+              open ? (inv.display_status === "OVERDUE" ? "font-medium text-brand-danger" : "font-medium text-brand-warning") : "text-brand-muted"
             }`}
           >
             {formatMoney(inv.balance, inv.currency)}
@@ -132,7 +132,7 @@ export default async function InvoicesPage({
     },
     {
       header: "Estado",
-      accessor: (inv) => <Badge status={inv.status}>{STATUS_LABELS[inv.status] ?? inv.status}</Badge>,
+      accessor: (inv) => <Badge status={inv.display_status}>{STATUS_LABELS[inv.display_status] ?? inv.display_status}</Badge>,
     },
   ];
 

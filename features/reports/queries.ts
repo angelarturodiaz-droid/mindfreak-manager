@@ -171,7 +171,14 @@ export async function getAccountsReceivableReport(filters: ReceivableFilters = {
     .select("id, number, due_date, balance, currency, exchange_rate, status, clients(name)")
     .order("due_date", { ascending: true, nullsFirst: false });
 
-  if (filters.status) {
+  if (filters.status === "OVERDUE") {
+    // Vencida = abierta con balance y vencimiento pasado (ver features/invoices/overdue.ts).
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Santo_Domingo" }).format(new Date());
+    query = query
+      .in("status", PENDING_INVOICE_STATUSES)
+      .gt("balance", 0)
+      .or(`status.eq.OVERDUE,due_date.lt.${today}`);
+  } else if (filters.status) {
     query = query.eq("status", filters.status);
   } else {
     query = query.in("status", PENDING_INVOICE_STATUSES).gt("balance", 0);
