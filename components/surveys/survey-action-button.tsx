@@ -19,8 +19,10 @@ export function SurveyActionButton({
   icon,
   variant = "outline",
   confirm,
+  hint,
 }: {
   action: () => Promise<SurveyActionState>;
+  hint?: string;
   label: string;
   icon?: ReactNode;
   variant?: "primary" | "secondary" | "outline" | "danger";
@@ -50,6 +52,7 @@ export function SurveyActionButton({
         size="sm"
         variant={variant}
         icon={icon}
+        hint={hint}
         loading={pending && !open}
         onClick={() => (confirm ? setOpen(true) : run())}
       >

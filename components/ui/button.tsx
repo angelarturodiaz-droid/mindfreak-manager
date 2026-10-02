@@ -1,5 +1,7 @@
 import { forwardRef } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { Tooltip } from "./tooltip";
+import { BUTTON_HINTS } from "@/lib/ui/button-hints";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger" | "outline";
 type Size = "sm" | "md" | "icon";
@@ -28,13 +30,20 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: Size;
   icon?: ReactNode;
   loading?: boolean;
+  /**
+   * Explicación que sale al pasar el mouse. Si no se pasa, se busca por el
+   * texto del botón en lib/ui/button-hints.ts. `hint=""` = sin explicación.
+   */
+  hint?: string;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = "primary", size = "md", icon, loading, disabled, className = "", children, ...props },
+  { variant = "primary", size = "md", icon, loading, disabled, className = "", children, hint, ...props },
   ref,
 ) {
-  return (
+  const hintText =
+    hint !== undefined ? hint || undefined : typeof children === "string" ? BUTTON_HINTS[children.trim()] : undefined;
+  const button = (
     <button
       ref={ref}
       disabled={disabled || loading}
@@ -56,4 +65,5 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       {children}
     </button>
   );
+  return hintText ? <Tooltip text={hintText}>{button}</Tooltip> : button;
 });

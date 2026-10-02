@@ -215,6 +215,7 @@ export async function ProjectSurveyPanel({
               <SurveyActionButton
                 action={cancelSurveyAction.bind(null, latest.id, projectId)}
                 label="Cancelar"
+                hint="Cancela la encuesta: el enlace deja de aceptar respuestas."
                 icon={<Ban size={14} />}
                 confirm={{
                   title: "¿Cancelar la encuesta?",

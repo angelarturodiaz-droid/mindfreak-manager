@@ -477,3 +477,8 @@ pulsa el botón.
 - Expirada = calculada (Enviada o Negociando con validez vencida); se puede
   aprobar igual. Pasar a negociación permite editar después de enviada.
   "Vista" no se ofrece en filtros (no se registran aperturas).
+
+## Explicación de los botones (2026-10-01)
+- Al pasar el mouse por un botón de acción sale un globo con lo que hace.
+  Los textos están todos en lib/ui/button-hints.ts (para agregar o cambiar
+  una explicación, editar ese archivo con el texto exacto del botón).

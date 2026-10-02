@@ -27,6 +27,7 @@ export function ConfirmButton({
   icon,
   onConfirm,
   successMessage,
+  hint,
 }: {
   label: string;
   confirmTitle: string;
@@ -38,6 +39,8 @@ export function ConfirmButton({
   onConfirm: () => void | Promise<void>;
   /** Mensaje de éxito (toast) al terminar, también si la acción navega a otra pantalla. */
   successMessage?: string;
+  /** Explicación al pasar el mouse (si no, se busca por el texto del botón). */
+  hint?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -63,7 +66,7 @@ export function ConfirmButton({
 
   return (
     <>
-      <Button variant="ghost" size={size} icon={icon} onClick={() => setOpen(true)}>
+      <Button variant="ghost" size={size} icon={icon} hint={hint} onClick={() => setOpen(true)}>
         {label}
       </Button>
       <Modal open={open} onClose={() => setOpen(false)} title={confirmTitle}>

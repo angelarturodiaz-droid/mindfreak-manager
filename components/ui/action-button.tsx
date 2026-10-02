@@ -28,6 +28,7 @@ export function ActionButton({
   icon,
   className,
   successMessage,
+  hint,
 }: {
   label: string;
   onAction: () => Promise<unknown> | unknown;
@@ -37,6 +38,8 @@ export function ActionButton({
   className?: string;
   /** Si se pasa, se muestra un toast de éxito al terminar sin error. */
   successMessage?: string;
+  /** Explicación al pasar el mouse (si no, se busca por el texto del botón). */
+  hint?: string;
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -65,6 +68,7 @@ export function ActionButton({
       loading={isPending}
       onClick={handleClick}
       className={className}
+      hint={hint}
     >
       {label}
     </Button>

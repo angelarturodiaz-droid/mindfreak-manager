@@ -1,5 +1,17 @@
 # CHANGELOG — Mindfreak Manager
 
+## Explicación al pasar el mouse por los botones (2026-10-01)
+
+- `components/ui/tooltip.tsx`: globo con una explicación corta al pasar el
+  mouse (350 ms) o al llegar con Tab; se dibuja fuera de la tarjeta para
+  que no lo corten tablas ni contenedores.
+- `lib/ui/button-hints.ts`: diccionario único texto del botón → explicación
+  (~90 acciones: crear, enviar, aprobar, emitir, cobrar, pagar, cancelar,
+  anular, duplicar, encuesta, acuses, bancos, seguridad). `<Button>` lo
+  busca solo por su texto; `ActionButton`, `ConfirmButton`, `ActionLink` y
+  los botones de la encuesta también. `hint="..."` lo cambia y `hint=""` lo
+  quita. Los botones obvios (Guardar, Cancelar, Volver, Filtrar) no llevan.
+
 ## Estados de cotizaciones (2026-10-01)
 
 - "Expirada" calculada por la validez (`features/quotations/expired.ts`):

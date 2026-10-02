@@ -2,6 +2,8 @@
 
 import { useTransition } from "react";
 import { toast } from "./toaster";
+import { Tooltip } from "./tooltip";
+import { BUTTON_HINTS } from "@/lib/ui/button-hints";
 import { isNavigationSignal } from "@/lib/utils/navigation-signal";
 
 /**
@@ -34,9 +36,13 @@ export function ActionLink({
     });
   }
 
-  return (
+  const button = (
     <button type="button" onClick={handleClick} disabled={isPending} className={className}>
       {isPending ? (pendingLabel ?? "...") : label}
     </button>
+  );
+  const hint = BUTTON_HINTS[label.trim()];
+  return (
+    hint ? <Tooltip text={hint}>{button}</Tooltip> : button
   );
 }
