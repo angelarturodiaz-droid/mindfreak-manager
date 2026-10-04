@@ -8,6 +8,7 @@ const TABS = [
   { href: "/settings/tax-rates", label: "Impuestos" },
   { href: "/settings/expense-categories", label: "Categorías de gastos" },
   { href: "/settings/service-types", label: "Tipos de servicio" },
+  { href: "/settings/fiscal-rules", label: "Reglas fiscales" },
   { href: "/settings/payment-terms", label: "Condiciones de pago" },
   { href: "/settings/banks", label: "Bancos" },
   { href: "/settings/system", label: "Sistema" },

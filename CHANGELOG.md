@@ -1,5 +1,24 @@
 # CHANGELOG — Mindfreak Manager
 
+## Tratamiento fiscal — fases 3 y 4: reglas fiscales y motor (2026-10-03)
+
+- Migración 073: `fiscal_rules` (condiciones nulas = cualquiera + acción
+  RETAIN/NO_RETENTION/REVIEW/BLOCK, `isr_rate`, `isr_base_pct`,
+  `itbis_retention_pct`, vigencia, versión por `rule_key`, prioridad,
+  referencia normativa, `needs_review`) con RLS (leen todos los de la
+  compañía, escribe settings.manage). 19 reglas iniciales como datos, todas
+  "Revisar con su contador"; NG 02-2026 (e-CF) inactiva.
+- `features/fiscal/engine.ts`: motor puro (`evaluateFiscal`): datos
+  faltantes, candidatas por vigencia y condiciones, orden por prioridad →
+  especificidad → versión, empate → REVIEW, cálculo ISR (con base %) e
+  ITBIS retenido, neto. 18 pruebas en `tests/unit/fiscal-engine.test.ts`.
+- Configuración → Reglas fiscales: resumen por estado, filtros, tabla
+  sencilla, detalle con condiciones/acción/vigencia/referencia/versiones,
+  asistente de 6 pasos con ejemplo en pesos, nueva versión automática si la
+  regla ya se usó, activar/desactivar, marcar como revisada, eliminar si no
+  se usó y "Probar reglas". Auditoría CREATE/UPDATE/NEW_VERSION/
+  VALIDITY_CHANGE/ACTIVATE/DEACTIVATE/REVIEWED/DELETE de `fiscal_rule`.
+
 ## Tratamiento fiscal — fase 2: perfil fiscal del proveedor (2026-10-03)
 
 - Migración 072: `suppliers.id_type`, `supplier_kind`, `fiscal_condition`,

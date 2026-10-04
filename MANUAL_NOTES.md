@@ -495,3 +495,10 @@ pulsa el botón.
   condición (registrado/informal/RST), residencia, país, e-CF. El RNC/Cédula
   sugiere el tipo (9 = RNC → jurídica, 11 = Cédula → física), nunca la
   condición. Reglas en lib/fiscal/tax-id.ts.
+
+## Tratamiento fiscal — fases 3 y 4 (2026-10-03)
+- Configuración → Reglas fiscales (settings.manage). Motor único en
+  features/fiscal/engine.ts (puro, con pruebas). Reglas iniciales = propuesta
+  a revisar con el contador; NG 02-2026 inactiva hasta confirmar.
+- Versionado: regla usada por gastos → al editar se crea versión nueva y se
+  cierra la anterior el día antes.
