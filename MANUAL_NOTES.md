@@ -523,3 +523,11 @@ pulsa el botón.
   servicio (keywords). 57 de las 81 categorías no tienen tipos de servicio
   (son administrativas o aún sin tipos): un proveedor de esas categorías
   queda sin tipo y su gasto sale "Faltan datos" hasta elegir el tipo.
+
+## Sugerencia de categoría por el nombre (2026-10-03)
+- Proveedor nuevo: al escribir el nombre del negocio se aplica la categoría
+  y tipo sugeridos (si no se eligió a mano). Diccionario de pistas en
+  features/suppliers/suggest-classification.ts (HINTS): agregar ahí palabras
+  nuevas; los tipos se nombran igual que en el catálogo.
+- 44 tipos de servicio nuevos para categorías de proveedores (archivo de
+  datos del 3-oct). Las categorías administrativas siguen sin tipos.

@@ -26,7 +26,19 @@ export function NewSupplierForm({
 
   return (
     <form action={formAction} className="max-w-md space-y-4">
-      <Input label="Nombre" name="name" required />
+      <Input
+        label="Nombre del negocio"
+        name="name"
+        required
+        placeholder="Ej. Alberto Sistemas de Incendio"
+        hint="Nombre comercial o razón social (si es una persona sin negocio, su nombre completo). Con él se sugieren la categoría y el tipo de servicio."
+      />
+      <Input
+        label="Persona de contacto (opcional)"
+        name="contact_name"
+        placeholder="Ej. Alberto Gómez"
+        hint="Se guarda como contacto principal del proveedor."
+      />
       <SupplierFiscalFields />
       <SupplierCategoryFields categories={categories} serviceTypes={serviceTypes} />
       <Input label="Correo" name="email" type="email" />

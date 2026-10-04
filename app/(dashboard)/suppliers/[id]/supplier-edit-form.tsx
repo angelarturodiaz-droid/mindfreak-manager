@@ -51,7 +51,7 @@ export function SupplierEditForm({
   // refrescar la página).
   return (
     <form key={state.successId ?? 0} action={formAction} className="space-y-4">
-      <Input label="Nombre" name="name" defaultValue={supplier.name} required />
+      <Input label="Nombre del negocio" name="name" defaultValue={supplier.name} required />
       <SupplierFiscalFields defaults={supplier} />
       <SupplierCategoryFields
         categories={categories}

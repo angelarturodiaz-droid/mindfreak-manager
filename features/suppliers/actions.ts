@@ -87,12 +87,25 @@ export async function createSupplierAction(
 
   if (error) return { error: error.message };
 
+  // Persona de contacto (opcional): queda como contacto principal.
+  const contactName = String(formData.get("contact_name") ?? "").trim().slice(0, 200);
+  if (contactName) {
+    await supabase.from("supplier_contacts").insert({
+      supplier_id: data.id,
+      company_id: companyId,
+      full_name: contactName,
+      email: parsed.data.email || null,
+      phone: parsed.data.phone || null,
+      is_primary: true,
+    });
+  }
+
   await logAudit({
     companyId,
     action: "CREATE",
     entityType: "supplier",
     entityId: data.id,
-    newValues: { ...parsed.data, ...classification, ...fiscal.data },
+    newValues: { ...parsed.data, ...classification, ...fiscal.data, contact_name: contactName || null },
   });
 
   revalidatePath("/suppliers");

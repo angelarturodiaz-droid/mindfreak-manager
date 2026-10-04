@@ -1,5 +1,22 @@
 # CHANGELOG — Mindfreak Manager
 
+## Sugerencia de categoría por el nombre del proveedor y tipos de servicio nuevos (2026-10-03)
+
+- `features/suppliers/suggest-classification.ts`: `suggestClassification`
+  (pura) propone categoría + tipo de servicio a partir del nombre del
+  negocio: palabras del nombre contra los tipos/categorías del catálogo y un
+  diccionario de pistas (≈100 grupos: dj, flores, catering, bufete,
+  extintores…), palabras vacías y débiles, explicación por la palabra de más
+  peso. 21 pruebas en `tests/unit/suggest-classification.test.ts` con el
+  catálogo real (`tests/unit/fixtures-catalog.ts`).
+- Proveedor: "Nombre del negocio" (con ejemplo) y, al crear, "Persona de
+  contacto" (se guarda como contacto principal). La categoría y el tipo se
+  aplican solos mientras no se elijan a mano; otras opciones como botones.
+- Datos: `supabase/data/2026-10-03_tipos_servicio_categorias_proveedores.sql`
+  — 44 tipos de servicio nuevos con clasificación fiscal para 20 categorías
+  de proveedores que no tenían (Seguridad de instalaciones → Sistemas contra
+  incendios, Honorarios profesionales → Asesoría legal, etc.).
+
 ## Listas con buscador (2026-10-03)
 
 - `components/ui/search-select.tsx` (`SearchSelect`): lista que al abrirse
