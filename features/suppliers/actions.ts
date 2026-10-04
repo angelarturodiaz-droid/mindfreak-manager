@@ -7,6 +7,7 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
 import { supplierSchema, supplierContactSchema } from "./schema";
+import { parseSupplierFiscal, FISCAL_PROFILE_KEYS } from "./fiscal";
 import {
   classificationFromNames,
   resolveSupplierClassification,
@@ -62,6 +63,8 @@ export async function createSupplierAction(
   const ids = classificationIds(formData);
   const classification = await resolveSupplierClassification(supabase, companyId, ids.categoryId, ids.serviceTypeId);
   if ("error" in classification) return { error: classification.error };
+  const fiscal = parseSupplierFiscal(formData);
+  if ("error" in fiscal) return { error: fiscal.error ?? "Datos fiscales inválidos." };
 
   const { data, error } = await supabase
     .from("suppliers")
@@ -70,6 +73,8 @@ export async function createSupplierAction(
       name: parsed.data.name,
       tax_id: parsed.data.tax_id || null,
       ...classification,
+      ...fiscal.data,
+      fiscal_reviewed_at: fiscal.data.supplier_kind && fiscal.data.fiscal_condition ? new Date().toISOString() : null,
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
       address: parsed.data.address || null,
@@ -87,7 +92,7 @@ export async function createSupplierAction(
     action: "CREATE",
     entityType: "supplier",
     entityId: data.id,
-    newValues: { ...parsed.data, ...classification },
+    newValues: { ...parsed.data, ...classification, ...fiscal.data },
   });
 
   revalidatePath("/suppliers");
@@ -110,13 +115,18 @@ export async function updateSupplierAction(
   const companyId = await getPrimaryCompanyId();
   const { data: before } = await supabase
     .from("suppliers")
-    .select("name, tax_id, category, category_id, email, phone, address, bank_name, bank_account_number, service_type, service_type_id")
+    .select("name, tax_id, category, category_id, email, phone, address, bank_name, bank_account_number, service_type, service_type_id, id_type, supplier_kind, fiscal_condition, tax_residence, country_code, foreign_tax_id, e_issuer")
     .eq("id", supplierId)
     .single();
 
   const ids = classificationIds(formData);
   const classification = await resolveSupplierClassification(supabase, companyId, ids.categoryId, ids.serviceTypeId);
   if ("error" in classification) return { error: classification.error };
+  const fiscal = parseSupplierFiscal(formData);
+  if ("error" in fiscal) return { error: fiscal.error ?? "Datos fiscales inválidos." };
+  const fiscalChanged = FISCAL_PROFILE_KEYS.some(
+    (k) => ((before as Record<string, unknown> | null)?.[k] ?? null) !== (fiscal.data[k] ?? null),
+  );
 
   const { error } = await supabase
     .from("suppliers")
@@ -124,6 +134,8 @@ export async function updateSupplierAction(
       name: parsed.data.name,
       tax_id: parsed.data.tax_id || null,
       ...classification,
+      ...fiscal.data,
+      ...(fiscalChanged ? { fiscal_reviewed_at: new Date().toISOString() } : {}),
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
       address: parsed.data.address || null,
@@ -140,8 +152,18 @@ export async function updateSupplierAction(
     entityType: "supplier",
     entityId: supplierId,
     oldValues: before,
-    newValues: { ...parsed.data, ...classification },
+    newValues: { ...parsed.data, ...classification, ...fiscal.data },
   });
+  if (fiscalChanged) {
+    await logAudit({
+      companyId,
+      action: "FISCAL_PROFILE_UPDATE",
+      entityType: "supplier",
+      entityId: supplierId,
+      oldValues: Object.fromEntries(FISCAL_PROFILE_KEYS.map((k) => [k, (before as Record<string, unknown> | null)?.[k] ?? null])),
+      newValues: fiscal.data,
+    });
+  }
 
   revalidatePath(`/suppliers/${supplierId}`);
   revalidatePath("/suppliers");

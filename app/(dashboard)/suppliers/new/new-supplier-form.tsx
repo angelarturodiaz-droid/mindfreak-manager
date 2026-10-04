@@ -6,6 +6,7 @@ import { createSupplierAction, type ActionState } from "@/features/suppliers/act
 import { Input, Select } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { SupplierCategoryFields } from "@/components/suppliers/supplier-category-fields";
+import { SupplierFiscalFields } from "@/components/suppliers/supplier-fiscal-fields";
 
 const initialState: ActionState = { error: null };
 
@@ -26,7 +27,7 @@ export function NewSupplierForm({
   return (
     <form action={formAction} className="max-w-md space-y-4">
       <Input label="Nombre" name="name" required />
-      <Input label="RNC / Cédula" name="tax_id" />
+      <SupplierFiscalFields />
       <SupplierCategoryFields categories={categories} serviceTypes={serviceTypes} />
       <Input label="Correo" name="email" type="email" />
       <Input label="Teléfono" name="phone" />

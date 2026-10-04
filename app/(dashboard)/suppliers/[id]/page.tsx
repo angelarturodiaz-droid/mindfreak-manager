@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { fiscalSummary } from "@/features/suppliers/fiscal";
+import { formatTaxId } from "@/lib/fiscal/tax-id";
 import { safeReturnTo, returnToLabel, withReturnTo } from "@/lib/utils/return-to";
 import { notFound } from "next/navigation";
 import {
@@ -184,11 +186,25 @@ export default async function SupplierDetailPage({
               {supplier.service_type && <Badge tone="neutral">{supplier.service_type}</Badge>}
               {!supplier.is_active && <Badge tone="danger">Inactivo</Badge>}
             </div>
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              {fiscalSummary(supplier).length > 0 ? (
+                fiscalSummary(supplier).map((p) => (
+                  <Badge key={p} tone="neutral">
+                    {p}
+                  </Badge>
+                ))
+              ) : (
+                <Badge tone="warning">Información fiscal pendiente</Badge>
+              )}
+              {supplier.tax_residence !== "EXTRANJERO" && (!supplier.supplier_kind || !supplier.fiscal_condition) && fiscalSummary(supplier).length > 0 && (
+                <Badge tone="warning">Falta condición fiscal o tipo</Badge>
+              )}
+            </div>
             <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-2 text-sm">
               <div className="flex items-center gap-1.5">
                 <Hash size={15} className="text-brand-muted" aria-hidden />
                 <dt className="sr-only">RNC / Cédula</dt>
-                <dd className={supplier.tax_id ? "text-brand-text" : "text-brand-muted"}>{supplier.tax_id ?? "Sin RNC/Cédula"}</dd>
+                <dd className={supplier.tax_id ? "text-brand-text" : "text-brand-muted"}>{supplier.tax_id ? formatTaxId(supplier.tax_id) : "Sin RNC/Cédula"}</dd>
               </div>
               {supplier.email && (
                 <div className="flex items-center gap-1.5">

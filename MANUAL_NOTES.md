@@ -489,3 +489,9 @@ pulsa el botón.
   seguridad, exento, otro, sin tratamiento). No guarda porcentajes: las
   reglas fiscales (fase 3) deciden las retenciones.
 - Ícono ⓘ en campos con términos fiscales: textos en lib/ui/field-hints.ts.
+
+## Tratamiento fiscal — fase 2 (2026-10-03)
+- Proveedor → Información fiscal: tipo (física/jurídica/único dueño),
+  condición (registrado/informal/RST), residencia, país, e-CF. El RNC/Cédula
+  sugiere el tipo (9 = RNC → jurídica, 11 = Cédula → física), nunca la
+  condición. Reglas en lib/fiscal/tax-id.ts.

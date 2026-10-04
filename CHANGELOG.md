@@ -1,5 +1,19 @@
 # CHANGELOG — Mindfreak Manager
 
+## Tratamiento fiscal — fase 2: perfil fiscal del proveedor (2026-10-03)
+
+- Migración 072: `suppliers.id_type`, `supplier_kind`, `fiscal_condition`,
+  `tax_residence` (DO por defecto), `country_code`, `foreign_tax_id`,
+  `e_issuer` (NO_CONFIRMADO por defecto), `fiscal_reviewed_at`. `tax_id` igual.
+- `lib/fiscal/tax-id.ts`: normaliza, da formato y clasifica RNC (9) /
+  Cédula (11), verifica el dígito de control (solo aviso) y sugiere tipo de
+  proveedor; nunca la condición fiscal. `verifyTaxId()` preparado para una
+  consulta futura a la DGII. Pruebas en `tests/unit/tax-id.test.ts`.
+- Formulario de proveedor: sección "Información fiscal" con visualización
+  progresiva (extranjero → país e identificación extranjera), ⓘ en cada
+  campo y aviso si falta tipo/condición. Detalle: chips del perfil fiscal y
+  RNC/Cédula con formato. Auditoría `FISCAL_PROFILE_UPDATE`.
+
 ## Tratamiento fiscal — fase 1: clasificación fiscal de servicios (2026-10-03)
 
 - Propuesta completa en `claude/propuesta-tratamiento-fiscal.md` (proyecto).

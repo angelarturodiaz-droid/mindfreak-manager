@@ -5,6 +5,7 @@ import { updateSupplierAction, type ActionState } from "@/features/suppliers/act
 import { Input, Select } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { SupplierCategoryFields } from "@/components/suppliers/supplier-category-fields";
+import { SupplierFiscalFields } from "@/components/suppliers/supplier-fiscal-fields";
 import { useSuccessToast } from "@/components/ui/use-success-toast";
 import { CheckCircle2 } from "lucide-react";
 
@@ -29,6 +30,13 @@ export function SupplierEditForm({
     service_type: string | null;
     category_id?: string | null;
     service_type_id?: string | null;
+    id_type?: string | null;
+    supplier_kind?: string | null;
+    fiscal_condition?: string | null;
+    tax_residence?: string | null;
+    country_code?: string | null;
+    foreign_tax_id?: string | null;
+    e_issuer?: string | null;
   };
   bankCatalog: { id: string; name: string }[];
   categories: { id: string; name: string }[];
@@ -44,7 +52,7 @@ export function SupplierEditForm({
   return (
     <form key={state.successId ?? 0} action={formAction} className="space-y-4">
       <Input label="Nombre" name="name" defaultValue={supplier.name} required />
-      <Input label="RNC / Cédula" name="tax_id" defaultValue={supplier.tax_id ?? ""} />
+      <SupplierFiscalFields defaults={supplier} />
       <SupplierCategoryFields
         categories={categories}
         serviceTypes={serviceTypes}
