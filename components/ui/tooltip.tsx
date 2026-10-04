@@ -1,6 +1,6 @@
 "use client";
 
-import { cloneElement, useEffect, useId, useState, type ReactElement, type SyntheticEvent } from "react";
+import { useEffect, useRef, useId, useState, type ReactElement, type SyntheticEvent } from "react";
 import { createPortal } from "react-dom";
 
 // Un solo temporizador para todos: solo se muestra una explicación a la vez.
@@ -52,31 +52,36 @@ export function Tooltip({ text, children }: { text: string; children: ReactEleme
     return () => window.removeEventListener("scroll", onScroll, true);
   }, [pos]);
   useEffect(() => clearTimer, []);
+  // Accesibilidad: el elemento de adentro queda "descrito" por la explicación.
+  const wrapRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const el = wrapRef.current?.firstElementChild;
+    if (!el) return;
+    if (pos) el.setAttribute("aria-describedby", id);
+    else el.removeAttribute("aria-describedby");
+  }, [pos, id]);
 
-  const p = children.props;
-  const child = cloneElement(children, {
-    onMouseEnter: (e: SyntheticEvent<HTMLElement>) => {
-      p.onMouseEnter?.(e);
-      show(e.currentTarget, 350);
-    },
-    onMouseLeave: (e: SyntheticEvent<HTMLElement>) => {
-      p.onMouseLeave?.(e);
-      hide();
-    },
-    onFocus: (e: SyntheticEvent<HTMLElement>) => {
-      p.onFocus?.(e);
-      if (e.currentTarget.matches(":focus-visible")) show(e.currentTarget, 0);
-    },
-    onBlur: (e: SyntheticEvent<HTMLElement>) => {
-      p.onBlur?.(e);
-      hide();
-    },
-    onClick: (e: SyntheticEvent<HTMLElement>) => {
-      hide();
-      p.onClick?.(e);
-    },
-    ...(pos ? { "aria-describedby": id } : {}),
-  } as Handlers);
+  // No se clona el hijo: si viene de un componente de servidor React lo
+  // entrega como referencia diferida y clonarlo rompe la página. Se envuelve
+  // en un <span style="display: contents"> (no cambia el diseño) que escucha
+  // los eventos del botón o ícono de adentro.
+  const targetOf = (e: SyntheticEvent<HTMLElement>) =>
+    ((e.currentTarget.firstElementChild as HTMLElement | null) ?? e.currentTarget);
+  const child = (
+    <span
+      ref={wrapRef}
+      style={{ display: "contents" }}
+      onMouseEnter={(e) => show(targetOf(e), 350)}
+      onMouseLeave={hide}
+      onFocus={(e) => {
+        if ((e.target as HTMLElement).matches(":focus-visible")) show(e.target as HTMLElement, 0);
+      }}
+      onBlur={hide}
+      onClickCapture={hide}
+    >
+      {children}
+    </span>
+  );
 
   return (
     <>

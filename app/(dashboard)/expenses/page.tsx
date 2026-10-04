@@ -11,6 +11,8 @@ import { FilterPills, StatCard, StatGrid, listHref } from "@/components/ui/page-
 import { relationName, relationRow } from "@/lib/utils/relation";
 import { parsePage } from "@/lib/utils/pagination";
 import { formatDate } from "@/lib/utils/dates";
+import { FiscalStatusBadge } from "@/components/fiscal/fiscal-status-badge";
+import { EXPENSE_FISCAL_REVIEW } from "@/features/fiscal/expense-labels";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente",
@@ -30,12 +32,12 @@ type ExpenseRow = Awaited<ReturnType<typeof listExpenses>>["rows"][number];
 export default async function ExpensesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; fiscal?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const page = parsePage(params.page);
   const [{ rows: expenses, total, pageSize }, stats] = await Promise.all([
-    listExpenses({ status: params.status, page }),
+    listExpenses({ status: params.status, fiscal: params.fiscal, page }),
     getExpenseStats(),
   ]);
   const monthName = new Intl.DateTimeFormat("es-DO", {
@@ -82,7 +84,14 @@ export default async function ExpensesPage({
       header: "Total",
       className: "text-right",
       accessor: (e) => (
-        <span className="whitespace-nowrap font-medium tabular-nums">{formatMoney(e.total, e.currency)}</span>
+        <span className="block whitespace-nowrap">
+          <span className="block font-medium tabular-nums">{formatMoney(e.total, e.currency)}</span>
+          {Number(e.total_withheld) > 0 && (
+            <span className="block text-xs text-brand-muted tabular-nums">
+              Retenido {formatMoney(Number(e.total_withheld), e.currency)}
+            </span>
+          )}
+        </span>
       ),
     },
     {
@@ -99,7 +108,14 @@ export default async function ExpensesPage({
     },
     {
       header: "Estado",
-      accessor: (e) => <Badge status={e.status}>{STATUS_LABELS[e.status] ?? e.status}</Badge>,
+      accessor: (e) => (
+        <span className="flex flex-col items-start gap-1">
+          <Badge status={e.status}>{STATUS_LABELS[e.status] ?? e.status}</Badge>
+          {e.status !== "CANCELLED" && EXPENSE_FISCAL_REVIEW.includes(e.fiscal_status) && (
+            <FiscalStatusBadge status={e.fiscal_status} />
+          )}
+        </span>
+      ),
     },
   ];
 
@@ -159,17 +175,39 @@ export default async function ExpensesPage({
             label: s ? STATUS_LABELS[s] ?? s : "Todos",
             count: s ? stats.byStatus[s] ?? 0 : stats.total,
             active: (params.status ?? undefined) === s,
-            href: listHref("/expenses", { status: s }),
+            href: listHref("/expenses", { status: s, fiscal: params.fiscal }),
           }))}
         />
+        {(stats.fiscalReview > 0 || stats.withheldCount > 0 || params.fiscal) && (
+          <FilterPills
+            label="Filtrar por tratamiento fiscal"
+            items={[
+              { key: "fiscal-all", label: "Fiscal: todos", value: undefined, count: undefined },
+              { key: "fiscal-review", label: "Revisión fiscal", value: "review", count: stats.fiscalReview },
+              { key: "fiscal-withheld", label: "Con retenciones", value: "withheld", count: stats.withheldCount },
+            ].map((it) => ({
+              key: it.key,
+              label: it.label,
+              count: it.count,
+              active: (params.fiscal ?? undefined) === it.value,
+              href: listHref("/expenses", { status: params.status, fiscal: it.value }),
+            }))}
+          />
+        )}
 
         {expenses.length === 0 ? (
           <EmptyState
-            filtered={Boolean(params.status)}
+            filtered={Boolean(params.status || params.fiscal)}
             clearHref="/expenses"
             what="gastos"
             icon={<CreditCard size={28} />}
-            title={params.status ? "No hay gastos con este estado." : "Aún no tienes gastos."}
+            title={
+              params.fiscal === "review"
+                ? "No hay gastos con el tratamiento fiscal por revisar."
+                : params.status || params.fiscal
+                  ? "No hay gastos con este filtro."
+                  : "Aún no tienes gastos."
+            }
             action={
               <Link href="/expenses/new">
                 <Button size="sm" icon={<Plus size={14} />}>
@@ -186,7 +224,7 @@ export default async function ExpensesPage({
               page={page}
               pageSize={pageSize}
               total={total}
-              params={{ status: params.status }}
+              params={{ status: params.status, fiscal: params.fiscal }}
             />
           </div>
         )}

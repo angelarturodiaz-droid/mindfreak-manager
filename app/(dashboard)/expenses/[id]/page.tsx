@@ -27,6 +27,9 @@ import { formatDate } from "@/lib/utils/dates";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { DownloadReceiptButton } from "@/components/payments/download-receipt-button";
+import { listServiceTypeOptions } from "@/features/supplier-service-types/queries";
+import { ExpenseFiscalCard, type ExpenseFiscalRow } from "@/components/fiscal/expense-fiscal-card";
+import { FiscalStatusBadge } from "@/components/fiscal/fiscal-status-badge";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente",
@@ -62,7 +65,7 @@ export default async function ExpenseDetailPage({
   }
   if (!expense) notFound();
 
-  const [categories, suppliers, projects, canEdit, canPay, payments, bankAccounts, documents, bankCatalog, company, funds] =
+  const [categories, suppliers, projects, canEdit, canPay, payments, bankAccounts, documents, bankCatalog, company, funds, serviceTypes, canSeeRules, canApprove] =
     await Promise.all([
       listExpenseCategories(),
       listActiveSuppliers(),
@@ -75,6 +78,9 @@ export default async function ExpenseDetailPage({
       listBankCatalog(),
       getCompany(),
       getAccountFunds(),
+      listServiceTypeOptions(),
+      hasPermission("settings.manage"),
+      hasPermission("expenses.approve"),
     ]);
 
   const category = expense.expense_categories as { name: string } | null;
@@ -119,7 +125,10 @@ export default async function ExpenseDetailPage({
     },
   ];
 
-  const paidPct = expense.total > 0 ? (expense.paid_amount / expense.total) * 100 : 0;
+  // Con retenciones se le paga al proveedor el neto, no el total de la factura.
+  const netPayable = Number(expense.net_payable ?? expense.total);
+  const withheld = Number(expense.total_withheld ?? 0);
+  const paidPct = netPayable > 0 ? (expense.paid_amount / netPayable) * 100 : expense.status === "PAID" ? 100 : 0;
   const isOpen = expense.status === "PENDING" || expense.status === "PARTIALLY_PAID";
 
   return (
@@ -139,6 +148,9 @@ export default async function ExpenseDetailPage({
                 {expense.description}
               </h1>
               <Badge status={expense.status}>{STATUS_LABELS[expense.status] ?? expense.status}</Badge>
+              {expense.fiscal_status && expense.fiscal_status !== "NOT_EVALUATED" && (
+                <FiscalStatusBadge status={expense.fiscal_status} />
+              )}
             </div>
             <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
               <div className="flex items-center gap-1.5">
@@ -201,13 +213,19 @@ export default async function ExpenseDetailPage({
           value={formatMoney(expense.paid_amount, expense.currency)}
           pct={paidPct}
           tone={expense.status === "PAID" ? "success" : undefined}
-          hint={`${paidPct.toFixed(0)}% del total`}
+          hint={withheld > 0 ? `${paidPct.toFixed(0)}% del neto a pagar` : `${paidPct.toFixed(0)}% del total`}
         />
         <MetricCard
-          label="Por pagar"
+          label={withheld > 0 ? "Por pagar (neto)" : "Por pagar"}
           value={formatMoney(expense.balance, expense.currency)}
           tone={isOpen && expense.balance > 0 ? "warning" : undefined}
-          hint={isOpen && expense.balance > 0 ? "Saldo pendiente" : "Nada pendiente"}
+          hint={
+            withheld > 0
+              ? `Ya descontados ${formatMoney(withheld, expense.currency)} retenidos para la DGII`
+              : isOpen && expense.balance > 0
+                ? "Saldo pendiente"
+                : "Nada pendiente"
+          }
         />
         <Card className="flex min-w-0 flex-col gap-1.5 text-sm">
           <p className="font-medium text-brand-muted">Cómo se pagó</p>
@@ -263,6 +281,21 @@ export default async function ExpenseDetailPage({
                     projectId={expense.project_id}
                     balance={expense.balance}
                     currency={expense.currency}
+                    fiscal={
+                      withheld > 0
+                        ? {
+                            total: Number(expense.total),
+                            isrRate: Number(expense.isr_rate),
+                            isrBasePct: Number(expense.isr_base_pct),
+                            itbisRetentionPct: Number(expense.itbis_retention_pct),
+                            isrWithheld: Number(expense.isr_withheld),
+                            itbisWithheld: Number(expense.itbis_withheld),
+                            totalWithheld: withheld,
+                            netPayable,
+                          }
+                        : null
+                    }
+                    fiscalStatus={expense.fiscal_status ?? "NOT_EVALUATED"}
                     bankAccounts={bankAccounts}
                     bankCatalog={bankCatalog}
                     funds={funds}
@@ -283,6 +316,8 @@ export default async function ExpenseDetailPage({
                   projects={projects}
                   bankCatalog={bankCatalog}
                   baseCurrency={company.base_currency}
+                  serviceTypes={serviceTypes}
+                  canSeeRules={canSeeRules}
                 />
               </Card>
             </section>
@@ -297,6 +332,14 @@ export default async function ExpenseDetailPage({
         </div>
 
         <aside className="flex flex-col gap-4">
+          {expense.status !== "CANCELLED" && (
+            <ExpenseFiscalCard
+              expense={expense as unknown as ExpenseFiscalRow}
+              canRecalculate={isEditable}
+              canOverride={canApprove && expense.status === "PENDING" && expense.paid_amount === 0}
+              canSeeRules={canSeeRules}
+            />
+          )}
           <SectionHeader
             title="Recibos y comprobantes"
             count={documents.length}

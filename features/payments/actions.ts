@@ -303,7 +303,7 @@ export async function getSupplierPaymentReceiptDataAction(
     supabase
       .from("supplier_payments")
       .select(
-        "id, payment_date, amount, method, reference, currency, payee_bank_name, expenses(description, balance), suppliers(name, tax_id, email, phone), bank_accounts(name, bank_name)",
+        "id, payment_date, amount, method, reference, currency, payee_bank_name, expenses(description, balance, total, ncf, isr_withheld, itbis_withheld, total_withheld, net_payable), suppliers(name, tax_id, email, phone), bank_accounts(name, bank_name)",
       )
       .eq("id", paymentId)
       .single(),
@@ -317,8 +317,32 @@ export async function getSupplierPaymentReceiptDataAction(
   if (pError || !payment) return { data: null, error: pError?.message ?? "Pago no encontrado." };
 
   type One<T> = T | T[] | null;
-  const expenseData = payment.expenses as One<{ description: string; balance: number }>;
-  const expense = Array.isArray(expenseData) ? expenseData[0] : expenseData;
+  type ExpenseData = {
+    description: string;
+    balance: number;
+    total: number;
+    ncf: string | null;
+    isr_withheld: number | null;
+    itbis_withheld: number | null;
+    total_withheld: number | null;
+    net_payable: number | null;
+  };
+  const expenseData = payment.expenses as One<ExpenseData>;
+  const rawExpense = Array.isArray(expenseData) ? expenseData[0] : expenseData;
+  // Retenciones del gasto (migración 074): el comprobante muestra cómo se
+  // llegó al neto que se le paga al proveedor.
+  const expense = rawExpense
+    ? {
+        description: rawExpense.description,
+        balance: Number(rawExpense.balance),
+        total: Number(rawExpense.total ?? 0),
+        ncf: rawExpense.ncf ?? null,
+        isrWithheld: Number(rawExpense.isr_withheld ?? 0),
+        itbisWithheld: Number(rawExpense.itbis_withheld ?? 0),
+        totalWithheld: Number(rawExpense.total_withheld ?? 0),
+        netPayable: Number(rawExpense.net_payable ?? rawExpense.total ?? 0),
+      }
+    : null;
   const supplierData = payment.suppliers as One<{
     name: string;
     tax_id: string | null;

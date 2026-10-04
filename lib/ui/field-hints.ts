@@ -27,4 +27,14 @@ export const FIELD_HINTS = {
   netPayable:
     "Neto a pagar: lo que realmente recibe el proveedor = total de la factura − retenciones. Es el monto que sale del banco al pagarle.",
   pendingNet: "Lo que todavía falta por pagarle al proveedor, ya descontadas las retenciones.",
+  expenseServiceType:
+    "Qué se le está pagando al proveedor en este gasto (ej. Fotografía, Alquiler de sillas). Se sugiere el del proveedor, pero puedes cambiarlo: de esto depende qué retenciones aplican.",
+  fiscalTreatment:
+    "Según quién es el proveedor y qué servicio da, la ley puede obligar a la empresa a quedarse con una parte del pago (retención) y entregarla a la DGII. El sistema lo calcula solo con las reglas de Configuración → Reglas fiscales.",
+  fiscalRecalculate:
+    "Vuelve a calcular las retenciones con los datos y reglas de hoy (por ejemplo, después de completar la ficha del proveedor). Solo mientras el gasto no tenga pagos; si había un ajuste manual, se reemplaza por el cálculo de las reglas.",
+  fiscalOverride:
+    "Cambiar a mano lo retenido cuando el contador indica algo distinto a la regla. Pide un motivo y queda registrado quién lo hizo. Solo para quien aprueba gastos.",
+  paymentAmountNet:
+    "Se propone lo que falta por pagarle al proveedor ya descontadas las retenciones. Puedes pagar menos si es un abono, pero no más.",
 } as const;

@@ -12,11 +12,13 @@ import { MoneyInput } from "@/components/ui/money-input";
 import { CurrencyExchangeFields } from "@/components/ui/currency-exchange-fields";
 import { Button } from "@/components/ui/button";
 import { todayISO } from "@/lib/utils/dates";
+import { ExpenseFiscalFields } from "@/components/fiscal/expense-fiscal-fields";
 
 const initialState: ActionState = { error: null };
 
 type Option = { id: string; name: string };
-type SupplierOption = Option & { category_id?: string | null };
+type SupplierOption = Option & { category_id?: string | null; service_type_id?: string | null };
+type ServiceTypeOption = { id: string; name: string; category_id: string; fiscal_classification_id: string | null };
 type ProjectOption = { id: string; number: string; name: string };
 type Account = { id: string; name: string; bank_name: string | null; type: string };
 
@@ -31,6 +33,8 @@ export function NewExpenseForm({
   defaultSupplierId = "",
   returnTo = null,
   funds = {},
+  serviceTypes = [],
+  canSeeRules = false,
 }: {
   categories: Option[];
   suppliers: SupplierOption[];
@@ -44,6 +48,9 @@ export function NewExpenseForm({
   returnTo?: string | null;
   /** Saldo de cada cuenta, para mostrar cuánto hay disponible en la elegida. */
   funds?: Record<string, AccountFunds>;
+  /** Tipos de servicio (para el tratamiento fiscal). */
+  serviceTypes?: ServiceTypeOption[];
+  canSeeRules?: boolean;
 }) {
   const [state, formAction, pending, dialogs] = useOverdraftConfirmAction(createExpenseAction, initialState);
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -138,6 +145,14 @@ export function NewExpenseForm({
         <Input label="Impuesto (%)" name="tax_percent" type="number" step="0.01" min="0" defaultValue="18" />
       </div>
 
+      <ExpenseFiscalFields
+        serviceTypes={serviceTypes}
+        categories={categories}
+        suppliers={suppliers}
+        defaults={{ supplierId: defaultSupplierId }}
+        canSeeRules={canSeeRules}
+      />
+
       <Select
         label="Método de pago"
         name="payment_method"
@@ -163,7 +178,7 @@ export function NewExpenseForm({
             required
             value={accountId}
             onChange={(e) => setAccountId(e.target.value)}
-            hint="El gasto queda pagado de inmediato y la deuda de la tarjeta sube sola."
+            hint="El gasto queda pagado de inmediato (por el neto, si hay retenciones) y la deuda de la tarjeta sube sola."
           >
             <option value="" disabled>
               Selecciona una tarjeta…
@@ -194,7 +209,7 @@ export function NewExpenseForm({
             hint={
               relevantAccounts.length === 0
                 ? "Sin cuentas bancarias todavía — se puede pagar después desde el detalle del gasto."
-                : "Si ya sabes desde qué banco se pagó, el gasto queda pagado de inmediato. Si no, déjalo en blanco y lo pagas después."
+                : "Si ya sabes desde qué banco se pagó, el gasto queda pagado de inmediato por el neto a pagar. Si no, déjalo en blanco y lo pagas después."
             }
           >
             <option value="">Aún no lo sé (queda pendiente de pago)</option>

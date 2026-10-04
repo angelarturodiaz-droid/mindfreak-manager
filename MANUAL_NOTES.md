@@ -502,3 +502,17 @@ pulsa el botón.
   a revisar con el contador; NG 02-2026 inactiva hasta confirmar.
 - Versionado: regla usada por gastos → al editar se crea versión nueva y se
   cierra la anterior el día antes.
+
+## Tratamiento fiscal — fases 5 a 7 (2026-10-03)
+- Gasto: Tipo de servicio (sugerido por el proveedor), comprobante y NCF;
+  tarjeta "Tratamiento fiscal" en vivo. El cálculo SIEMPRE se repite en el
+  servidor al guardar (features/fiscal/expense-fiscal.ts). Regla BLOCK no
+  deja guardar; sin regla/datos → retención 0 y "Revisión fiscal".
+- Se guarda el resultado en el gasto (snapshot): cambiar reglas no cambia
+  gastos ya registrados. "Recalcular" solo pendiente y sin pagos.
+- Saldo del gasto = neto (total − retenido). Pagos, banco y tarjeta mueven
+  solo el neto. Gastos viejos: NOT_EVALUATED, neto = total.
+- "Ajustar" retenciones: expenses.approve, motivo obligatorio, auditoría
+  FISCAL_OVERRIDE. Editar o recalcular quita el ajuste.
+- Tooltip: envuelve con span display:contents (no clona) para funcionar
+  también con hijos que vienen de componentes de servidor.

@@ -18,6 +18,7 @@ import {
   ListFilter,
   PackageCheck,
   Smile,
+  Scale,
 } from "lucide-react";
 import { IconBadge, type IconBadgeTone } from "@/components/ui/icon-badge";
 import { Card } from "@/components/ui/card";
@@ -464,6 +465,7 @@ const SECTIONS: Section[] = [
             "Cada cobro o pago genera su movimiento en Bancos con la categoría asignada automáticamente (ver Bancos).",
             <><strong>Categoría del cobro</strong>: al registrar un cobro en una factura, el campo <strong>Categoría</strong> viene con &ldquo;Cobro de factura&rdquo;. Déjalo así para un cobro normal, o elige otra si ese dinero se debe clasificar distinto (ej. Anticipo de cliente, Servicios, Reembolso). La categoría solo afecta cómo se ve el ingreso en Bancos y en el reporte de Ingresos y egresos por categoría; el monto, el balance y el estado de la factura se calculan igual. Si después quieres cambiarla, hazlo desde Bancos con el selector de la fila.</>,
             <><strong>Pagos a proveedores</strong>: no tienen campo de categoría porque toman la <strong>categoría del gasto</strong>. Elígela en el gasto antes de pagar (o cámbiala luego en Bancos).</>,
+            <><strong>Pago a proveedor con retenciones</strong>: se paga el <strong>neto</strong> (factura − ISR − ITBIS retenidos), no el total. El formulario lo explica paso a paso; ver <strong>Retenciones al pagar a un proveedor</strong>.</>,
           ]}
         />
       </>
@@ -498,6 +500,55 @@ const SECTIONS: Section[] = [
             "Un gasto con proveedor se liquida registrando un pago a proveedor contra él.",
             <>Si pagas desde una cuenta sin fondos suficientes, el sistema no deja registrar el pago (ver <strong>Bancos → Reglas de cada tipo de cuenta</strong>). Si la cuenta es corriente con sobregiro autorizado, te pide confirmar.</>,
             "El listado resume lo que hay por pagar y lo gastado en el mes y el año; el detalle muestra la barra de lo pagado y sus recibos y comprobantes.",
+            <><strong>Tipo de servicio, comprobante y NCF</strong>: al elegir el proveedor se sugiere su tipo de servicio (puedes cambiarlo si este gasto es de otra cosa). Indica también el tipo de comprobante que te dio (B01, B02, E31…) y su NCF; el NCF debe empezar igual que el tipo elegido (ej. B01…). Con esto el sistema calcula las <strong>retenciones</strong> (ver <strong>Retenciones al pagar a un proveedor</strong>).</>,
+            <>El listado tiene el filtro <strong>Revisión fiscal</strong> (gastos a los que les falta información o regla) y <strong>Con retenciones</strong>; en la columna Total se ve lo retenido debajo del monto.</>,
+          ]}
+        />
+      </>
+    ),
+  },
+  {
+    id: "retenciones",
+    label: "Retenciones al pagar a un proveedor",
+    icon: Scale,
+    tone: "amber",
+    summary: "Por qué a veces le pagas al proveedor menos que su factura, y cómo lo calcula el sistema.",
+    content: (
+      <>
+        <p className="text-sm text-brand-text">
+          En República Dominicana, cuando la empresa le paga a ciertos proveedores la ley la obliga a{" "}
+          <strong>quedarse con una parte del pago</strong> y entregársela a la DGII a nombre del proveedor. Eso es una{" "}
+          <strong>retención</strong>. No es un descuento ni dinero que se ahorra: es un impuesto del proveedor que la
+          empresa paga por él. Por eso al proveedor se le paga el <strong>neto</strong>.
+        </p>
+        <Card className="flex flex-col gap-1 text-sm">
+          <p className="font-medium text-brand-text">Ejemplo: técnico de iluminación, persona física registrada</p>
+          <p className="text-brand-muted">Factura: RD$100,000 + ITBIS 18 % (RD$18,000) = <strong className="text-brand-text">RD$118,000</strong></p>
+          <p className="text-brand-muted">− ISR retenido: 15 % sobre el 20 % del subtotal = RD$3,000</p>
+          <p className="text-brand-muted">− ITBIS retenido: 100 % del ITBIS = RD$18,000</p>
+          <p className="text-brand-text">= Le pagas al proveedor <strong>RD$97,000</strong>. Los RD$21,000 retenidos se pagan a la DGII (tu contador los declara el mes siguiente).</p>
+        </Card>
+        <Bullets
+          items={[
+            <><strong>Cómo lo decide el sistema</strong>: mira la <em>ficha fiscal del proveedor</em> (persona física o jurídica, registrado, informal, RST, del extranjero, si emite e-CF), el <em>tipo de servicio</em> del gasto (y su clasificación fiscal: técnico, profesional, alquiler, bienes…), el <em>comprobante</em> y la <em>fecha</em>, y busca la regla vigente en Configuración → Reglas fiscales. Nadie escribe porcentajes en el gasto.</>,
+            <><strong>Al registrar el gasto</strong> aparece la tarjeta <strong>Tratamiento fiscal</strong>, que se actualiza sola mientras llenas el formulario: total de la factura, ISR retenido, ITBIS retenido y <strong>neto a pagar</strong>. Cada término tiene un <strong>ⓘ</strong>: pasa el mouse por encima para ver qué significa. En <em>¿Por qué se aplicó esto?</em> ves la regla, su base legal y el enlace a la fuente.</>,
+            <><strong>Si falta información</strong> (el proveedor no tiene ficha fiscal o el tipo de servicio no está clasificado), la tarjeta lo dice y trae el enlace para completarlo. El gasto se puede guardar igual: queda con retención 0 y marcado <strong>Faltan datos</strong> o <strong>Sin regla</strong> (filtro <em>Revisión fiscal</em>). Nunca se inventa una retención.</>,
+            <><strong>Recalcular</strong>: si completaste los datos después, en el detalle del gasto pulsa <strong>Recalcular</strong> (solo mientras el gasto no tenga pagos). Hazlo <strong>antes del primer pago</strong>: una vez pagado, lo retenido queda como se pagó.</>,
+            <><strong>Al pagar</strong>: el formulario de pago explica &ldquo;¿Cuánto le pago al proveedor?&rdquo; con el mismo desglose y propone el <strong>neto pendiente</strong>. Puedes pagar en abonos, pero no más que el neto. Del banco sale solo el neto. El comprobante de pago (PDF) muestra las retenciones.</>,
+            <><strong>Pagado al crearlo</strong>: si al registrar el gasto eliges el banco o la tarjeta, se paga en ese momento <strong>el neto</strong>.</>,
+            <><strong>Las reglas cambian, los gastos no</strong>: cada gasto guarda la regla, la versión y los montos con los que se calculó. Si la DGII cambia una tasa, se crea una versión nueva de la regla y solo afecta a los gastos nuevos.</>,
+            <><strong>Ajustar</strong> (solo quien puede aprobar gastos): si tu contador indica un tratamiento distinto, en el detalle del gasto pulsa <strong>Ajustar</strong>, corrige el ISR o ITBIS retenido y escribe el motivo. Queda marcado <em>Ajuste manual</em> y registrado en Auditoría con los montos de antes y después.</>,
+            <><strong>Gastos anteriores</strong> a esta función quedan <em>Sin evaluar</em>: se pagan por el total, como siempre.</>,
+            <>Las reglas iniciales son una <strong>propuesta</strong> basada en fuentes públicas de la DGII; revísalas con tu contador (Configuración → Reglas fiscales).</>,
+          ]}
+        />
+        <StatusRow
+          items={[
+            { label: "Con retenciones", tone: "info" },
+            { label: "Sin retención", tone: "success" },
+            { label: "Faltan datos / Sin regla / Por revisar", tone: "warning" },
+            { label: "Bloqueado (no se deja guardar)", tone: "danger" },
+            { label: "Sin evaluar / Sin proveedor", tone: "neutral" },
           ]}
         />
       </>

@@ -8,6 +8,8 @@
  * y devuelve retención 0 (el gasto queda "por revisar").
  */
 
+import { FISCAL_CONDITION_LABELS, SUPPLIER_KIND_LABELS } from "@/features/suppliers/fiscal";
+
 export type FiscalRule = {
   id: string;
   rule_key: string;
@@ -233,7 +235,16 @@ export function evaluateFiscal(ctx: FiscalContext, rules: FiscalRule[]): FiscalR
     };
   }
 
-  const why = `El sistema identificó al proveedor (${[ctx.supplier.supplier_kind, ctx.supplier.fiscal_condition].filter(Boolean).join(" · ") || "datos fiscales"}) y la clasificación del servicio, y encontró una regla fiscal vigente que aplica a esta operación: "${top.name}"${top.version > 1 ? ` (versión ${top.version})` : ""}.`;
+  const why = `El sistema identificó al proveedor (${
+    [
+      ctx.supplier.supplier_kind ? SUPPLIER_KIND_LABELS[ctx.supplier.supplier_kind] ?? ctx.supplier.supplier_kind : null,
+      ctx.supplier.fiscal_condition
+        ? FISCAL_CONDITION_LABELS[ctx.supplier.fiscal_condition] ?? ctx.supplier.fiscal_condition
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" · ") || "datos fiscales"
+  }) y la clasificación del servicio, y encontró una regla fiscal vigente que aplica a esta operación: "${top.name}"${top.version > 1 ? ` (versión ${top.version})` : ""}.`;
 
   if (top.action === "BLOCK") {
     return {

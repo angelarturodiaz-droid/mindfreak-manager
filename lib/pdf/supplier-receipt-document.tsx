@@ -43,7 +43,16 @@ export type SupplierReceiptPdfData = {
     currency: string;
     payee_bank_name: string | null;
   };
-  expense: { description: string; balance: number };
+  expense: {
+    description: string;
+    balance: number;
+    total?: number;
+    ncf?: string | null;
+    isrWithheld?: number;
+    itbisWithheld?: number;
+    totalWithheld?: number;
+    netPayable?: number;
+  };
   supplier: { name: string; tax_id: string | null; email: string | null; phone: string | null };
   bankAccount: { name: string; bank_name: string | null } | null;
 };
@@ -136,6 +145,12 @@ export function SupplierReceiptPdfDocument({
     },
     grandTotalLabel: { color: "#ffffff", fontSize: 10, fontWeight: 700 },
     grandTotalValue: { color: "#ffffff", fontSize: 10, fontWeight: 700 },
+    withholdBox: { marginTop: 4, borderWidth: 0.5, borderColor: "#d1d5db", padding: 10 },
+    withholdRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 3 },
+    withholdLabel: { fontSize: 8, color: "#374151" },
+    withholdValue: { fontSize: 8, color: "#1a1a1a" },
+    withholdNet: { fontSize: 9, fontWeight: 700, color: "#1a1a1a" },
+    withholdNote: { fontSize: 7, color: "#6b7280", marginTop: 4 },
     footer: {
       position: "absolute",
       bottom: 24,
@@ -207,6 +222,12 @@ export function SupplierReceiptPdfDocument({
                 <Text style={styles.fieldLabel}>Concepto</Text>
                 <Text style={styles.fieldValue}>{expense.description}</Text>
               </View>
+              {expense.ncf && (
+                <View style={styles.fieldRow}>
+                  <Text style={styles.fieldLabel}>NCF</Text>
+                  <Text style={styles.fieldValue}>{expense.ncf}</Text>
+                </View>
+              )}
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Método</Text>
                 <Text style={styles.fieldValue}>
@@ -233,6 +254,37 @@ export function SupplierReceiptPdfDocument({
               </View>
             </View>
           </View>
+
+          {(expense.totalWithheld ?? 0) > 0 && (
+            <View>
+              <Text style={styles.sectionTitle}>RETENCIONES APLICADAS AL GASTO</Text>
+              <View style={styles.withholdBox}>
+                <View style={styles.withholdRow}>
+                  <Text style={styles.withholdLabel}>Total de la factura</Text>
+                  <Text style={styles.withholdValue}>{money(expense.total ?? 0, payment.currency)}</Text>
+                </View>
+                {(expense.isrWithheld ?? 0) > 0 && (
+                  <View style={styles.withholdRow}>
+                    <Text style={styles.withholdLabel}>ISR retenido</Text>
+                    <Text style={styles.withholdValue}>− {money(expense.isrWithheld ?? 0, payment.currency)}</Text>
+                  </View>
+                )}
+                {(expense.itbisWithheld ?? 0) > 0 && (
+                  <View style={styles.withholdRow}>
+                    <Text style={styles.withholdLabel}>ITBIS retenido</Text>
+                    <Text style={styles.withholdValue}>− {money(expense.itbisWithheld ?? 0, payment.currency)}</Text>
+                  </View>
+                )}
+                <View style={styles.withholdRow}>
+                  <Text style={styles.withholdNet}>Neto a pagar</Text>
+                  <Text style={styles.withholdNet}>{money(expense.netPayable ?? 0, payment.currency)}</Text>
+                </View>
+                <Text style={styles.withholdNote}>
+                  Los montos retenidos se pagan a la DGII a nombre del proveedor, conforme a la normativa vigente.
+                </Text>
+              </View>
+            </View>
+          )}
 
           <View style={styles.amountBox}>
             <Text style={styles.amountLabel}>MONTO PAGADO</Text>

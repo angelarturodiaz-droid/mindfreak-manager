@@ -25,7 +25,22 @@ export const expenseSchema = z.object({
   // le depositó (distinto de bank_account_id, que es siempre la cuenta
   // PROPIA de origen del dinero).
   payee_bank_name: z.string().trim().optional().or(z.literal("")),
-});
+  // Tratamiento fiscal (migración 074): de qué tipo de servicio es el gasto
+  // y qué comprobante entregó el proveedor. El servidor calcula las
+  // retenciones con el motor fiscal; el formulario solo las muestra.
+  service_type_id: z.string().uuid().optional().or(z.literal("")),
+  document_type: z.string().trim().max(10).optional().or(z.literal("")),
+  ncf: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^(B\d{10}|E\d{12})$/, "El NCF no tiene el formato correcto (ej. B0100000123 o E310000000123).")
+    .optional()
+    .or(z.literal("")),
+}).refine(
+  (d) => !d.ncf || !d.document_type || d.document_type === "NONE" || d.ncf.startsWith(d.document_type),
+  { message: "El NCF no corresponde al tipo de comprobante elegido (debe empezar igual, ej. B01…).", path: ["ncf"] },
+);
 
 export type ExpenseInput = z.infer<typeof expenseSchema>;
 

@@ -7,11 +7,13 @@ import { Input, Select } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import { CurrencyExchangeFields } from "@/components/ui/currency-exchange-fields";
 import { Button } from "@/components/ui/button";
+import { ExpenseFiscalFields } from "@/components/fiscal/expense-fiscal-fields";
 
 const initialState: ActionState = { error: null };
 
 type Option = { id: string; name: string };
 type ProjectOption = { id: string; number: string; name: string };
+type ServiceTypeOption = { id: string; name: string; category_id: string; fiscal_classification_id: string | null };
 
 export function ExpenseEditForm({
   expense,
@@ -20,6 +22,8 @@ export function ExpenseEditForm({
   projects,
   bankCatalog,
   baseCurrency,
+  serviceTypes = [],
+  canSeeRules = false,
 }: {
   expense: {
     id: string;
@@ -34,12 +38,17 @@ export function ExpenseEditForm({
     currency: string;
     exchange_rate: number;
     payee_bank_name: string | null;
+    service_type_id?: string | null;
+    document_type?: string | null;
+    ncf?: string | null;
   };
   categories: Option[];
-  suppliers: Option[];
+  suppliers: (Option & { service_type_id?: string | null })[];
   projects: ProjectOption[];
   bankCatalog: Option[];
   baseCurrency: string;
+  serviceTypes?: ServiceTypeOption[];
+  canSeeRules?: boolean;
 }) {
   const updateWithId = updateExpenseAction.bind(null, expense.id);
   const [state, formAction, pending] = useActionState(updateWithId, initialState);
@@ -99,6 +108,19 @@ export function ExpenseEditForm({
         <MoneyInput label="Subtotal" name="subtotal" min={0} required defaultValue={expense.subtotal} />
         <Input label="Impuesto (%)" name="tax_percent" type="number" step="0.01" min="0" defaultValue={impliedPercent} />
       </div>
+
+      <ExpenseFiscalFields
+        serviceTypes={serviceTypes}
+        categories={categories}
+        suppliers={suppliers}
+        defaults={{
+          supplierId: expense.supplier_id,
+          serviceTypeId: expense.service_type_id,
+          documentType: expense.document_type,
+          ncf: expense.ncf,
+        }}
+        canSeeRules={canSeeRules}
+      />
 
       <Select label="Método de pago" name="payment_method" defaultValue={expense.payment_method ?? ""}>
         <option value="">Sin especificar</option>

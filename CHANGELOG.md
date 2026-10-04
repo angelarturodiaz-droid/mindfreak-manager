@@ -1,5 +1,40 @@
 # CHANGELOG — Mindfreak Manager
 
+## Tratamiento fiscal — fases 5 a 7: retenciones en gastos y pagos (2026-10-03)
+
+- Migración 074: en `expenses` tipo de servicio, comprobante (tipo + NCF) y
+  el resultado fiscal guardado (`fiscal_status`, regla y versión, tasas,
+  `isr_withheld`, `itbis_withheld`, `total_withheld`, `net_payable`,
+  `fiscal_snapshot`, ajuste manual con motivo/quién/cuándo). Gastos
+  existentes: NOT_EVALUATED y `net_payable = total` (nada cambia).
+  `register_supplier_payment` baja el saldo contra el neto;
+  `create_card_expense` recibe `p_fiscal` y paga el neto (sin movimiento si
+  el neto es 0). Probada en PGlite.
+- `features/fiscal/expense-fiscal.ts`: evalúa el gasto en el servidor (lee
+  proveedor, tipo de servicio y reglas, llama al motor) y arma las columnas.
+  Crear/editar gasto recalcula siempre en el servidor; regla BLOCK no deja
+  guardar; sin regla o con datos faltantes se guarda con retención 0 "por
+  revisar". NCF validado (B + 10 dígitos o E + 12, prefijo = tipo).
+- Formulario de gasto: Tipo de servicio (sugerido por el proveedor), Tipo de
+  comprobante, NCF y tarjeta "Tratamiento fiscal" en vivo
+  (`previewExpenseFiscalAction`) con desglose, ⓘ, "¿Por qué se aplicó
+  esto?", fuente y enlaces para completar lo que falta.
+- Detalle del gasto: chip fiscal, tarjeta con lo guardado, "Recalcular"
+  (pendiente y sin pagos, auditoría FISCAL_RECALCULATE) y "Ajustar"
+  (expenses.approve, motivo obligatorio, estado OVERRIDDEN, auditoría
+  FISCAL_OVERRIDE). Métricas Pagado/Por pagar contra el neto.
+- Listado de gastos: filtros "Revisión fiscal" y "Con retenciones", retenido
+  bajo el total y chip de revisión.
+- Registrar pago: explicación "¿Cuánto le pago al proveedor?" y monto
+  propuesto = neto pendiente; aviso si el tratamiento está por revisar.
+  Comprobante de pago (PDF): NCF y bloque de retenciones.
+- Arreglo: `Tooltip` ya no clona su hijo (fallaba con "Element type is
+  invalid" cuando el botón o ⓘ venía de un componente de servidor); ahora
+  envuelve con `<span style="display: contents">`. `InfoHint` es cliente.
+- Explicación del motor con etiquetas legibles (Persona Física · Registrado
+  DGII) en vez de códigos.
+- Ayuda: sección nueva "Retenciones al pagar a un proveedor" con ejemplo.
+
 ## Tratamiento fiscal — fases 3 y 4: reglas fiscales y motor (2026-10-03)
 
 - Migración 073: `fiscal_rules` (condiciones nulas = cualquiera + acción
