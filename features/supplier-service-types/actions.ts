@@ -91,7 +91,16 @@ export async function deleteServiceTypeAction(serviceTypeId: string): Promise<vo
 
 export type ImportServiceTypesState = {
   error: string | null;
-  result?: { total: number; created: number; skipped: number; categoriesCreated: string[] };
+  result?: {
+    total: number;
+    created: number;
+    skipped: number;
+    categoriesCreated: string[];
+    /** Tipos a los que se les puso la clasificación fiscal (columna opcional). */
+    classified?: number;
+    /** Valores de clasificación que no se reconocieron. */
+    unknownClassifications?: string[];
+  };
 };
 
 /**
@@ -123,6 +132,8 @@ export async function importServiceTypesCsvAction(
   const descIdx = header.findIndex((h) =>
     ["descripcion categoria", "descripcion", "description"].includes(h),
   );
+  // Opcional: clasificación fiscal (nombre o código, ej. "Servicio técnico" o SERVICIO_TECNICO).
+  const fiscalIdx = header.findIndex((h) => ["clasificacion fiscal", "clasificacion", "fiscal"].includes(h));
   if (catIdx === -1 || typeIdx === -1) {
     return { error: 'El CSV debe tener las columnas "categoria" y "tipo_servicio" (descarga la plantilla).' };
   }
@@ -130,6 +141,7 @@ export async function importServiceTypesCsvAction(
     category: r[catIdx] ?? "",
     name: r[typeIdx] ?? "",
     description: descIdx !== -1 ? (r[descIdx] ?? "") : "",
+    fiscal: fiscalIdx !== -1 ? (r[fiscalIdx] ?? "") : "",
   }));
   // Filas con categoría y tipo vacío: solo crean la categoría (si falta).
   const rows = allRows.filter((r) => r.category && r.name);
@@ -138,10 +150,20 @@ export async function importServiceTypesCsvAction(
   const companyId = await getPrimaryCompanyId();
   const supabase = await createSupabaseClient();
 
-  const [{ data: categories, error: catError }, { data: types, error: typeError }] = await Promise.all([
-    supabase.from("expense_categories").select("id, name").eq("company_id", companyId),
-    supabase.from("supplier_service_types").select("name, category_id").eq("company_id", companyId),
-  ]);
+  const [{ data: categories, error: catError }, { data: types, error: typeError }, { data: fiscalRows }] =
+    await Promise.all([
+      supabase.from("expense_categories").select("id, name").eq("company_id", companyId),
+      supabase.from("supplier_service_types").select("id, name, category_id").eq("company_id", companyId),
+      supabase.from("fiscal_classifications").select("id, code, name").eq("company_id", companyId),
+    ]);
+  const fiscalMap = new Map<string, string>();
+  for (const f of fiscalRows ?? []) {
+    fiscalMap.set(normalizeCatalogName(f.name), f.id);
+    fiscalMap.set(normalizeCatalogName(f.code.replace(/_/g, " ")), f.id);
+  }
+  const typeIdByName = new Map((types ?? []).map((t) => [normalizeCatalogName(t.name), t.id as string]));
+  const unknownClassifications = new Set<string>();
+  const classifyExisting: { id: string; fiscalId: string }[] = [];
   if (catError) return { error: catError.message };
   if (typeError) return { error: typeError.message };
 
@@ -149,7 +171,12 @@ export async function importServiceTypesCsvAction(
   // Un tipo de servicio no se repite en toda la empresa (en ninguna categoría).
   const seen = new Set((types ?? []).map((t) => normalizeCatalogName(t.name)));
   const categoriesCreated: string[] = [];
-  const toInsert: { company_id: string; category_id: string; name: string }[] = [];
+  const toInsert: {
+    company_id: string;
+    category_id: string;
+    name: string;
+    fiscal_classification_id?: string | null;
+  }[] = [];
   let skipped = 0;
 
   for (const r of allRows.filter((x) => x.category)) {
@@ -172,12 +199,20 @@ export async function importServiceTypesCsvAction(
     }
     if (!r.name) continue;
     const key = normalizeCatalogName(r.name);
+    let fiscalId: string | null = null;
+    if (r.fiscal) {
+      fiscalId = fiscalMap.get(normalizeCatalogName(r.fiscal.replace(/_/g, " "))) ?? null;
+      if (!fiscalId) unknownClassifications.add(r.fiscal);
+    }
     if (seen.has(key)) {
       skipped++;
+      // Ya existe: si el archivo trae clasificación fiscal, se le asigna.
+      const existingId = typeIdByName.get(key);
+      if (existingId && fiscalId) classifyExisting.push({ id: existingId, fiscalId });
       continue;
     }
     seen.add(key);
-    toInsert.push({ company_id: companyId, category_id: categoryId, name: r.name });
+    toInsert.push({ company_id: companyId, category_id: categoryId, name: r.name, fiscal_classification_id: fiscalId });
   }
 
   if (toInsert.length > 0) {
@@ -192,10 +227,35 @@ export async function importServiceTypesCsvAction(
     });
   }
 
+  for (const c of classifyExisting) {
+    const { error } = await supabase
+      .from("supplier_service_types")
+      .update({ fiscal_classification_id: c.fiscalId })
+      .eq("id", c.id);
+    if (error) return { error: error.message };
+  }
+  const classified = toInsert.filter((t) => t.fiscal_classification_id).length + classifyExisting.length;
+  if (classifyExisting.length > 0) {
+    await logAudit({
+      companyId,
+      action: "FISCAL_CLASSIFICATION_BULK",
+      entityType: "supplier_service_type",
+      entityId: companyId,
+      newValues: { file: file.name, classified: classifyExisting },
+    });
+  }
+
   revalidateAll();
   revalidatePath("/settings/expense-categories");
   return {
     error: null,
-    result: { total: rows.length, created: toInsert.length, skipped, categoriesCreated },
+    result: {
+      total: rows.length,
+      created: toInsert.length,
+      skipped,
+      categoriesCreated,
+      classified,
+      unknownClassifications: [...unknownClassifications],
+    },
   };
 }

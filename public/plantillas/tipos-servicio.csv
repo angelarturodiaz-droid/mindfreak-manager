@@ -1,4 +1,4 @@
-categoria,tipo_servicio
-Audiovisuales,Alquiler de sonido
-Audiovisuales,Alquiler de pantallas
-Catering y alimentos,Buffet
+categoria,tipo_servicio,clasificacion_fiscal
+Audiovisuales,Alquiler de sonido,Alquiler
+Audiovisuales,Alquiler de pantallas,Alquiler
+Catering y alimentos,Buffet,Venta de bienes

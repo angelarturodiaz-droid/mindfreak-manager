@@ -1,5 +1,6 @@
 import { forwardRef, useId } from "react";
 import type { InputHTMLAttributes, SelectHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
+import { InfoHint } from "./info-hint";
 
 export const FIELD_CLASSES =
   "w-full rounded-[var(--radius-md)] border border-brand-border bg-brand-surface px-3 py-2.5 text-sm text-brand-text outline-none transition-colors placeholder:text-brand-muted hover:border-brand-muted focus:border-brand-accent focus:ring-2 focus:ring-brand-accent-light disabled:cursor-not-allowed disabled:border-brand-border disabled:bg-brand-background disabled:text-brand-disabled disabled:hover:border-brand-border";
@@ -9,6 +10,7 @@ export function FieldWrapper({
   htmlFor,
   error,
   hint,
+  info,
   required,
   children,
 }: {
@@ -16,16 +18,21 @@ export function FieldWrapper({
   htmlFor: string;
   error?: string;
   hint?: string;
+  /** Explicación con ícono ⓘ junto a la etiqueta (sale al pasar el mouse). */
+  info?: string;
   required?: boolean;
   children: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-1">
       {label && (
-        <label htmlFor={htmlFor} className="text-sm font-medium text-brand-text">
-          {label}
-          {required && <span className="text-brand-danger"> *</span>}
-        </label>
+        <span className="flex items-center gap-1.5">
+          <label htmlFor={htmlFor} className="text-sm font-medium text-brand-text">
+            {label}
+            {required && <span className="text-brand-danger"> *</span>}
+          </label>
+          {info && <InfoHint text={info} label={`Qué es: ${label}`} />}
+        </span>
       )}
       {children}
       {error ? (
@@ -41,12 +48,14 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   hint?: string;
+  /** Explicación con ícono ⓘ junto a la etiqueta. */
+  info?: string;
   /** Ícono decorativo a la izquierda del campo (ej. sobre para "Correo"). */
   icon?: ReactNode;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { label, error, hint, id, className = "", required, icon, ...props },
+  { label, error, hint, info, id, className = "", required, icon, ...props },
   ref,
 ) {
   const autoId = useId();
@@ -61,7 +70,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     />
   );
   return (
-    <FieldWrapper label={label} htmlFor={inputId} error={error} hint={hint} required={required}>
+    <FieldWrapper label={label} htmlFor={inputId} error={error} hint={hint} info={info} required={required}>
       {icon ? (
         <div className="relative flex items-center">
           <span className="pointer-events-none absolute left-3 flex text-brand-muted">{icon}</span>
@@ -78,16 +87,17 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   error?: string;
   hint?: string;
+  info?: string;
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
-  { label, error, hint, id, className = "", required, children, ...props },
+  { label, error, hint, info, id, className = "", required, children, ...props },
   ref,
 ) {
   const autoId = useId();
   const selectId = id ?? autoId;
   return (
-    <FieldWrapper label={label} htmlFor={selectId} error={error} hint={hint} required={required}>
+    <FieldWrapper label={label} htmlFor={selectId} error={error} hint={hint} info={info} required={required}>
       <select
         ref={ref}
         id={selectId}
@@ -105,16 +115,17 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
   label?: string;
   error?: string;
   hint?: string;
+  info?: string;
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
-  { label, error, hint, id, className = "", required, ...props },
+  { label, error, hint, info, id, className = "", required, ...props },
   ref,
 ) {
   const autoId = useId();
   const textareaId = id ?? autoId;
   return (
-    <FieldWrapper label={label} htmlFor={textareaId} error={error} hint={hint} required={required}>
+    <FieldWrapper label={label} htmlFor={textareaId} error={error} hint={hint} info={info} required={required}>
       <textarea
         ref={ref}
         id={textareaId}

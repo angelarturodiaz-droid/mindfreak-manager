@@ -5,7 +5,7 @@ export async function listServiceTypeOptions() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("supplier_service_types")
-    .select("id, name, category_id")
+    .select("id, name, category_id, fiscal_classification_id")
     .order("name");
   if (error) throw new Error(error.message);
   return data;
@@ -17,7 +17,7 @@ export async function listServiceTypesWithUsage() {
   const [{ data: types, error }, { data: suppliers, error: supError }] = await Promise.all([
     supabase
       .from("supplier_service_types")
-      .select("id, name, category_id, expense_categories(name)")
+      .select("id, name, category_id, fiscal_classification_id, expense_categories(name)")
       .order("name"),
     supabase.from("suppliers").select("service_type_id").not("service_type_id", "is", null),
   ]);

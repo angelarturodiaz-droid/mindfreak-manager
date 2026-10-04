@@ -1,5 +1,21 @@
 # CHANGELOG — Mindfreak Manager
 
+## Tratamiento fiscal — fase 1: clasificación fiscal de servicios (2026-10-03)
+
+- Propuesta completa en `claude/propuesta-tratamiento-fiscal.md` (proyecto).
+- Migración 071: `fiscal_classifications` (catálogo parametrizable, sin
+  porcentajes; 9 iniciales) y `supplier_service_types.fiscal_classification_id`.
+- Configuración → Tipos de servicio: columna "Clasificación fiscal" (se
+  guarda al elegir), filtro (incluye "Sin clasificar"), contador de tipos
+  sin clasificar, "Clasificar los N filtrados", gestión de clasificaciones
+  (crear, renombrar, activar/desactivar) e importación CSV con columna
+  opcional `clasificacion_fiscal`. Auditoría: FISCAL_CLASSIFICATION(_BULK),
+  CREATE/UPDATE/ACTIVATE/DEACTIVATE de `fiscal_classification`.
+- Ayudas para usuarios no contables: prop `info` en Input/Select/Textarea
+  (ícono ⓘ con explicación al pasar el mouse, `components/ui/info-hint.tsx`)
+  y textos centralizados en `lib/ui/field-hints.ts` (ISR retenido, ITBIS
+  retenido, neto a pagar, tipo de comprobante, NCF, condición fiscal…).
+
 ## Explicación al pasar el mouse por los botones (2026-10-01)
 
 - `components/ui/tooltip.tsx`: globo con una explicación corta al pasar el

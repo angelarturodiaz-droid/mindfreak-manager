@@ -482,3 +482,10 @@ pulsa el botón.
 - Al pasar el mouse por un botón de acción sale un globo con lo que hace.
   Los textos están todos en lib/ui/button-hints.ts (para agregar o cambiar
   una explicación, editar ese archivo con el texto exacto del botón).
+
+## Tratamiento fiscal — fase 1 (2026-10-03)
+- Configuración → Tipos de servicio: cada tipo lleva una Clasificación
+  fiscal (Servicio técnico, profesional, venta de bienes, alquiler, comisión,
+  seguridad, exento, otro, sin tratamiento). No guarda porcentajes: las
+  reglas fiscales (fase 3) deciden las retenciones.
+- Ícono ⓘ en campos con términos fiscales: textos en lib/ui/field-hints.ts.

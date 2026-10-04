@@ -42,8 +42,10 @@ export function ImportServiceTypesForm() {
       </form>
       <p className="text-xs text-brand-muted">
         Columnas: <span className="font-medium">categoria</span>,{" "}
-        <span className="font-medium">tipo_servicio</span> y (opcional){" "}
-        <span className="font-medium">descripcion_categoria</span>. Si la categoría no existe se crea
+        <span className="font-medium">tipo_servicio</span> y (opcionales){" "}
+        <span className="font-medium">descripcion_categoria</span> y{" "}
+        <span className="font-medium">clasificacion_fiscal</span> (nombre, ej. &quot;Servicio técnico&quot;; también
+        clasifica los tipos que ya existen). Si la categoría no existe se crea
         en Categorías (una fila con tipo vacío crea solo la categoría). Lo que ya existe se omite: no
         se repiten nombres aunque cambien mayúsculas, acentos o espacios, y un tipo de servicio solo
         puede estar en una categoría.
@@ -58,6 +60,17 @@ export function ImportServiceTypesForm() {
             {state.result.total} en el archivo
             {state.result.skipped > 0 && ` · ${state.result.skipped} omitidos porque ya existían`}.
           </p>
+          {(state.result.classified ?? 0) > 0 && (
+            <p className="mt-1 text-xs text-brand-muted">
+              Con clasificación fiscal: {state.result.classified}
+            </p>
+          )}
+          {(state.result.unknownClassifications?.length ?? 0) > 0 && (
+            <p className="mt-1 text-xs text-brand-warning">
+              Clasificaciones no reconocidas (se dejaron sin clasificar):{" "}
+              {state.result.unknownClassifications?.join(", ")}
+            </p>
+          )}
           {state.result.categoriesCreated.length > 0 && (
             <p className="mt-1 text-xs text-brand-muted">
               Categorías nuevas: {state.result.categoriesCreated.join(", ")}
