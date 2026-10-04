@@ -8,6 +8,7 @@ import Link from "next/link";
 import { createExpenseAction, type ActionState } from "@/features/expenses/actions";
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
 import { Input, Select } from "@/components/ui/field";
+import { SearchSelect } from "@/components/ui/search-select";
 import { MoneyInput } from "@/components/ui/money-input";
 import { CurrencyExchangeFields } from "@/components/ui/currency-exchange-fields";
 import { Button } from "@/components/ui/button";
@@ -75,31 +76,29 @@ export function NewExpenseForm({
       <Input label="Descripción" name="description" required />
       <Input label="Fecha" name="expense_date" type="date" required defaultValue={todayISO()} />
 
-      <Select
+      <SearchSelect
         label="Categoría"
         name="category_id"
         value={categoryId}
-        onChange={(e) => {
-          setCategoryId(e.target.value);
+        onChange={(v) => {
+          setCategoryId(v);
           setCategoryTouched(true);
           setSuggestedFrom(null);
         }}
+        emptyLabel="Sin categoría"
+        options={categories.map((c) => ({ value: c.id, label: c.name }))}
         hint={suggestedFrom ? `Sugerida por el proveedor ${suggestedFrom}. Puedes cambiarla.` : undefined}
-      >
-        <option value="">Sin categoría</option>
-        {categories.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
-      </Select>
+      />
 
-      <Select
+      <SearchSelect
         label="Proveedor"
         name="supplier_id"
         defaultValue={defaultSupplierId}
-        onChange={(e) => {
-          const supplier = suppliers.find((s) => s.id === e.target.value);
+        emptyLabel="Sin proveedor (gasto general)"
+        placeholder="Escribe el nombre del proveedor…"
+        options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
+        onChange={(v) => {
+          const supplier = suppliers.find((s) => s.id === v);
           if (!categoryTouched && supplier?.category_id) {
             setCategoryId(supplier.category_id);
             setSuggestedFrom(supplier.name);
@@ -108,14 +107,7 @@ export function NewExpenseForm({
             setSuggestedFrom(null);
           }
         }}
-      >
-        <option value="">Sin proveedor (gasto general)</option>
-        {suppliers.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.name}
-          </option>
-        ))}
-      </Select>
+      />
 
       <Select
         label="Banco del proveedor (opcional)"

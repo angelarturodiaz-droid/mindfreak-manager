@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Scale } from "lucide-react";
 import { Input, Select } from "@/components/ui/field";
+import { SearchSelect } from "@/components/ui/search-select";
 import { Badge } from "@/components/ui/badge";
 import { InfoHint } from "@/components/ui/info-hint";
 import { FIELD_HINTS } from "@/lib/ui/field-hints";
@@ -121,29 +122,22 @@ export function ExpenseFiscalFields({
 
   return (
     <div ref={wrapperRef} className="flex flex-col gap-4">
-      <Select
+      <SearchSelect
         label="Tipo de servicio"
         name="service_type_id"
         value={serviceTypeId}
         info={FIELD_HINTS.expenseServiceType}
         hint={suggested ? "Sugerido por el proveedor. Cámbialo si este gasto es de otro tipo." : undefined}
-        onChange={(e) => {
+        placeholder="Busca el servicio o su categoría…"
+        onChange={(v) => {
           touchedRef.current = true;
-          setServiceTypeId(e.target.value);
+          setServiceTypeId(v);
           setSuggested(false);
         }}
-      >
-        <option value="">Sin especificar</option>
-        {byCategory.map((c) => (
-          <optgroup key={c.id} label={c.name}>
-            {c.types.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </Select>
+        options={byCategory.flatMap((c) =>
+          c.types.map((t) => ({ value: t.id, label: t.name, group: c.name })),
+        )}
+      />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Select label="Tipo de comprobante" name="document_type" defaultValue={defaults?.documentType ?? ""} info={FIELD_HINTS.documentType}>

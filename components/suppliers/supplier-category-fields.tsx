@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Select } from "@/components/ui/field";
+import { SearchSelect, searchKey } from "@/components/ui/search-select";
 
 type Option = { id: string; name: string };
 type ServiceTypeOption = Option & { category_id: string };
@@ -50,53 +50,52 @@ export function SupplierCategoryFields({
   return (
     <>
       <span ref={anchor} hidden />
-      <Select
+      <SearchSelect
         label="Categoría"
         name="category_id"
         value={categoryId}
-        onChange={(e) => {
-          setCategoryId(e.target.value);
-          setServiceTypeId("");
+        onChange={(v, query) => {
+          setCategoryId(v);
+          // Si se encontró escribiendo un servicio (ej. "drones"), se elige también ese tipo.
+          const q = searchKey(query);
+          const hits = q ? serviceTypes.filter((t) => t.category_id === v && searchKey(t.name).includes(q)) : [];
+          setServiceTypeId(hits.length === 1 ? hits[0].id : "");
         }}
+        emptyLabel="Sin categoría"
+        placeholder="Busca la categoría o un servicio (ej. fotografía)…"
+        options={categories.map((c) => ({
+          value: c.id,
+          label: c.name,
+          // Se encuentra también por sus tipos de servicio.
+          keywords: serviceTypes.filter((t) => t.category_id === c.id).map((t) => t.name),
+        }))}
         hint={
           !defaultCategoryId && legacyCategory
             ? `Antes decía "${legacyCategory}": elige la categoría equivalente de la lista.`
-            : "Se sugiere sola al registrar un gasto de este proveedor."
+            : "Escribe para buscar. También la encuentras por un servicio (ej. drones) y ese servicio queda elegido."
         }
-      >
-        <option value="">Sin categoría</option>
-        {categories.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
-      </Select>
+      />
       <div className="flex flex-col gap-1">
-        <Select
+        <SearchSelect
           label="Tipo de servicio"
           name="service_type_id"
           value={serviceTypeId}
-          onChange={(e) => setServiceTypeId(e.target.value)}
+          onChange={setServiceTypeId}
           disabled={!categoryId}
+          emptyLabel={
+            !categoryId
+              ? "Elige primero la categoría"
+              : typesForCategory.length === 0
+                ? "Esta categoría no tiene tipos de servicio"
+                : "Sin especificar"
+          }
+          options={typesForCategory.map((t) => ({ value: t.id, label: t.name }))}
           hint={
             !defaultServiceTypeId && legacyServiceType
               ? `Antes decía "${legacyServiceType}".`
               : undefined
           }
-        >
-          <option value="">
-            {!categoryId
-              ? "Elige primero la categoría"
-              : typesForCategory.length === 0
-                ? "Esta categoría no tiene tipos de servicio"
-                : "Sin especificar"}
-          </option>
-          {typesForCategory.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </Select>
+        />
         <p className="text-xs text-brand-muted">
           ¿No está en la lista? Agrégalo en{" "}
           <Link href="/settings/service-types" className="text-brand-accent hover:underline" target="_blank">

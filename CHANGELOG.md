@@ -1,5 +1,19 @@
 # CHANGELOG — Mindfreak Manager
 
+## Listas con buscador (2026-10-03)
+
+- `components/ui/search-select.tsx` (`SearchSelect`): lista que al abrirse
+  permite escribir para filtrar (sin acentos ni mayúsculas, varias palabras),
+  con grupos, texto de detalle, palabras clave ("Incluye: …"), teclado
+  (flechas, Enter, Esc), modo controlado o libre (vuelve al valor inicial en
+  `form.reset`) y evento `change` en el input oculto para que otras partes
+  del formulario reaccionen.
+- Proveedor (crear/editar): Categoría y Tipo de servicio con buscador; la
+  categoría se encuentra también por el nombre de sus servicios y, si la
+  búsqueda coincide con un solo servicio, queda elegido ese tipo.
+- Gasto (crear/editar): Categoría, Proveedor y Tipo de servicio (agrupado
+  por categoría) con buscador.
+
 ## Tratamiento fiscal — fases 5 a 7: retenciones en gastos y pagos (2026-10-03)
 
 - Migración 074: en `expenses` tipo de servicio, comprobante (tipo + NCF) y

@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { updateExpenseAction, type ActionState } from "@/features/expenses/actions";
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
 import { Input, Select } from "@/components/ui/field";
+import { SearchSelect } from "@/components/ui/search-select";
 import { MoneyInput } from "@/components/ui/money-input";
 import { CurrencyExchangeFields } from "@/components/ui/currency-exchange-fields";
 import { Button } from "@/components/ui/button";
@@ -60,23 +61,22 @@ export function ExpenseEditForm({
       <Input label="Descripción" name="description" required defaultValue={expense.description} />
       <Input label="Fecha" name="expense_date" type="date" required defaultValue={expense.expense_date} />
 
-      <Select label="Categoría" name="category_id" defaultValue={expense.category_id ?? ""}>
-        <option value="">Sin categoría</option>
-        {categories.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
-      </Select>
+      <SearchSelect
+        label="Categoría"
+        name="category_id"
+        defaultValue={expense.category_id ?? ""}
+        emptyLabel="Sin categoría"
+        options={categories.map((c) => ({ value: c.id, label: c.name }))}
+      />
 
-      <Select label="Proveedor" name="supplier_id" defaultValue={expense.supplier_id ?? ""}>
-        <option value="">Sin proveedor (gasto general)</option>
-        {suppliers.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.name}
-          </option>
-        ))}
-      </Select>
+      <SearchSelect
+        label="Proveedor"
+        name="supplier_id"
+        defaultValue={expense.supplier_id ?? ""}
+        emptyLabel="Sin proveedor (gasto general)"
+        placeholder="Escribe el nombre del proveedor…"
+        options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
+      />
 
       <Select
         label="Banco del proveedor (opcional)"

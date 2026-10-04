@@ -516,3 +516,10 @@ pulsa el botón.
   FISCAL_OVERRIDE. Editar o recalcular quita el ajuste.
 - Tooltip: envuelve con span display:contents (no clona) para funcionar
   también con hijos que vienen de componentes de servidor.
+
+## Listas con buscador (2026-10-03)
+- `SearchSelect` para listas largas (categorías, tipos de servicio,
+  proveedores). La categoría del proveedor se busca también por sus tipos de
+  servicio (keywords). 57 de las 81 categorías no tienen tipos de servicio
+  (son administrativas o aún sin tipos): un proveedor de esas categorías
+  queda sin tipo y su gasto sale "Faltan datos" hasta elegir el tipo.
