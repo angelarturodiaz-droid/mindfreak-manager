@@ -544,3 +544,17 @@ pulsa el botón.
 - Si el informal **no cobró ITBIS**, registrar el gasto con impuesto 0 %: solo
   se retiene el ISR. El alquiler de **vivienda** no lleva ITBIS.
 
+## RST, factura electrónica y pagos al exterior (2026-10-04)
+
+- **Proveedor RST**: se le retiene el 100 % del ITBIS que facture. El ISR
+  queda en 0 hasta que el contador confirme.
+- **Proveedor empresa con factura electrónica (e-CF)**: si el proveedor está
+  marcado "Sí, emite e-CF" y el gasto es tipo **E31**, ya no se retiene el
+  30 % del ITBIS (Norma 02-2026). Con B01 se sigue reteniendo.
+- **Proveedor del extranjero**: se retiene ISR del 27 %. Si el tipo de
+  servicio es digital (software, suscripciones, hosting, publicidad en
+  Google/Meta), desde el 1-jul-2026 es 15 %. Lo retenido se reporta en el
+  609 (día 15). Si la plataforma cobra el total con tarjeta, la retención la
+  asume la empresa: confirmar con el contador cómo registrarlo. El ITBIS de
+  servicios del exterior todavía no lo calcula el sistema.
+

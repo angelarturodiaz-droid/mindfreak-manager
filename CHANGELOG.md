@@ -1,5 +1,22 @@
 # CHANGELOG — Mindfreak Manager
 
+## Reglas fiscales RST, e-CF y pagos al exterior (2026-10-04)
+
+- Datos: `supabase/data/2026-10-04_reglas_rst_ecf_exterior_dgii.sql`
+  (aplicado en producción), todo "por revisar con el contador":
+  - **Proveedor RST**: retención 100 % del ITBIS (Decreto 265-19), ISR 0
+    hasta confirmar (`RST_ITBIS`, prioridad 28).
+  - **NG 02-2026** (emitida 16-sep-2026): se activa
+    `PJ_SERV_PROFESIONAL_ECF` — sin retención del 30 % del ITBIS entre
+    empresas emisoras e-CF con comprobante E31.
+  - **Pagos al exterior**: ISR 27 % general (`EXT_GENERAL`) y servicios
+    digitales 27 % → 15 % desde 1-jul-2026 (`EXT_DIGITAL`, Ley 30-26).
+    Clasificación fiscal nueva **Servicio digital / software**, asignada a
+    Licencias y suscripciones, Hosting y dominios y a dos tipos nuevos
+    (Almacenamiento en la nube; Publicidad en plataformas digitales).
+  - El ITBIS por servicios del exterior (18 %) no se calcula: necesita un
+    cambio del motor fiscal, pendiente.
+
 ## Reglas fiscales para proveedores informales (2026-10-04)
 
 - Datos: `supabase/data/2026-10-04_reglas_proveedor_informal_dgii.sql`
