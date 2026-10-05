@@ -1,5 +1,17 @@
 # CHANGELOG — Mindfreak Manager
 
+## Reglas fiscales para proveedores informales (2026-10-04)
+
+- Datos: `supabase/data/2026-10-04_reglas_proveedor_informal_dgii.sql`
+  (aplicado en producción) — 9 reglas nuevas, prioridad 25, para persona
+  física / único dueño **informal** con comprobante B11: ITBIS retenido 100 %
+  (NG 05-19) e ISR según el servicio, con versión anterior y posterior a la
+  Ley 30-26 (1-jul-2026): servicios profesionales, alquileres y comisiones
+  10 % → 15 %; servicios técnicos 2 % → 15 % s/20 %; compra de bienes solo
+  ITBIS 100 %. Todas marcadas "por revisar con el contador". Lo no cubierto
+  (persona jurídica informal, seguridad, otros) sigue en "Proveedor informal
+  → Revisar". Sin cambios de código ni del motor fiscal.
+
 ## Sugerencia de categoría por el nombre del proveedor y tipos de servicio nuevos (2026-10-03)
 
 - `features/suppliers/suggest-classification.ts`: `suggestClassification`

@@ -531,3 +531,16 @@ pulsa el botón.
   nuevas; los tipos se nombran igual que en el catálogo.
 - 44 tipos de servicio nuevos para categorías de proveedores (archivo de
   datos del 3-oct). Las categorías administrativas siguen sin tipos.
+
+## Proveedores informales (2026-10-04)
+
+- A un proveedor **informal** (persona física sin RNC/no registrada) la
+  empresa le emite el **comprobante de compras B11** y le retiene el **100 %
+  del ITBIS** y el **ISR** que corresponda al servicio (alquiler, honorarios,
+  comisiones: 15 % desde el 1-jul-2026; servicios técnicos 15 % sobre el
+  20 %). El sistema ya lo calcula solo; la tarjeta fiscal avisa que la regla
+  está pendiente de revisar con el contador. Lo retenido se paga a la DGII:
+  ISR en el IR-17 (día 10) e ITBIS en el IT-1 (día 20) del mes siguiente.
+- Si el informal **no cobró ITBIS**, registrar el gasto con impuesto 0 %: solo
+  se retiene el ISR. El alquiler de **vivienda** no lleva ITBIS.
+
