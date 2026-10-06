@@ -57,7 +57,7 @@ export async function listBankTransactions(bankAccountId: string) {
   const { data, error } = await supabase
     .from("bank_transactions")
     .select(
-      "id, type, amount, transaction_date, description, reference, reconciled, project_id, client_id, supplier_id, category_id, expense_categories(name), customer_payment_id, supplier_payment_id, expense_id, transfer_group_id, counterpart_account_id, counterpart:bank_accounts!bank_transactions_counterpart_account_id_fkey(name), customer_payments(invoice_id, invoices(number)), expenses(description), supplier_payments(expense_id, expenses(description))",
+      "id, type, amount, exchange_rate, transaction_date, description, reference, reconciled, system_concept, related_source_type, related_source_id, project_id, client_id, supplier_id, category_id, expense_categories(name), customer_payment_id, supplier_payment_id, expense_id, transfer_group_id, counterpart_account_id, counterpart:bank_accounts!bank_transactions_counterpart_account_id_fkey(name), customer_payments(invoice_id, invoices(number)), expenses(description), supplier_payments(expense_id, expenses(description))",
     )
     .eq("bank_account_id", bankAccountId)
     .order("transaction_date", { ascending: false })

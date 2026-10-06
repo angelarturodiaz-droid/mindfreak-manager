@@ -122,3 +122,20 @@ export function computeFx(i: FxInput): FxResult {
     missingRate: null,
   };
 }
+
+/**
+ * Transferencia entre una cuenta en moneda base y otra en moneda extranjera
+ * (paso 4). Misma fórmula que public.create_bank_transfer (migración 078).
+ * `amount` sale de la cuenta origen; `received` entra en la destino; `ref` =
+ * tasa del día (1 extranjera = X base). Diferencia positiva = desfavorable.
+ */
+export function computeTransferFx(i: { fromIsBase: boolean; amount: number; received: number; ref: number }) {
+  const estimated = i.ref > 0 && i.amount > 0 ? r2(i.fromIsBase ? i.amount / i.ref : i.amount * i.ref) : null;
+  const effective =
+    i.amount > 0 && i.received > 0 ? r6(i.fromIsBase ? i.amount / i.received : i.received / i.amount) : null;
+  const difference =
+    i.ref > 0 && i.amount > 0 && i.received > 0
+      ? r2(i.fromIsBase ? i.amount - i.received * i.ref : i.amount * i.ref - i.received)
+      : null;
+  return { estimated, effective, difference };
+}

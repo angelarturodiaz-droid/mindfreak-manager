@@ -24,6 +24,7 @@ import { toggleBankAccountActiveAction, toggleReconciledAction } from "@/feature
 import { hasPermission } from "@/lib/auth/permissions";
 import { ManualTransactionForm } from "./manual-transaction-form";
 import { TransferForm } from "./transfer-form";
+import { getFxContext } from "@/features/currencies/queries";
 import { BankAccountEditForm } from "./bank-account-edit-form";
 import { listBankCatalog } from "@/features/bank-catalog/queries";
 import { ConfirmButton } from "@/components/ui/confirm-button";
@@ -132,7 +133,7 @@ export default async function BankAccountDetailPage({
   }
   if (!account) notFound();
 
-  const [transactions, otherAccounts, canCreate, canReconcile, hasTx, bankCatalog, categories, company] = await Promise.all([
+  const [transactions, otherAccounts, canCreate, canReconcile, hasTx, bankCatalog, categories, company, fxContext] = await Promise.all([
     listBankTransactions(id),
     listOtherActiveAccounts(id),
     hasPermission("banks.create"),
@@ -141,6 +142,7 @@ export default async function BankAccountDetailPage({
     listBankCatalog(),
     listCategoryOptions(),
     getCompany(),
+    getFxContext(),
   ]);
 
   const isCard = account.type === "CREDIT_CARD";
@@ -159,6 +161,40 @@ export default async function BankAccountDetailPage({
     runningBalance:
       Number(account.current_balance) - effects.slice(0, i).reduce((acc, e) => acc + e, 0),
   }));
+
+  // Operaciones de esta cuenta a las que se les puede ligar una comisión
+  // (multimoneda V5, paso 4) y etiqueta de las comisiones ya ligadas.
+  const feeLinkMap = new Map<string, { label: string; href: string | null }>();
+  for (const t of transactions) {
+    const date = formatDate(t.transaction_date);
+    const amt = formatMoney(Math.abs(Number(t.amount)), account.currency);
+    if (t.customer_payment_id) {
+      const p = relationRow<{ invoice_id: string; invoices: unknown }>(t.customer_payments);
+      const n = p ? relationRow<{ number: string }>(p.invoices)?.number : null;
+      feeLinkMap.set(`customer_payment:${t.customer_payment_id}`, {
+        label: `Cobro factura ${n ?? ""} · ${date} · ${amt}`,
+        href: p ? `/invoices/${p.invoice_id}` : null,
+      });
+    } else if (t.supplier_payment_id) {
+      const sp = relationRow<{ expense_id: string; expenses: unknown }>(t.supplier_payments);
+      const d = sp ? relationRow<{ description: string }>(sp.expenses)?.description : null;
+      feeLinkMap.set(`supplier_payment:${t.supplier_payment_id}`, {
+        label: `Pago: ${d ?? "proveedor"} · ${date} · ${amt}`,
+        href: sp?.expense_id ? `/expenses/${sp.expense_id}` : null,
+      });
+    } else if (t.type === "TRANSFER" && t.transfer_group_id) {
+      const other = relationName(t.counterpart);
+      feeLinkMap.set(`bank_transfer:${t.transfer_group_id}`, {
+        label: `Transferencia ${Number(t.amount) < 0 ? "a" : "desde"} ${other ?? "otra cuenta"} · ${date} · ${amt}`,
+        href: t.counterpart_account_id ? `/banks/${t.counterpart_account_id}` : null,
+      });
+    }
+  }
+  const feeLinks = [...feeLinkMap.entries()].slice(0, 40).map(([value, v]) => ({ value, label: v.label }));
+  const feeOrigin = (t: TransactionRow) =>
+    t.system_concept === "BANK_FEE" && t.related_source_type && t.related_source_id
+      ? (feeLinkMap.get(`${t.related_source_type}:${t.related_source_id}`) ?? { label: "Comisión de una operación", href: null })
+      : null;
 
   const typeFilter = ["INCOME", "EXPENSE", "TRANSFER"].includes(filters.type ?? "") ? filters.type : undefined;
   const recFilter = filters.rec === "no" ? "no" : filters.rec === "si" ? "si" : undefined;
@@ -218,6 +254,9 @@ export default async function BankAccountDetailPage({
               <span className="text-xs text-brand-muted">
                 {TYPE_LABELS[t.type] ?? t.type}
                 {t.reference ? ` · Ref. ${t.reference}` : ""}
+                {t.type === "TRANSFER" && account.currency !== company.base_currency && Number(t.exchange_rate) !== 1
+                  ? ` · Tasa ${Number(t.exchange_rate)}`
+                  : ""}
               </span>
             </span>
           </div>
@@ -226,7 +265,18 @@ export default async function BankAccountDetailPage({
     },
     {
       header: "Origen",
-      accessor: (t) => <TransactionOrigin t={t} />,
+      accessor: (t) => {
+        const fee = feeOrigin(t);
+        if (!fee) return <TransactionOrigin t={t} />;
+        const text = `Comisión de: ${fee.label.split(" · ")[0]}`;
+        return fee.href ? (
+          <Link href={fee.href} className="line-clamp-2 block max-w-[11rem] break-words text-brand-accent hover:underline">
+            {text}
+          </Link>
+        ) : (
+          <span className="text-brand-muted">{text}</span>
+        );
+      },
     },
     {
       header: "Monto",
@@ -400,6 +450,7 @@ export default async function BankAccountDetailPage({
                 categories={categories}
                 accountCurrency={account.currency}
                 baseCurrency={company.base_currency}
+                feeLinks={feeLinks}
               />
             </div>
           </details>
@@ -420,6 +471,7 @@ export default async function BankAccountDetailPage({
                 fromCurrency={account.currency}
                 baseCurrency={company.base_currency}
                 otherAccounts={otherAccounts}
+                rates={fxContext.rates}
               />
             </div>
           </details>

@@ -139,11 +139,43 @@ export async function createManualTransactionAction(
 ): Promise<ActionState> {
   await requirePermission("banks.create");
 
+  // Multimoneda V5 (paso 4): comisión cobrada después y relacionada con un
+  // pago, cobro o transferencia de ESTA cuenta ("tipo:id", opcional).
+  const related = parseFeeLink(String(formData.get("related") ?? ""));
+  const type = String(formData.get("type") ?? "INCOME");
+  if (related === "invalid") return { error: "La operación relacionada no es válida. Recarga la página." };
+  if (related && type !== "EXPENSE") {
+    return { error: "Solo un gasto (comisión) se puede relacionar con un pago, cobro o transferencia." };
+  }
+  let categoryInput = String(formData.get("category_id") ?? "");
+  if (related) {
+    const supabaseCheck = await createSupabaseClient();
+    const column = FEE_LINK_COLUMN[related.type];
+    const { data: own } = await supabaseCheck
+      .from("bank_transactions")
+      .select("id")
+      .eq("bank_account_id", bankAccountId)
+      .eq(column, related.id)
+      .limit(1);
+    if (!own || own.length === 0) {
+      return { error: "La operación relacionada no es de esta cuenta. Elige una de la lista." };
+    }
+    // Sin categoría elegida: Comisiones bancarias.
+    if (!categoryInput) {
+      const { data: cat } = await supabaseCheck
+        .from("expense_categories")
+        .select("id")
+        .ilike("name", "comisiones bancarias")
+        .limit(1);
+      categoryInput = cat?.[0]?.id ?? "";
+    }
+  }
+
   const parsed = manualTransactionSchema.safeParse({
-    type: String(formData.get("type") ?? "INCOME"),
+    type,
     transaction_date: String(formData.get("transaction_date") ?? ""),
     amount: String(formData.get("amount") ?? "0"),
-    category_id: String(formData.get("category_id") ?? ""),
+    category_id: categoryInput,
     description: String(formData.get("description") ?? ""),
     reference: String(formData.get("reference") ?? ""),
     exchange_rate: formData.get("exchange_rate") ? String(formData.get("exchange_rate")) : undefined,
@@ -203,6 +235,9 @@ export async function createManualTransactionAction(
       category_id: parsed.data.category_id || null,
       reference: parsed.data.reference || null,
       overdraft_confirmed: overdraftConfirmed(formData),
+      ...(related
+        ? { system_concept: "BANK_FEE", related_source_type: related.type, related_source_id: related.id }
+        : {}),
     })
     .select("id")
     .single();
@@ -213,7 +248,7 @@ export async function createManualTransactionAction(
     action: "CREATE",
     entityType: "bank_transaction",
     entityId: inserted.id,
-    newValues: parsed.data,
+    newValues: related ? { ...parsed.data, related_source_type: related.type, related_source_id: related.id } : parsed.data,
   });
 
   revalidatePath(`/banks/${bankAccountId}`);
@@ -224,6 +259,25 @@ export async function createManualTransactionAction(
     successId: Date.now(),
   };
 }
+
+const FEE_LINK_COLUMN = {
+  customer_payment: "customer_payment_id",
+  supplier_payment: "supplier_payment_id",
+  bank_transfer: "transfer_group_id",
+} as const;
+type FeeLinkType = keyof typeof FEE_LINK_COLUMN;
+
+/** "tipo:uuid" del selector "Comisión de…" → objeto, null (vacío) o "invalid". */
+function parseFeeLink(value: string): { type: FeeLinkType; id: string } | null | "invalid" {
+  if (!value) return null;
+  const [type, id] = value.split(":");
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!(type in FEE_LINK_COLUMN) || !uuid.test(id ?? "")) return "invalid";
+  return { type: type as FeeLinkType, id };
+}
+
+/** Campo numérico opcional del formulario: vacío = no se envía. */
+const optNum = (v: FormDataEntryValue | null) => (v && String(v).trim() !== "" ? String(v) : undefined);
 
 /**
  * Transferencia entre dos cuentas propias. Toda la lógica (dos filas,
@@ -242,7 +296,11 @@ export async function createTransferAction(
     transaction_date: String(formData.get("transaction_date") ?? ""),
     amount: String(formData.get("amount") ?? "0"),
     description: String(formData.get("description") ?? ""),
-    exchange_rate: formData.get("exchange_rate") ? String(formData.get("exchange_rate")) : undefined,
+    exchange_rate: optNum(formData.get("exchange_rate")),
+    to_amount: optNum(formData.get("to_amount")),
+    fee: optNum(formData.get("fee")),
+    reference_rate: optNum(formData.get("reference_rate")),
+    reference_rate_source: String(formData.get("reference_rate_source") ?? "") || undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -260,6 +318,10 @@ export async function createTransferAction(
     p_description: parsed.data.description || null,
     p_exchange_rate: parsed.data.exchange_rate ?? null,
     p_confirm_overdraft: overdraftConfirmed(formData),
+    p_to_amount: parsed.data.to_amount ?? null,
+    p_fee: parsed.data.fee || null,
+    p_reference_rate: parsed.data.reference_rate ?? null,
+    p_reference_rate_source: parsed.data.reference_rate_source ?? null,
   });
 
   if (error) {
@@ -271,8 +333,12 @@ export async function createTransferAction(
     if (error.message.includes("exchange_rate_required")) {
       return {
         error:
-          "Falta la tasa de cambio. Esta transferencia es entre cuentas de monedas distintas (pesos y dólares): escribe la tasa del banco, por ejemplo 59.50 pesos por 1 dólar, y el sistema calcula cuánto entra en la otra cuenta.",
+          "Falta cuánto entró en la cuenta destino. Esta transferencia es entre cuentas de monedas distintas: escribe el monto que realmente recibió la otra cuenta (lo que dice su estado de cuenta).",
       };
+    }
+    if (error.message.includes("invalid_amount")) {
+      const i = error.message.indexOf("invalid_amount:");
+      return { error: error.message.slice(i + 15).trim() };
     }
     if (error.message.includes("unsupported_currencies")) {
       return {
@@ -293,12 +359,18 @@ export async function createTransferAction(
     .in("id", [fromAccountId, parsed.data.to_bank_account_id]);
   const from = pair?.find((a) => a.id === fromAccountId);
   const to = pair?.find((a) => a.id === parsed.data.to_bank_account_id);
+  const fromCur = from?.currency ?? "DOP";
+  const received =
+    from && to && from.currency !== to.currency && parsed.data.to_amount
+      ? ` (entraron ${formatMoney(parsed.data.to_amount, to.currency)})`
+      : "";
+  const fee = parsed.data.fee ? ` La comisión de ${formatMoney(parsed.data.fee, fromCur)} quedó registrada aparte.` : "";
   return {
     error: null,
     successTitle: "Transferencia realizada",
-    success: `Se transfirieron ${formatMoney(parsed.data.amount, from?.currency ?? "DOP")}${
+    success: `Se transfirieron ${formatMoney(parsed.data.amount, fromCur)}${
       from && to ? ` de ${from.name} a ${to.name}` : ""
-    }. Los saldos de las dos cuentas ya están actualizados.`,
+    }${received}. Los saldos de las dos cuentas ya están actualizados.${fee}`,
     successId: Date.now(),
   };
 }

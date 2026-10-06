@@ -25,8 +25,8 @@ export const BUTTON_HINTS: Record<string, string> = {
   "Importar CSV": "Carga varios registros de una vez desde un archivo CSV.",
   "Agregar línea": "Agrega un servicio o producto a la lista.",
   "Agregar contacto": "Agrega una persona de contacto de este cliente.",
-  "Agregar movimiento": "Registra una entrada o salida de dinero manual en la cuenta.",
-  "Transferir": "Mueve dinero entre dos de tus cuentas. No cuenta como ingreso ni gasto.",
+  "Agregar movimiento": "Registra una entrada o salida de dinero manual en la cuenta. Si es una comisión que el banco cobró después, puedes ligarla al pago, cobro o transferencia.",
+  "Transferir": "Mueve dinero entre dos de tus cuentas. No cuenta como ingreso ni gasto. Entre monedas distintas pide cuánto entró realmente en la otra cuenta; la comisión del banco se registra aparte.",
   "Personalizar": "Elige qué tarjetas ver en el tablero y en qué orden.",
   "Subir logo": "Sube el logo que sale en PDFs, correos y la encuesta.",
 

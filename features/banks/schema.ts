@@ -76,4 +76,11 @@ export const transferSchema = z.object({
   // Solo si las cuentas tienen monedas distintas: unidades de moneda base
   // por 1 unidad de la otra moneda (ej. 59.50 RD$ por US$).
   exchange_rate: z.coerce.number().positive("La tasa de cambio debe ser mayor a 0 (ej. 59.50).").optional(),
+  // Multimoneda V5 (paso 4): lo que realmente entró en la cuenta destino
+  // (moneda de esa cuenta), comisión del banco de origen y tasa del día
+  // (informativa). Todos opcionales; la base de datos valida y calcula.
+  to_amount: z.coerce.number().positive("Lo que entró en la cuenta destino debe ser mayor a 0.").optional(),
+  fee: z.coerce.number().min(0, "La comisión no puede ser negativa.").optional(),
+  reference_rate: z.coerce.number().positive("La tasa del día debe ser mayor a 0.").optional(),
+  reference_rate_source: z.string().trim().max(40).optional(),
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useOverdraftConfirmAction } from "@/components/ui/overdraft-confirm";
 import Link from "next/link";
 import { Plus } from "lucide-react";
@@ -8,6 +9,7 @@ import { Input, Select } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 import { todayISO } from "@/lib/utils/dates";
+import { FIELD_HINTS } from "@/lib/ui/field-hints";
 
 const initialState: ActionState = { error: null };
 
@@ -16,6 +18,7 @@ export function ManualTransactionForm({
   categories,
   accountCurrency,
   baseCurrency,
+  feeLinks = [],
 }: {
   bankAccountId: string;
   /** Moneda de la cuenta; si no es la moneda base se pide la tasa. */
@@ -23,16 +26,24 @@ export function ManualTransactionForm({
   baseCurrency: string;
   /** Catálogo de Configuración > Categorías (mismo para ingresos y egresos). */
   categories: { id: string; name: string }[];
+  /** Pagos, cobros y transferencias recientes de esta cuenta, para ligar una comisión ("tipo:id"). */
+  feeLinks?: { value: string; label: string }[];
 }) {
   const createWithId = createManualTransactionAction.bind(null, bankAccountId);
   // Éxito: aviso corto y el formulario queda en blanco (key). Sin fondos: ventana.
   const [state, formAction, pending, dialogs, formKey] = useOverdraftConfirmAction(createWithId, initialState, {
     successAs: "toast",
   });
+  const [type, setType] = useState("INCOME");
+  const [seenKey, setSeenKey] = useState(formKey);
+  if (seenKey !== formKey) {
+    setSeenKey(formKey);
+    setType("INCOME");
+  }
 
   return (
     <form key={formKey} action={formAction} className="flex flex-wrap items-end gap-2">
-      <Select label="Tipo" name="type" defaultValue="INCOME">
+      <Select label="Tipo" name="type" value={type} onChange={(e) => setType(e.target.value)}>
         <option value="INCOME">Ingreso</option>
         <option value="EXPENSE">Gasto</option>
       </Select>
@@ -65,6 +76,23 @@ export function ManualTransactionForm({
           className="w-44"
           hint="Para convertir este movimiento a pesos en los reportes."
         />
+      )}
+      {type === "EXPENSE" && feeLinks.length > 0 && (
+        <Select
+          label="¿Comisión de una operación? (opcional)"
+          name="related"
+          defaultValue=""
+          className="w-72"
+          info={FIELD_HINTS.feeLink}
+          hint="Si el banco cobró después una comisión por un pago, cobro o transferencia."
+        >
+          <option value="">No, es un gasto suelto</option>
+          {feeLinks.map((l) => (
+            <option key={l.value} value={l.value}>
+              {l.label}
+            </option>
+          ))}
+        </Select>
       )}
       <Button type="submit" loading={pending} icon={<Plus size={14} />}>
         Agregar movimiento

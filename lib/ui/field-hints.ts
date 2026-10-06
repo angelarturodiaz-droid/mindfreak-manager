@@ -47,6 +47,10 @@ export const FIELD_HINTS = {
     "Diferencias muy pequeñas (hasta este monto, en moneda funcional) entre lo esperado y lo que el banco debitó se registran como redondeo y no como diferencia. Ej.: 1.00 = hasta un peso.",
   foreignPayment:
     "La cuenta está en otra moneda que el documento. El documento (gasto o factura) baja por el monto en su moneda; la cuenta se mueve solo por lo que el banco realmente debitó o acreditó, en la moneda de la cuenta. Si el banco cobró comisión, se registra aparte como Comisiones bancarias. La tasa efectiva sale de esos dos montos; la diferencia con la tasa de referencia es solo informativa (no es ganancia ni pérdida contable).",
+  transferReceived:
+    "Cuando las dos cuentas están en monedas distintas, escribe lo que realmente entró en la cuenta destino (su estado de cuenta). Cada cuenta se mueve solo en su moneda; la tasa efectiva sale de los dos montos. La tasa del día es opcional y solo sirve para comparar (diferencia informativa, no es ganancia ni pérdida contable).",
+  feeLink:
+    "Si el banco cobró una comisión días después de un pago, cobro o transferencia, elígelo aquí: la comisión queda ligada a esa operación y en la categoría Comisiones bancarias (si no eliges otra). No cambia el monto de la operación original.",
   currencyCatalog:
     "Las monedas que se pueden elegir al crear cuentas, cotizaciones, facturas y gastos. Desactivar una moneda solo la quita de las listas: lo ya registrado no cambia.",
 } as const;

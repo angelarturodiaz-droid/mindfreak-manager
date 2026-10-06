@@ -605,3 +605,19 @@ pulsa el botón.
   todos los botones de Monedas y tasas (Guardar configuración, Agregar
   moneda, Guardar tasa, Activar/Desactivar, Borrar) explican qué hacen.
 
+## Transferencias con lo que realmente entró y comisión (2026-10-06)
+
+- Transferir entre cuentas de monedas distintas: escribe lo que sale de tu
+  cuenta y **cuánto entró realmente** en la otra (su estado de cuenta). El
+  sistema calcula la tasa efectiva. La tasa del día es opcional y solo
+  sirve para comparar (diferencia informativa, no es ganancia ni pérdida).
+- **Comisión del banco** al transferir (opcional): va aparte en la cuenta
+  de origen, en "Comisiones bancarias", ligada a la transferencia. Lo
+  transferido no cambia.
+- **Comisión cobrada después**: Movimiento manual → tipo Gasto → "¿Comisión
+  de una operación?" → elige el pago, cobro o transferencia de esa cuenta.
+  Queda ligada (en Origen dice "Comisión de: …") y, si no eliges categoría,
+  en Comisiones bancarias.
+- Entre cuentas de la misma moneda, entra lo mismo que sale; si el banco
+  cobró algo, va como comisión.
+

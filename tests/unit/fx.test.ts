@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeFx } from "@/features/currencies/fx";
+import { computeFx, computeTransferFx } from "@/features/currencies/fx";
 
 const base = { functionalCurrency: "DOP", tolerance: 1 };
 
@@ -73,5 +73,25 @@ describe("Multimoneda V5 — pago/cobro en moneda diferente (casos aprobados)", 
     const r = computeFx({ ...base, kind: "COBRO", documentCurrency: "USD", accountCurrency: "DOP", applied: 1000, accountAmount: 58799.5, referenceRateDocument: 58.8 });
     expect(r.roundingDifference).toBe(0.5);
     expect(r.informativeDifference).toBe(0);
+  });
+});
+
+describe("Multimoneda V5 — paso 4: transferencias con monto recibido", () => {
+  it("US$1,000 → RD$60,000 (ref 59.80): efectiva 60, diferencia −200 (favorable)", () => {
+    const r = computeTransferFx({ fromIsBase: false, amount: 1000, received: 60000, ref: 59.8 });
+    expect(r.effective).toBe(60);
+    expect(r.difference).toBe(-200);
+    expect(r.estimated).toBe(59800);
+  });
+  it("RD$59,500 → US$1,000 (ref 59.20): efectiva 59.50, diferencia +300 (desfavorable)", () => {
+    const r = computeTransferFx({ fromIsBase: true, amount: 59500, received: 1000, ref: 59.2 });
+    expect(r.effective).toBe(59.5);
+    expect(r.difference).toBe(300);
+    expect(r.estimated).toBe(1005.07);
+  });
+  it("sin tasa del día: hay tasa efectiva pero no diferencia", () => {
+    const r = computeTransferFx({ fromIsBase: true, amount: 5900, received: 100, ref: 0 });
+    expect(r.effective).toBe(59);
+    expect(r.difference).toBeNull();
   });
 });

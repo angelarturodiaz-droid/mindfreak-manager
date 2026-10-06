@@ -1,5 +1,31 @@
 # CHANGELOG — Mindfreak Manager
 
+## Multimoneda V5 — paso 4: transferencias con monto recibido y comisión (2026-10-06)
+
+- Migración **078** (aplicada en producción, md5 verificado):
+  `create_bank_transfer` con `p_to_amount` (lo que realmente entró en la
+  cuenta destino), `p_fee` (comisión del banco de origen → EXPENSE
+  `BANK_FEE`, Comisiones bancarias, `related_source_type = 'bank_transfer'`,
+  `related_source_id = transfer_group_id`, respeta la confirmación de
+  sobregiro), `p_reference_rate` y fuente (diferencia informativa en
+  Auditoría). Entre monedas, la tasa efectiva sale de los dos montos y se
+  guarda en el lado extranjero; sin monto recibido sigue funcionando con la
+  tasa como antes. En la misma moneda lo recibido debe ser igual a lo
+  enviado. Ahora devuelve el `transfer_group_id`. La versión anterior queda
+  `create_bank_transfer_old_063` sin permisos.
+- Pantalla *Transferir*: comisión opcional, recuadro "Transferencia entre
+  monedas" con tasa del día (editable), "¿Cuánto entró en …?", estimado,
+  tasa efectiva y diferencia informativa (`computeTransferFx` en
+  `features/currencies/fx.ts`, misma fórmula que la base).
+- *Movimiento manual*: en un gasto, "¿Comisión de una operación?" liga la
+  comisión a un pago, cobro o transferencia de esa cuenta (validado en el
+  servidor; sin categoría → Comisiones bancarias). Bancos: Origen
+  "Comisión de: …" con enlace y tasa de las transferencias en la cuenta
+  extranjera.
+- Ayuda al pasar el mouse: *Transferir* y *Agregar movimiento* explican lo
+  nuevo; ⓘ en el recuadro y en el selector de la comisión.
+- Simulación PGlite: 19 comprobaciones OK; 88 pruebas unitarias.
+
 ## Multimoneda V5 — paso 3: cobros a clientes en moneda diferente (2026-10-05)
 
 - Migración **077** (aplicada en producción, md5 de la función verificado):

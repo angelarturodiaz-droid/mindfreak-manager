@@ -678,15 +678,16 @@ const SECTIONS: Section[] = [
             <>La cuenta de origen tiene que tener fondos (o sobregiro autorizado y confirmado); si no, la transferencia no se registra en ninguna de las dos cuentas.</>,
             <>Una transferencia <strong>no es ingreso ni gasto</strong>: solo mueve tu propio dinero. Por eso el reporte de Ingresos y egresos la excluye por defecto.</>,
             <>Las dos partes quedan <strong>enlazadas</strong>: en la columna Origen de cada una verás <em>A Popular</em> o <em>Desde Banreservas</em>, con enlace a la otra cuenta.</>,
+            <><strong>Comisión del banco</strong> (opcional): lo que cobró el banco de origen por enviar. Se registra <strong>aparte</strong> en la cuenta de origen, en la categoría <em>Comisiones bancarias</em>, ligada a la transferencia (en Origen dice <em>Comisión de: Transferencia a …</em>). Lo transferido no cambia: sale RD$5,000 + RD$50 de comisión y entran RD$5,000.</>,
           ]}
         />
         <p className="text-sm font-medium text-brand-text">Transferencias entre monedas distintas (ej. pagar una tarjeta en dólares desde una cuenta en pesos):</p>
         <Bullets
           items={[
-            <>Al elegir una cuenta destino con otra moneda aparece el campo <strong>Tasa</strong>: cuántos pesos vale 1 dólar según tu banco (ej. <em>59.50</em>).</>,
-            <>Escribe en <strong>Monto que sale</strong> lo que se descuenta de la cuenta de origen, en su moneda. El sistema calcula y te muestra lo que entra en la otra cuenta antes de guardar. Ejemplo: sale <strong>RD$5,950.00</strong> a tasa 59.50 → entran <strong>US$100.00</strong> a la tarjeta.</>,
-            "También funciona al revés (de dólares a pesos): sale el monto en dólares y entra el equivalente en pesos.",
-            "Cada movimiento guarda su tasa, así los reportes convierten correctamente a pesos. Una de las dos cuentas debe estar en la moneda base de la empresa (pesos).",
+            <>Al elegir una cuenta destino con otra moneda aparece el recuadro <strong>Transferencia entre monedas</strong> con la <strong>tasa del día</strong> (la de Configuración → Monedas y tasas; opcional, solo para comparar) y el campo <strong>¿Cuánto entró en …?</strong>.</>,
+            <>Escribe en <strong>Monto que sale</strong> lo que se descontó de la cuenta de origen y en <strong>¿Cuánto entró?</strong> lo que realmente recibió la otra cuenta (su estado de cuenta). El sistema calcula la <strong>tasa efectiva</strong> con los dos montos. Ejemplo: sale <strong>US$1,000</strong> de Promerica y entran <strong>RD$60,000</strong> en Popular → tasa efectiva 1 USD = 60.00; con la tasa del día 59.80 la <strong>diferencia informativa</strong> es −RD$200 (verde: se recibió más valor). No es ganancia ni pérdida contable.</>,
+            "También funciona al revés (de pesos a dólares, por ejemplo para pagar una tarjeta en dólares): sale el monto en pesos y escribes los dólares que entraron.",
+            "Cada movimiento guarda su tasa (la efectiva), así los reportes convierten correctamente a pesos. Una de las dos cuentas debe estar en la moneda base de la empresa (pesos).",
             <><strong>Tarjetas con dos monedas</strong> (balance en pesos y en dólares): regístrala como <strong>dos tarjetas</strong>, una en DOP y otra en USD (ej. <em>Visa Popular DOP</em> y <em>Visa Popular USD</em>). Así cada balance lleva su propia deuda y límite, y pagas cada uno desde la cuenta que corresponda.</>,
           ]}
         />
@@ -710,7 +711,7 @@ const SECTIONS: Section[] = [
           <li>En Bancos, abre la cuenta y filtra por <strong>Sin conciliar</strong>.</li>
           <li>Por cada línea del estado de cuenta, busca el movimiento con la misma fecha y monto y haz clic en <strong>Marcar</strong>: pasa a <em>✓ Conciliado</em>.</li>
           <li>Lo que quede sin marcar en el sistema, investígalo (¿se registró de más o con otro monto?).</li>
-          <li>Lo que esté en el banco y no en el sistema (ej. una comisión), regístralo como <strong>Movimiento manual</strong> y márcalo.</li>
+          <li>Lo que esté en el banco y no en el sistema (ej. una comisión), regístralo como <strong>Movimiento manual</strong> y márcalo. Si es una comisión que el banco cobró días después por un pago, cobro o transferencia, elige el tipo <strong>Gasto</strong> y en <strong>¿Comisión de una operación?</strong> la operación: queda ligada a ella y en <em>Comisiones bancarias</em>.</li>
           <li>Al terminar, el balance del sistema debe coincidir con el saldo final del estado de cuenta.</li>
         </ol>
         <p className="text-sm text-brand-muted">

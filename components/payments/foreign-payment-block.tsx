@@ -14,7 +14,7 @@ import { formatMoney } from "@/lib/utils/money";
 export type RateHistory = Record<string, { date: string; rate: number; source: string }[]>;
 
 /** Última tasa registrada en o antes de la fecha. */
-function rateOn(history: RateHistory, code: string, date: string) {
+export function rateOn(history: RateHistory, code: string, date: string) {
   return (history[code] ?? []).find((r) => r.date <= date) ?? null;
 }
 
