@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { currencyCodeSchema } from "@/features/currencies/schema";
 
 export const ACCOUNT_TYPES = ["BANK", "CREDIT_CARD"] as const;
 
@@ -17,7 +18,8 @@ export const bankAccountSchema = z.object({
   name: z.string().trim().min(1, "El nombre es requerido"),
   bank_name: z.string().trim().optional().or(z.literal("")),
   account_number_masked: z.string().trim().optional().or(z.literal("")),
-  currency: z.enum(["DOP", "USD"]).default("DOP"),
+  // Código ISO de 3 letras; se valida contra el catálogo de monedas activas en la acción.
+  currency: currencyCodeSchema.default("DOP"),
   type: z.enum(ACCOUNT_TYPES).default("BANK"),
   opening_balance: z.coerce.number().default(0),
   opening_balance_date: z.string().min(1, "La fecha es requerida"),

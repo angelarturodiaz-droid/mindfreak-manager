@@ -11,7 +11,7 @@ export type BankRuleResult =
   | { kind: "error"; message: string }
   | { kind: "confirm"; message: string };
 
-const CODES = ["insufficient_funds", "credit_insufficient", "overdraft_confirmation_required"] as const;
+const CODES = ["insufficient_funds", "credit_insufficient", "overdraft_confirmation_required", "currency_mismatch"] as const;
 
 export function parseBankRuleError(message: string | null | undefined): BankRuleResult | null {
   if (!message) return null;
@@ -42,7 +42,7 @@ export type MoneyActionState = {
 };
 
 /** Título de la ventana según el mensaje de la base de datos. */
-const TITLES = ["Fondos insuficientes", "Crédito insuficiente"];
+const TITLES = ["Fondos insuficientes", "Crédito insuficiente", "Moneda diferente"];
 
 /**
  * Convierte el error de Supabase en el estado de un formulario: sobregiro

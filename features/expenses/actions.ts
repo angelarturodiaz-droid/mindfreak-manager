@@ -1,5 +1,6 @@
 "use server";
 
+import { accountCurrencyMismatch, currencyError } from "@/features/currencies/queries";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
@@ -114,7 +115,9 @@ export async function createExpenseAction(
   const parsed = parseExpenseForm(formData);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
-  }
+  }  const currencyProblem = await currencyError(parsed.data.currency, null);
+  if (currencyProblem) return { error: currencyProblem };
+
 
   const { tax, total } = calculateExpenseTotals(parsed.data);
   const companyId = await getPrimaryCompanyId();
@@ -138,6 +141,9 @@ export async function createExpenseAction(
   // el paso de "Registrar pago" cuando el usuario ya sabe desde dónde se
   // pagó. Sin cuenta, sigue naciendo pendiente como siempre.
   if (parsed.data.bank_account_id) {
+    // Regla de oro del banco (V5): la cuenta debe estar en la moneda del gasto.
+    const mismatch = await accountCurrencyMismatch(parsed.data.bank_account_id, parsed.data.currency, "pago");
+    if (mismatch) return { error: null, blockedTitle: "Moneda diferente", blocked: mismatch };
     const { data, error } = await supabase.rpc("create_card_expense", {
       p_company_id: companyId,
       p_category_id: parsed.data.category_id || null,
@@ -239,13 +245,15 @@ export async function updateExpenseAction(
   // y ya no se edita libremente — mismo principio que cotizaciones/facturas).
   const { data: existing, error: fetchError } = await supabase
     .from("expenses")
-    .select("status, paid_amount")
+    .select("status, paid_amount, currency")
     .eq("id", expenseId)
     .single();
   if (fetchError || !existing) return { error: "Gasto no encontrado." };
   if (existing.status !== "PENDING" || existing.paid_amount > 0) {
     return { error: "Este gasto ya no se puede editar (tiene pagos registrados)." };
   }
+  const currencyProblem = await currencyError(parsed.data.currency, existing.currency);
+  if (currencyProblem) return { error: currencyProblem };
 
   const { tax, total } = calculateExpenseTotals(parsed.data);
 

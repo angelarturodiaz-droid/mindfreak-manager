@@ -558,3 +558,18 @@ pulsa el botón.
   asume la empresa: confirmar con el contador cómo registrarlo. El ITBIS de
   servicios del exterior todavía no lo calcula el sistema.
 
+## Monedas y tasas (2026-10-05)
+
+- **Configuración → Monedas y tasas**: qué monedas usa la empresa (DOP y USD;
+  se pueden agregar otras), la tasa de referencia de cada día escrita siempre
+  como "1 USD = 58.80 DOP", de dónde sale (Banco Central/DGII, banco, manual
+  u otra) y la tolerancia de redondeo (1.00 peso al inicio).
+- Cada operación guardará la tasa que usó: cambiar o borrar una tasa no
+  cambia nada ya registrado.
+- **Regla del banco**: una cuenta solo se mueve en su moneda. Mientras no
+  esté el pago/cobro en moneda diferente, si eliges una cuenta de otra
+  moneda sale "Moneda diferente" y no se guarda: usa una cuenta en la misma
+  moneda del documento.
+- La moneda funcional (Organización) no se puede cambiar cuando ya hay
+  documentos o movimientos.
+

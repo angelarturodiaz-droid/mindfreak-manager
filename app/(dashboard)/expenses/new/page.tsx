@@ -8,6 +8,7 @@ import {
 } from "@/features/expenses/queries";
 import { listBankCatalog } from "@/features/bank-catalog/queries";
 import { getCompany } from "@/features/settings/queries";
+import { listCurrencyOptions } from "@/features/currencies/queries";
 import { safeReturnTo } from "@/lib/utils/return-to";
 import { getAccountFunds } from "@/features/banks/queries";
 import { listServiceTypeOptions } from "@/features/supplier-service-types/queries";
@@ -20,7 +21,7 @@ export default async function NewExpensePage({
   searchParams: Promise<{ project_id?: string; supplier_id?: string; return_to?: string }>;
 }) {
   const params = await searchParams;
-  const [categories, suppliers, projects, accounts, bankCatalog, company, funds, serviceTypes, canSeeRules] = await Promise.all([
+  const [categories, suppliers, projects, accounts, bankCatalog, company, funds, serviceTypes, canSeeRules, currencyOptions] = await Promise.all([
     listExpenseCategories(),
     listActiveSuppliers(),
     listProjectsForSelect(),
@@ -30,6 +31,7 @@ export default async function NewExpensePage({
     getAccountFunds(),
     listServiceTypeOptions(),
     hasPermission("settings.manage"),
+    listCurrencyOptions(),
   ]);
 
   // Gasto creado desde un proyecto o proveedor: se preselecciona y, al
@@ -68,6 +70,7 @@ export default async function NewExpensePage({
         accounts={accounts}
         bankCatalog={bankCatalog}
         baseCurrency={company.base_currency}
+        currencies={currencyOptions.map((c) => c.code)}
         defaultProjectId={project?.id}
         defaultSupplierId={supplier?.id}
         returnTo={returnTo}

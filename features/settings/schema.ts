@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { currencyCodeSchema } from "@/features/currencies/schema";
 
 export const organizationSchema = z.object({
   legal_name: z.string().trim().optional().or(z.literal("")),
@@ -6,7 +7,8 @@ export const organizationSchema = z.object({
   address: z.string().trim().optional().or(z.literal("")),
   phone: z.string().trim().optional().or(z.literal("")),
   email: z.string().trim().email("Correo inválido").optional().or(z.literal("")),
-  base_currency: z.enum(["DOP", "USD"]).default("DOP"),
+  // Código ISO de 3 letras; se valida contra el catálogo de monedas activas en la acción.
+  base_currency: currencyCodeSchema.default("DOP"),
 });
 
 export const systemSchema = z.object({

@@ -222,8 +222,10 @@ export default async function BanksPage({
     params.kind === "SAVINGS" || params.kind === "CHECKING" || params.kind === "CARD" ? params.kind : undefined;
   // Vista: tarjetas (por defecto) o lista compacta para muchas cuentas.
   const listView = params.view === "lista";
-  const currencyFilter = params.currency === "DOP" || params.currency === "USD" ? params.currency : undefined;
   const accounts = await listBankAccountsWithBalance();
+  // Monedas con cuentas (catálogo de Configuración → Monedas y tasas).
+  const accountCurrencies = Array.from(new Set(accounts.map((a) => a.currency))).sort();
+  const currencyFilter = params.currency && accountCurrencies.includes(params.currency) ? params.currency : undefined;
   const allBanks = accounts.filter((a) => a.type !== "CREDIT_CARD");
   const cards = accounts.filter((a) => a.type === "CREDIT_CARD");
   const showBanks = kindFilter !== "CARD";
@@ -385,7 +387,7 @@ export default async function BanksPage({
                 label="Filtrar por moneda"
                 items={[
                   { key: "all", label: "Todas las monedas", active: !currencyFilter, href: listHref("/banks", { kind: noResults ? undefined : kindFilter, view }) },
-                  ...(["DOP", "USD"] as const).map((c) => ({
+                  ...accountCurrencies.map((c) => ({
                     key: c,
                     label: c,
                     count: (kindFilter === "CARD" ? cards : kindFilter ? allBanks.filter((a) => a.account_kind === kindFilter) : accounts).filter(

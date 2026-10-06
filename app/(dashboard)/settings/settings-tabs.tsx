@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/settings/organization", label: "Organización" },
   { href: "/settings/tax-rates", label: "Impuestos" },
+  { href: "/settings/currencies", label: "Monedas y tasas" },
   { href: "/settings/expense-categories", label: "Categorías de gastos" },
   { href: "/settings/service-types", label: "Tipos de servicio" },
   { href: "/settings/fiscal-rules", label: "Reglas fiscales" },

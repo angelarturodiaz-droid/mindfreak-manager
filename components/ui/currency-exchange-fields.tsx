@@ -11,10 +11,13 @@ import { Select, Input } from "./field";
  */
 export function CurrencyExchangeFields({
   baseCurrency,
+  currencies,
   defaultCurrency,
   defaultExchangeRate = 1,
 }: {
   baseCurrency: string;
+  /** Monedas activas del catálogo (Configuración → Monedas y tasas). */
+  currencies: string[];
   defaultCurrency?: string;
   defaultExchangeRate?: number;
 }) {
@@ -30,8 +33,11 @@ export function CurrencyExchangeFields({
         onChange={(e) => setCurrency(e.target.value)}
         className="flex-1"
       >
-        <option value="DOP">DOP</option>
-        <option value="USD">USD</option>
+        {Array.from(new Set([baseCurrency, ...currencies, ...(defaultCurrency ? [defaultCurrency] : [])])).map((c) => (
+          <option key={c} value={c}>
+            {c}
+          </option>
+        ))}
       </Select>
       {needsRate ? (
         <Input
@@ -43,6 +49,7 @@ export function CurrencyExchangeFields({
           required
           defaultValue={defaultExchangeRate}
           hint={`1 ${currency} = ? ${baseCurrency}`}
+          info={`Cuántos ${baseCurrency} vale 1 ${currency} para este documento. Las tasas de referencia del día están en Configuración → Monedas y tasas.`}
           className="flex-1"
         />
       ) : (

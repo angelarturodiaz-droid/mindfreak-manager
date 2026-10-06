@@ -1,5 +1,6 @@
 "use server";
 
+import { currencyError } from "@/features/currencies/queries";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
@@ -45,7 +46,9 @@ export async function createBankAccountAction(
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
-  }
+  }  const currencyProblem = await currencyError(parsed.data.currency, null);
+  if (currencyProblem) return { error: currencyProblem };
+
   if (parsed.data.type === "BANK" && !parsed.data.account_kind) {
     return { error: "Elige el tipo de cuenta: Ahorros o Corriente." };
   }

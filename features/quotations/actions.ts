@@ -1,5 +1,6 @@
 "use server";
 
+import { currencyError } from "@/features/currencies/queries";
 import { todayISO } from "@/lib/utils/dates";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -91,7 +92,9 @@ export async function createQuotationAction(
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
-  }
+  }  const currencyProblem = await currencyError(parsed.data.currency, null);
+  if (currencyProblem) return { error: currencyProblem };
+
 
   const companyId = await getPrimaryCompanyId();
   const number = await generateQuotationNumber(companyId);
@@ -212,6 +215,9 @@ export async function updateQuotationHeaderAction(
   }
 
   const supabase = await createSupabaseClient();
+  const { data: current } = await supabase.from("quotations").select("currency").eq("id", quotationId).single();
+  const currencyProblem = await currencyError(parsed.data.currency, current?.currency);
+  if (currencyProblem) return { error: currencyProblem };
   const { error } = await supabase
     .from("quotations")
     .update({

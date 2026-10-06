@@ -1,5 +1,6 @@
 "use server";
 
+import { currencyError } from "@/features/currencies/queries";
 import { todayISO } from "@/lib/utils/dates";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -97,7 +98,9 @@ export async function createInvoiceAction(
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
-  }
+  }  const currencyProblem = await currencyError(parsed.data.currency, null);
+  if (currencyProblem) return { error: currencyProblem };
+
 
   const supabase = await createSupabaseClient();
   let clientId = parsed.data.client_id || null;

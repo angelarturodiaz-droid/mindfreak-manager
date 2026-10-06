@@ -19,6 +19,7 @@ import { UploadDocumentForm } from "@/components/documents/upload-document-form"
 import { listDocuments } from "@/features/documents/queries";
 import { listBankCatalog } from "@/features/bank-catalog/queries";
 import { getCompany } from "@/features/settings/queries";
+import { listCurrencyOptions } from "@/features/currencies/queries";
 import { getAccountFunds } from "@/features/banks/queries";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -65,7 +66,7 @@ export default async function ExpenseDetailPage({
   }
   if (!expense) notFound();
 
-  const [categories, suppliers, projects, canEdit, canPay, payments, bankAccounts, documents, bankCatalog, company, funds, serviceTypes, canSeeRules, canApprove] =
+  const [categories, suppliers, projects, canEdit, canPay, payments, bankAccounts, documents, bankCatalog, company, funds, serviceTypes, canSeeRules, canApprove, currencyOptions] =
     await Promise.all([
       listExpenseCategories(),
       listActiveSuppliers(),
@@ -81,6 +82,7 @@ export default async function ExpenseDetailPage({
       listServiceTypeOptions(),
       hasPermission("settings.manage"),
       hasPermission("expenses.approve"),
+      listCurrencyOptions(),
     ]);
 
   const category = expense.expense_categories as { name: string } | null;
@@ -316,6 +318,7 @@ export default async function ExpenseDetailPage({
                   projects={projects}
                   bankCatalog={bankCatalog}
                   baseCurrency={company.base_currency}
+                  currencies={currencyOptions.map((c) => c.code)}
                   serviceTypes={serviceTypes}
                   canSeeRules={canSeeRules}
                 />

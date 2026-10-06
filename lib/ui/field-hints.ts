@@ -37,4 +37,14 @@ export const FIELD_HINTS = {
     "Cambiar a mano lo retenido cuando el contador indica algo distinto a la regla. Pide un motivo y queda registrado quién lo hizo. Solo para quien aprueba gastos.",
   paymentAmountNet:
     "Se propone lo que falta por pagarle al proveedor ya descontadas las retenciones. Puedes pagar menos si es un abono, pero no más.",
+  functionalCurrency:
+    "La moneda en la que la empresa lleva sus números (reportes, dashboard, equivalentes). Las demás monedas se convierten a esta con la tasa de referencia. No se puede cambiar cuando ya hay documentos o movimientos.",
+  referenceRate:
+    "El precio de una moneda en tu moneda funcional para un día: 1 USD = 58.80 DOP. Sirve de referencia para comparar lo que el banco realmente cobró o pagó. Cada operación guarda la tasa que usó; cambiar o borrar una tasa aquí no modifica operaciones pasadas.",
+  rateSource:
+    "De dónde sale la tasa de referencia: la publicada por el Banco Central/DGII, la que te da tu banco, una que escribes a mano u otra fuente.",
+  roundingTolerance:
+    "Diferencias muy pequeñas (hasta este monto, en moneda funcional) entre lo esperado y lo que el banco debitó se registran como redondeo y no como diferencia. Ej.: 1.00 = hasta un peso.",
+  currencyCatalog:
+    "Las monedas que se pueden elegir al crear cuentas, cotizaciones, facturas y gastos. Desactivar una moneda solo la quita de las listas: lo ya registrado no cambia.",
 } as const;

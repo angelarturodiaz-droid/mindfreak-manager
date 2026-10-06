@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { currencyCodeSchema } from "@/features/currencies/schema";
 
 export const QUOTATION_STATUSES = [
   "DRAFT",
@@ -16,7 +17,8 @@ export const quotationHeaderSchema = z.object({
   contact_id: z.string().uuid().optional().or(z.literal("")),
   issue_date: z.string().min(1, "La fecha es requerida"),
   valid_until: z.string().optional().or(z.literal("")),
-  currency: z.enum(["DOP", "USD"]).default("DOP"),
+  // Código ISO de 3 letras; se valida contra el catálogo de monedas activas en la acción.
+  currency: currencyCodeSchema.default("DOP"),
   exchange_rate: z.coerce.number().positive().default(1),
   terms: z.string().trim().optional().or(z.literal("")),
   payment_terms_id: z.string().uuid().optional().or(z.literal("")),

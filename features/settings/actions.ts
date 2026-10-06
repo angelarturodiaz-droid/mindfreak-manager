@@ -5,6 +5,7 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
 import { organizationSchema, systemSchema } from "./schema";
+import { currencyError, hasFinancialActivity } from "@/features/currencies/queries";
 
 export type ActionState = { error: string | null };
 
@@ -36,6 +37,14 @@ export async function updateOrganizationAction(
 
   const companyId = await getPrimaryCompanyId();
   const supabase = await createSupabaseClient();
+  const { data: current } = await supabase.from("companies").select("base_currency").eq("id", companyId).single();
+  if (current && parsed.data.base_currency !== current.base_currency) {
+    if (await hasFinancialActivity()) {
+      return { error: "Ya hay documentos o movimientos registrados: la moneda funcional no se puede cambiar." };
+    }
+    const currencyProblem = await currencyError(parsed.data.base_currency);
+    if (currencyProblem) return { error: currencyProblem };
+  }
   const { error } = await supabase
     .from("companies")
     .update({

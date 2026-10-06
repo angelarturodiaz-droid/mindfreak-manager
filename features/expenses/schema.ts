@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { currencyCodeSchema } from "@/features/currencies/schema";
 
 export const EXPENSE_STATUSES = [
   "PENDING",
@@ -19,7 +20,8 @@ export const expenseSchema = z.object({
   // calcula el monto de impuesto sobre el subtotal.
   tax_percent: z.coerce.number().min(0).default(0),
   payment_method: z.string().optional().or(z.literal("")),
-  currency: z.enum(["DOP", "USD"]).default("DOP"),
+  // Código ISO de 3 letras; se valida contra el catálogo de monedas activas en la acción.
+  currency: currencyCodeSchema.default("DOP"),
   exchange_rate: z.coerce.number().positive().default(1),
   // Informativo, nunca afecta ningún cálculo: a qué banco del PROVEEDOR se
   // le depositó (distinto de bank_account_id, que es siempre la cuenta

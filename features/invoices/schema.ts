@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { currencyCodeSchema } from "@/features/currencies/schema";
 
 export const INVOICE_STATUSES = [
   "DRAFT",
@@ -21,7 +22,8 @@ export const invoiceHeaderSchema = z.object({
   // si hay comisión (> 0); el servidor lo resuelve contra el catálogo de
   // Configuración → Impuestos igual que cualquier línea.
   commission_tax_rate_id: z.string().uuid().optional().or(z.literal("")),
-  currency: z.enum(["DOP", "USD"]).default("DOP"),
+  // Código ISO de 3 letras; se valida contra el catálogo de monedas activas en la acción.
+  currency: currencyCodeSchema.default("DOP"),
   exchange_rate: z.coerce.number().positive().default(1),
   billing_type: z.enum(["REGULAR", "ELECTRONIC"]).default("REGULAR"),
   ncf: z.string().trim().optional().or(z.literal("")),

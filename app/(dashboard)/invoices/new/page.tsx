@@ -1,5 +1,6 @@
 import { listActiveClients, listProjectsForSelect } from "@/features/invoices/queries";
 import { getCompany } from "@/features/settings/queries";
+import { listCurrencyOptions } from "@/features/currencies/queries";
 import { listPaymentTerms } from "@/features/payment-terms/queries";
 import { listTaxRates } from "@/features/tax-rates/queries";
 import { NewInvoiceForm } from "./new-invoice-form";
@@ -15,12 +16,13 @@ export default async function NewInvoicePage({
   const { client, project_id, return_to } = await searchParams;
   // Desde un proyecto: el proyecto viene elegido y "volver" regresa a él.
   const returnTo = safeReturnTo(return_to);
-  const [clients, projects, company, paymentTerms, taxRates] = await Promise.all([
+  const [clients, projects, company, paymentTerms, taxRates, currencyOptions] = await Promise.all([
     listActiveClients(),
     listProjectsForSelect(),
     getCompany(),
     listPaymentTerms(),
     listTaxRates(),
+    listCurrencyOptions(),
   ]);
 
   return (
@@ -46,6 +48,7 @@ export default async function NewInvoicePage({
         defaultProjectId={projects.some((p) => p.id === project_id) ? project_id : undefined}
         returnTo={returnTo}
         baseCurrency={company.base_currency}
+        currencies={currencyOptions.map((c) => c.code)}
         paymentTerms={paymentTerms}
         taxRates={taxRates}
       />

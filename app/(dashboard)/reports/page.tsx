@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { listCurrencies } from "@/features/currencies/queries";
 import { redirect } from "next/navigation";
 import { ArrowDownCircle, AlertTriangle, Clock, CalendarClock, CalendarDays, CalendarRange } from "lucide-react";
 import { hasPermission } from "@/lib/auth/permissions";
@@ -99,6 +100,20 @@ type Params = {
   origin?: string;
   direction?: string;
 };
+
+/** Monedas del catálogo (Configuración → Monedas y tasas), incluidas las inactivas: puede haber documentos en ellas. */
+async function CurrencyOptions() {
+  const currencies = await listCurrencies(false);
+  return (
+    <>
+      {currencies.map((c) => (
+        <option key={c.code} value={c.code}>
+          {c.code}
+        </option>
+      ))}
+    </>
+  );
+}
 
 export default async function ReportsPage({
   searchParams,
@@ -673,8 +688,7 @@ async function ReceivableReport({ params }: { params: Params }) {
         </Select>
         <Select label="Moneda" name="currency" defaultValue={params.currency ?? ""}>
           <option value="">Todas</option>
-          <option value="DOP">DOP</option>
-          <option value="USD">USD</option>
+          <CurrencyOptions />
         </Select>
       </FilterBar>
 
@@ -750,8 +764,7 @@ async function PayableReport({ params }: { params: Params }) {
         </Select>
         <Select label="Moneda" name="currency" defaultValue={params.currency ?? ""}>
           <option value="">Todas</option>
-          <option value="DOP">DOP</option>
-          <option value="USD">USD</option>
+          <CurrencyOptions />
         </Select>
       </FilterBar>
 
@@ -830,8 +843,7 @@ async function SalesByClientReport({ params }: { params: Params }) {
         </Select>
         <Select label="Moneda" name="currency" defaultValue={params.currency ?? ""}>
           <option value="">Todas</option>
-          <option value="DOP">DOP</option>
-          <option value="USD">USD</option>
+          <CurrencyOptions />
         </Select>
       </FilterBar>
 

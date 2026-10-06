@@ -15,6 +15,7 @@ type TaxRate = { id: string; name: string; rate: number; is_default: boolean };
 export function NewQuotationForm({
   clients,
   baseCurrency,
+  currencies,
   paymentTerms,
   taxRates,
   defaultClientId,
@@ -23,6 +24,7 @@ export function NewQuotationForm({
   /** Cliente preseleccionado (ej. al venir desde el detalle del cliente). */
   defaultClientId?: string;
   baseCurrency: string;
+  currencies: string[];
   paymentTerms: { id: string; name: string; credit_days: number }[];
   taxRates: TaxRate[];
 }) {
@@ -84,7 +86,7 @@ export function NewQuotationForm({
         ))}
       </Select>
 
-      <CurrencyExchangeFields baseCurrency={baseCurrency} />
+      <CurrencyExchangeFields baseCurrency={baseCurrency} currencies={currencies} />
 
       <Textarea label="Condiciones / Notas" name="terms" rows={3} />
 

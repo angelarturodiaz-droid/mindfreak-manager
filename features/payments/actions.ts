@@ -1,5 +1,6 @@
 "use server";
 
+import { accountCurrencyMismatch } from "@/features/currencies/queries";
 import { revalidatePath } from "next/cache";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
@@ -54,6 +55,11 @@ export async function registerPaymentAction(
     .eq("id", invoiceId)
     .single();
   if (invError || !invoice) return { error: "Factura no encontrada." };
+
+  // Regla de oro del banco (V5): hasta habilitar los cobros en moneda
+  // diferente, la cuenta debe estar en la moneda de la factura.
+  const mismatch = await accountCurrencyMismatch(parsed.data.bank_account_id, invoice.currency, "cobro");
+  if (mismatch) return { error: mismatch };
 
   const { error } = await supabase.rpc("register_customer_payment", {
     p_company_id: companyIds[0],
@@ -130,6 +136,10 @@ export async function registerSupplierPaymentAction(
     .eq("id", expenseId)
     .single();
   if (expError || !expense) return { error: "Gasto no encontrado." };
+
+  // Regla de oro del banco (V5): la cuenta debe estar en la moneda del gasto.
+  const mismatch = await accountCurrencyMismatch(parsed.data.bank_account_id, expense.currency, "pago");
+  if (mismatch) return { error: null, blockedTitle: "Moneda diferente", blocked: mismatch };
 
   const payeeBankName = String(formData.get("payee_bank_name") ?? "").trim() || null;
 

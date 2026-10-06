@@ -461,6 +461,8 @@ const SECTIONS: Section[] = [
         <Bullets
           items={[
             "Cada cobro o pago se registra en la moneda en la que ocurrió, con su tasa de cambio congelada si es distinta a la moneda base de la empresa.",
+            <><strong>Regla del banco: cada cuenta se mueve solo en su moneda.</strong> Una cuenta en dólares solo recibe o paga dólares. Por ahora, si eliges una cuenta en una moneda distinta a la de la factura o el gasto (ej. pagar un gasto en pesos desde la cuenta en dólares), el sistema no deja guardar y muestra <em>&ldquo;Moneda diferente&rdquo;</em>: usa una cuenta en la misma moneda. Los pagos y cobros en moneda diferente (con tasa efectiva y comisión) llegan con el módulo multimoneda.</>,
+            <><strong>Configuración → Monedas y tasas</strong>: monedas que usa la empresa (DOP y USD activas; se pueden agregar otras como EUR), la <strong>tasa de referencia</strong> de cada día (siempre &ldquo;1 USD = 58.80 DOP&rdquo;), de dónde sale (Banco Central/DGII, banco, manual u otra) y la <strong>tolerancia de redondeo</strong>. Cada operación guarda su propia tasa: cambiar o borrar una tasa no modifica lo ya registrado. La moneda funcional (la de los reportes) se elige en Organización y ya no se puede cambiar cuando hay documentos.</>,
             "No se puede cobrar o pagar más del balance pendiente.",
             "La pantalla Cobros y pagos resume lo cobrado y pagado en el mes, el neto del mes y lo cobrado en el año, con dos pestañas: Cobros de clientes y Pagos a proveedores.",
             "Cada cobro o pago genera su movimiento en Bancos con la categoría asignada automáticamente (ver Bancos).",

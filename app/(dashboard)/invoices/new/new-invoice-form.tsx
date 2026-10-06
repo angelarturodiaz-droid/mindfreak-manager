@@ -24,6 +24,7 @@ export function NewInvoiceForm({
   clients,
   projects,
   baseCurrency,
+  currencies,
   paymentTerms,
   taxRates,
   defaultClientId,
@@ -39,6 +40,7 @@ export function NewInvoiceForm({
   /** A dónde volver (se conserva al crear la factura). */
   returnTo?: string | null;
   baseCurrency: string;
+  currencies: string[];
   paymentTerms: { id: string; name: string; credit_days: number }[];
   taxRates: TaxRate[];
 }) {
@@ -175,7 +177,7 @@ export function NewInvoiceForm({
         ))}
       </Select>
 
-      <CurrencyExchangeFields baseCurrency={baseCurrency} />
+      <CurrencyExchangeFields baseCurrency={baseCurrency} currencies={currencies} />
 
       <Select
         label="Tipo de facturación"

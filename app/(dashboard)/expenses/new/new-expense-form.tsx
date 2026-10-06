@@ -30,6 +30,7 @@ export function NewExpenseForm({
   accounts,
   bankCatalog,
   baseCurrency,
+  currencies,
   defaultProjectId = "",
   defaultSupplierId = "",
   returnTo = null,
@@ -43,6 +44,7 @@ export function NewExpenseForm({
   accounts: Account[];
   bankCatalog: Option[];
   baseCurrency: string;
+  currencies: string[];
   /** Viene de un proyecto o proveedor: se preselecciona y al guardar/cancelar se vuelve ahí. */
   defaultProjectId?: string;
   defaultSupplierId?: string;
@@ -216,7 +218,7 @@ export function NewExpenseForm({
 
       {accountId && <AccountFundsHint funds={funds[accountId]} />}
 
-      <CurrencyExchangeFields baseCurrency={baseCurrency} />
+      <CurrencyExchangeFields baseCurrency={baseCurrency} currencies={currencies} />
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
 

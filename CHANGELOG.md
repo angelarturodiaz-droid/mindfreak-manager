@@ -1,5 +1,35 @@
 # CHANGELOG — Mindfreak Manager
 
+## Multimoneda V5 — paso 1: Monedas y tasas (2026-10-05)
+
+- Migración **075** (aplicada en producción): catálogo `currencies` (DOP y
+  USD activas, EUR inactiva; RLS con `settings.manage`), `currency_settings`
+  (fuente de la tasa de referencia BCRD/DGII · Manual · Banco · Otra y
+  tolerancia de redondeo, inicial 1.00), `exchange_rates` con las fuentes
+  nuevas, `source_name`, `notes` y validaciones (tasa > 0, código ISO).
+- **Regla de oro del banco** en la base: trigger
+  `trg_bank_transaction_a_currency_guard` — un movimiento solo puede estar
+  en la moneda de su cuenta (`currency_mismatch`, corre antes de la regla de
+  fondos). Producción tenía 0 movimientos en otra moneda. Desde ahora un
+  pago/cobro/gasto pagado desde una cuenta en otra moneda se bloquea con la
+  ventana "Moneda diferente" (antes restaba pesos como dólares) hasta los
+  pasos 2–3 de V5.
+- **Configuración → Monedas y tasas** (`app/(dashboard)/settings/currencies`,
+  `features/currencies`): configuración, tasas de referencia por fecha
+  (última tasa por moneda, guardar/reemplazar, borrar, historial) y
+  catálogo de monedas (agregar, activar/desactivar; no se desactiva la
+  funcional ni una moneda con cuentas activas). Todo auditado.
+- Las listas fijas `DOP|USD` se reemplazan por el catálogo: esquemas de
+  cotizaciones, facturas, gastos, cuentas y organización
+  (`currencyCodeSchema` + validación en el servidor `currencyError`),
+  selector de moneda de documentos (`CurrencyExchangeFields`), nueva cuenta,
+  filtros de Reportes y de Bancos.
+- Organización: la moneda funcional ya no se puede cambiar cuando hay
+  documentos o movimientos (pantalla y servidor).
+- `getReferenceRate(moneda, fecha)` listo para los pasos 2–3.
+- Pruebas: `tests/unit/currencies.test.ts` (7) y simulación de la migración
+  con PGlite (idempotencia, guardia de moneda, regla de fondos, tasas).
+
 ## Reglas fiscales RST, e-CF y pagos al exterior (2026-10-04)
 
 - Datos: `supabase/data/2026-10-04_reglas_rst_ecf_exterior_dgii.sql`

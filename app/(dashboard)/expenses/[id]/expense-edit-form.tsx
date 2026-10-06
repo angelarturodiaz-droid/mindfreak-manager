@@ -23,6 +23,7 @@ export function ExpenseEditForm({
   projects,
   bankCatalog,
   baseCurrency,
+  currencies,
   serviceTypes = [],
   canSeeRules = false,
 }: {
@@ -48,6 +49,7 @@ export function ExpenseEditForm({
   projects: ProjectOption[];
   bankCatalog: Option[];
   baseCurrency: string;
+  currencies: string[];
   serviceTypes?: ServiceTypeOption[];
   canSeeRules?: boolean;
 }) {
@@ -133,6 +135,7 @@ export function ExpenseEditForm({
 
       <CurrencyExchangeFields
         baseCurrency={baseCurrency}
+        currencies={currencies}
         defaultCurrency={expense.currency}
         defaultExchangeRate={expense.exchange_rate}
       />

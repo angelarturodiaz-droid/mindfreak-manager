@@ -11,7 +11,16 @@ import { AccountKindFields, CardFavorField } from "@/components/banks/account-ru
 
 const initialState: ActionState = { error: null };
 
-export function NewBankAccountForm({ bankCatalog }: { bankCatalog: { id: string; name: string }[] }) {
+export function NewBankAccountForm({
+  bankCatalog,
+  currencies,
+  defaultCurrency,
+}: {
+  bankCatalog: { id: string; name: string }[];
+  /** Monedas activas (Configuración → Monedas y tasas). */
+  currencies: { code: string; name: string }[];
+  defaultCurrency: string;
+}) {
   const [state, formAction, pending] = useActionState(createBankAccountAction, initialState);
   const [type, setType] = useState<"BANK" | "CREDIT_CARD">("BANK");
   const isCard = type === "CREDIT_CARD";
@@ -55,11 +64,14 @@ export function NewBankAccountForm({ bankCatalog }: { bankCatalog: { id: string;
         <Select
           label="Moneda"
           name="currency"
-          defaultValue="DOP"
-          hint="No se puede cambiar después de crearla."
+          defaultValue={defaultCurrency}
+          hint="No se puede cambiar después de crearla. El saldo de la cuenta solo se mueve en esta moneda."
         >
-          <option value="DOP">DOP (pesos)</option>
-          <option value="USD">USD (dólares)</option>
+          {currencies.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.code} ({c.name})
+            </option>
+          ))}
         </Select>
         <MoneyInput
           label={isCard ? "Deuda inicial" : "Balance inicial"}
