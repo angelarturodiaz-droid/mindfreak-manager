@@ -24,6 +24,7 @@ import {
   type FiscalAmounts,
 } from "@/components/fiscal/fiscal-breakdown";
 import { EXPENSE_FISCAL_REVIEW } from "@/features/fiscal/expense-labels";
+import { ForeignPaymentBlock, type RateHistory } from "@/components/payments/foreign-payment-block";
 
 const initialState: ActionState = { error: null };
 
@@ -46,6 +47,7 @@ export function RegisterSupplierPaymentForm({
   funds = {},
   fiscal = null,
   fiscalStatus = "NOT_EVALUATED",
+  fxContext,
 }: {
   expenseId: string;
   supplierId: string | null;
@@ -59,6 +61,8 @@ export function RegisterSupplierPaymentForm({
   /** Retenciones guardadas en el gasto (null si no hay): se explica el neto. */
   fiscal?: FiscalAmounts | null;
   fiscalStatus?: string;
+  /** Moneda funcional, tolerancia y tasas de referencia (pago en moneda diferente). */
+  fxContext: { functionalCurrency: string; tolerance: number; rates: RateHistory };
 }) {
   const registerWithIds = registerSupplierPaymentAction.bind(
     null,
@@ -70,13 +74,18 @@ export function RegisterSupplierPaymentForm({
     useOverdraftConfirmAction(registerWithIds, initialState);
   const [accountId, setAccountId] = useState("");
   const [amount, setAmount] = useState(balance);
+  const [paymentDate, setPaymentDate] = useState(todayISO());
   // Después de un pago exitoso el formulario vuelve a empezar.
   const [seenKey, setSeenKey] = useState(formKey);
   if (seenKey !== formKey) {
     setSeenKey(formKey);
     setAccountId("");
     setAmount(balance);
+    setPaymentDate(todayISO());
   }
+  const account = bankAccounts.find((b) => b.id === accountId);
+  // Cuenta en otra moneda que el gasto → bloque "Pago en moneda diferente".
+  const foreign = Boolean(account && account.currency !== currency);
 
   const paidSoFar = fiscal
     ? Math.max(0, Math.round((fiscal.netPayable - balance) * 100) / 100)
@@ -127,7 +136,8 @@ export function RegisterSupplierPaymentForm({
           name="payment_date"
           type="date"
           required
-          defaultValue={todayISO()}
+          value={paymentDate}
+          onChange={(e) => setPaymentDate(e.target.value)}
         />
         <MoneyInput
           label="Monto"
@@ -162,7 +172,7 @@ export function RegisterSupplierPaymentForm({
           </option>
           {bankAccounts.map((b) => (
             <option key={b.id} value={b.id}>
-              {b.name} ({b.bank_name})
+              {b.name} ({b.bank_name}){b.currency !== currency ? ` · ${b.currency}` : ""}
             </option>
           ))}
         </Select>
@@ -181,16 +191,29 @@ export function RegisterSupplierPaymentForm({
             </option>
           ))}
         </Select>
-        <Button type="submit" loading={pending}>
-          Registrar pago
-        </Button>
+        {account && foreign && (
+          <ForeignPaymentBlock
+            key={`${account.id}-${formKey}`}
+            documentCurrency={currency}
+            accountCurrency={account.currency}
+            accountName={account.name}
+            functionalCurrency={fxContext.functionalCurrency}
+            applied={amount}
+            date={paymentDate}
+            rates={fxContext.rates}
+            tolerance={fxContext.tolerance}
+          />
+        )}
         {accountId && (
           <AccountFundsHint
             funds={funds[accountId]}
-            amount={amount}
+            amount={foreign ? undefined : amount}
             amountCurrency={currency}
           />
         )}
+        <Button type="submit" loading={pending}>
+          Registrar pago
+        </Button>
         {state.error && (
           <p className="w-full text-sm text-brand-danger">{state.error}</p>
         )}

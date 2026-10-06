@@ -14,6 +14,7 @@ import { CurrencyExchangeFields } from "@/components/ui/currency-exchange-fields
 import { Button } from "@/components/ui/button";
 import { todayISO } from "@/lib/utils/dates";
 import { ExpenseFiscalFields } from "@/components/fiscal/expense-fiscal-fields";
+import { ForeignPaymentBlock, type RateHistory } from "@/components/payments/foreign-payment-block";
 
 const initialState: ActionState = { error: null };
 
@@ -21,7 +22,7 @@ type Option = { id: string; name: string };
 type SupplierOption = Option & { category_id?: string | null; service_type_id?: string | null };
 type ServiceTypeOption = { id: string; name: string; category_id: string; fiscal_classification_id: string | null };
 type ProjectOption = { id: string; number: string; name: string };
-type Account = { id: string; name: string; bank_name: string | null; type: string };
+type Account = { id: string; name: string; bank_name: string | null; type: string; currency: string };
 
 export function NewExpenseForm({
   categories,
@@ -37,6 +38,7 @@ export function NewExpenseForm({
   funds = {},
   serviceTypes = [],
   canSeeRules = false,
+  fxContext,
 }: {
   categories: Option[];
   suppliers: SupplierOption[];
@@ -54,6 +56,8 @@ export function NewExpenseForm({
   /** Tipos de servicio (para el tratamiento fiscal). */
   serviceTypes?: ServiceTypeOption[];
   canSeeRules?: boolean;
+  /** Moneda funcional, tolerancia y tasas de referencia (pago en moneda diferente). */
+  fxContext: { functionalCurrency: string; tolerance: number; rates: RateHistory };
 }) {
   const [state, formAction, pending, dialogs] = useOverdraftConfirmAction(createExpenseAction, initialState);
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -67,7 +71,14 @@ export function NewExpenseForm({
     defaultSupplier?.category_id ? defaultSupplier.name : null,
   );
 
+  // Neto a pagar y moneda (los calcula la tarjeta fiscal) y fecha del gasto,
+  // para el bloque "Pago en moneda diferente".
+  const [net, setNet] = useState<{ netPayable: number; currency: string } | null>(null);
+  const [expenseDate, setExpenseDate] = useState(todayISO());
   const isCard = paymentMethod === "CARD";
+  const account = accounts.find((a) => a.id === accountId);
+  const docCurrency = net?.currency ?? baseCurrency;
+  const foreign = Boolean(account && account.currency !== docCurrency);
   const relevantAccounts = accounts.filter((a) =>
     isCard ? a.type === "CREDIT_CARD" : a.type === "BANK",
   );
@@ -76,7 +87,14 @@ export function NewExpenseForm({
     <form action={formAction} className="max-w-md space-y-4">
       {returnTo && <input type="hidden" name="return_to" value={returnTo} />}
       <Input label="Descripción" name="description" required />
-      <Input label="Fecha" name="expense_date" type="date" required defaultValue={todayISO()} />
+      <Input
+        label="Fecha"
+        name="expense_date"
+        type="date"
+        required
+        value={expenseDate}
+        onChange={(e) => setExpenseDate(e.target.value)}
+      />
 
       <SearchSelect
         label="Categoría"
@@ -145,6 +163,7 @@ export function NewExpenseForm({
         suppliers={suppliers}
         defaults={{ supplierId: defaultSupplierId }}
         canSeeRules={canSeeRules}
+        onPreview={setNet}
       />
 
       <Select
@@ -179,7 +198,7 @@ export function NewExpenseForm({
             </option>
             {relevantAccounts.map((a) => (
               <option key={a.id} value={a.id}>
-                {a.name} {a.bank_name ? `(${a.bank_name})` : ""}
+                {a.name} {a.bank_name ? `(${a.bank_name})` : ""} · {a.currency}
               </option>
             ))}
           </Select>
@@ -209,7 +228,7 @@ export function NewExpenseForm({
             <option value="">Aún no lo sé (queda pendiente de pago)</option>
             {relevantAccounts.map((a) => (
               <option key={a.id} value={a.id}>
-                {a.name} {a.bank_name ? `(${a.bank_name})` : ""}
+                {a.name} {a.bank_name ? `(${a.bank_name})` : ""} · {a.currency}
               </option>
             ))}
           </Select>
@@ -219,6 +238,20 @@ export function NewExpenseForm({
       {accountId && <AccountFundsHint funds={funds[accountId]} />}
 
       <CurrencyExchangeFields baseCurrency={baseCurrency} currencies={currencies} />
+
+      {account && foreign && (
+        <ForeignPaymentBlock
+          key={account.id}
+          documentCurrency={docCurrency}
+          accountCurrency={account.currency}
+          accountName={account.name}
+          functionalCurrency={fxContext.functionalCurrency}
+          applied={net?.netPayable ?? 0}
+          date={expenseDate}
+          rates={fxContext.rates}
+          tolerance={fxContext.tolerance}
+        />
+      )}
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
 

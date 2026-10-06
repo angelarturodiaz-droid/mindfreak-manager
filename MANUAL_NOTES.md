@@ -573,3 +573,19 @@ pulsa el botón.
 - La moneda funcional (Organización) no se puede cambiar cuando ya hay
   documentos o movimientos.
 
+## Pago en moneda diferente (2026-10-05)
+
+- Si pagas un gasto en pesos desde una cuenta en dólares (o al revés), al
+  elegir la cuenta aparece "Pago en moneda diferente": escribe cuánto
+  debitó realmente el banco y, si hubo, la comisión. El gasto baja en su
+  moneda; la cuenta baja solo lo que debitó el banco en su moneda; la
+  comisión va aparte como "Comisiones bancarias".
+- La tasa efectiva la calcula el sistema. La "diferencia informativa" es
+  contra la tasa de referencia del día: positiva = salió más de lo esperado.
+  No es una ganancia ni una pérdida contable. Diferencias hasta la
+  tolerancia (RD$1.00) se guardan como redondeo.
+- Si no hay tasa registrada para ese día, se escribe en el recuadro (o en
+  Configuración → Monedas y tasas). Si se cambia la tasa sugerida, queda
+  marcada como manual con quién la cambió.
+- Los cobros de clientes en otra moneda todavía no (paso siguiente).
+

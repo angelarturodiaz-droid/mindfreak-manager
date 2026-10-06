@@ -1,5 +1,31 @@
 # CHANGELOG — Mindfreak Manager
 
+## Multimoneda V5 — paso 2: pagos a proveedores en moneda diferente (2026-10-05)
+
+- Migración **076** (aplicada en producción): columnas nuevas y opcionales
+  en `supplier_payments` (moneda y monto real del banco, comisión, moneda y
+  equivalente funcional, tasa efectiva y su moneda, tasa de referencia de la
+  cuenta y del documento, fuente, fecha, tasa cambiada a mano con quién y
+  la anterior, redondeo y diferencia informativa); en `bank_transactions`
+  `system_concept` (BANK_FEE) y relación con la operación de origen.
+- `fx_settlement()` en la base = `features/currencies/fx.ts` en la
+  pantalla: misma fórmula (casos aprobados de la V5 en
+  `tests/unit/fx.test.ts` y en la simulación PGlite de la migración).
+- `register_supplier_payment` y `create_card_expense` con parámetros
+  opcionales: misma moneda → igual que antes; moneda diferente → exige el
+  monto real del banco y la tasa de referencia, el movimiento sale en la
+  moneda de la cuenta y la comisión es otro movimiento (Comisiones
+  bancarias, ligado al pago). Las versiones anteriores quedan renombradas
+  `*_old_074` y sin permisos (se pueden borrar desde el SQL Editor).
+- Pantalla: bloque **"Pago en moneda diferente"**
+  (`components/payments/foreign-payment-block.tsx`) en *Registrar pago* del
+  gasto y en *Nuevo gasto* pagado al crearlo: tasa de referencia del día
+  (editable, queda marcada como manual), débito estimado, monto real,
+  comisión, tasa efectiva, diferencia informativa o redondeo y débito total.
+  Detalle del gasto: columna "Salió del banco". La tarjeta fiscal avisa el
+  neto (`onPreview`) sin cambiar el cálculo fiscal.
+- Los **cobros** en otra moneda siguen bloqueados hasta el paso 3.
+
 ## Multimoneda V5 — paso 1: Monedas y tasas (2026-10-05)
 
 - Migración **075** (aplicada en producción): catálogo `currencies` (DOP y

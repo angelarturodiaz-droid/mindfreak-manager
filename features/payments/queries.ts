@@ -41,7 +41,7 @@ export async function listPaymentsForExpense(expenseId: string) {
   const { data, error } = await supabase
     .from("supplier_payments")
     .select(
-      "id, payment_date, amount, method, reference, notes, payee_bank_name, bank_accounts(name, bank_name)",
+      "id, payment_date, amount, method, reference, notes, payee_bank_name, account_currency, account_amount, bank_fee_amount, effective_rate, effective_rate_currency, reference_rate, reference_rate_document, rate_manual_override, rounding_difference, informative_difference, functional_currency, bank_accounts(name, bank_name)",
     )
     .eq("expense_id", expenseId)
     .order("payment_date", { ascending: false });

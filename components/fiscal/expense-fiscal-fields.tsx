@@ -32,13 +32,20 @@ export function ExpenseFiscalFields({
   suppliers,
   defaults,
   canSeeRules = false,
+  onPreview,
 }: {
   serviceTypes: ServiceType[];
   categories: { id: string; name: string }[];
   suppliers: SupplierRef[];
   defaults?: { serviceTypeId?: string | null; documentType?: string | null; ncf?: string | null; supplierId?: string | null };
   canSeeRules?: boolean;
+  /** Avisa el neto a pagar y la moneda calculados (ej. para el pago en moneda diferente). */
+  onPreview?: (info: { netPayable: number; currency: string } | null) => void;
 }) {
+  const onPreviewRef = useRef(onPreview);
+  useEffect(() => {
+    onPreviewRef.current = onPreview;
+  }, [onPreview]);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const touchedRef = useRef(Boolean(defaults?.serviceTypeId));
   const initialType =
@@ -73,7 +80,8 @@ export function ExpenseFiscalFields({
         }
       }
       setSupplierId(sup);
-      setCurrency(String(fd.get("currency") ?? "DOP") || "DOP");
+      const formCurrency = String(fd.get("currency") ?? "DOP") || "DOP";
+      setCurrency(formCurrency);
       const id = ++request;
       setLoading(true);
       try {
@@ -88,6 +96,7 @@ export function ExpenseFiscalFields({
         if (id === request) {
           setPreview(res);
           setFailed(false);
+          onPreviewRef.current?.({ netPayable: res.netPayable, currency: formCurrency });
         }
       } catch {
         if (id === request) setFailed(true);

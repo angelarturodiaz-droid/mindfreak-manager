@@ -4,7 +4,7 @@ import { accountCurrencyMismatch } from "@/features/currencies/queries";
 import { revalidatePath } from "next/cache";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
-import { registerPaymentSchema } from "./schema";
+import { foreignPaymentError, foreignPaymentRpcParams, parseForeignPayment, registerPaymentSchema } from "./schema";
 import type { ReceiptPdfData } from "@/lib/pdf/receipt-document";
 import { bankRuleState, overdraftConfirmed, type MoneyActionState } from "@/lib/utils/bank-errors";
 import { formatMoney } from "@/lib/utils/money";
@@ -137,9 +137,10 @@ export async function registerSupplierPaymentAction(
     .single();
   if (expError || !expense) return { error: "Gasto no encontrado." };
 
-  // Regla de oro del banco (V5): la cuenta debe estar en la moneda del gasto.
-  const mismatch = await accountCurrencyMismatch(parsed.data.bank_account_id, expense.currency, "pago");
-  if (mismatch) return { error: null, blockedTitle: "Moneda diferente", blocked: mismatch };
+  // Multimoneda V5: si la cuenta está en otra moneda, llegan los datos del
+  // bloque "Pago en moneda diferente" (la base de datos recalcula todo).
+  const fx = parseForeignPayment(formData);
+  if (!fx.success) return { error: fx.error.issues[0]?.message ?? "Datos del pago en otra moneda inválidos." };
 
   const payeeBankName = String(formData.get("payee_bank_name") ?? "").trim() || null;
 
@@ -158,12 +159,15 @@ export async function registerSupplierPaymentAction(
     p_notes: parsed.data.notes || null,
     p_payee_bank_name: payeeBankName,
     p_confirm_overdraft: overdraftConfirmed(formData),
+    ...foreignPaymentRpcParams(fx.data),
   });
 
   if (error) {
     // Fondos insuficientes / sobregiro por confirmar (reglas de cuentas, migración 063)
     const rule = bankRuleState(error.message);
     if (rule) return rule;
+    const fxError = foreignPaymentError(error.message);
+    if (fxError) return { error: fxError };
     if (error.message.includes("amount_exceeds_balance")) {
       return {
         error: null,
@@ -183,14 +187,19 @@ export async function registerSupplierPaymentAction(
 
   const { data: account } = await supabase
     .from("bank_accounts")
-    .select("name")
+    .select("name, currency")
     .eq("id", parsed.data.bank_account_id)
     .single();
+  const foreign = account && account.currency !== expense.currency && fx.data.account_amount;
   return {
     error: null,
     successTitle: "Pago registrado",
     success: `Se registró el pago de ${formatMoney(parsed.data.amount, expense.currency)}${
       account ? ` desde ${account.name}` : ""
+    }${
+      foreign
+        ? ` (la cuenta bajó ${formatMoney(fx.data.account_amount! + (fx.data.bank_fee ?? 0), account.currency)}${fx.data.bank_fee ? ", comisión incluida" : ""})`
+        : ""
     }. Ya se ve en el gasto y en Bancos.`,
     successId: Date.now(),
   };

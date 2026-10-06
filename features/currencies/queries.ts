@@ -138,3 +138,23 @@ export async function accountCurrencyMismatch(
   const plural = kind === "pago" ? "Los pagos" : "Los cobros";
   return `La cuenta «${data.name}» está en ${data.currency} y el documento en ${documentCurrency}. ${plural} desde una cuenta en una moneda diferente estarán disponibles cuando se habilite el módulo multimoneda.`;
 }
+
+/**
+ * Datos para el bloque "Pago/Cobro en moneda diferente": moneda funcional,
+ * tolerancia de redondeo y tasas de referencia por moneda (recientes primero).
+ */
+export async function getFxContext(): Promise<{
+  functionalCurrency: string;
+  tolerance: number;
+  rates: Record<string, { date: string; rate: number; source: string }[]>;
+}> {
+  const supabase = await createClient();
+  const [{ data: company }, settings, list] = await Promise.all([
+    supabase.from("companies").select("base_currency").single(),
+    getCurrencySettings(),
+    listExchangeRates(500),
+  ]);
+  const rates: Record<string, { date: string; rate: number; source: string }[]> = {};
+  for (const r of list) (rates[r.currency_code] ??= []).push({ date: r.effective_date, rate: r.rate_to_base, source: r.source });
+  return { functionalCurrency: company?.base_currency ?? "DOP", tolerance: settings.rounding_tolerance, rates };
+}

@@ -136,7 +136,7 @@ export async function listActiveAccountsForSelect() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("bank_accounts")
-    .select("id, name, bank_name, type")
+    .select("id, name, bank_name, type, currency")
     .eq("is_active", true)
     .order("name");
   if (error) throw new Error(error.message);

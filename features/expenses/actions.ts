@@ -1,6 +1,7 @@
 "use server";
 
-import { accountCurrencyMismatch, currencyError } from "@/features/currencies/queries";
+import { currencyError } from "@/features/currencies/queries";
+import { foreignPaymentError, foreignPaymentRpcParams, parseForeignPayment } from "@/features/payments/schema";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
@@ -141,9 +142,10 @@ export async function createExpenseAction(
   // el paso de "Registrar pago" cuando el usuario ya sabe desde dónde se
   // pagó. Sin cuenta, sigue naciendo pendiente como siempre.
   if (parsed.data.bank_account_id) {
-    // Regla de oro del banco (V5): la cuenta debe estar en la moneda del gasto.
-    const mismatch = await accountCurrencyMismatch(parsed.data.bank_account_id, parsed.data.currency, "pago");
-    if (mismatch) return { error: null, blockedTitle: "Moneda diferente", blocked: mismatch };
+    // Multimoneda V5: cuenta en otra moneda → datos del bloque "Pago en
+    // moneda diferente" (la base de datos recalcula y valida todo).
+    const fx = parseForeignPayment(formData);
+    if (!fx.success) return { error: fx.error.issues[0]?.message ?? "Datos del pago en otra moneda inválidos." };
     const { data, error } = await supabase.rpc("create_card_expense", {
       p_company_id: companyId,
       p_category_id: parsed.data.category_id || null,
@@ -161,9 +163,13 @@ export async function createExpenseAction(
       p_payee_bank_name: parsed.data.payee_bank_name || null,
       p_confirm_overdraft: overdraftConfirmed(formData),
       p_fiscal: { ...fiscal.columns, snapshot: fiscal.columns.fiscal_snapshot },
+      ...foreignPaymentRpcParams(fx.data),
     });
     // Fondos insuficientes, crédito insuficiente o sobregiro por confirmar (migración 063)
-    if (error) return bankRuleState(error.message) ?? { error: error.message };
+    if (error) {
+      const fxError = foreignPaymentError(error.message);
+      return bankRuleState(error.message) ?? { error: fxError ?? error.message };
+    }
 
     await logAudit({
       companyId,

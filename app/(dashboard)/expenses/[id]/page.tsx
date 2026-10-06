@@ -19,7 +19,7 @@ import { UploadDocumentForm } from "@/components/documents/upload-document-form"
 import { listDocuments } from "@/features/documents/queries";
 import { listBankCatalog } from "@/features/bank-catalog/queries";
 import { getCompany } from "@/features/settings/queries";
-import { listCurrencyOptions } from "@/features/currencies/queries";
+import { getFxContext, listCurrencyOptions } from "@/features/currencies/queries";
 import { getAccountFunds } from "@/features/banks/queries";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -66,7 +66,7 @@ export default async function ExpenseDetailPage({
   }
   if (!expense) notFound();
 
-  const [categories, suppliers, projects, canEdit, canPay, payments, bankAccounts, documents, bankCatalog, company, funds, serviceTypes, canSeeRules, canApprove, currencyOptions] =
+  const [categories, suppliers, projects, canEdit, canPay, payments, bankAccounts, documents, bankCatalog, company, funds, serviceTypes, canSeeRules, canApprove, currencyOptions, fxContext] =
     await Promise.all([
       listExpenseCategories(),
       listActiveSuppliers(),
@@ -83,6 +83,7 @@ export default async function ExpenseDetailPage({
       hasPermission("settings.manage"),
       hasPermission("expenses.approve"),
       listCurrencyOptions(),
+      getFxContext(),
     ]);
 
   const category = expense.expense_categories as { name: string } | null;
@@ -100,6 +101,38 @@ export default async function ExpenseDetailPage({
       header: "Monto",
       className: "text-right",
       accessor: (p) => <span className="font-medium tabular-nums">{formatMoney(p.amount, expense.currency)}</span>,
+    },
+    {
+      // Multimoneda V5: pago desde una cuenta en otra moneda (o con comisión).
+      header: "Salió del banco",
+      className: "text-right",
+      accessor: (p) => {
+        const foreign = p.account_currency && p.account_currency !== expense.currency;
+        if (!foreign && !p.bank_fee_amount) return <span className="text-brand-muted">—</span>;
+        const fn = p.functional_currency ?? company.base_currency;
+        const diff = Number(p.informative_difference ?? 0) || Number(p.rounding_difference ?? 0);
+        return (
+          <span className="flex flex-col items-end text-xs">
+            <span className="font-medium tabular-nums text-brand-text">
+              {formatMoney(Number(p.account_amount ?? p.amount), p.account_currency ?? expense.currency)}
+              {p.bank_fee_amount ? ` + comisión ${formatMoney(Number(p.bank_fee_amount), p.account_currency ?? expense.currency)}` : ""}
+            </span>
+            {foreign && p.effective_rate && (
+              <span className="text-brand-muted">
+                Efectiva 1 {p.effective_rate_currency} = {Number(p.effective_rate)} {fn}
+                {p.reference_rate || p.reference_rate_document
+                  ? ` · ref. ${Number(p.reference_rate ?? p.reference_rate_document)}${p.rate_manual_override ? " (manual)" : ""}`
+                  : ""}
+              </span>
+            )}
+            {foreign && diff !== 0 && (
+              <span className={Number(p.rounding_difference) !== 0 ? "text-brand-muted" : diff > 0 ? "text-brand-warning" : "text-brand-success"}>
+                {Number(p.rounding_difference) !== 0 ? "Redondeo" : "Dif. informativa"} {formatMoney(diff, fn)}
+              </span>
+            )}
+          </span>
+        );
+      },
     },
     { header: "Método", accessor: (p) => <span className="text-brand-muted">{PAYMENT_METHOD_LABELS[p.method] ?? p.method}</span> },
     {
@@ -301,6 +334,7 @@ export default async function ExpenseDetailPage({
                     bankAccounts={bankAccounts}
                     bankCatalog={bankCatalog}
                     funds={funds}
+                    fxContext={fxContext}
                   />
                 )}
               </Card>
