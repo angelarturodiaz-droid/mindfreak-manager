@@ -566,10 +566,10 @@ pulsa el botón.
   u otra) y la tolerancia de redondeo (1.00 peso al inicio).
 - Cada operación guardará la tasa que usó: cambiar o borrar una tasa no
   cambia nada ya registrado.
-- **Regla del banco**: una cuenta solo se mueve en su moneda. Mientras no
-  esté el pago/cobro en moneda diferente, si eliges una cuenta de otra
-  moneda sale "Moneda diferente" y no se guarda: usa una cuenta en la misma
-  moneda del documento.
+- **Regla del banco**: una cuenta solo se mueve en su moneda. Si pagas o
+  cobras con una cuenta de otra moneda, el sistema pide cuánto se movió
+  realmente en el banco (ver "Pago en moneda diferente" y "Cobro en moneda
+  diferente").
 - La moneda funcional (Organización) no se puede cambiar cuando ya hay
   documentos o movimientos.
 
@@ -587,5 +587,21 @@ pulsa el botón.
 - Si no hay tasa registrada para ese día, se escribe en el recuadro (o en
   Configuración → Monedas y tasas). Si se cambia la tasa sugerida, queda
   marcada como manual con quién la cambió.
-- Los cobros de clientes en otra moneda todavía no (paso siguiente).
+- Los cobros de clientes en otra moneda: ver la sección siguiente.
+
+## Cobro en moneda diferente (2026-10-05)
+
+- Si un cliente paga una factura en dólares en tu cuenta en pesos (o al
+  revés), al elegir la cuenta aparece "Cobro en moneda diferente": escribe
+  cuánto entró realmente al banco y, si el banco cobró por recibirlo, la
+  comisión. La factura baja en su moneda; la cuenta sube solo lo que entró
+  en su moneda; la comisión va aparte como "Comisiones bancarias".
+- Diferencia informativa: positiva = entró menos de lo esperado a la tasa
+  de referencia; negativa = entró más. No es ganancia ni pérdida contable.
+- En la factura, la columna "Entró al banco" muestra el monto en la moneda
+  de la cuenta, la comisión, la tasa efectiva y la diferencia.
+- El cobro siempre es del cliente de la factura (la base lo valida).
+- Ayuda al pasar el mouse: Registrar cobro, Registrar pago, Crear gasto y
+  todos los botones de Monedas y tasas (Guardar configuración, Agregar
+  moneda, Guardar tasa, Activar/Desactivar, Borrar) explican qué hacen.
 

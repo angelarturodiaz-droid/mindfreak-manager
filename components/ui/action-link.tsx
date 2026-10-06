@@ -16,8 +16,11 @@ export function ActionLink({
   onAction,
   className = "text-sm text-brand-accent hover:underline",
   pendingLabel,
+  hint: hintProp,
 }: {
   label: string;
+  /** Explicación al pasar el mouse. Si no se da, se busca por el texto en BUTTON_HINTS. `""` = ninguna. */
+  hint?: string;
   onAction: () => Promise<unknown> | unknown;
   className?: string;
   pendingLabel?: string;
@@ -41,7 +44,7 @@ export function ActionLink({
       {isPending ? (pendingLabel ?? "...") : label}
     </button>
   );
-  const hint = BUTTON_HINTS[label.trim()];
+  const hint = hintProp ?? BUTTON_HINTS[label.trim()];
   return (
     hint ? <Tooltip text={hint}>{button}</Tooltip> : button
   );

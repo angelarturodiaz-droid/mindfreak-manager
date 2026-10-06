@@ -56,4 +56,22 @@ describe("Multimoneda V5 — pago/cobro en moneda diferente (casos aprobados)", 
     const r = computeFx({ ...base, tolerance: 0.5, kind: "PAGO", documentCurrency: "DOP", accountCurrency: "USD", applied: 97000, accountAmount: 1649.67, referenceRate: 58.8 });
     expect(r.informativeDifference).toBe(0.6);
   });
+
+  it("Paso 3. Factura USD 1,000 cobrada en cuenta DOP con RD$58,500 (ref 58.80) → +300, entró menos", () => {
+    const r = computeFx({ ...base, kind: "COBRO", documentCurrency: "USD", accountCurrency: "DOP", applied: 1000, accountAmount: 58500, referenceRateDocument: 58.8 });
+    expect(r.effectiveRate).toBe(58.5);
+    expect(r.effectiveRateCurrency).toBe("USD");
+    expect(r.functionalAmount).toBe(58500);
+    expect(r.informativeDifference).toBe(300);
+    expect(r.estimatedAccountAmount).toBe(58800);
+  });
+  it("Paso 3. Cobro parcial USD 500 → RD$29,600 (ref 59) → −100, entró más", () => {
+    const r = computeFx({ ...base, kind: "COBRO", documentCurrency: "USD", accountCurrency: "DOP", applied: 500, accountAmount: 29600, referenceRateDocument: 59 });
+    expect(r.informativeDifference).toBe(-100);
+  });
+  it("Paso 3. Cobro con redondeo dentro de la tolerancia", () => {
+    const r = computeFx({ ...base, kind: "COBRO", documentCurrency: "USD", accountCurrency: "DOP", applied: 1000, accountAmount: 58799.5, referenceRateDocument: 58.8 });
+    expect(r.roundingDifference).toBe(0.5);
+    expect(r.informativeDifference).toBe(0);
+  });
 });

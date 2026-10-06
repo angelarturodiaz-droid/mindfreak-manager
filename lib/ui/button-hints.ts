@@ -18,7 +18,7 @@ export const BUTTON_HINTS: Record<string, string> = {
   "Crear cotización": "Crea una cotización con los datos de este cliente o proyecto.",
   "Crear factura": "Crea una factura en borrador con estos datos.",
   "Crear proyecto": "Crea el proyecto con estos datos.",
-  "Crear gasto": "Registra el gasto con estos datos.",
+  "Crear gasto": "Registra el gasto con estos datos. Si lo marcas como pagado desde una cuenta en otra moneda, también registra cuánto salió realmente del banco.",
   "Crear tarea": "Agrega una tarea con responsable y fecha límite.",
   "Invitar usuario": "Envía un correo para que la persona cree su contraseña y entre al sistema.",
   "Importar": "Carga varios registros de una vez desde un archivo CSV.",
@@ -45,14 +45,16 @@ export const BUTTON_HINTS: Record<string, string> = {
 
   // Facturas
   "Emitir factura": "La factura pasa a ser oficial: cuenta como venta y queda pendiente de cobro.",
-  "Registrar cobro": "Anota un pago del cliente. Baja el balance y entra el dinero a la cuenta elegida.",
+  "Registrar cobro": "Anota un pago del cliente. Baja el balance de la factura y entra el dinero a la cuenta elegida. Si la cuenta está en otra moneda, primero pide cuánto entró realmente al banco.",
   "Marcar como enviada al cliente": "Solo anota que ya se la mandaste. No cambia el estado ni los montos.",
   "Quitar marca de enviada": "Quita la anotación de enviada al cliente (si la marcaste por error).",
   "Cancelar factura": "La anula. Deja de contar como venta y no se puede cobrar.",
   "Duplicar factura": "Crea una factura nueva en borrador con las mismas líneas.",
 
   // Gastos y pagos
-  "Registrar pago": "Anota un pago al proveedor. Sale el dinero de la cuenta elegida.",
+  "Registrar pago": "Anota un pago al proveedor. Sale el dinero de la cuenta elegida. Si la cuenta está en otra moneda, primero pide cuánto debitó realmente el banco.",
+  "Guardar tasa": "Guarda la tasa de referencia de esa moneda para ese día. Si ya había una ese día, la reemplaza. Lo ya registrado no cambia.",
+  "Agregar moneda": "Agrega la moneda al catálogo para poder usarla en cuentas, cotizaciones, facturas y gastos.",
   "Cancelar gasto": "Anula el gasto. Deja de contar en los costos y no se puede pagar.",
 
   // Proyectos

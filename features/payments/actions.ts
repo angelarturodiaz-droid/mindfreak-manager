@@ -1,6 +1,5 @@
 "use server";
 
-import { accountCurrencyMismatch } from "@/features/currencies/queries";
 import { revalidatePath } from "next/cache";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
@@ -56,10 +55,12 @@ export async function registerPaymentAction(
     .single();
   if (invError || !invoice) return { error: "Factura no encontrada." };
 
-  // Regla de oro del banco (V5): hasta habilitar los cobros en moneda
-  // diferente, la cuenta debe estar en la moneda de la factura.
-  const mismatch = await accountCurrencyMismatch(parsed.data.bank_account_id, invoice.currency, "cobro");
-  if (mismatch) return { error: mismatch };
+  // Multimoneda V5 (paso 3): si la cuenta está en otra moneda que la
+  // factura, llegan los datos del bloque "Cobro en moneda diferente"
+  // (lo que realmente entró al banco y la tasa). La base de datos
+  // recalcula todo y deja el banco en la moneda de la cuenta.
+  const fx = parseForeignPayment(formData);
+  if (!fx.success) return { error: fx.error.issues[0]?.message ?? "Datos del cobro en otra moneda inválidos." };
 
   const { error } = await supabase.rpc("register_customer_payment", {
     p_company_id: companyIds[0],
@@ -76,12 +77,19 @@ export async function registerPaymentAction(
     p_notes: parsed.data.notes || null,
     // Vacío = null: la base de datos pone "Cobro de factura" automáticamente.
     p_category_id: parsed.data.category_id || null,
+    ...foreignPaymentRpcParams(fx.data),
   });
 
   if (error) {
+    const fxError = foreignPaymentError(error.message);
+    if (fxError) return { error: fxError };
     // Traducir los errores conocidos de la función a mensajes claros
     if (error.message.includes("amount_exceeds_balance")) {
-      return { error: "El monto supera el balance pendiente de la factura." };
+      return {
+        error: null,
+        blockedTitle: "Monto mayor a lo pendiente",
+        blocked: "El monto que escribiste es mayor a lo que falta por cobrar de esta factura. Revisa el monto e inténtalo de nuevo.",
+      };
     }
     if (error.message.includes("invalid_status")) {
       return { error: "Esta factura no admite cobros en su estado actual." };
@@ -89,13 +97,43 @@ export async function registerPaymentAction(
     if (error.message.includes("category_not_found")) {
       return { error: "La categoría elegida no existe. Recarga la página e inténtalo de nuevo." };
     }
+    if (error.message.includes("client_mismatch")) {
+      return { error: "El cliente del cobro no coincide con el de la factura. Recarga la página e inténtalo de nuevo." };
+    }
+    if (error.message.includes("invalid_account_type")) {
+      return { error: "No se puede recibir un cobro en una tarjeta de crédito. Elige una cuenta bancaria." };
+    }
+    if (error.message.includes("invalid_amount")) {
+      const i = error.message.indexOf("invalid_amount:");
+      return { error: error.message.slice(i + 15).trim() };
+    }
     return { error: error.message };
   }
 
   revalidatePath(`/invoices/${invoiceId}`);
   revalidatePath("/invoices");
   revalidatePath("/payments");
-  return { error: null };
+
+  const { data: account } = await supabase
+    .from("bank_accounts")
+    .select("name, currency")
+    .eq("id", parsed.data.bank_account_id)
+    .single();
+  const foreign = account && account.currency !== invoice.currency && fx.data.account_amount;
+  return {
+    error: null,
+    successTitle: "Cobro registrado",
+    success: `Se registró el cobro de ${formatMoney(parsed.data.amount, invoice.currency)}${
+      account ? ` en ${account.name}` : ""
+    }${
+      foreign
+        ? ` (entraron ${formatMoney(fx.data.account_amount!, account.currency)}${
+            fx.data.bank_fee ? `; comisión del banco ${formatMoney(fx.data.bank_fee, account.currency)} registrada aparte` : ""
+          })`
+        : ""
+    }. Ya se ve en la factura y en Bancos.`,
+    successId: Date.now(),
+  };
 }
 
 /**

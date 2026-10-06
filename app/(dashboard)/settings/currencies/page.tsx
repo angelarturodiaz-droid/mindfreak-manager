@@ -62,6 +62,11 @@ export default async function CurrenciesSettingsPage() {
         canManage && c.code !== functional ? (
           <ActionLink
             label={c.is_active ? "Desactivar" : "Activar"}
+            hint={
+              c.is_active
+                ? "La moneda deja de aparecer para elegir en cuentas y documentos nuevos. Lo ya registrado en esta moneda no cambia."
+                : "La moneda vuelve a aparecer para elegir en cuentas y documentos nuevos."
+            }
             className="text-sm text-brand-muted hover:text-brand-danger"
             onAction={toggleCurrencyActiveAction.bind(null, c.id)}
           />
@@ -91,6 +96,7 @@ export default async function CurrenciesSettingsPage() {
           <ConfirmButton
             label="Borrar"
             variant="secondary"
+            hint="Borra esta tasa de referencia. Los pagos y cobros ya registrados guardan su propia tasa y no cambian."
             confirmTitle={`¿Borrar la tasa de ${r.currency_code} del ${r.effective_date}?`}
             confirmMessage="Las operaciones ya registradas guardan su propia tasa y no cambian."
             onConfirm={deleteExchangeRateAction.bind(null, r.id)}

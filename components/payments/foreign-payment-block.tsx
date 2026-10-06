@@ -97,7 +97,7 @@ export function ForeignPaymentBlock({
     <div className="w-full rounded-[var(--radius-md)] border border-brand-accent/40 bg-brand-accent-light/40 p-3">
       <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-brand-text">
         <ArrowLeftRight size={15} /> {kind === "PAGO" ? "Pago" : "Cobro"} en moneda diferente
-        <InfoHint text={FIELD_HINTS.foreignPayment} label="Qué es un pago en moneda diferente" />
+        <InfoHint text={FIELD_HINTS.foreignPayment} label={`Qué es un ${kind === "PAGO" ? "pago" : "cobro"} en moneda diferente`} />
       </p>
 
       {/* Datos que guarda el servidor (recalcula todo; la pantalla solo informa). */}
@@ -178,19 +178,29 @@ export function ForeignPaymentBlock({
           defaultValue={0}
           onValueChange={setAccountAmount}
           className="w-52"
-          hint="Lo que aparece en el estado de cuenta, sin la comisión."
+          hint={
+            kind === "PAGO"
+              ? "Lo que aparece en el estado de cuenta, sin la comisión."
+              : "Lo que entró, antes de descontar la comisión del banco."
+          }
         />
-        {kind === "PAGO" && (
-          <MoneyInput
-            label={`Comisión (opcional, ${accountCurrency})`}
-            name="bank_fee"
-            min={0}
-            defaultValue={0}
-            onValueChange={setFee}
-            className="w-44"
-            hint="Se registra aparte como Comisiones bancarias."
-          />
-        )}
+        <MoneyInput
+          label={
+            kind === "PAGO"
+              ? `Comisión (opcional, ${accountCurrency})`
+              : `Comisión del banco (opcional, ${accountCurrency})`
+          }
+          name="bank_fee"
+          min={0}
+          defaultValue={0}
+          onValueChange={setFee}
+          className="w-52"
+          hint={
+            kind === "PAGO"
+              ? "Se registra aparte como Comisiones bancarias."
+              : "Lo que el banco cobró por recibir el dinero. Se registra aparte como Comisiones bancarias."
+          }
+        />
       </div>
 
       {fx.effectiveRate !== null && (
@@ -220,17 +230,19 @@ export function ForeignPaymentBlock({
           </dd>
           {fee > 0 && (
             <>
-              <dt className="text-brand-muted">{kind === "PAGO" ? "Débito total" : "Total"}</dt>
-              <dd className="font-semibold tabular-nums">{formatMoney(totalDebit, accountCurrency)}</dd>
+              <dt className="text-brand-muted">{kind === "PAGO" ? "Débito total" : "Neto en la cuenta"}</dt>
+              <dd className="font-semibold tabular-nums">
+                {formatMoney(kind === "PAGO" ? totalDebit : Math.round((accountAmount - fee) * 100) / 100, accountCurrency)}
+              </dd>
             </>
           )}
         </dl>
       )}
 
       <p className="mt-3 text-xs text-brand-muted">
-        ⓘ El {documentLabel} continuará registrado en {documentCurrency}. La cuenta {accountName} será afectada
+        ⓘ {kind === "PAGO" ? "El" : "La"} {documentLabel} continuará {kind === "PAGO" ? "registrado" : "registrada"} en {documentCurrency}. La cuenta {accountName} será afectada
         únicamente por {accountAmount > 0 ? formatMoney(accountAmount, accountCurrency) : `el monto en ${accountCurrency}`}
-        {kind === "PAGO" ? " (más la comisión, si la indicas)" : ""}. La diferencia informativa no es una ganancia ni una
+        {kind === "PAGO" ? " (más la comisión, si la indicas)" : " (menos la comisión, si la indicas)"}. La diferencia informativa no es una ganancia ni una
         pérdida contable.
       </p>
     </div>

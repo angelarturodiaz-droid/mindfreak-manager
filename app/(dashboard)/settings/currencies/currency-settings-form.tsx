@@ -62,7 +62,11 @@ export function CurrencySettingsForm({
       {state.error && <p className="text-sm text-brand-danger sm:col-span-2">{state.error}</p>}
       {canManage && (
         <div className="sm:col-span-2">
-          <Button type="submit" loading={pending}>
+          <Button
+            type="submit"
+            loading={pending}
+            hint="Guarda la moneda funcional y la tolerancia de redondeo. La moneda funcional se bloquea cuando ya hay movimientos."
+          >
             Guardar configuración
           </Button>
         </div>

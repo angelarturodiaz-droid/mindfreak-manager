@@ -4,7 +4,9 @@ export async function listPaymentsForInvoice(invoiceId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("customer_payments")
-    .select("id, payment_date, amount, method, reference, notes, bank_accounts(name, bank_name)")
+    .select(
+      "id, payment_date, amount, method, reference, notes, account_currency, account_amount, bank_fee_amount, effective_rate, effective_rate_currency, reference_rate, reference_rate_document, rate_manual_override, rounding_difference, informative_difference, functional_currency, bank_accounts(name, bank_name)",
+    )
     .eq("invoice_id", invoiceId)
     .order("payment_date", { ascending: false });
   if (error) throw new Error(error.message);

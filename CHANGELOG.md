@@ -1,5 +1,27 @@
 # CHANGELOG — Mindfreak Manager
 
+## Multimoneda V5 — paso 3: cobros a clientes en moneda diferente (2026-10-05)
+
+- Migración **077** (aplicada en producción, md5 de la función verificado):
+  las mismas columnas opcionales del paso 2 en `customer_payments`.
+  `register_customer_payment` con 8 parámetros opcionales: misma moneda →
+  igual que antes; moneda diferente → `fx_settlement('COBRO', …)`, exige lo
+  que entró al banco y la tasa de referencia, el INCOME entra en la moneda
+  de la cuenta y la comisión del banco es un EXPENSE aparte (BANK_FEE,
+  Comisiones bancarias, ligado al cobro; la comisión debe ser menor que lo
+  recibido). Nuevo: `client_mismatch` (cliente del cobro = cliente de la
+  factura; producción tenía 0 diferencias). La versión anterior queda
+  renombrada `register_customer_payment_old_062` y sin permisos.
+- Pantalla: el bloque "Cobro en moneda diferente" en *Registrar cobro* de la
+  factura (con comisión del banco y neto en la cuenta), ventana de éxito y
+  de monto mayor a lo pendiente; columna "Entró al banco" en los cobros de
+  la factura. Se quitó el bloqueo "Moneda diferente" de los cobros.
+- **Ayuda al pasar el mouse** que faltaba en los pasos 1–2: *Guardar
+  configuración*, *Agregar moneda*, *Guardar tasa*, *Activar/Desactivar*
+  moneda (nuevo prop `hint` en `ActionLink`) y *Borrar* tasa; *Registrar
+  pago*, *Registrar cobro* y *Crear gasto* ahora mencionan la otra moneda.
+- Simulación PGlite: 24 comprobaciones OK.
+
 ## Multimoneda V5 — paso 2: pagos a proveedores en moneda diferente (2026-10-05)
 
 - Migración **076** (aplicada en producción): columnas nuevas y opcionales

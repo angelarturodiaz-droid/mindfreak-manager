@@ -32,6 +32,7 @@ import { listCategoryOptions } from "@/features/expense-categories/queries";
 import { ResponsibleSelector } from "./responsible-selector";
 import { AddCollectionHistoryForm } from "./add-collection-history-form";
 import { listPaymentsForInvoice, listBankAccounts } from "@/features/payments/queries";
+import { getFxContext } from "@/features/currencies/queries";
 import { PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
 import { listPaymentTerms } from "@/features/payment-terms/queries";
 import { getDefaultTaxRate, listTaxRates } from "@/features/tax-rates/queries";
@@ -100,7 +101,7 @@ export default async function InvoiceDetailPage({
   }
   if (!invoice) notFound();
 
-  const [items, services, canEdit, canPay, projectItems, payments, bankAccounts, paymentTerms, defaultTaxRate, companyUsers, collectionHistory, taxRates, categories] =
+  const [items, services, canEdit, canPay, projectItems, payments, bankAccounts, paymentTerms, defaultTaxRate, companyUsers, collectionHistory, taxRates, categories, fxContext] =
     await Promise.all([
       listInvoiceItems(id),
       listActiveServices(),
@@ -116,6 +117,7 @@ export default async function InvoiceDetailPage({
       listTaxRates(),
       // Categorías para el cobro; si no se pueden leer, el cobro usa la automática.
       listCategoryOptions().catch(() => []),
+      getFxContext(),
     ]);
 
   const clientData = invoice.clients as { name: string } | { name: string }[] | null;
@@ -186,6 +188,39 @@ export default async function InvoiceDetailPage({
       header: "Monto",
       className: "text-right",
       accessor: (p) => <span className="font-medium tabular-nums text-brand-success">{formatMoney(p.amount, invoice.currency)}</span>,
+    },
+    {
+      // Multimoneda V5: cobro recibido en una cuenta en otra moneda (o con comisión).
+      header: "Entró al banco",
+      className: "text-right",
+      accessor: (p) => {
+        const foreign = p.account_currency && p.account_currency !== invoice.currency;
+        if (!foreign && !p.bank_fee_amount) return <span className="text-brand-muted">—</span>;
+        const acc = p.account_currency ?? invoice.currency;
+        const fn = p.functional_currency ?? fxContext.functionalCurrency;
+        const diff = Number(p.informative_difference ?? 0) || Number(p.rounding_difference ?? 0);
+        return (
+          <span className="flex flex-col items-end text-xs">
+            <span className="font-medium tabular-nums text-brand-text">
+              {formatMoney(Number(p.account_amount ?? p.amount), acc)}
+              {p.bank_fee_amount ? ` − comisión ${formatMoney(Number(p.bank_fee_amount), acc)}` : ""}
+            </span>
+            {foreign && p.effective_rate && (
+              <span className="text-brand-muted">
+                Efectiva 1 {p.effective_rate_currency} = {Number(p.effective_rate)} {fn}
+                {p.reference_rate || p.reference_rate_document
+                  ? ` · ref. ${Number(p.reference_rate ?? p.reference_rate_document)}${p.rate_manual_override ? " (manual)" : ""}`
+                  : ""}
+              </span>
+            )}
+            {foreign && diff !== 0 && (
+              <span className={Number(p.rounding_difference) !== 0 ? "text-brand-muted" : diff > 0 ? "text-brand-warning" : "text-brand-success"}>
+                {Number(p.rounding_difference) !== 0 ? "Redondeo" : "Dif. informativa"} {formatMoney(diff, fn)}
+              </span>
+            )}
+          </span>
+        );
+      },
     },
     { header: "Método", accessor: (p) => <span className="text-brand-muted">{PAYMENT_METHOD_LABELS[p.method] ?? p.method}</span> },
     {
@@ -487,6 +522,7 @@ export default async function InvoiceDetailPage({
                       currency={invoice.currency}
                       bankAccounts={bankAccounts}
                       categories={categories}
+                      fxContext={fxContext}
                     />
                   )}
                 </Card>
