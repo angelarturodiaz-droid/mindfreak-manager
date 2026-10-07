@@ -1,4 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
+import {
+  summarizePaymentsByCurrency,
+  toPaymentFxRow,
+  type PaymentFxRow,
+  type RawFxPayment,
+} from "./payments-by-currency";
 
 // ---- Catálogos para los selects de filtro ----
 
@@ -554,4 +560,88 @@ export async function getCashflowByCategoryReport(filters: CashflowByCategoryFil
       ? { count: uncategorized.count, amount: uncategorized.ingresos + uncategorized.egresos }
       : { count: 0, amount: 0 },
   };
+}
+
+// ---- Multimoneda V5 (paso 5): Pagos y cobros por moneda ----
+
+export type PaymentsByCurrencyFilters = {
+  from?: string;
+  to?: string;
+  /** "in" = solo cobros, "out" = solo pagos a proveedores. */
+  direction?: "in" | "out";
+  bankAccountId?: string;
+  /** Moneda del documento (factura o gasto). */
+  currency?: string;
+  clientId?: string;
+  supplierId?: string;
+  /** Solo los que se hicieron desde/hacia una cuenta en otra moneda. */
+  onlyForeign?: boolean;
+};
+
+const FX_COLUMNS =
+  "id, payment_date, amount, currency, exchange_rate, account_currency, account_amount, bank_fee_amount, functional_currency, functional_amount, effective_rate, effective_rate_currency, reference_rate, reference_rate_document, rate_manual_override, rounding_difference, informative_difference, bank_account_id, bank_accounts(name)";
+
+/**
+ * Cobros y pagos a proveedores con lo aplicado al documento, lo que se
+ * movió en el banco (en la moneda de la cuenta), comisión, tasas y
+ * diferencias. Período = fecha del pago/cobro.
+ */
+export async function getPaymentsByCurrencyReport(filters: PaymentsByCurrencyFilters = {}) {
+  const supabase = await createClient();
+  const { data: company } = await supabase.from("companies").select("base_currency").limit(1).single();
+  const functional = company?.base_currency ?? "DOP";
+
+  const wantCobros = filters.direction !== "out" && !filters.supplierId;
+  const wantPagos = filters.direction !== "in" && !filters.clientId;
+
+  const fetchCobros = async () => {
+    if (!wantCobros) return { data: [] as unknown[], error: null };
+    let q = supabase.from("customer_payments").select(`${FX_COLUMNS}, invoice_id, invoices(number), clients(name)`);
+    if (filters.from) q = q.gte("payment_date", filters.from);
+    if (filters.to) q = q.lte("payment_date", filters.to);
+    if (filters.bankAccountId) q = q.eq("bank_account_id", filters.bankAccountId);
+    if (filters.currency) q = q.eq("currency", filters.currency);
+    if (filters.clientId) q = q.eq("client_id", filters.clientId);
+    const { data, error } = await q.order("payment_date", { ascending: false }).limit(1000);
+    return { data: (data ?? []) as unknown[], error };
+  };
+  const fetchPagos = async () => {
+    if (!wantPagos) return { data: [] as unknown[], error: null };
+    let q = supabase.from("supplier_payments").select(`${FX_COLUMNS}, expense_id, expenses(description), suppliers(name)`);
+    if (filters.from) q = q.gte("payment_date", filters.from);
+    if (filters.to) q = q.lte("payment_date", filters.to);
+    if (filters.bankAccountId) q = q.eq("bank_account_id", filters.bankAccountId);
+    if (filters.currency) q = q.eq("currency", filters.currency);
+    if (filters.supplierId) q = q.eq("supplier_id", filters.supplierId);
+    const { data, error } = await q.order("payment_date", { ascending: false }).limit(1000);
+    return { data: (data ?? []) as unknown[], error };
+  };
+  const [cobros, pagos] = await Promise.all([fetchCobros(), fetchPagos()]);
+  if (cobros.error) throw new Error(cobros.error.message);
+  if (pagos.error) throw new Error(pagos.error.message);
+
+  const one = <T,>(v: unknown): T | null => (Array.isArray(v) ? (v[0] ?? null) : ((v as T) ?? null));
+  type Row = RawFxPayment & Record<string, unknown>;
+  const rows: PaymentFxRow[] = [
+    ...((cobros.data ?? []) as unknown as Row[]).map((p) =>
+      toPaymentFxRow(p, "COBRO", {
+        documentLabel: `Factura ${one<{ number: string }>(p.invoices)?.number ?? ""}`.trim(),
+        documentHref: p.invoice_id ? `/invoices/${p.invoice_id as string}` : null,
+        party: one<{ name: string }>(p.clients)?.name ?? "—",
+        accountName: one<{ name: string }>(p.bank_accounts)?.name ?? "—",
+      }, functional),
+    ),
+    ...((pagos.data ?? []) as unknown as Row[]).map((p) =>
+      toPaymentFxRow(p, "PAGO", {
+        documentLabel: one<{ description: string }>(p.expenses)?.description ?? "Gasto",
+        documentHref: p.expense_id ? `/expenses/${p.expense_id as string}` : null,
+        party: one<{ name: string }>(p.suppliers)?.name ?? "—",
+        accountName: one<{ name: string }>(p.bank_accounts)?.name ?? "—",
+      }, functional),
+    ),
+  ]
+    .filter((r) => !filters.onlyForeign || r.foreign)
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+
+  return { rows, summary: summarizePaymentsByCurrency(rows), functionalCurrency: functional };
 }

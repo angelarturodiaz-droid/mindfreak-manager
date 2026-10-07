@@ -11,6 +11,7 @@ import {
   getExpensesByCategoryReport,
   getReceivablesDashboard,
   getCashflowByCategoryReport,
+  getPaymentsByCurrencyReport,
   CASHFLOW_ORIGINS,
   type CashflowOrigin,
   listBankAccountsForFilter,
@@ -29,6 +30,9 @@ import { relationName } from "@/lib/utils/relation";
 import { formatDate, pluralDays } from "@/lib/utils/dates";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { NoResults } from "@/components/ui/no-results";
+import { InfoHint } from "@/components/ui/info-hint";
+import { FIELD_HINTS } from "@/lib/ui/field-hints";
+import type { PaymentFxRow } from "@/features/reports/payments-by-currency";
 
 function formatMoney(amount: number, currency = "DOP") {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency }).format(amount);
@@ -75,7 +79,10 @@ const REPORT_CATALOG: { category: string; reports: { key: string; label: string 
   { category: "Pagos", reports: [{ key: "cxp", label: "Cuentas por pagar" }] },
   {
     category: "Bancos",
-    reports: [{ key: "flujo-categoria", label: "Ingresos y egresos por categoría" }],
+    reports: [
+      { key: "flujo-categoria", label: "Ingresos y egresos por categoría" },
+      { key: "por-moneda", label: "Pagos y cobros por moneda" },
+    ],
   },
   { category: "Ventas", reports: [{ key: "ventas-cliente", label: "Ventas por cliente" }] },
   { category: "Gastos", reports: [{ key: "gastos-categoria", label: "Gastos por categoría" }] },
@@ -99,6 +106,7 @@ type Params = {
   view?: string;
   origin?: string;
   direction?: string;
+  only_foreign?: string;
 };
 
 /** Monedas del catálogo (Configuración → Monedas y tasas), incluidas las inactivas: puede haber documentos en ellas. */
@@ -168,6 +176,7 @@ export default async function ReportsPage({
         {activeReport === "ventas-cliente" && <SalesByClientReport params={params} />}
         {activeReport === "flujo-categoria" && <CashflowByCategoryReport params={params} />}
         {activeReport === "gastos-categoria" && <ExpensesByCategoryReport params={params} />}
+        {activeReport === "por-moneda" && <PaymentsByCurrencyReport params={params} />}
       </section>
     </main>
   );
@@ -1238,3 +1247,225 @@ async function CashflowByCategoryReport({ params }: { params: Params }) {
     </div>
   );
 }
+
+const fmtRate = (n: number) =>
+  new Intl.NumberFormat("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 6 }).format(n);
+
+/**
+ * Multimoneda V5 (paso 5): cobros y pagos con lo aplicado al documento, lo
+ * que se movió en el banco (en la moneda de la cuenta), comisión, tasas y
+ * diferencias. Operativo: la diferencia informativa no es ganancia ni
+ * pérdida contable.
+ */
+async function PaymentsByCurrencyReport({ params }: { params: Params }) {
+  const direction = params.direction === "in" || params.direction === "out" ? params.direction : undefined;
+  const onlyForeign = params.only_foreign === "1";
+  const [report, accounts, clients, suppliers] = await Promise.all([
+    getPaymentsByCurrencyReport({
+      from: params.from,
+      to: params.to,
+      direction,
+      bankAccountId: params.bank_account_id,
+      currency: params.currency,
+      clientId: params.client_id,
+      supplierId: params.supplier_id,
+      onlyForeign,
+    }),
+    listBankAccountsForFilter(),
+    listClientsForFilter(),
+    listSuppliersForFilter(),
+  ]);
+  const { rows, summary, functionalCurrency: fn } = report;
+
+  const columns: Column<PaymentFxRow>[] = [
+    { header: "Fecha", accessor: (r) => <span className="whitespace-nowrap text-brand-muted">{formatDate(r.date)}</span> },
+    {
+      header: "Tipo",
+      accessor: (r) => <Badge tone={r.direction === "COBRO" ? "success" : "warning"}>{r.direction === "COBRO" ? "Cobro" : "Pago"}</Badge>,
+    },
+    {
+      header: "Documento",
+      accessor: (r) => (
+        <span className="flex max-w-[14rem] flex-col">
+          {r.documentHref ? (
+            <Link href={r.documentHref} className="line-clamp-2 break-words font-medium text-brand-text hover:text-brand-accent">
+              {r.documentLabel}
+            </Link>
+          ) : (
+            <span className="font-medium">{r.documentLabel}</span>
+          )}
+          <span className="text-xs text-brand-muted">{r.party}</span>
+        </span>
+      ),
+    },
+    {
+      header: "Aplicado",
+      className: "text-right",
+      accessor: (r) => <Money value={r.applied} currency={r.documentCurrency} strong />,
+    },
+    {
+      header: "Banco",
+      className: "text-right",
+      accessor: (r) => (
+        <span className="flex flex-col items-end">
+          <span className={`whitespace-nowrap tabular-nums ${r.foreign ? "font-medium text-brand-text" : "text-brand-muted"}`}>
+            {r.direction === "COBRO" ? "+" : "−"}
+            {formatMoney(r.bankAmount, r.accountCurrency)}
+          </span>
+          <span className="text-xs text-brand-muted">{r.accountName}</span>
+        </span>
+      ),
+    },
+    {
+      header: "Comisión",
+      className: "text-right",
+      accessor: (r) => (r.fee > 0 ? <Money value={r.fee} currency={r.accountCurrency} /> : <span className="text-brand-muted">—</span>),
+    },
+    {
+      header: "Tasas",
+      accessor: (r) =>
+        r.foreign && r.effectiveRate ? (
+          <span className="flex flex-col whitespace-nowrap text-xs">
+            <span className="text-brand-text">
+              Efectiva 1 {r.effectiveRateCurrency} = {fmtRate(r.effectiveRate)}
+            </span>
+            {r.referenceRate !== null && (
+              <span className="text-brand-muted">
+                Ref. {fmtRate(r.referenceRate)}
+                {r.manualRate ? " (manual)" : ""}
+              </span>
+            )}
+          </span>
+        ) : (
+          <span className="text-brand-muted">—</span>
+        ),
+    },
+    {
+      header: "Diferencia",
+      className: "text-right",
+      accessor: (r) =>
+        r.rounding !== 0 ? (
+          <span className="whitespace-nowrap text-xs tabular-nums text-brand-muted">Redondeo {formatMoney(r.rounding, fn)}</span>
+        ) : r.informative !== 0 ? (
+          <span className={`whitespace-nowrap tabular-nums ${r.informative > 0 ? "text-brand-warning" : "text-brand-success"}`}>
+            {formatMoney(r.informative, fn)}
+          </span>
+        ) : (
+          <span className="text-brand-muted">—</span>
+        ),
+    },
+    {
+      header: `Equivalente ${fn}`,
+      className: "text-right",
+      accessor: (r) => <span className="whitespace-nowrap tabular-nums text-brand-muted">{formatMoney(r.functionalAmount, fn)}</span>,
+    },
+  ];
+
+  return (
+    <div>
+      <ReportTitle
+        title="Pagos y cobros por moneda"
+        description="Lo aplicado a cada factura o gasto en su moneda y lo que realmente se movió en el banco en la moneda de la cuenta, con comisiones, tasas y diferencias."
+      />
+      <FilterBar report="por-moneda">
+        <DateRangeFields from={params.from} to={params.to} />
+        <Select label="Tipo" name="direction" defaultValue={direction ?? ""}>
+          <option value="">Cobros y pagos</option>
+          <option value="in">Solo cobros</option>
+          <option value="out">Solo pagos a proveedores</option>
+        </Select>
+        <Select label="Cuenta" name="bank_account_id" defaultValue={params.bank_account_id ?? ""}>
+          <option value="">Todas</option>
+          {accounts.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name} ({a.currency})
+            </option>
+          ))}
+        </Select>
+        <Select label="Moneda del documento" name="currency" defaultValue={params.currency ?? ""}>
+          <option value="">Todas</option>
+          <CurrencyOptions />
+        </Select>
+        <Select label="Cliente" name="client_id" defaultValue={params.client_id ?? ""}>
+          <option value="">Todos</option>
+          {clients.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </Select>
+        <Select label="Proveedor" name="supplier_id" defaultValue={params.supplier_id ?? ""}>
+          <option value="">Todos</option>
+          {suppliers.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </Select>
+        <Select label="Moneda de la cuenta" name="only_foreign" defaultValue={onlyForeign ? "1" : ""}>
+          <option value="">Todas las operaciones</option>
+          <option value="1">Solo en moneda diferente</option>
+        </Select>
+      </FilterBar>
+
+      {rows.length > 0 && (
+        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {summary.byAccountCurrency.map((c) => (
+            <Card key={c.currency} className="text-sm">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-brand-muted">Cuentas en {c.currency}</p>
+              <p className="flex justify-between">
+                <span className="text-brand-muted">Entró (cobros)</span>
+                <span className="tabular-nums text-brand-success">{formatMoney(c.cobrado, c.currency)}</span>
+              </p>
+              <p className="flex justify-between">
+                <span className="text-brand-muted">Salió (pagos)</span>
+                <span className="tabular-nums text-brand-danger">{formatMoney(c.pagado, c.currency)}</span>
+              </p>
+              <p className="flex justify-between">
+                <span className="text-brand-muted">Comisiones</span>
+                <span className="tabular-nums">{formatMoney(c.comisiones, c.currency)}</span>
+              </p>
+            </Card>
+          ))}
+          <Card className="text-sm">
+            <p className="mb-2 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-brand-muted">
+              Diferencias ({fn})
+              <InfoHint text={FIELD_HINTS.informativeDifference} label="Qué es la diferencia informativa" />
+            </p>
+            <p className="flex justify-between">
+              <span className="text-brand-muted">Informativa</span>
+              <span className={`tabular-nums ${summary.informativeTotal > 0 ? "text-brand-warning" : summary.informativeTotal < 0 ? "text-brand-success" : ""}`}>
+                {formatMoney(summary.informativeTotal, fn)}
+              </span>
+            </p>
+            <p className="flex justify-between">
+              <span className="text-brand-muted">Redondeo</span>
+              <span className="tabular-nums">{formatMoney(summary.roundingTotal, fn)}</span>
+            </p>
+            <p className="mt-1 text-xs text-brand-muted">
+              {summary.foreignCount} de {summary.count} en moneda diferente
+            </p>
+          </Card>
+        </div>
+      )}
+
+      <DataTable
+        columns={columns}
+        rows={rows}
+        keyFor={(r) => `${r.direction}-${r.id}`}
+        emptyMessage="No hay cobros ni pagos en este período."
+        filtered={hasReportFilters(params)}
+        noResultsHint="Cambia los filtros de arriba y pulsa Aplicar filtros, o límpialos para ver todo."
+        clearHref="/reports?report=por-moneda"
+        what="operaciones"
+        maxWidth="max-w-none"
+      />
+      <p className="mt-3 text-xs text-brand-muted">
+        Diferencia informativa: positiva (naranja) = se entregó más valor o se recibió menos que a la tasa del día;
+        negativa (verde) = lo contrario. No es una ganancia ni una pérdida contable. El equivalente en {fn} es lo que se
+        movió en el banco a la tasa de referencia (en registros anteriores a la multimoneda, a la tasa del documento).
+      </p>
+    </div>
+  );
+}
+

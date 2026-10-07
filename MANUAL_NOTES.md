@@ -621,3 +621,17 @@ pulsa el botón.
 - Entre cuentas de la misma moneda, entra lo mismo que sale; si el banco
   cobró algo, va como comisión.
 
+## Reporte por moneda y recibos con los dos montos (2026-10-06)
+
+- **Reportes → Bancos → Pagos y cobros por moneda**: cada cobro y pago a
+  proveedor con lo aplicado al documento (su moneda) y lo que se movió en
+  el banco (moneda de la cuenta), comisión, tasas, redondeo o diferencia
+  informativa y equivalente en pesos. Tarjetas por moneda de cuenta (entró,
+  salió, comisiones) y total de diferencias. Filtro "Solo en moneda
+  diferente". La diferencia informativa no es ganancia ni pérdida contable.
+- **Recibos PDF** (cobro y pago a proveedor): si la cuenta estaba en otra
+  moneda o hubo comisión, traen "Conversión de moneda" con los dos montos,
+  la comisión, las tasas y la diferencia. Si no, el recibo es igual que
+  antes.
+- Con esto queda completa la multimoneda operacional (V5, pasos 1–5).
+

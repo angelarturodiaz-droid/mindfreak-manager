@@ -269,7 +269,7 @@ export async function getPaymentReceiptDataAction(
     supabase
       .from("customer_payments")
       .select(
-        "id, payment_date, amount, method, reference, currency, invoices(number, balance), clients(name, tax_id, email, phone), bank_accounts(name, bank_name)",
+        "id, payment_date, amount, method, reference, currency, account_currency, account_amount, bank_fee_amount, effective_rate, effective_rate_currency, reference_rate, reference_rate_document, rounding_difference, informative_difference, functional_currency, invoices(number, balance), clients(name, tax_id, email, phone), bank_accounts(name, bank_name)",
       )
       .eq("id", paymentId)
       .single(),
@@ -360,7 +360,7 @@ export async function getSupplierPaymentReceiptDataAction(
     supabase
       .from("supplier_payments")
       .select(
-        "id, payment_date, amount, method, reference, currency, payee_bank_name, expenses(description, balance, total, ncf, isr_withheld, itbis_withheld, total_withheld, net_payable), suppliers(name, tax_id, email, phone), bank_accounts(name, bank_name)",
+        "id, payment_date, amount, method, reference, currency, payee_bank_name, account_currency, account_amount, bank_fee_amount, effective_rate, effective_rate_currency, reference_rate, reference_rate_document, rounding_difference, informative_difference, functional_currency, expenses(description, balance, total, ncf, isr_withheld, itbis_withheld, total_withheld, net_payable), suppliers(name, tax_id, email, phone), bank_accounts(name, bank_name)",
       )
       .eq("id", paymentId)
       .single(),

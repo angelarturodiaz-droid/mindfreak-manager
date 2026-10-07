@@ -1,5 +1,25 @@
 # CHANGELOG — Mindfreak Manager
 
+## Multimoneda V5 — paso 5: reporte por moneda y recibos con los dos montos (2026-10-06)
+
+- Reporte nuevo **Pagos y cobros por moneda** (Reportes → Bancos,
+  `report=por-moneda`): une `customer_payments` y `supplier_payments` con
+  aplicado, monto del banco y su moneda, comisión, tasa efectiva, tasa de
+  referencia (manual), redondeo, diferencia informativa y equivalente
+  funcional; tarjetas por moneda de cuenta y total de diferencias; filtros
+  por fechas, tipo, cuenta, moneda del documento, cliente, proveedor y
+  "solo en moneda diferente". Lógica en
+  `features/reports/payments-by-currency.ts` (los registros anteriores a
+  076/077 se toman como misma moneda; equivalente por la tasa del
+  documento). Sin cambios en la base.
+- Recibos PDF de cobro y de pago a proveedor: sección **Conversión de
+  moneda** (`lib/pdf/fx-section.tsx`) con aplicado, lo que entró o salió de
+  la cuenta, comisión, neto o débito total, tasa efectiva, tasa del día y
+  diferencia informativa. En la misma moneda sin comisión el recibo no
+  cambia.
+- ⓘ nuevo `informativeDifference`. Pruebas: 95 (7 nuevas).
+- **Multimoneda V5 completa** (pasos 1–5).
+
 ## Multimoneda V5 — paso 4: transferencias con monto recibido y comisión (2026-10-06)
 
 - Migración **078** (aplicada en producción, md5 verificado):
