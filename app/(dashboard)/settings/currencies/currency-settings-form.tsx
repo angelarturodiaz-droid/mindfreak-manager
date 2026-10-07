@@ -56,10 +56,13 @@ export function CurrencySettingsForm({
         name="reference_source_name"
         defaultValue={settings.reference_source_name ?? ""}
         placeholder={source === "BANK" ? "Ej. Banco Popular" : source === "OTHER" ? "Ej. Infodolar" : ""}
-        required={source === "OTHER"}
         disabled={!canManage}
+        error={state.field === "reference_source_name" && source === "OTHER" ? state.error ?? undefined : undefined}
+        hint={source === "OTHER" ? "Requerido con «Otra fuente»." : undefined}
       />
-      {state.error && <p className="text-sm text-brand-danger sm:col-span-2">{state.error}</p>}
+      {state.error && state.field !== "reference_source_name" && (
+        <p className="text-sm text-brand-danger sm:col-span-2">{state.error}</p>
+      )}
       {canManage && (
         <div className="sm:col-span-2">
           <Button

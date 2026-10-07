@@ -7,6 +7,7 @@ import { Input, Select } from "@/components/ui/field";
 import { SearchSelect } from "@/components/ui/search-select";
 import { MoneyInput } from "@/components/ui/money-input";
 import { CurrencyExchangeFields } from "@/components/ui/currency-exchange-fields";
+import type { RateHistory } from "@/components/payments/foreign-payment-block";
 import { Button } from "@/components/ui/button";
 import { ExpenseFiscalFields } from "@/components/fiscal/expense-fiscal-fields";
 
@@ -24,6 +25,7 @@ export function ExpenseEditForm({
   bankCatalog,
   baseCurrency,
   currencies,
+  rates,
   serviceTypes = [],
   canSeeRules = false,
 }: {
@@ -50,6 +52,8 @@ export function ExpenseEditForm({
   bankCatalog: Option[];
   baseCurrency: string;
   currencies: string[];
+  /** Tasas de referencia (Configuración → Monedas y tasas). */
+  rates?: RateHistory;
   serviceTypes?: ServiceTypeOption[];
   canSeeRules?: boolean;
 }) {
@@ -138,6 +142,7 @@ export function ExpenseEditForm({
         currencies={currencies}
         defaultCurrency={expense.currency}
         defaultExchangeRate={expense.exchange_rate}
+        rates={rates}
       />
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}

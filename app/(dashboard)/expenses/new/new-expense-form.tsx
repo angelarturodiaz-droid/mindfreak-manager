@@ -237,7 +237,7 @@ export function NewExpenseForm({
 
       {accountId && <AccountFundsHint funds={funds[accountId]} />}
 
-      <CurrencyExchangeFields baseCurrency={baseCurrency} currencies={currencies} />
+      <CurrencyExchangeFields baseCurrency={baseCurrency} currencies={currencies} rates={fxContext.rates} />
 
       {account && foreign && (
         <ForeignPaymentBlock

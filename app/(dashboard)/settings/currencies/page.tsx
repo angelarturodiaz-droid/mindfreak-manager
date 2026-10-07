@@ -1,6 +1,6 @@
 import { getCompany } from "@/features/settings/queries";
 import { getCurrencySettings, listCurrencies, listExchangeRates } from "@/features/currencies/queries";
-import { deleteExchangeRateAction, toggleCurrencyActiveAction } from "@/features/currencies/actions";
+import { deleteCurrencyAction, deleteExchangeRateAction, toggleCurrencyActiveAction } from "@/features/currencies/actions";
 import { RATE_SOURCE_LABELS, describeRate, type RateSource } from "@/features/currencies/schema";
 import { hasPermission } from "@/lib/auth/permissions";
 import { todayISO } from "@/lib/utils/dates";
@@ -60,7 +60,8 @@ export default async function CurrenciesSettingsPage() {
       className: "text-right",
       accessor: (c) =>
         canManage && c.code !== functional ? (
-          <ActionLink
+          <span className="flex items-center justify-end gap-3">
+            <ActionLink
             label={c.is_active ? "Desactivar" : "Activar"}
             hint={
               c.is_active
@@ -69,7 +70,17 @@ export default async function CurrenciesSettingsPage() {
             }
             className="text-sm text-brand-muted hover:text-brand-danger"
             onAction={toggleCurrencyActiveAction.bind(null, c.id)}
-          />
+            />
+            <ConfirmButton
+              label="Borrar"
+              variant="secondary"
+              hint="Borra la moneda del catálogo. Solo se puede si nunca se usó (sin cuentas, documentos ni movimientos); si ya se usó, desactívala."
+              confirmTitle={`¿Borrar la moneda ${c.code}?`}
+              confirmMessage={`Se quita del catálogo junto con sus tasas de referencia. Si ${c.code} ya se usó en cuentas, documentos o movimientos, el sistema no la borra y te lo explica.`}
+              onConfirm={deleteCurrencyAction.bind(null, c.id)}
+              successMessage={`Moneda ${c.code} borrada.`}
+            />
+          </span>
         ) : null,
     },
   ];

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createQuotationAction, type ActionState } from "@/features/quotations/actions";
 import { Input, Select, Textarea } from "@/components/ui/field";
 import { CurrencyExchangeFields } from "@/components/ui/currency-exchange-fields";
+import type { RateHistory } from "@/components/payments/foreign-payment-block";
 import { Button } from "@/components/ui/button";
 import { todayISO } from "@/lib/utils/dates";
 
@@ -16,6 +17,7 @@ export function NewQuotationForm({
   clients,
   baseCurrency,
   currencies,
+  rates,
   paymentTerms,
   taxRates,
   defaultClientId,
@@ -25,6 +27,8 @@ export function NewQuotationForm({
   defaultClientId?: string;
   baseCurrency: string;
   currencies: string[];
+  /** Tasas de referencia (Configuración → Monedas y tasas). */
+  rates?: RateHistory;
   paymentTerms: { id: string; name: string; credit_days: number }[];
   taxRates: TaxRate[];
 }) {
@@ -86,7 +90,7 @@ export function NewQuotationForm({
         ))}
       </Select>
 
-      <CurrencyExchangeFields baseCurrency={baseCurrency} currencies={currencies} />
+      <CurrencyExchangeFields baseCurrency={baseCurrency} currencies={currencies} rates={rates} />
 
       <Textarea label="Condiciones / Notas" name="terms" rows={3} />
 

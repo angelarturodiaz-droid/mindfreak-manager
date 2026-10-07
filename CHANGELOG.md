@@ -1,5 +1,20 @@
 # CHANGELOG — Mindfreak Manager
 
+## Monedas y tasas: ajustes de las pruebas AL (2026-10-06)
+
+- Mensaje claro con "Otra fuente" sin nombre (debajo del campo; sin el
+  aviso nativo del navegador). `CurrencyActionState.field`.
+- Migración **079** `delete_currency(p_currency_id)`: borra una moneda solo
+  si nunca se usó (cuentas, cotizaciones, facturas, gastos, cobros, pagos,
+  movimientos) y no es la funcional; borra sus tasas de referencia;
+  auditada. Botón "Borrar" con confirmación en Monedas y tasas.
+  *El SQL lo pega el usuario en el SQL Editor (Supabase pide confirmación
+  por el `delete`).*
+- `CurrencyExchangeFields`: la moneda sigue por defecto en la funcional;
+  al elegir otra, la tasa se llena con la tasa de referencia del día
+  (editable, con fuente y fecha); al editar se conserva la del documento.
+  Cotización nueva, factura nueva, gasto nuevo y editar gasto.
+
 ## Multimoneda V5 — paso 5: reporte por moneda y recibos con los dos montos (2026-10-06)
 
 - Reporte nuevo **Pagos y cobros por moneda** (Reportes → Bancos,

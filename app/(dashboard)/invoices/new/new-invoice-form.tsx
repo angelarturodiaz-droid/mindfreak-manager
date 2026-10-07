@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createInvoiceAction, type ActionState } from "@/features/invoices/actions";
 import { Input, Select } from "@/components/ui/field";
 import { CurrencyExchangeFields } from "@/components/ui/currency-exchange-fields";
+import type { RateHistory } from "@/components/payments/foreign-payment-block";
 import { Button } from "@/components/ui/button";
 import { todayISO } from "@/lib/utils/dates";
 
@@ -25,6 +26,7 @@ export function NewInvoiceForm({
   projects,
   baseCurrency,
   currencies,
+  rates,
   paymentTerms,
   taxRates,
   defaultClientId,
@@ -41,6 +43,8 @@ export function NewInvoiceForm({
   returnTo?: string | null;
   baseCurrency: string;
   currencies: string[];
+  /** Tasas de referencia (Configuración → Monedas y tasas). */
+  rates?: RateHistory;
   paymentTerms: { id: string; name: string; credit_days: number }[];
   taxRates: TaxRate[];
 }) {
@@ -177,7 +181,7 @@ export function NewInvoiceForm({
         ))}
       </Select>
 
-      <CurrencyExchangeFields baseCurrency={baseCurrency} currencies={currencies} />
+      <CurrencyExchangeFields baseCurrency={baseCurrency} currencies={currencies} rates={rates} />
 
       <Select
         label="Tipo de facturación"

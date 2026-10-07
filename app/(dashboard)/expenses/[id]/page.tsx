@@ -353,6 +353,7 @@ export default async function ExpenseDetailPage({
                   bankCatalog={bankCatalog}
                   baseCurrency={company.base_currency}
                   currencies={currencyOptions.map((c) => c.code)}
+                  rates={fxContext.rates}
                   serviceTypes={serviceTypes}
                   canSeeRules={canSeeRules}
                 />

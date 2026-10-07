@@ -635,3 +635,17 @@ pulsa el botón.
   antes.
 - Con esto queda completa la multimoneda operacional (V5, pasos 1–5).
 
+## Ajustes a Monedas y tasas (2026-10-06, pruebas AL)
+
+- Con "Otra fuente" sin nombre, el mensaje sale debajo del campo y explica
+  qué escribir (ej. Infodolar). Ya no aparece el aviso del navegador.
+- **Borrar moneda**: botón "Borrar" (con confirmación) junto a
+  Activar/Desactivar. Solo borra si la moneda nunca se usó; si ya tiene
+  cuentas, cotizaciones, facturas, gastos, cobros, pagos o movimientos,
+  dice dónde se usó y sugiere desactivarla. Sus tasas de referencia se
+  borran con ella. La moneda de la empresa no se puede borrar.
+- **Cotización, factura y gasto**: la moneda viene por defecto en la de la
+  empresa (DOP). Al elegir otra (ej. USD), la tasa se llena sola con la
+  tasa del día de Monedas y tasas y se puede cambiar. Al editar un gasto
+  que ya estaba en USD se conserva su tasa.
+

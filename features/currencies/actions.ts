@@ -8,6 +8,8 @@ import { currencySchema, currencySettingsSchema, describeRate, exchangeRateSchem
 
 export type CurrencyActionState = {
   error: string | null;
+  /** Campo con el problema, para mostrar el mensaje debajo de él. */
+  field?: string;
   success?: string;
   successId?: number;
 };
@@ -101,6 +103,35 @@ export async function toggleCurrencyActiveAction(currencyId: string): Promise<vo
   revalidatePath(PATH);
 }
 
+/**
+ * Borrar una moneda del catálogo. Solo si nunca se usó (función
+ * `delete_currency`, migración 079): si ya tiene cuentas, documentos o
+ * movimientos se explica y se sugiere desactivarla. Sus tasas de
+ * referencia se borran con ella.
+ */
+export async function deleteCurrencyAction(currencyId: string): Promise<void> {
+  await requirePermission("settings.manage");
+  const supabase = await createSupabaseClient();
+  const { error } = await supabase.rpc("delete_currency", { p_currency_id: currencyId });
+  if (error) {
+    const m = error.message;
+    if (m.includes("currency_in_use")) {
+      const detail = m.slice(m.indexOf("currency_in_use:") + 16).trim();
+      throw new Error(
+        detail.includes("funcional")
+          ? `No se puede borrar: ${detail}.`
+          : `No se puede borrar porque ${detail}. Si ya no la vas a usar, desactívala: deja de salir en las listas y lo registrado no cambia.`,
+      );
+    }
+    if (m.includes("currency_not_found")) throw new Error("La moneda ya no existe. Recarga la página.");
+    if (m.includes("Could not find the function") || m.includes("does not exist")) {
+      throw new Error("Falta activar el borrado de monedas en la base de datos (migración 079). Avísale al administrador.");
+    }
+    throw new Error(m);
+  }
+  revalidatePath(PATH);
+}
+
 /** Fuente de la tasa de referencia y tolerancia de redondeo. */
 export async function updateCurrencySettingsAction(
   _prev: CurrencyActionState,
@@ -112,7 +143,10 @@ export async function updateCurrencySettingsAction(
     reference_source_name: String(formData.get("reference_source_name") ?? ""),
     rounding_tolerance: String(formData.get("rounding_tolerance") ?? "1"),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return { error: issue?.message ?? "Datos inválidos.", field: issue?.path?.[0] ? String(issue.path[0]) : undefined };
+  }
 
   const companyId = await getPrimaryCompanyId();
   const supabase = await createSupabaseClient();

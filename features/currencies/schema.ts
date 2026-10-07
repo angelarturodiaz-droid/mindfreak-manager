@@ -42,7 +42,7 @@ export const currencySettingsSchema = z
   })
   .superRefine((v, ctx) => {
     if (v.reference_rate_source === "OTHER" && !v.reference_source_name) {
-      ctx.addIssue({ code: "custom", message: "Escribe el nombre de la otra fuente.", path: ["reference_source_name"] });
+      ctx.addIssue({ code: "custom", message: "Como elegiste «Otra fuente», escribe su nombre para saber de dónde sale la tasa (por ejemplo, Infodolar o la casa de cambio que usas).", path: ["reference_source_name"] });
     }
   });
 
