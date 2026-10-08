@@ -36,9 +36,11 @@ export type RegisterPaymentInput = z.infer<typeof registerPaymentSchema>;
  * opcionales: con la cuenta en la misma moneda del documento no se envían.
  * El servidor (fx_settlement en la base) recalcula y valida todo.
  */
+// Vacío o 0 = no lo escribió: la base de datos responde con un mensaje claro
+// ("Indica cuánto debitó realmente el banco…", "Falta la tasa de referencia…").
 const optionalPositive = z.preprocess(
-  (v) => (v === "" || v === null || v === undefined ? undefined : v),
-  z.coerce.number().positive().optional(),
+  (v) => (v === "" || v === null || v === undefined || Number(String(v).replace(/,/g, "")) === 0 ? undefined : v),
+  z.coerce.number().positive("El valor debe ser mayor que 0.").optional(),
 );
 export const foreignPaymentSchema = z.object({
   account_amount: optionalPositive,

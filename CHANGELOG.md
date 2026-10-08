@@ -1,5 +1,28 @@
 # CHANGELOG — Mindfreak Manager
 
+## Correcciones de la prueba AM (2026-10-07)
+
+- **Migración 080** (aplicada en producción, md5 verificado): las funciones
+  `register_supplier_payment`, `create_card_expense` y
+  `register_customer_payment` guardaban el resultado de `fx_settlement` en
+  una variable `record` que solo se llenaba en moneda diferente; en la misma
+  moneda fallaban con *record "v_fx" is not assigned yet* (Postgres necesita
+  la estructura del record al planificar, aunque la rama del CASE no se use).
+  Ahora usan variables simples. Misma lógica y firmas. La simulación nueva
+  (`t080`) reproduce el error sin la corrección y pasa con ella; las
+  simulaciones de 076/077 siguen pasando. Producción: 0 pagos en la misma
+  moneda desde la 076 (el error solo bloqueaba).
+- **Recibos PDF** de cobro y de pago: se quitó la sección "Conversión de
+  moneda" (el detalle es interno). Quedan igual que antes del paso 5. Se
+  borró `lib/pdf/fx-section.tsx`.
+- **Sin avisos del navegador en inglés**: se quitaron `required`/`min` de la
+  tasa de referencia, del monto real del banco (pago/cobro), de la tasa del
+  documento (cotización/factura/gasto) y del monto recibido (transferencia);
+  los mensajes los da el servidor en español. 0 en el monto del banco = no
+  escrito.
+- **Gasto**: la moneda y su tasa pasan arriba, antes de Subtotal (nuevo y
+  editar).
+
 ## Monedas y tasas: ajustes de las pruebas AL (2026-10-06)
 
 - Mensaje claro con "Otra fuente" sin nombre (debajo del campo; sin el

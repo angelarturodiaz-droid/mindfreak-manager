@@ -79,7 +79,7 @@ export const transferSchema = z.object({
   // Multimoneda V5 (paso 4): lo que realmente entró en la cuenta destino
   // (moneda de esa cuenta), comisión del banco de origen y tasa del día
   // (informativa). Todos opcionales; la base de datos valida y calcula.
-  to_amount: z.coerce.number().positive("Lo que entró en la cuenta destino debe ser mayor a 0.").optional(),
+  to_amount: z.coerce.number().positive("Escribe cuánto entró realmente en la cuenta destino (lo que dice su estado de cuenta).").optional(),
   fee: z.coerce.number().min(0, "La comisión no puede ser negativa.").optional(),
   reference_rate: z.coerce.number().positive("La tasa del día debe ser mayor a 0.").optional(),
   reference_rate_source: z.string().trim().max(40).optional(),

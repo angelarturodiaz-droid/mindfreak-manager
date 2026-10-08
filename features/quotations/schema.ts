@@ -19,7 +19,10 @@ export const quotationHeaderSchema = z.object({
   valid_until: z.string().optional().or(z.literal("")),
   // Código ISO de 3 letras; se valida contra el catálogo de monedas activas en la acción.
   currency: currencyCodeSchema.default("DOP"),
-  exchange_rate: z.coerce.number().positive().default(1),
+  exchange_rate: z.coerce
+    .number({ message: "La tasa de cambio debe ser un número (ej. 58.80)." })
+    .positive("Escribe la tasa de cambio del documento: cuántos pesos vale 1 unidad de la otra moneda (ej. 58.80).")
+    .default(1),
   terms: z.string().trim().optional().or(z.literal("")),
   payment_terms_id: z.string().uuid().optional().or(z.literal("")),
   commission_percent: z.coerce.number().min(0).max(100).default(0),

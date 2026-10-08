@@ -165,7 +165,6 @@ export function TransferForm({
               name="reference_rate"
               type="number"
               step="0.000001"
-              min="0.000001"
               value={refText}
               onChange={(e) => setRefTyped(e.target.value)}
               info={FIELD_HINTS.referenceRate}
@@ -179,8 +178,6 @@ export function TransferForm({
             <MoneyInput
               label={`¿Cuánto entró en ${to.name}? (${to.currency})`}
               name="to_amount"
-              min={0.01}
-              required
               defaultValue={0}
               className="w-56"
               onValueChange={setReceived}

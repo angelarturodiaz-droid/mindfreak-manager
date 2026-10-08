@@ -24,7 +24,10 @@ export const invoiceHeaderSchema = z.object({
   commission_tax_rate_id: z.string().uuid().optional().or(z.literal("")),
   // Código ISO de 3 letras; se valida contra el catálogo de monedas activas en la acción.
   currency: currencyCodeSchema.default("DOP"),
-  exchange_rate: z.coerce.number().positive().default(1),
+  exchange_rate: z.coerce
+    .number({ message: "La tasa de cambio debe ser un número (ej. 58.80)." })
+    .positive("Escribe la tasa de cambio del documento: cuántos pesos vale 1 unidad de la otra moneda (ej. 58.80).")
+    .default(1),
   billing_type: z.enum(["REGULAR", "ELECTRONIC"]).default("REGULAR"),
   ncf: z.string().trim().optional().or(z.literal("")),
   ncf_type: z.string().trim().optional().or(z.literal("")),

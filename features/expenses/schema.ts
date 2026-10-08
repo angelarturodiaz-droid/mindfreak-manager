@@ -22,7 +22,10 @@ export const expenseSchema = z.object({
   payment_method: z.string().optional().or(z.literal("")),
   // Código ISO de 3 letras; se valida contra el catálogo de monedas activas en la acción.
   currency: currencyCodeSchema.default("DOP"),
-  exchange_rate: z.coerce.number().positive().default(1),
+  exchange_rate: z.coerce
+    .number({ message: "La tasa de cambio debe ser un número (ej. 58.80)." })
+    .positive("Escribe la tasa de cambio del documento: cuántos pesos vale 1 unidad de la otra moneda (ej. 58.80).")
+    .default(1),
   // Informativo, nunca afecta ningún cálculo: a qué banco del PROVEEDOR se
   // le depositó (distinto de bank_account_id, que es siempre la cuenta
   // PROPIA de origen del dinero).

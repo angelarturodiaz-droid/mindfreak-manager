@@ -74,8 +74,6 @@ export function CurrencyExchangeFields({
           name="exchange_rate"
           type="number"
           step="0.000001"
-          min="0.000001"
-          required
           value={value}
           onChange={(e) => setTyped(e.target.value)}
           hint={hint}

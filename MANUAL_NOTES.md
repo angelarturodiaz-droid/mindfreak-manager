@@ -629,10 +629,10 @@ pulsa el botón.
   informativa y equivalente en pesos. Tarjetas por moneda de cuenta (entró,
   salió, comisiones) y total de diferencias. Filtro "Solo en moneda
   diferente". La diferencia informativa no es ganancia ni pérdida contable.
-- **Recibos PDF** (cobro y pago a proveedor): si la cuenta estaba en otra
-  moneda o hubo comisión, traen "Conversión de moneda" con los dos montos,
-  la comisión, las tasas y la diferencia. Si no, el recibo es igual que
-  antes.
+- **Recibos PDF** (cobro y pago a proveedor): muestran solo el monto en la
+  moneda del documento. La conversión (cuenta, tasas, comisión, diferencia)
+  es interna: se ve en el ERP y en el reporte, no en el recibo (ajuste del
+  7-oct, prueba AM).
 - Con esto queda completa la multimoneda operacional (V5, pasos 1–5).
 
 ## Ajustes a Monedas y tasas (2026-10-06, pruebas AL)
@@ -648,4 +648,24 @@ pulsa el botón.
   empresa (DOP). Al elegir otra (ej. USD), la tasa se llena sola con la
   tasa del día de Monedas y tasas y se puede cambiar. Al editar un gasto
   que ya estaba en USD se conserva su tasa.
+
+## Correcciones de la prueba AM (2026-10-07)
+
+- **Pagos y cobros en la misma moneda** (pesos desde una cuenta en pesos)
+  daban el error "record v_fx is not assigned yet". Corregido en la base
+  (migración 080); no se había registrado ningún pago con error.
+- **Recibos PDF**: ya no muestran tasas, comisión ni diferencia; solo el
+  monto en la moneda de la factura o del gasto.
+- **Tasa vacía**: ya no sale el aviso del navegador en inglés ("Please fill
+  out this field"); el sistema explica qué falta en español.
+- **Moneda del gasto**: ahora está arriba, justo antes de Subtotal (en Nuevo
+  gasto y en Editar gasto). Al elegir otra moneda, la tasa del día se llena
+  sola.
+- **ITBIS y tratamiento fiscal**: no se duplican. El ITBIS de arriba es el
+  impuesto que cobra el proveedor en su factura (forma el total); la tarjeta
+  "Tratamiento fiscal" solo dice si a ese total se le retiene algo. "Sin
+  retención" no quiere decir "sin ITBIS".
+- **Pagar con tarjeta de crédito**: se hace al crear el gasto (método
+  Tarjeta → elegir la tarjeta). En "Registrar pago" de un gasto ya creado
+  solo salen cuentas de banco (regla de la base desde la migración 036).
 

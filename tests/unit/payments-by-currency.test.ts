@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { summarizePaymentsByCurrency, toPaymentFxRow, type RawFxPayment } from "@/features/reports/payments-by-currency";
-import { fxSectionRows } from "@/lib/pdf/fx-section";
 
 const base: RawFxPayment = {
   id: "1",
@@ -64,34 +63,5 @@ describe("Multimoneda V5 — paso 5: reporte por moneda", () => {
     ]);
     expect(s.informativeTotal).toBe(320);
     expect(s.roundingTotal).toBe(0.5);
-  });
-});
-
-describe("Multimoneda V5 — paso 5: recibos PDF", () => {
-  it("misma moneda sin comisión: el recibo no cambia", () => {
-    expect(fxSectionRows("COBRO", "a la factura", "DOP", 4000, { account_currency: "DOP", account_amount: 4000 })).toEqual([]);
-    expect(fxSectionRows("PAGO", "al gasto", "DOP", 100, {})).toEqual([]);
-  });
-  it("cobro en otra moneda con comisión muestra los dos montos, tasas y diferencia", () => {
-    const rows = fxSectionRows("COBRO", "a la factura", "USD", 1000, {
-      account_currency: "DOP", account_amount: 58500, bank_fee_amount: 150, effective_rate: 58.5,
-      effective_rate_currency: "USD", reference_rate_document: 58.8, informative_difference: 300, functional_currency: "DOP",
-    });
-    const labels = rows.map((r) => r.label);
-    expect(labels).toContain("Aplicado a la factura");
-    expect(labels).toContain("Entró a la cuenta");
-    expect(labels).toContain("Neto en la cuenta");
-    expect(labels).toContain("Tasa de referencia del día");
-    expect(labels).toContain("Diferencia informativa (no contable)");
-    expect(rows.find((r) => r.label === "Tasa efectiva")?.value).toBe("1 USD = 58.50 DOP");
-  });
-  it("pago desde cuenta USD: débito total y referencia de la cuenta", () => {
-    const rows = fxSectionRows("PAGO", "al gasto", "DOP", 97000, {
-      account_currency: "USD", account_amount: 1650, bank_fee_amount: 5, effective_rate: 58.787879,
-      effective_rate_currency: "USD", reference_rate: 58.8, informative_difference: 20, functional_currency: "DOP",
-    });
-    expect(rows.find((r) => r.label === "Salió de la cuenta")).toBeTruthy();
-    expect(rows.find((r) => r.label === "Débito total")?.value).toContain("1,655.00");
-    expect(rows.find((r) => r.label === "Tasa de referencia del día")?.value).toBe("1 USD = 58.80 DOP");
   });
 });

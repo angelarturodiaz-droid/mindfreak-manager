@@ -121,14 +121,14 @@ export function ForeignPaymentBlock({
         </dd>
       </dl>
 
+      {/* Sin "required" del navegador (sale en inglés): si falta la tasa o el
+          monto, el servidor responde con un mensaje claro en español. */}
       <div className="mt-3 flex flex-wrap items-end gap-2">
         {needAcc && (
           <Input
             label={`Tasa referencia (1 ${accountCurrency} = ? ${functionalCurrency})`}
             type="number"
             step="0.000001"
-            min="0.000001"
-            required
             value={refAcc}
             onChange={(e) => setAccTyped(e.target.value)}
             info={FIELD_HINTS.referenceRate}
@@ -145,8 +145,6 @@ export function ForeignPaymentBlock({
             label={`Tasa referencia (1 ${documentCurrency} = ? ${functionalCurrency})`}
             type="number"
             step="0.000001"
-            min="0.000001"
-            required
             value={refDoc}
             onChange={(e) => setDocTyped(e.target.value)}
             info={FIELD_HINTS.referenceRate}
@@ -173,8 +171,6 @@ export function ForeignPaymentBlock({
         <MoneyInput
           label={`¿Cuánto ${verb} realmente el banco? (${accountCurrency})`}
           name="account_amount"
-          min={0.01}
-          required
           defaultValue={0}
           onValueChange={setAccountAmount}
           className="w-52"

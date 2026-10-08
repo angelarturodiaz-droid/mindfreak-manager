@@ -110,6 +110,14 @@ export function ExpenseEditForm({
         ))}
       </Select>
 
+      <CurrencyExchangeFields
+        baseCurrency={baseCurrency}
+        currencies={currencies}
+        defaultCurrency={expense.currency}
+        defaultExchangeRate={expense.exchange_rate}
+        rates={rates}
+      />
+
       <div className="grid grid-cols-2 gap-3">
         <MoneyInput label="Subtotal" name="subtotal" min={0} required defaultValue={expense.subtotal} />
         <Input label="Impuesto (%)" name="tax_percent" type="number" step="0.01" min="0" defaultValue={impliedPercent} />
@@ -137,13 +145,6 @@ export function ExpenseEditForm({
         ))}
       </Select>
 
-      <CurrencyExchangeFields
-        baseCurrency={baseCurrency}
-        currencies={currencies}
-        defaultCurrency={expense.currency}
-        defaultExchangeRate={expense.exchange_rate}
-        rates={rates}
-      />
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
 

@@ -1,6 +1,5 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 import { registerPdfFonts } from "./fonts";
-import { fxSectionRows, PdfFxSection, type PaymentFxData } from "./fx-section";
 
 function money(amount: number, currency: string) {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency }).format(
@@ -43,7 +42,7 @@ export type SupplierReceiptPdfData = {
     reference: string | null;
     currency: string;
     payee_bank_name: string | null;
-  } & PaymentFxData;
+  };
   expense: {
     description: string;
     balance: number;
@@ -291,13 +290,6 @@ export function SupplierReceiptPdfDocument({
             <Text style={styles.amountLabel}>MONTO PAGADO</Text>
             <Text style={styles.amountValue}>{money(payment.amount, payment.currency)}</Text>
           </View>
-
-          <PdfFxSection
-            title="CONVERSIÓN DE MONEDA"
-            rows={fxSectionRows("PAGO", "al gasto", payment.currency, Number(payment.amount), payment)}
-            accent={accent}
-            background={accentLight}
-          />
 
           <View style={styles.grandTotalRow}>
             <Text style={styles.grandTotalLabel}>BALANCE PENDIENTE DEL GASTO</Text>

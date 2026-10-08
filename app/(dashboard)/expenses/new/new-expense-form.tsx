@@ -152,6 +152,8 @@ export function NewExpenseForm({
         ))}
       </Select>
 
+      <CurrencyExchangeFields baseCurrency={baseCurrency} currencies={currencies} rates={fxContext.rates} />
+
       <div className="grid grid-cols-2 gap-3">
         <MoneyInput label="Subtotal" name="subtotal" min={0} required defaultValue={0} />
         <Input label="Impuesto (%)" name="tax_percent" type="number" step="0.01" min="0" defaultValue="18" />
@@ -236,8 +238,6 @@ export function NewExpenseForm({
       )}
 
       {accountId && <AccountFundsHint funds={funds[accountId]} />}
-
-      <CurrencyExchangeFields baseCurrency={baseCurrency} currencies={currencies} rates={fxContext.rates} />
 
       {account && foreign && (
         <ForeignPaymentBlock
