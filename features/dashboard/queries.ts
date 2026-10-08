@@ -1,13 +1,25 @@
 import { createClient } from "@/lib/supabase/server";
 
+/**
+ * Mes calendario en hora de República Dominicana. El servidor corre en UTC:
+ * sin esto, desde las 8:00 p. m. del último día del mes el Dashboard ya
+ * mostraba el mes siguiente.
+ */
 function monthRange(monthsAgo: number) {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth() - monthsAgo, 1);
-  const end = new Date(now.getFullYear(), now.getMonth() - monthsAgo + 1, 1);
+  const [y, m] = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Santo_Domingo", year: "numeric", month: "2-digit" })
+    .format(new Date())
+    .split("-")
+    .map(Number);
+  const iso = (year: number, month0: number) => {
+    const d = new Date(Date.UTC(year, month0, 1));
+    return d.toISOString().slice(0, 10);
+  };
+  const start = iso(y, m - 1 - monthsAgo);
+  const end = iso(y, m - monthsAgo);
   return {
-    start: start.toISOString().slice(0, 10),
-    end: end.toISOString().slice(0, 10),
-    label: start.toLocaleDateString("es-DO", { month: "short", year: "2-digit" }),
+    start,
+    end,
+    label: new Date(`${start}T12:00:00Z`).toLocaleDateString("es-DO", { month: "short", year: "2-digit", timeZone: "UTC" }),
   };
 }
 

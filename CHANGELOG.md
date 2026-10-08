@@ -1,5 +1,22 @@
 # CHANGELOG — Mindfreak Manager
 
+## Dashboard: anillos de Gastos y Margen del mes (2026-10-07)
+
+- Los números estaban bien calculados, pero con muy pocas ventas en el mes
+  (octubre: una factura de RD$61.95 contra RD$503,287.70 de gastos de
+  prueba) el anillo mostraba "−812310%" y el texto se salía del círculo.
+  Ahora el centro del anillo nunca pasa de 5 caracteres (">999%",
+  "<−999"), un margen negativo llena el anillo en rojo según la pérdida, y
+  con 0 % ya no se dibuja un punto.
+- *Gastos del mes*: si los gastos superan las ventas, el anillo va en rojo
+  y dice "Superan las ventas (RD$…)"; sin ventas, "Sin ventas este mes".
+- *Margen del mes*: el porcentaje grande se muestra sin decimales y con
+  separador de miles (−812,310%); el detalle dice "Utilidad ÷ ventas del
+  mes".
+- El mes del Dashboard se calcula en hora de República Dominicana (antes,
+  desde las 8:00 p. m. del último día del mes ya mostraba el mes siguiente,
+  porque el servidor está en UTC).
+
 ## Manual del sistema más corto y con buscador (2026-10-07)
 
 - `app/(dashboard)/help/page.tsx` (ahora componente de cliente; el

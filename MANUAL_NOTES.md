@@ -688,3 +688,8 @@ pulsa el botón.
   frecuentes, cuadrícula de módulos (se abre uno a la vez, con anterior /
   siguiente) y puntos largos con *Ver más*. Al agregar texto nuevo al
   manual basta con sumarlo a `SECTIONS`; el buscador lo encuentra solo.
+- **Dashboard (7-oct)**: Ventas/Gastos/Margen del mes usan el total de las
+  facturas (no canceladas) y de los gastos (no cancelados) con fecha del mes,
+  convertidos a pesos con la tasa de cada documento; incluyen ITBIS y,
+  hoy, también los borradores de factura. El anillo muestra como máximo
+  ">999%".

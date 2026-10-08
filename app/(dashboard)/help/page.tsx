@@ -256,6 +256,9 @@ const SECTIONS: Section[] = [
               vencido = qué parte de lo pendiente ya está vencida.
             </>,
             <>
+              <strong>Cómo se calculan Ventas, Gastos y Margen del mes</strong>: Ventas = total de las facturas del mes (fecha de emisión, sin las canceladas); Gastos = total de los gastos del mes (fecha del gasto, sin los cancelados), pagados o no; los dos con ITBIS y convertidos a pesos con la tasa de cada documento. Utilidad = Ventas − Gastos y Margen = Utilidad ÷ Ventas. Si en el mes hay muy pocas ventas, el % puede ser enorme (ej. −812,310 %): el anillo muestra como máximo <em>&gt;999%</em> y, si los gastos superan las ventas, se pone en rojo con el aviso <em>Superan las ventas</em>. El mes es el de la hora de República Dominicana.
+            </>,
+            <>
               <strong>Flujo financiero</strong>: cobros (verde) y pagos (rojo) de
               los últimos 6 meses, con los totales, el neto y cuánto subieron o
               bajaron los cobros de este mes frente al anterior.{" "}

@@ -28,15 +28,27 @@ export function toneColor(tone: Tone) {
 }
 
 /** Anillo de progreso con el % en el centro. `value` null = sin dato ("—"). */
+/** Porcentaje corto para el centro del anillo: 45%, −40%, >999%, <−999%. */
+function ringText(value: number) {
+  const r = Math.round(value);
+  if (r > 999) return ">999%";
+  if (r < -999) return "<−999";
+  return `${r < 0 ? "−" : ""}${Math.abs(r)}%`;
+}
+
 export function RingGauge({ value, tone, label }: { value: number | null; tone: Tone; label?: string }) {
   const r = 20;
   const c = 2 * Math.PI * r;
-  const pct = value === null || !Number.isFinite(value) ? 0 : Math.max(0, Math.min(100, value));
-  const text = value === null || !Number.isFinite(value) ? "—" : `${Math.round(value)}%`;
+  const ok = value !== null && Number.isFinite(value);
+  // Negativo (ej. margen −40 %): el anillo se llena con el tamaño de la pérdida, en el color del tono.
+  // Más de 100 %: el anillo queda lleno. El número nunca se sale del círculo.
+  const pct = ok ? Math.min(100, Math.abs(value)) : 0;
+  const text = ok ? ringText(value) : "—";
   return (
     <div className="relative h-12 w-12 shrink-0" title={label}>
       <svg viewBox="0 0 48 48" className="h-12 w-12 -rotate-90">
         <circle cx="24" cy="24" r={r} fill="none" stroke="var(--brand-border)" strokeWidth="5" />
+        {pct > 0 && (
         <circle
           cx="24"
           cy="24"
@@ -47,8 +59,13 @@ export function RingGauge({ value, tone, label }: { value: number | null; tone: 
           strokeLinecap="round"
           strokeDasharray={`${(pct / 100) * c} ${c}`}
         />
+        )}
       </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold tabular-nums text-brand-text">
+      <span
+        className={`absolute inset-0 flex items-center justify-center font-semibold tabular-nums text-brand-text ${
+          text.length > 4 ? "text-[9px]" : "text-[11px]"
+        }`}
+      >
         {text}
       </span>
     </div>

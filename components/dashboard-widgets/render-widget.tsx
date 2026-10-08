@@ -46,7 +46,10 @@ function cashBreakdown(c: { savings: number; checking: number; other: number; co
 }
 
 function percent(value: number | null) {
-  return value === null ? "—" : `${value.toFixed(1)}%`;
+  if (value === null || !Number.isFinite(value)) return "—";
+  // Valores muy grandes (pocas ventas en el mes) sin decimales y con separador de miles.
+  if (Math.abs(value) >= 1000) return `${value < 0 ? "−" : ""}${Math.round(Math.abs(value)).toLocaleString("es-DO")}%`;
+  return `${value < 0 ? "−" : ""}${Math.abs(value).toFixed(1)}%`;
 }
 
 /** a / b en %, o null si b es 0. */
@@ -120,8 +123,19 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
           label="Gastos del mes"
           value={money0(kpis.gastos)}
           title={money(kpis.gastos)}
-          ring={{ value: ratio(kpis.gastos, kpis.ventas), tone: "warning", label: "Gastos como % de las ventas" }}
-          sub={kpis.ventas > 0 ? "de las ventas del mes" : `Pagado ${money0(kpis.pagos)}`}
+          ring={{
+            value: ratio(kpis.gastos, kpis.ventas),
+            tone: kpis.ventas > 0 && kpis.gastos > kpis.ventas ? "danger" : "warning",
+            label: "Gastos como % de las ventas del mes",
+          }}
+          sub={
+            kpis.ventas <= 0
+              ? `Sin ventas este mes · Pagado ${money0(kpis.pagos)}`
+              : kpis.gastos > kpis.ventas
+                ? `Superan las ventas (${money0(kpis.ventas)})`
+                : "de las ventas del mes"
+          }
+          subTone={kpis.ventas > 0 && kpis.gastos > kpis.ventas ? "danger" : undefined}
         />
       );
     case "utilidad_mes":
@@ -143,7 +157,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
           value={percent(kpis.margen)}
           danger={(kpis.margen ?? 0) < 0}
           ring={{ value: kpis.margen, tone: (kpis.margen ?? 0) < 0 ? "danger" : "success", label: "Utilidad / ventas" }}
-          sub="Utilidad sobre ventas"
+          sub={kpis.ventas > 0 ? "Utilidad ÷ ventas del mes" : "Sin ventas este mes"}
         />
       );
     case "total_por_cobrar":
