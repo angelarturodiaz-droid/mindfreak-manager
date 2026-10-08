@@ -33,6 +33,8 @@ type BankAccount = {
   name: string;
   bank_name: string | null;
   currency: string;
+  /** BANK o CREDIT_CARD: un gasto pendiente también se puede pagar con tarjeta. */
+  type?: string;
 };
 type BankCatalogEntry = { id: string; name: string };
 
@@ -73,6 +75,7 @@ export function RegisterSupplierPaymentForm({
   const [state, formAction, pending, dialogs, formKey] =
     useOverdraftConfirmAction(registerWithIds, initialState);
   const [accountId, setAccountId] = useState("");
+  const [method, setMethod] = useState("TRANSFER");
   const [amount, setAmount] = useState(balance);
   const [paymentDate, setPaymentDate] = useState(todayISO());
   // Después de un pago exitoso el formulario vuelve a empezar.
@@ -80,10 +83,16 @@ export function RegisterSupplierPaymentForm({
   if (seenKey !== formKey) {
     setSeenKey(formKey);
     setAccountId("");
+    setMethod("TRANSFER");
     setAmount(balance);
     setPaymentDate(todayISO());
   }
   const account = bankAccounts.find((b) => b.id === accountId);
+  const isCard = account?.type === "CREDIT_CARD";
+  const banks = bankAccounts.filter((b) => b.type !== "CREDIT_CARD");
+  const cards = bankAccounts.filter((b) => b.type === "CREDIT_CARD");
+  const optionLabel = (b: BankAccount) =>
+    `${b.name}${b.bank_name ? ` (${b.bank_name})` : ""}${b.currency !== currency ? ` · ${b.currency}` : ""}`;
   // Cuenta en otra moneda que el gasto → bloque "Pago en moneda diferente".
   const foreign = Boolean(account && account.currency !== currency);
 
@@ -153,7 +162,7 @@ export function RegisterSupplierPaymentForm({
           className="w-40"
           onValueChange={setAmount}
         />
-        <Select label="Método" name="method" defaultValue="TRANSFER">
+        <Select label="Método" name="method" value={method} onChange={(e) => setMethod(e.target.value)}>
           {PAYMENT_METHODS.map((m) => (
             <option key={m} value={m}>
               {PAYMENT_METHOD_LABELS[m]}
@@ -161,20 +170,44 @@ export function RegisterSupplierPaymentForm({
           ))}
         </Select>
         <Select
-          label="Cuenta bancaria"
+          label="Cuenta o tarjeta"
           name="bank_account_id"
           required
           value={accountId}
-          onChange={(e) => setAccountId(e.target.value)}
+          onChange={(e) => {
+            setAccountId(e.target.value);
+            // Con tarjeta de crédito el método queda "Tarjeta" (la base también lo fija).
+            if (bankAccounts.find((b) => b.id === e.target.value)?.type === "CREDIT_CARD") setMethod("CARD");
+          }}
+          hint={isCard ? "Con tarjeta de crédito el pago sube la deuda de la tarjeta." : undefined}
         >
           <option value="" disabled>
-            Selecciona una cuenta…
+            Selecciona una cuenta o tarjeta…
           </option>
-          {bankAccounts.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.name} ({b.bank_name}){b.currency !== currency ? ` · ${b.currency}` : ""}
-            </option>
-          ))}
+          {cards.length > 0 ? (
+            <>
+              <optgroup label="Cuentas de banco">
+                {banks.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {optionLabel(b)}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Tarjetas de crédito">
+                {cards.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {optionLabel(b)} — Tarjeta
+                  </option>
+                ))}
+              </optgroup>
+            </>
+          ) : (
+            banks.map((b) => (
+              <option key={b.id} value={b.id}>
+                {optionLabel(b)}
+              </option>
+            ))
+          )}
         </Select>
         <Input label="Referencia" name="reference" />
         <Select

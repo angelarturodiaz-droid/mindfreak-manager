@@ -52,7 +52,7 @@ export const BUTTON_HINTS: Record<string, string> = {
   "Duplicar factura": "Crea una factura nueva en borrador con las mismas líneas.",
 
   // Gastos y pagos
-  "Registrar pago": "Anota un pago al proveedor. Sale el dinero de la cuenta elegida. Si la cuenta está en otra moneda, primero pide cuánto debitó realmente el banco.",
+  "Registrar pago": "Anota un pago al proveedor desde una cuenta de banco o una tarjeta de crédito (con tarjeta sube su deuda). Si la cuenta o tarjeta está en otra moneda, primero pide cuánto debitó realmente el banco.",
   "Guardar tasa": "Guarda la tasa de referencia de esa moneda para ese día. Si ya había una ese día, la reemplaza. Lo ya registrado no cambia.",
   "Agregar moneda": "Agrega la moneda al catálogo para poder usarla en cuentas, cotizaciones, facturas y gastos.",
   "Cancelar gasto": "Anula el gasto. Deja de contar en los costos y no se puede pagar.",

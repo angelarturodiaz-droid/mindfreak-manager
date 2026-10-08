@@ -22,6 +22,15 @@
   escrito.
 - **Gasto**: la moneda y su tasa pasan arriba, antes de Subtotal (nuevo y
   editar).
+- **Migración 081** (aplicada, md5 verificado): `register_supplier_payment`
+  acepta tarjetas de crédito (pagar después un gasto pendiente con tarjeta),
+  fija el método `CARD` con tarjeta, rechaza cuentas o tarjetas inactivas y
+  describe el movimiento como "Pago con tarjeta — gasto…". El límite lo valida
+  el trigger de fondos. Simulación `t081`: 9 comprobaciones OK.
+- *Registrar pago* del gasto: lista "Cuenta o tarjeta" con grupos (cuentas de
+  banco / tarjetas); al elegir tarjeta el método pasa a Tarjeta. *Cómo se
+  pagó* refleja los pagos reales (método y cuenta), no solo lo elegido al
+  crear el gasto.
 
 ## Monedas y tasas: ajustes de las pruebas AL (2026-10-06)
 

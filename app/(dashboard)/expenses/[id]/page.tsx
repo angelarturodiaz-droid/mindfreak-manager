@@ -7,9 +7,10 @@ import {
   listExpenseCategories,
   listActiveSuppliers,
   listProjectsForSelect,
+  listActiveAccountsForSelect,
 } from "@/features/expenses/queries";
 import { cancelExpenseAction } from "@/features/expenses/actions";
-import { listPaymentsForExpense, listBankAccounts } from "@/features/payments/queries";
+import { listPaymentsForExpense } from "@/features/payments/queries";
 import { PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
 import { hasPermission } from "@/lib/auth/permissions";
 import { ExpenseEditForm } from "./expense-edit-form";
@@ -66,7 +67,7 @@ export default async function ExpenseDetailPage({
   }
   if (!expense) notFound();
 
-  const [categories, suppliers, projects, canEdit, canPay, payments, bankAccounts, documents, bankCatalog, company, funds, serviceTypes, canSeeRules, canApprove, currencyOptions, fxContext] =
+  const [categories, suppliers, projects, canEdit, canPay, payments, documents, bankCatalog, company, funds, serviceTypes, canSeeRules, canApprove, currencyOptions, fxContext, paymentAccounts] =
     await Promise.all([
       listExpenseCategories(),
       listActiveSuppliers(),
@@ -74,7 +75,6 @@ export default async function ExpenseDetailPage({
       hasPermission("expenses.create"),
       hasPermission("payments.create"),
       listPaymentsForExpense(id),
-      listBankAccounts(),
       listDocuments("expense", id),
       listBankCatalog(),
       getCompany(),
@@ -84,8 +84,23 @@ export default async function ExpenseDetailPage({
       hasPermission("expenses.approve"),
       listCurrencyOptions(),
       getFxContext(),
+      // Cuentas de banco y tarjetas de crédito activas: un gasto pendiente
+      // también se puede pagar después con tarjeta (migración 081).
+      listActiveAccountsForSelect(),
     ]);
 
+  // Cómo se pagó de verdad: métodos y cuentas de los pagos registrados.
+  const paidMethods = [...new Set(payments.map((p) => p.method).filter(Boolean))] as string[];
+  const paidAccounts = [
+    ...new Set(
+      payments
+        .map((p) => {
+          const a = p.bank_accounts as { name: string } | { name: string }[] | null;
+          return (Array.isArray(a) ? a[0] : a)?.name;
+        })
+        .filter(Boolean),
+    ),
+  ] as string[];
   const category = expense.expense_categories as { name: string } | null;
   const supplier = expense.suppliers as { name: string } | null;
   const project = expense.projects as { number: string; name: string } | null;
@@ -264,15 +279,27 @@ export default async function ExpenseDetailPage({
         />
         <Card className="flex min-w-0 flex-col gap-1.5 text-sm">
           <p className="font-medium text-brand-muted">Cómo se pagó</p>
+          {/* Si ya hay pagos, se muestra cómo se pagó de verdad (el método se
+              puede decidir al registrar el pago, incluso con tarjeta). */}
           <p className="text-brand-text">
-            {expense.payment_method
-              ? PAYMENT_METHOD_LABELS[expense.payment_method] ?? expense.payment_method
-              : "—"}
+            {paidMethods.length > 1
+              ? "Varios métodos"
+              : paidMethods.length === 1
+                ? PAYMENT_METHOD_LABELS[paidMethods[0]] ?? paidMethods[0]
+                : expense.payment_method
+                  ? PAYMENT_METHOD_LABELS[expense.payment_method] ?? expense.payment_method
+                  : "—"}
           </p>
-          {bankAccount && (
+          {paidAccounts.length > 0 ? (
             <p className="text-xs text-brand-muted">
-              {expense.payment_method === "CARD" ? "Tarjeta" : "Cuenta"}: {bankAccount.name}
+              {paidMethods.length === 1 && paidMethods[0] === "CARD" ? "Tarjeta" : "Cuenta"}: {paidAccounts.join(", ")}
             </p>
+          ) : (
+            bankAccount && (
+              <p className="text-xs text-brand-muted">
+                {expense.payment_method === "CARD" ? "Tarjeta" : "Cuenta"}: {bankAccount.name}
+              </p>
+            )
           )}
           {expense.payee_bank_name && (
             <p className="text-xs text-brand-muted">Banco del proveedor: {expense.payee_bank_name}</p>
@@ -300,7 +327,7 @@ export default async function ExpenseDetailPage({
                     Este gasto no tiene proveedor asignado — agrégalo editando el
                     gasto para poder registrarle un pago.
                   </p>
-                ) : bankAccounts.length === 0 ? (
+                ) : paymentAccounts.length === 0 ? (
                   <p className="text-sm text-brand-muted">
                     Necesitas crear al menos una{" "}
                     <Link href="/banks/new" className="text-brand-accent hover:underline">
@@ -331,7 +358,7 @@ export default async function ExpenseDetailPage({
                         : null
                     }
                     fiscalStatus={expense.fiscal_status ?? "NOT_EVALUATED"}
-                    bankAccounts={bankAccounts}
+                    bankAccounts={paymentAccounts}
                     bankCatalog={bankCatalog}
                     funds={funds}
                     fxContext={fxContext}

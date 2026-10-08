@@ -216,6 +216,9 @@ export async function registerSupplierPaymentAction(
     if (error.message.includes("invalid_status")) {
       return { error: "Este gasto no admite pagos en su estado actual." };
     }
+    if (error.message.includes("inactive_account")) {
+      return { error: "Esa cuenta o tarjeta está inactiva. Actívala en Bancos o elige otra." };
+    }
     return { error: error.message };
   }
 

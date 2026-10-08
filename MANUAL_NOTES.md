@@ -668,4 +668,9 @@ pulsa el botón.
 - **Pagar con tarjeta de crédito**: se hace al crear el gasto (método
   Tarjeta → elegir la tarjeta). En "Registrar pago" de un gasto ya creado
   solo salen cuentas de banco (regla de la base desde la migración 036).
+- **Pagar después con tarjeta** (migración 081): un gasto pendiente se puede
+  pagar más tarde con una tarjeta de crédito desde *Registrar pago* (lista
+  "Cuenta o tarjeta", con las tarjetas aparte). El método queda en Tarjeta,
+  la deuda de la tarjeta sube y se valida el crédito disponible. *Cómo se
+  pagó* muestra el método y la cuenta de los pagos reales.
 
