@@ -9,9 +9,11 @@ import { Input } from "@/components/ui/field";
 import { InfoHint } from "@/components/ui/info-hint";
 import { FIELD_HINTS } from "@/lib/ui/field-hints";
 import { formatMoney } from "@/lib/utils/money";
+import { todayISO } from "@/lib/utils/dates";
 
 /** Tasas de referencia registradas, por moneda (más recientes primero). */
-export type RateHistory = Record<string, { date: string; rate: number; source: string }[]>;
+export type RateEntry = { date: string; rate: number; source: string };
+export type RateHistory = Record<string, RateEntry[]>;
 
 /** Última tasa registrada en o antes de la fecha. */
 export function rateOn(history: RateHistory, code: string, date: string) {
@@ -58,8 +60,16 @@ export function ForeignPaymentBlock({
 }) {
   const needAcc = accountCurrency !== functionalCurrency;
   const needDoc = needsDocumentRate({ documentCurrency, accountCurrency, functionalCurrency });
-  const accFound = needAcc ? rateOn(rates, accountCurrency, date) : null;
-  const docFound = needDoc ? rateOn(rates, documentCurrency, date) : null;
+  // Tasa puesta sola después del error "Falta la tasa": si la fecha del pago
+  // no tiene tasa, se usa la tasa del día (la última registrada hasta hoy).
+  // Se guarda con su moneda: si cambia la cuenta, deja de aplicar.
+  const [filled, setFilled] = useState<Record<string, RateEntry | null>>({});
+  const accOnDate = needAcc ? rateOn(rates, accountCurrency, date) : null;
+  const docOnDate = needDoc ? rateOn(rates, documentCurrency, date) : null;
+  const accFound = needAcc ? (accOnDate ?? filled[accountCurrency] ?? null) : null;
+  const docFound = needDoc ? (docOnDate ?? filled[documentCurrency] ?? null) : null;
+  const accIsToday = needAcc && !accOnDate && accFound !== null;
+  const docIsToday = needDoc && !docOnDate && docFound !== null;
 
   const [accountAmount, setAccountAmount] = useState(0);
   const [fee, setFee] = useState(0);
@@ -69,6 +79,30 @@ export function ForeignPaymentBlock({
   const [docTyped, setDocTyped] = useState<string | null>(null);
   const refAcc = accTyped ?? (accFound ? String(accFound.rate) : "");
   const refDoc = docTyped ?? (docFound ? String(docFound.rate) : "");
+
+  // Al llegar el error "Falta un dato", la tasa vacía se vuelve a llenar sola:
+  // con la de la fecha del pago si existe, y si no con la tasa del día.
+  const [seenMissing, setSeenMissing] = useState(markMissing);
+  if (seenMissing !== markMissing) {
+    setSeenMissing(markMissing);
+    if (markMissing) {
+      const today = todayISO();
+      if (needAcc && !(Number(refAcc) > 0)) {
+        setAccTyped(null);
+        if (!accFound) {
+          const r = rateOn(rates, accountCurrency, today) ?? rates[accountCurrency]?.[0] ?? null;
+          setFilled((f) => ({ ...f, [accountCurrency]: r }));
+        }
+      }
+      if (needDoc && !(Number(refDoc) > 0)) {
+        setDocTyped(null);
+        if (!docFound) {
+          const r = rateOn(rates, documentCurrency, today) ?? rates[documentCurrency]?.[0] ?? null;
+          setFilled((f) => ({ ...f, [documentCurrency]: r }));
+        }
+      }
+    }
+  }
 
   const fx = useMemo(
     () =>
@@ -142,7 +176,7 @@ export function ForeignPaymentBlock({
             error={accRateMissing ? `${missing} Escribe la tasa de ${accountCurrency} de ese día.` : undefined}
             hint={
               accFound
-                ? `${RATE_SOURCE_LABELS[accFound.source as RateSource] ?? accFound.source} · ${accFound.date}${accOverride ? " · cambiada a mano" : ""}`
+                ? `${RATE_SOURCE_LABELS[accFound.source as RateSource] ?? accFound.source} · ${accFound.date}${accIsToday ? " · tasa del día (la fecha del pago no tiene tasa): revísala" : ""}${accOverride ? " · cambiada a mano" : ""}`
                 : "No hay tasa registrada: escríbela (o regístrala en Configuración → Monedas y tasas)."
             }
             className="w-44"
@@ -159,7 +193,7 @@ export function ForeignPaymentBlock({
             error={docRateMissing ? `${missing} Escribe la tasa de ${documentCurrency} de ese día.` : undefined}
             hint={
               docFound
-                ? `${RATE_SOURCE_LABELS[docFound.source as RateSource] ?? docFound.source} · ${docFound.date}${docOverride ? " · cambiada a mano" : ""}`
+                ? `${RATE_SOURCE_LABELS[docFound.source as RateSource] ?? docFound.source} · ${docFound.date}${docIsToday ? " · tasa del día (la fecha del pago no tiene tasa): revísala" : ""}${docOverride ? " · cambiada a mano" : ""}`
                 : "No hay tasa registrada: escríbela."
             }
             className="w-44"

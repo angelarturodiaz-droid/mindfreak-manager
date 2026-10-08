@@ -23,6 +23,11 @@
   `error`; nuevo `MissingDataDialog` y `validationErrorState` para los
   formularios sin `useOverdraftConfirmAction`. Sin cambios de lógica fiscal
   ni de dinero.
+- **La tasa vuelve sola después del error**: si la tasa quedó vacía, al
+  llegar "Falta un dato" se vuelve a llenar con la tasa de la fecha del pago
+  o, si esa fecha no tiene, con la tasa del día (aviso "revísala"); se
+  guarda con la fecha y la fuente de esa tasa. Igual con la tasa del
+  documento.
 
 ## Correcciones de la prueba AM (2026-10-07)
 

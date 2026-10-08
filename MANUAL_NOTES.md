@@ -679,3 +679,4 @@ pulsa el botón.
   puede quedar pendiente (*Aún no*) y pagarse después. El método de pago va
   antes de *Tratamiento fiscal*. Si falta la tasa o el monto del banco sale
   la ventana roja *Falta un dato* y el campo queda en rojo.
+  Si la tasa estaba vacía, después del error vuelve sola la tasa del día.

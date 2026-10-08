@@ -46,6 +46,13 @@ export function CurrencyExchangeFields({
   const suggested = keepDocRate ? String(defaultExchangeRate) : found ? String(found.rate) : "";
   const value = typed ?? suggested;
 
+  // Al llegar el error "Falta la tasa", si quedó vacía vuelve la tasa del día.
+  const [seenMissing, setSeenMissing] = useState(markMissing);
+  if (seenMissing !== markMissing) {
+    setSeenMissing(markMissing);
+    if (markMissing && !(Number(value) > 0)) setTyped(null);
+  }
+
   const hint = keepDocRate
     ? `1 ${currency} = ? ${baseCurrency} · tasa guardada en el documento`
     : found
