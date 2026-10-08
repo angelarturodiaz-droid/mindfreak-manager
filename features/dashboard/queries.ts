@@ -51,7 +51,8 @@ export async function getDashboardKPIs() {
     supabase
       .from("invoices")
       .select("total, exchange_rate")
-      .neq("status", "CANCELLED")
+      // Borradores y canceladas no son ventas.
+      .not("status", "in", "(CANCELLED,DRAFT)")
       .gte("issue_date", start)
       .lt("issue_date", end),
     supabase

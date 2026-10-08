@@ -1,5 +1,15 @@
 # CHANGELOG — Mindfreak Manager
 
+## Los borradores de factura ya no cuentan como ventas (2026-10-07)
+
+- Decisión del usuario: una factura en **Borrador** está en espera y no es
+  venta. Se excluye (además de las canceladas) en: Ventas del mes,
+  Utilidad y Margen del Dashboard; comparativos (períodos, clientes,
+  proyectos); Rentabilidad por proyecto; Ventas por cliente (sin filtro de
+  estado) y el *Facturado* del detalle del proyecto. Por cobrar ya usaba
+  solo emitidas. Hoy hay 5 borradores (17–28 sep, RD$7,135.90, sin
+  proyecto): septiembre baja esa cantidad en ventas.
+
 ## Dashboard: anillos de Gastos y Margen del mes (2026-10-07)
 
 - Los números estaban bien calculados, pero con muy pocas ventas en el mes

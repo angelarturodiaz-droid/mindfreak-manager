@@ -105,7 +105,8 @@ export async function getProjectsProfitabilityReport(filters: ProfitabilityFilte
       .from("invoices")
       .select("project_id, total, exchange_rate")
       .in("project_id", projectIds)
-      .neq("status", "CANCELLED"),
+      // Facturado = facturas emitidas (sin borradores ni canceladas).
+      .not("status", "in", "(CANCELLED,DRAFT)"),
     supabase.from("customer_payments").select("project_id, amount, exchange_rate").in("project_id", projectIds),
     supabase.from("project_items").select("project_id, estimated_cost").in("project_id", projectIds),
     supabase
@@ -259,7 +260,8 @@ export async function getSalesByClientReport(filters: SalesByClientFilters = {})
   if (filters.status) {
     query = query.eq("status", filters.status);
   } else {
-    query = query.neq("status", "CANCELLED");
+    // Sin filtro: ventas = facturas emitidas (sin borradores ni canceladas).
+    query = query.not("status", "in", "(CANCELLED,DRAFT)");
   }
   if (filters.from) query = query.gte("issue_date", filters.from);
   if (filters.to) query = query.lte("issue_date", filters.to);

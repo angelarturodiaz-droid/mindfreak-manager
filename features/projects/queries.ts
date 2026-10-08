@@ -199,7 +199,8 @@ export async function getProjectProfitability(projectId: string) {
         .from("invoices")
         .select("total, exchange_rate")
         .eq("project_id", projectId)
-        .neq("status", "CANCELLED"),
+        // Facturado = facturas emitidas (sin borradores ni canceladas).
+        .not("status", "in", "(CANCELLED,DRAFT)"),
       supabase
         .from("customer_payments")
         .select("amount, exchange_rate")

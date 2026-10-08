@@ -6,7 +6,8 @@ function relName(rel: NameRel): string | null {
   return Array.isArray(rel) ? rel[0]?.name ?? null : rel?.name ?? null;
 }
 
-const ACTIVE_INVOICE_STATUSES_EXCLUDE = "CANCELLED";
+// Ventas = facturas emitidas: no cuentan las canceladas ni los borradores (en espera, aún no se emiten).
+const NOT_SALES = "(CANCELLED,DRAFT)";
 const ACTIVE_EXPENSE_STATUSES_EXCLUDE = "CANCELLED";
 
 // ---------------------------------------------------------------------------
@@ -49,7 +50,7 @@ export async function getProjectProfitabilityComparison(period: Period) {
         .from("invoices")
         .select("project_id, total, exchange_rate")
         .in("project_id", projectIds)
-        .neq("status", ACTIVE_INVOICE_STATUSES_EXCLUDE),
+        .not("status", "in", NOT_SALES),
       supabase
         .from("expenses")
         .select("project_id, total, exchange_rate")
@@ -215,7 +216,7 @@ export async function getSalesByClientComparison(period: Period) {
     const { data, error } = await supabase
       .from("invoices")
       .select("client_id, total, balance, exchange_rate, clients(name)")
-      .neq("status", ACTIVE_INVOICE_STATUSES_EXCLUDE)
+      .not("status", "in", NOT_SALES)
       .gte("issue_date", from)
       .lte("issue_date", to);
     if (error) throw new Error(error.message);
@@ -323,7 +324,7 @@ export async function getClientProfitabilityComparison(period: Period) {
       supabase
         .from("invoices")
         .select("client_id, total, exchange_rate, clients(name)")
-        .neq("status", ACTIVE_INVOICE_STATUSES_EXCLUDE)
+        .not("status", "in", NOT_SALES)
         .gte("issue_date", from)
         .lte("issue_date", to),
       supabase.from("projects").select("id, client_id"),
@@ -430,7 +431,7 @@ export async function getPeriodOverPeriodComparison(period: Period) {
       supabase
         .from("invoices")
         .select("total, exchange_rate")
-        .neq("status", ACTIVE_INVOICE_STATUSES_EXCLUDE)
+        .not("status", "in", NOT_SALES)
         .gte("issue_date", from)
         .lte("issue_date", to),
       supabase
