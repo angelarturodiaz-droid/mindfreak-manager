@@ -6,6 +6,7 @@ import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/features/payments/sche
 import { Input, Select } from "@/components/ui/field";
 import { SearchSelect } from "@/components/ui/search-select";
 import { MoneyInput } from "@/components/ui/money-input";
+import { MissingDataDialog } from "@/components/ui/missing-data-dialog";
 import { CurrencyExchangeFields } from "@/components/ui/currency-exchange-fields";
 import type { RateHistory } from "@/components/payments/foreign-payment-block";
 import { Button } from "@/components/ui/button";
@@ -111,6 +112,7 @@ export function ExpenseEditForm({
       </Select>
 
       <CurrencyExchangeFields
+        markMissing={state.field === "rate"}
         baseCurrency={baseCurrency}
         currencies={currencies}
         defaultCurrency={expense.currency}
@@ -122,6 +124,15 @@ export function ExpenseEditForm({
         <MoneyInput label="Subtotal" name="subtotal" min={0} required defaultValue={expense.subtotal} />
         <Input label="Impuesto (%)" name="tax_percent" type="number" step="0.01" min="0" defaultValue={impliedPercent} />
       </div>
+
+      <Select label="Método de pago" name="payment_method" defaultValue={expense.payment_method ?? ""}>
+        <option value="">Sin especificar</option>
+        {PAYMENT_METHODS.map((m) => (
+          <option key={m} value={m}>
+            {PAYMENT_METHOD_LABELS[m]}
+          </option>
+        ))}
+      </Select>
 
       <ExpenseFiscalFields
         serviceTypes={serviceTypes}
@@ -136,14 +147,7 @@ export function ExpenseEditForm({
         canSeeRules={canSeeRules}
       />
 
-      <Select label="Método de pago" name="payment_method" defaultValue={expense.payment_method ?? ""}>
-        <option value="">Sin especificar</option>
-        {PAYMENT_METHODS.map((m) => (
-          <option key={m} value={m}>
-            {PAYMENT_METHOD_LABELS[m]}
-          </option>
-        ))}
-      </Select>
+      <MissingDataDialog state={state} />
 
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}

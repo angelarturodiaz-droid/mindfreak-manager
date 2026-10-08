@@ -39,6 +39,7 @@ export function ForeignPaymentBlock({
   date,
   rates,
   tolerance,
+  markMissing = false,
 }: {
   kind?: FxKind;
   documentCurrency: string;
@@ -52,6 +53,8 @@ export function ForeignPaymentBlock({
   date: string;
   rates: RateHistory;
   tolerance: number;
+  /** El servidor dijo que falta un dato: marca en rojo la tasa o el monto vacíos. */
+  markMissing?: boolean;
 }) {
   const needAcc = accountCurrency !== functionalCurrency;
   const needDoc = needsDocumentRate({ documentCurrency, accountCurrency, functionalCurrency });
@@ -92,6 +95,10 @@ export function ForeignPaymentBlock({
   const totalDebit = Math.round((accountAmount + fee) * 100) / 100;
   const verb = kind === "PAGO" ? "debitó" : "acreditó";
   const diff = fx.informativeDifference || fx.roundingDifference;
+  const missing = "Falta este dato.";
+  const accRateMissing = markMissing && needAcc && !(Number(refAcc) > 0);
+  const docRateMissing = markMissing && needDoc && !(Number(refDoc) > 0);
+  const amountMissing = markMissing && !(accountAmount > 0);
 
   return (
     <div className="w-full rounded-[var(--radius-md)] border border-brand-accent/40 bg-brand-accent-light/40 p-3">
@@ -132,6 +139,7 @@ export function ForeignPaymentBlock({
             value={refAcc}
             onChange={(e) => setAccTyped(e.target.value)}
             info={FIELD_HINTS.referenceRate}
+            error={accRateMissing ? `${missing} Escribe la tasa de ${accountCurrency} de ese día.` : undefined}
             hint={
               accFound
                 ? `${RATE_SOURCE_LABELS[accFound.source as RateSource] ?? accFound.source} · ${accFound.date}${accOverride ? " · cambiada a mano" : ""}`
@@ -148,6 +156,7 @@ export function ForeignPaymentBlock({
             value={refDoc}
             onChange={(e) => setDocTyped(e.target.value)}
             info={FIELD_HINTS.referenceRate}
+            error={docRateMissing ? `${missing} Escribe la tasa de ${documentCurrency} de ese día.` : undefined}
             hint={
               docFound
                 ? `${RATE_SOURCE_LABELS[docFound.source as RateSource] ?? docFound.source} · ${docFound.date}${docOverride ? " · cambiada a mano" : ""}`
@@ -174,6 +183,7 @@ export function ForeignPaymentBlock({
           defaultValue={0}
           onValueChange={setAccountAmount}
           className="w-52"
+          error={amountMissing ? `${missing} Copia el monto del estado de cuenta.` : undefined}
           hint={
             kind === "PAGO"
               ? "Lo que aparece en el estado de cuenta, sin la comisión."

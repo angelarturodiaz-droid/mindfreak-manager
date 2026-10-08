@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { createQuotationAction, type ActionState } from "@/features/quotations/actions";
 import { Input, Select, Textarea } from "@/components/ui/field";
+import { MissingDataDialog } from "@/components/ui/missing-data-dialog";
 import { CurrencyExchangeFields } from "@/components/ui/currency-exchange-fields";
 import type { RateHistory } from "@/components/payments/foreign-payment-block";
 import { Button } from "@/components/ui/button";
@@ -90,9 +91,11 @@ export function NewQuotationForm({
         ))}
       </Select>
 
-      <CurrencyExchangeFields baseCurrency={baseCurrency} currencies={currencies} rates={rates} />
+      <CurrencyExchangeFields markMissing={state.field === "rate"} baseCurrency={baseCurrency} currencies={currencies} rates={rates} />
 
       <Textarea label="Condiciones / Notas" name="terms" rows={3} />
+
+      <MissingDataDialog state={state} />
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
 

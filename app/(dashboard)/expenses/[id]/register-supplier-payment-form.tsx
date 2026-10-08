@@ -25,6 +25,7 @@ import {
 } from "@/components/fiscal/fiscal-breakdown";
 import { EXPENSE_FISCAL_REVIEW } from "@/features/fiscal/expense-labels";
 import { ForeignPaymentBlock, type RateHistory } from "@/components/payments/foreign-payment-block";
+import { AccountPicker } from "@/components/payments/account-picker";
 
 const initialState: ActionState = { error: null };
 
@@ -50,6 +51,7 @@ export function RegisterSupplierPaymentForm({
   fiscal = null,
   fiscalStatus = "NOT_EVALUATED",
   fxContext,
+  defaultMethod,
 }: {
   expenseId: string;
   supplierId: string | null;
@@ -65,6 +67,8 @@ export function RegisterSupplierPaymentForm({
   fiscalStatus?: string;
   /** Moneda funcional, tolerancia y tasas de referencia (pago en moneda diferente). */
   fxContext: { functionalCurrency: string; tolerance: number; rates: RateHistory };
+  /** Método elegido al crear el gasto (ej. CARD): es el que viene seleccionado. */
+  defaultMethod?: string | null;
 }) {
   const registerWithIds = registerSupplierPaymentAction.bind(
     null,
@@ -75,7 +79,8 @@ export function RegisterSupplierPaymentForm({
   const [state, formAction, pending, dialogs, formKey] =
     useOverdraftConfirmAction(registerWithIds, initialState);
   const [accountId, setAccountId] = useState("");
-  const [method, setMethod] = useState("TRANSFER");
+  const startMethod = defaultMethod && PAYMENT_METHODS.includes(defaultMethod as (typeof PAYMENT_METHODS)[number]) ? defaultMethod : "TRANSFER";
+  const [method, setMethod] = useState(startMethod);
   const [amount, setAmount] = useState(balance);
   const [paymentDate, setPaymentDate] = useState(todayISO());
   // Después de un pago exitoso el formulario vuelve a empezar.
@@ -83,16 +88,13 @@ export function RegisterSupplierPaymentForm({
   if (seenKey !== formKey) {
     setSeenKey(formKey);
     setAccountId("");
-    setMethod("TRANSFER");
+    setMethod(startMethod);
     setAmount(balance);
     setPaymentDate(todayISO());
   }
   const account = bankAccounts.find((b) => b.id === accountId);
-  const isCard = account?.type === "CREDIT_CARD";
-  const banks = bankAccounts.filter((b) => b.type !== "CREDIT_CARD");
-  const cards = bankAccounts.filter((b) => b.type === "CREDIT_CARD");
-  const optionLabel = (b: BankAccount) =>
-    `${b.name}${b.bank_name ? ` (${b.bank_name})` : ""}${b.currency !== currency ? ` · ${b.currency}` : ""}`;
+  // El método decide qué se lista: Tarjeta → tarjetas de crédito; el resto → cuentas de banco.
+  const isCard = method === "CARD";
   // Cuenta en otra moneda que el gasto → bloque "Pago en moneda diferente".
   const foreign = Boolean(account && account.currency !== currency);
 
@@ -162,53 +164,32 @@ export function RegisterSupplierPaymentForm({
           className="w-40"
           onValueChange={setAmount}
         />
-        <Select label="Método" name="method" value={method} onChange={(e) => setMethod(e.target.value)}>
+        <Select
+          label="Método"
+          name="method"
+          value={method}
+          onChange={(e) => {
+            const next = e.target.value;
+            // Tarjeta = tarjetas de crédito; los demás métodos = cuentas de banco.
+            if ((next === "CARD") !== (method === "CARD")) setAccountId("");
+            setMethod(next);
+          }}
+          hint={isCard ? "Muestra solo tarjetas de crédito." : "Muestra solo cuentas de banco."}
+        >
           {PAYMENT_METHODS.map((m) => (
             <option key={m} value={m}>
               {PAYMENT_METHOD_LABELS[m]}
             </option>
           ))}
         </Select>
-        <Select
-          label="Cuenta o tarjeta"
-          name="bank_account_id"
-          required
+        <AccountPicker
+          accounts={bankAccounts}
+          kind={isCard ? "card" : "bank"}
+          documentCurrency={currency}
           value={accountId}
-          onChange={(e) => {
-            setAccountId(e.target.value);
-            // Con tarjeta de crédito el método queda "Tarjeta" (la base también lo fija).
-            if (bankAccounts.find((b) => b.id === e.target.value)?.type === "CREDIT_CARD") setMethod("CARD");
-          }}
-          hint={isCard ? "Con tarjeta de crédito el pago sube la deuda de la tarjeta." : undefined}
-        >
-          <option value="" disabled>
-            Selecciona una cuenta o tarjeta…
-          </option>
-          {cards.length > 0 ? (
-            <>
-              <optgroup label="Cuentas de banco">
-                {banks.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {optionLabel(b)}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="Tarjetas de crédito">
-                {cards.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {optionLabel(b)} — Tarjeta
-                  </option>
-                ))}
-              </optgroup>
-            </>
-          ) : (
-            banks.map((b) => (
-              <option key={b.id} value={b.id}>
-                {optionLabel(b)}
-              </option>
-            ))
-          )}
-        </Select>
+          onChange={setAccountId}
+          hint={isCard ? "El pago sube la deuda de la tarjeta." : undefined}
+        />
         <Input label="Referencia" name="reference" />
         <Select
           label="Banco del proveedor (opcional)"
@@ -235,6 +216,7 @@ export function RegisterSupplierPaymentForm({
             date={paymentDate}
             rates={fxContext.rates}
             tolerance={fxContext.tolerance}
+            markMissing={state.field === "fx"}
           />
         )}
         {accountId && (

@@ -23,6 +23,7 @@ export function CurrencyExchangeFields({
   defaultCurrency,
   defaultExchangeRate = 1,
   rates = {},
+  markMissing = false,
 }: {
   baseCurrency: string;
   /** Monedas activas del catálogo (Configuración → Monedas y tasas). */
@@ -31,6 +32,8 @@ export function CurrencyExchangeFields({
   defaultExchangeRate?: number;
   /** Tasas de referencia registradas, por moneda (para llenar la tasa sola). */
   rates?: RateHistory;
+  /** El servidor dijo que falta la tasa: se marca en rojo si sigue vacía. */
+  markMissing?: boolean;
 }) {
   const initial = defaultCurrency ?? baseCurrency;
   const [currency, setCurrency] = useState(initial);
@@ -77,6 +80,7 @@ export function CurrencyExchangeFields({
           value={value}
           onChange={(e) => setTyped(e.target.value)}
           hint={hint}
+          error={markMissing && !(Number(value) > 0) ? `Falta la tasa: escribe cuántos ${baseCurrency} vale 1 ${currency}.` : undefined}
           info={`Cuántos ${baseCurrency} vale 1 ${currency} para este documento. Se llena con la tasa de referencia del día (Configuración → Monedas y tasas) y la puedes cambiar.`}
           className="flex-1"
         />

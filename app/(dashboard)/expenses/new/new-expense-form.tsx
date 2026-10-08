@@ -11,6 +11,7 @@ import { Input, Select } from "@/components/ui/field";
 import { SearchSelect } from "@/components/ui/search-select";
 import { MoneyInput } from "@/components/ui/money-input";
 import { CurrencyExchangeFields } from "@/components/ui/currency-exchange-fields";
+import { AccountPicker } from "@/components/payments/account-picker";
 import { Button } from "@/components/ui/button";
 import { todayISO } from "@/lib/utils/dates";
 import { ExpenseFiscalFields } from "@/components/fiscal/expense-fiscal-fields";
@@ -152,21 +153,17 @@ export function NewExpenseForm({
         ))}
       </Select>
 
-      <CurrencyExchangeFields baseCurrency={baseCurrency} currencies={currencies} rates={fxContext.rates} />
+      <CurrencyExchangeFields
+        markMissing={state.field === "rate"}
+        baseCurrency={baseCurrency}
+        currencies={currencies}
+        rates={fxContext.rates}
+      />
 
       <div className="grid grid-cols-2 gap-3">
         <MoneyInput label="Subtotal" name="subtotal" min={0} required defaultValue={0} />
         <Input label="Impuesto (%)" name="tax_percent" type="number" step="0.01" min="0" defaultValue="18" />
       </div>
-
-      <ExpenseFiscalFields
-        serviceTypes={serviceTypes}
-        categories={categories}
-        suppliers={suppliers}
-        defaults={{ supplierId: defaultSupplierId }}
-        canSeeRules={canSeeRules}
-        onPreview={setNet}
-      />
 
       <Select
         label="Método de pago"
@@ -176,6 +173,7 @@ export function NewExpenseForm({
           setPaymentMethod(e.target.value);
           setAccountId("");
         }}
+        hint="Tarjeta muestra tus tarjetas de crédito; los demás métodos, tus cuentas de banco."
       >
         <option value="">Sin especificar</option>
         {PAYMENT_METHODS.map((m) => (
@@ -185,56 +183,32 @@ export function NewExpenseForm({
         ))}
       </Select>
 
-      {isCard ? (
-        <>
-          <Select
-            label="Tarjeta"
-            name="bank_account_id"
-            required
-            value={accountId}
-            onChange={(e) => setAccountId(e.target.value)}
-            hint="El gasto queda pagado de inmediato (por el neto, si hay retenciones) y la deuda de la tarjeta sube sola."
-          >
-            <option value="" disabled>
-              Selecciona una tarjeta…
-            </option>
-            {relevantAccounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name} {a.bank_name ? `(${a.bank_name})` : ""} · {a.currency}
-              </option>
-            ))}
-          </Select>
-          {relevantAccounts.length === 0 && (
-            <p className="text-sm text-brand-danger">
-              Todavía no tienes ninguna tarjeta de crédito creada —{" "}
-              <Link href="/banks/new" className="underline">
-                crea una primero
-              </Link>
-              .
-            </p>
-          )}
-        </>
-      ) : (
-        paymentMethod !== "" && (
-          <Select
-            label="Banco (opcional)"
-            name="bank_account_id"
-            value={accountId}
-            onChange={(e) => setAccountId(e.target.value)}
-            hint={
-              relevantAccounts.length === 0
-                ? "Sin cuentas bancarias todavía — se puede pagar después desde el detalle del gasto."
-                : "Si ya sabes desde qué banco se pagó, el gasto queda pagado de inmediato por el neto a pagar. Si no, déjalo en blanco y lo pagas después."
-            }
-          >
-            <option value="">Aún no lo sé (queda pendiente de pago)</option>
-            {relevantAccounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name} {a.bank_name ? `(${a.bank_name})` : ""} · {a.currency}
-              </option>
-            ))}
-          </Select>
-        )
+      {paymentMethod !== "" && (
+        <AccountPicker
+          accounts={accounts}
+          kind={isCard ? "card" : "bank"}
+          documentCurrency={docCurrency}
+          value={accountId}
+          onChange={setAccountId}
+          label={isCard ? "Tarjeta (opcional)" : "Banco (opcional)"}
+          emptyOptionLabel="Aún no — queda pendiente de pago"
+          hint={
+            accountId
+              ? isCard
+                ? "El gasto queda pagado de inmediato (por el neto, si hay retenciones) y sube la deuda de la tarjeta."
+                : "El gasto queda pagado de inmediato por el neto a pagar."
+              : 'Déjalo en "Aún no" si lo vas a pagar después (en Registrar pago), total o en partes.'
+          }
+        />
+      )}
+      {paymentMethod !== "" && relevantAccounts.length === 0 && isCard && (
+        <p className="text-sm text-brand-danger">
+          Todavía no tienes ninguna tarjeta de crédito creada —{" "}
+          <Link href="/banks/new" className="underline">
+            crea una primero
+          </Link>
+          .
+        </p>
       )}
 
       {accountId && <AccountFundsHint funds={funds[accountId]} />}
@@ -250,8 +224,18 @@ export function NewExpenseForm({
           date={expenseDate}
           rates={fxContext.rates}
           tolerance={fxContext.tolerance}
+          markMissing={state.field === "fx"}
         />
       )}
+
+      <ExpenseFiscalFields
+        serviceTypes={serviceTypes}
+        categories={categories}
+        suppliers={suppliers}
+        defaults={{ supplierId: defaultSupplierId }}
+        canSeeRules={canSeeRules}
+        onPreview={setNet}
+      />
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
 

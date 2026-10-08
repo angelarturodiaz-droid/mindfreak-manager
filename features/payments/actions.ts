@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
-import { foreignPaymentError, foreignPaymentRpcParams, parseForeignPayment, registerPaymentSchema } from "./schema";
+import { foreignPaymentErrorState, foreignPaymentRpcParams, parseForeignPayment, registerPaymentSchema } from "./schema";
 import type { ReceiptPdfData } from "@/lib/pdf/receipt-document";
 import { bankRuleState, overdraftConfirmed, type MoneyActionState } from "@/lib/utils/bank-errors";
 import { formatMoney } from "@/lib/utils/money";
@@ -81,8 +81,8 @@ export async function registerPaymentAction(
   });
 
   if (error) {
-    const fxError = foreignPaymentError(error.message);
-    if (fxError) return { error: fxError.replace("cuánto debitó realmente el banco", "cuánto entró realmente al banco") };
+    const fxState = foreignPaymentErrorState(error.message, "COBRO");
+    if (fxState) return fxState;
     // Traducir los errores conocidos de la función a mensajes claros
     if (error.message.includes("amount_exceeds_balance")) {
       return {
@@ -204,8 +204,8 @@ export async function registerSupplierPaymentAction(
     // Fondos insuficientes / sobregiro por confirmar (reglas de cuentas, migración 063)
     const rule = bankRuleState(error.message);
     if (rule) return rule;
-    const fxError = foreignPaymentError(error.message);
-    if (fxError) return { error: fxError };
+    const fxState = foreignPaymentErrorState(error.message);
+    if (fxState) return fxState;
     if (error.message.includes("amount_exceeds_balance")) {
       return {
         error: null,

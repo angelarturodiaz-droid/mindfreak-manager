@@ -673,4 +673,9 @@ pulsa el botón.
   "Cuenta o tarjeta", con las tarjetas aparte). El método queda en Tarjeta,
   la deuda de la tarjeta sube y se valida el crédito disponible. *Cómo se
   pagó* muestra el método y la cuenta de los pagos reales.
-
+- **Elegir la cuenta (segunda ronda AM)**: método *Tarjeta* → solo tarjetas;
+  otro método → solo cuentas de banco. El filtro *Moneda* (DOP · USD ·
+  Todas) arranca en la moneda del documento. Un gasto creado con Tarjeta
+  puede quedar pendiente (*Aún no*) y pagarse después. El método de pago va
+  antes de *Tratamiento fiscal*. Si falta la tasa o el monto del banco sale
+  la ventana roja *Falta un dato* y el campo queda en rojo.

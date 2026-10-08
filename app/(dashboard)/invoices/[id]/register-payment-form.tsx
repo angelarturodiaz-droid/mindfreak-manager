@@ -8,11 +8,12 @@ import { Input, Select } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 import { todayISO } from "@/lib/utils/dates";
+import { AccountPicker } from "@/components/payments/account-picker";
 import { ForeignPaymentBlock, type RateHistory } from "@/components/payments/foreign-payment-block";
 
 const initialState: ActionState = { error: null };
 
-type BankAccount = { id: string; name: string; bank_name: string | null; currency: string };
+type BankAccount = { id: string; name: string; bank_name: string | null; currency: string; type?: string | null };
 type CategoryOption = { id: string; name: string };
 
 /** Compara nombres sin mayúsculas ni acentos ("Cobro de Factura" = "cobro de factura"). */
@@ -88,22 +89,14 @@ export function RegisterPaymentForm({
           </option>
         ))}
       </Select>
-      <Select
-        label="Cuenta bancaria"
-        name="bank_account_id"
-        required
+      <AccountPicker
+        accounts={bankAccounts}
+        kind="bank"
+        documentCurrency={currency}
         value={accountId}
-        onChange={(e) => setAccountId(e.target.value)}
-      >
-        <option value="" disabled>
-          Selecciona una cuenta…
-        </option>
-        {bankAccounts.map((b) => (
-          <option key={b.id} value={b.id}>
-            {b.name} ({b.bank_name}){b.currency !== currency ? ` · ${b.currency}` : ""}
-          </option>
-        ))}
-      </Select>
+        onChange={setAccountId}
+        label="Cuenta bancaria"
+      />
       <Select
         label="Categoría"
         name="category_id"
@@ -131,6 +124,7 @@ export function RegisterPaymentForm({
           date={paymentDate}
           rates={fxContext.rates}
           tolerance={fxContext.tolerance}
+          markMissing={state.field === "fx"}
         />
       )}
       <Button type="submit" loading={pending}>

@@ -181,6 +181,7 @@ export function TransferForm({
               defaultValue={0}
               className="w-56"
               onValueChange={setReceived}
+              error={state.field === "fx" && !(received > 0) ? "Falta este dato. Copia el monto del estado de cuenta de la otra cuenta." : undefined}
               hint={estimated !== null ? `Estimado a la tasa del día: ${fmt(estimated, to.currency)}` : "Lo que dice el estado de cuenta de la otra cuenta."}
             />
           </div>

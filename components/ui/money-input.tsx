@@ -34,6 +34,7 @@ export function MoneyInput({
   disabled,
   className = "",
   hint,
+  error,
   onValueChange,
 }: {
   label?: string;
@@ -44,6 +45,8 @@ export function MoneyInput({
   disabled?: boolean;
   className?: string;
   hint?: string;
+  /** Mensaje en rojo debajo del campo (y borde rojo). */
+  error?: string;
   /** Opcional: recibe el valor numérico cada vez que cambia (ej. para mostrar una conversión en vivo). */
   onValueChange?: (value: number) => void;
 }) {
@@ -69,10 +72,15 @@ export function MoneyInput({
           onValueChange?.(Number(next) || 0);
         }}
         disabled={disabled}
-        className={`${FIELD_CLASSES} ${className} ${disabled ? "cursor-not-allowed bg-brand-background text-brand-disabled" : ""}`}
+        aria-invalid={error ? true : undefined}
+        className={`${FIELD_CLASSES} ${className} ${disabled ? "cursor-not-allowed bg-brand-background text-brand-disabled" : ""} ${error ? "border-brand-danger ring-1 ring-brand-danger" : ""}`}
       />
       <input type="hidden" name={name} value={raw} required={required} min={min} />
-      {hint && <p className="text-xs text-brand-muted">{hint}</p>}
+      {error ? (
+        <p className="text-xs text-brand-danger">{error}</p>
+      ) : (
+        hint && <p className="text-xs text-brand-muted">{hint}</p>
+      )}
     </div>
   );
 }

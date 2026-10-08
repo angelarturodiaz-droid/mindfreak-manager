@@ -1,5 +1,29 @@
 # CHANGELOG — Mindfreak Manager
 
+## Correcciones de la prueba AM — segunda ronda (2026-10-07)
+
+- **Lista de cuentas según el método** (`components/payments/account-picker.tsx`):
+  método *Tarjeta* = solo tarjetas de crédito; cualquier otro método = solo
+  cuentas de banco. Encima, filtro de **moneda** (chips DOP · USD · Todas) que
+  arranca en la moneda del documento; si la cuenta elegida queda fuera del
+  filtro se limpia. Se usa en *Registrar pago* del gasto (el método viene
+  del gasto), en *Nuevo gasto* y en *Registrar cobro* (solo cuentas de banco).
+- **Gasto con tarjeta pendiente**: al crear un gasto con método Tarjeta la
+  tarjeta es opcional (*Aún no — queda pendiente de pago*); se paga después
+  desde *Registrar pago* (total, parcial o con otra cuenta). Sin cambios en
+  la base.
+- **Orden del formulario de gasto**: Método de pago (y cuenta, fondos y
+  recuadro de moneda diferente) va antes de *Tratamiento fiscal*, que queda
+  al final (nuevo y editar).
+- **Falta un dato → ventana roja + campo en rojo**: si falta la tasa de
+  referencia o el monto real del banco (pago, cobro, gasto pagado al
+  crearlo), el monto recibido de una transferencia entre monedas o la tasa
+  del documento (cotización, factura, gasto), el servidor responde con la
+  ventana *Falta un dato* y `field` marca el campo. `MoneyInput` acepta
+  `error`; nuevo `MissingDataDialog` y `validationErrorState` para los
+  formularios sin `useOverdraftConfirmAction`. Sin cambios de lógica fiscal
+  ni de dinero.
+
 ## Correcciones de la prueba AM (2026-10-07)
 
 - **Migración 080** (aplicada en producción, md5 verificado): las funciones

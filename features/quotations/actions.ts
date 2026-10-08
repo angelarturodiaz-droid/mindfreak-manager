@@ -1,5 +1,7 @@
 "use server";
 
+import { validationErrorState, type MoneyActionState } from "@/lib/utils/bank-errors";
+
 import { currencyError } from "@/features/currencies/queries";
 import { todayISO } from "@/lib/utils/dates";
 import { revalidatePath } from "next/cache";
@@ -15,7 +17,7 @@ import {
 } from "./schema";
 import type { QuotationPdfData } from "@/lib/pdf/quotation-document";
 
-export type ActionState = { error: string | null };
+export type ActionState = MoneyActionState;
 
 async function getPrimaryCompanyId(): Promise<string> {
   const companyIds = await getCurrentUserCompanyIds();
@@ -91,7 +93,7 @@ export async function createQuotationAction(
     commission_tax_rate_id: String(formData.get("commission_tax_rate_id") ?? ""),
   });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return validationErrorState(parsed.error.issues);
   }  const currencyProblem = await currencyError(parsed.data.currency, null);
   if (currencyProblem) return { error: currencyProblem };
 
@@ -211,7 +213,7 @@ export async function updateQuotationHeaderAction(
     terms: String(formData.get("terms") ?? ""),
   });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return validationErrorState(parsed.error.issues);
   }
 
   const supabase = await createSupabaseClient();
@@ -263,7 +265,7 @@ export async function addQuotationItemAction(
     estimated_unit_cost: String(formData.get("estimated_unit_cost") ?? "0"),
   });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return validationErrorState(parsed.error.issues);
   }
 
   const supabase = await createSupabaseClient();

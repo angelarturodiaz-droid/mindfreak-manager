@@ -19,7 +19,7 @@ export const PAYMENT_METHOD_LABELS: Record<string, string> = {
 };
 
 export const registerPaymentSchema = z.object({
-  bank_account_id: z.string().uuid("Debes elegir una cuenta bancaria"),
+  bank_account_id: z.string().uuid("Elige la cuenta bancaria o la tarjeta del pago."),
   payment_date: z.string().min(1, "La fecha es requerida"),
   amount: z.coerce.number().positive("El monto debe ser mayor a 0"),
   method: z.enum(PAYMENT_METHODS),
@@ -96,3 +96,17 @@ export function foreignPaymentError(message: string): string | null {
   }
   return null;
 }
+
+/**
+ * Estado del formulario cuando falta la tasa o el monto real del banco:
+ * ventana roja con el mensaje, el mismo texto en rojo bajo el formulario y
+ * `field: "fx"` para que el recuadro de moneda diferente marque en rojo el
+ * campo vacío.
+ */
+export function foreignPaymentErrorState(message: string, kind: "PAGO" | "COBRO" = "PAGO") {
+  let text = foreignPaymentError(message);
+  if (!text) return null;
+  if (kind === "COBRO") text = text.replace("cuánto debitó realmente el banco", "cuánto entró realmente al banco");
+  return { error: text, blockedTitle: "Falta un dato", blocked: text, field: "fx" };
+}
+

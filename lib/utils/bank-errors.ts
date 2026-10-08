@@ -39,6 +39,8 @@ export type MoneyActionState = {
   success?: string;
   successTitle?: string;
   successId?: number;
+  /** Campo o grupo de campos con el problema (ej. "fx" = falta la tasa o el monto del banco), para marcarlo en rojo. */
+  field?: string;
 };
 
 /** Título de la ventana según el mensaje de la base de datos. */
@@ -64,4 +66,18 @@ export function bankRuleState(
 /** true si el formulario se reenvió después de que el usuario confirmó el sobregiro. */
 export function overdraftConfirmed(formData: FormData): boolean {
   return formData.get("confirm_overdraft") === "1";
+}
+
+/**
+ * Error de validación del formulario (zod) como estado de la pantalla. Si
+ * lo que falta es la tasa de cambio del documento, además del texto en rojo
+ * abre la ventana roja "Falta un dato" y marca el campo (`field: "rate"`).
+ */
+export function validationErrorState(issues: { message: string; path: PropertyKey[] }[]): MoneyActionState {
+  const issue = issues[0];
+  const msg = issue?.message ?? "Datos inválidos.";
+  if (issue?.path[0] === "exchange_rate") {
+    return { error: msg, blockedTitle: "Falta un dato", blocked: msg, field: "rate" };
+  }
+  return { error: msg };
 }

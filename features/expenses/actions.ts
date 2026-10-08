@@ -1,14 +1,14 @@
 "use server";
 
 import { currencyError } from "@/features/currencies/queries";
-import { foreignPaymentError, foreignPaymentRpcParams, parseForeignPayment } from "@/features/payments/schema";
+import { foreignPaymentErrorState, foreignPaymentRpcParams, parseForeignPayment } from "@/features/payments/schema";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
 import { expenseSchema, calculateExpenseTotals } from "./schema";
-import { bankRuleState, overdraftConfirmed, type MoneyActionState } from "@/lib/utils/bank-errors";
+import { bankRuleState, overdraftConfirmed, type MoneyActionState, validationErrorState } from "@/lib/utils/bank-errors";
 import { safeReturnTo } from "@/lib/utils/return-to";
 import {
   evaluateExpenseFiscal,
@@ -115,7 +115,7 @@ export async function createExpenseAction(
 
   const parsed = parseExpenseForm(formData);
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return validationErrorState(parsed.error.issues);
   }  const currencyProblem = await currencyError(parsed.data.currency, null);
   if (currencyProblem) return { error: currencyProblem };
 
@@ -124,9 +124,8 @@ export async function createExpenseAction(
   const companyId = await getPrimaryCompanyId();
   const supabase = await createSupabaseClient();
 
-  if (parsed.data.payment_method === "CARD" && !parsed.data.bank_account_id) {
-    return { error: "Selecciona con qué tarjeta se pagó este gasto." };
-  }
+  // Método Tarjeta sin tarjeta elegida = queda pendiente y se paga después
+  // (en Registrar pago, total o en partes, con tarjeta u otra cuenta).
 
   const fiscal = await resolveFiscal(parsed.data, tax, total);
   if (!fiscal.ok) return { error: fiscal.error };
@@ -167,8 +166,7 @@ export async function createExpenseAction(
     });
     // Fondos insuficientes, crédito insuficiente o sobregiro por confirmar (migración 063)
     if (error) {
-      const fxError = foreignPaymentError(error.message);
-      return bankRuleState(error.message) ?? { error: fxError ?? error.message };
+      return bankRuleState(error.message) ?? foreignPaymentErrorState(error.message) ?? { error: error.message };
     }
 
     await logAudit({
@@ -241,7 +239,7 @@ export async function updateExpenseAction(
 
   const parsed = parseExpenseForm(formData);
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return validationErrorState(parsed.error.issues);
   }
 
   const supabase = await createSupabaseClient();

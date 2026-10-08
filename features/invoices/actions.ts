@@ -1,5 +1,7 @@
 "use server";
 
+import { validationErrorState, type MoneyActionState } from "@/lib/utils/bank-errors";
+
 import { currencyError } from "@/features/currencies/queries";
 import { todayISO } from "@/lib/utils/dates";
 import { revalidatePath } from "next/cache";
@@ -17,7 +19,7 @@ import {
 import type { InvoicePdfData } from "@/lib/pdf/invoice-document";
 import type { InvoiceElectronicPdfData } from "@/lib/pdf/invoice-electronic-document";
 
-export type ActionState = { error: string | null };
+export type ActionState = MoneyActionState;
 
 async function getPrimaryCompanyId(): Promise<string> {
   const companyIds = await getCurrentUserCompanyIds();
@@ -97,7 +99,7 @@ export async function createInvoiceAction(
     payment_type_code: String(formData.get("payment_type_code") ?? ""),
   });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return validationErrorState(parsed.error.issues);
   }  const currencyProblem = await currencyError(parsed.data.currency, null);
   if (currencyProblem) return { error: currencyProblem };
 
@@ -294,7 +296,7 @@ export async function addInvoiceItemAction(
     tax_rate_id: String(formData.get("tax_rate_id") ?? ""),
   });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    return validationErrorState(parsed.error.issues);
   }
 
   const supabase = await createSupabaseClient();

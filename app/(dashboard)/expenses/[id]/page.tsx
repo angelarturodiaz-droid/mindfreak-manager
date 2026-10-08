@@ -362,6 +362,7 @@ export default async function ExpenseDetailPage({
                     bankCatalog={bankCatalog}
                     funds={funds}
                     fxContext={fxContext}
+                    defaultMethod={expense.payment_method}
                   />
                 )}
               </Card>

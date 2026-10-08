@@ -303,7 +303,11 @@ export async function createTransferAction(
     reference_rate_source: String(formData.get("reference_rate_source") ?? "") || undefined,
   });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+    const issue = parsed.error.issues[0];
+    const msg = issue?.message ?? "Datos inválidos.";
+    // Falta lo que entró en la cuenta destino: ventana roja + campo en rojo.
+    if (issue?.path[0] === "to_amount") return { error: msg, blockedTitle: "Falta un dato", blocked: msg, field: "fx" };
+    return { error: msg };
   }
 
   const companyId = await getPrimaryCompanyId();
@@ -331,10 +335,9 @@ export async function createTransferAction(
       return { error: "La cuenta origen y destino no pueden ser la misma." };
     }
     if (error.message.includes("exchange_rate_required")) {
-      return {
-        error:
-          "Falta cuánto entró en la cuenta destino. Esta transferencia es entre cuentas de monedas distintas: escribe el monto que realmente recibió la otra cuenta (lo que dice su estado de cuenta).",
-      };
+      const msg =
+        "Falta cuánto entró en la cuenta destino. Esta transferencia es entre cuentas de monedas distintas: escribe el monto que realmente recibió la otra cuenta (lo que dice su estado de cuenta).";
+      return { error: msg, blockedTitle: "Falta un dato", blocked: msg, field: "fx" };
     }
     if (error.message.includes("invalid_amount")) {
       const i = error.message.indexOf("invalid_amount:");
