@@ -680,3 +680,4 @@ pulsa el botón.
   antes de *Tratamiento fiscal*. Si falta la tasa o el monto del banco sale
   la ventana roja *Falta un dato* y el campo queda en rojo.
   Si la tasa estaba vacía, después del error vuelve sola la tasa del día.
+  Botón **↻ Usar tasa del día** junto a la tasa y **Cancelar** en Registrar pago / Registrar cobro.

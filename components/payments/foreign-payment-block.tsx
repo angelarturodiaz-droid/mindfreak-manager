@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight, RotateCcw } from "lucide-react";
 import { computeFx, needsDocumentRate, type FxKind } from "@/features/currencies/fx";
 import { RATE_SOURCE_LABELS, type RateSource } from "@/features/currencies/schema";
 import { MoneyInput } from "@/components/ui/money-input";
@@ -42,6 +42,7 @@ export function ForeignPaymentBlock({
   rates,
   tolerance,
   markMissing = false,
+  missingKey,
 }: {
   kind?: FxKind;
   documentCurrency: string;
@@ -57,6 +58,8 @@ export function ForeignPaymentBlock({
   tolerance: number;
   /** El servidor dijo que falta un dato: marca en rojo la tasa o el monto vacíos. */
   markMissing?: boolean;
+  /** Cambia con cada respuesta del servidor (el estado del formulario): cada error nuevo vuelve a llenar la tasa vacía. */
+  missingKey?: unknown;
 }) {
   const needAcc = accountCurrency !== functionalCurrency;
   const needDoc = needsDocumentRate({ documentCurrency, accountCurrency, functionalCurrency });
@@ -80,27 +83,29 @@ export function ForeignPaymentBlock({
   const refAcc = accTyped ?? (accFound ? String(accFound.rate) : "");
   const refDoc = docTyped ?? (docFound ? String(docFound.rate) : "");
 
-  // Al llegar el error "Falta un dato", la tasa vacía se vuelve a llenar sola:
-  // con la de la fecha del pago si existe, y si no con la tasa del día.
-  const [seenMissing, setSeenMissing] = useState(markMissing);
-  if (seenMissing !== markMissing) {
-    setSeenMissing(markMissing);
-    if (markMissing) {
-      const today = todayISO();
-      if (needAcc && !(Number(refAcc) > 0)) {
-        setAccTyped(null);
-        if (!accFound) {
-          const r = rateOn(rates, accountCurrency, today) ?? rates[accountCurrency]?.[0] ?? null;
-          setFilled((f) => ({ ...f, [accountCurrency]: r }));
-        }
-      }
-      if (needDoc && !(Number(refDoc) > 0)) {
-        setDocTyped(null);
-        if (!docFound) {
-          const r = rateOn(rates, documentCurrency, today) ?? rates[documentCurrency]?.[0] ?? null;
-          setFilled((f) => ({ ...f, [documentCurrency]: r }));
-        }
-      }
+  // Vuelve a poner la tasa: la de la fecha del pago si existe, y si no la
+  // tasa del día (la última registrada hasta hoy).
+  function restoreRate(which: "acc" | "doc") {
+    const code = which === "acc" ? accountCurrency : documentCurrency;
+    if (which === "acc") setAccTyped(null);
+    else setDocTyped(null);
+    if (!rateOn(rates, code, date)) {
+      const r = rateOn(rates, code, todayISO()) ?? rates[code]?.[0] ?? null;
+      setFilled((f) => ({ ...f, [code]: r }));
+    }
+  }
+  const canRestoreAcc = needAcc && (rateOn(rates, accountCurrency, date) ?? rateOn(rates, accountCurrency, todayISO()) ?? rates[accountCurrency]?.[0]) != null;
+  const canRestoreDoc = needDoc && (rateOn(rates, documentCurrency, date) ?? rateOn(rates, documentCurrency, todayISO()) ?? rates[documentCurrency]?.[0]) != null;
+
+  // Cada vez que llega el error "Falta un dato", la tasa vacía se vuelve a
+  // llenar sola (aunque se haya borrado después de un error anterior).
+  const [seenMissing, setSeenMissing] = useState<unknown>(markMissing ? missingKey : null);
+  const missingNow = markMissing ? (missingKey ?? true) : null;
+  if (seenMissing !== missingNow) {
+    setSeenMissing(missingNow);
+    if (missingNow !== null) {
+      if (needAcc && !(Number(refAcc) > 0)) restoreRate("acc");
+      if (needDoc && !(Number(refDoc) > 0)) restoreRate("doc");
     }
   }
 
@@ -182,6 +187,16 @@ export function ForeignPaymentBlock({
             className="w-44"
           />
         )}
+        {canRestoreAcc && (refAcc === "" || !(Number(refAcc) > 0) || accOverride) && (
+          <button
+            type="button"
+            onClick={() => restoreRate("acc")}
+            className="mb-6 inline-flex items-center gap-1 rounded-[var(--radius-md)] border border-brand-border bg-white px-2 py-1.5 text-xs text-brand-accent hover:bg-brand-accent-light"
+            title="Vuelve a poner la tasa de referencia (la de la fecha del pago o, si no hay, la del día)."
+          >
+            <RotateCcw size={13} /> Usar tasa del día
+          </button>
+        )}
         {needDoc && (
           <Input
             label={`Tasa referencia (1 ${documentCurrency} = ? ${functionalCurrency})`}
@@ -198,6 +213,16 @@ export function ForeignPaymentBlock({
             }
             className="w-44"
           />
+        )}
+        {canRestoreDoc && (refDoc === "" || !(Number(refDoc) > 0) || docOverride) && (
+          <button
+            type="button"
+            onClick={() => restoreRate("doc")}
+            className="mb-6 inline-flex items-center gap-1 rounded-[var(--radius-md)] border border-brand-border bg-white px-2 py-1.5 text-xs text-brand-accent hover:bg-brand-accent-light"
+            title="Vuelve a poner la tasa de referencia (la de la fecha del pago o, si no hay, la del día)."
+          >
+            <RotateCcw size={13} /> Usar tasa del día
+          </button>
         )}
       </div>
 

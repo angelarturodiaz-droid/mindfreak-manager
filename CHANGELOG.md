@@ -28,6 +28,11 @@
   o, si esa fecha no tiene, con la tasa del día (aviso "revísala"); se
   guarda con la fecha y la fuente de esa tasa. Igual con la tasa del
   documento.
+- La tasa se vuelve a llenar con **cada** error (antes solo con el
+  primero) y hay un botón **↻ Usar tasa del día** junto a la tasa cuando
+  está vacía o cambiada a mano.
+- **Cancelar** en *Registrar pago* (gasto) y *Registrar cobro* (factura):
+  vuelve el formulario al inicio y oculta el error, sin guardar nada.
 
 ## Correcciones de la prueba AM (2026-10-07)
 

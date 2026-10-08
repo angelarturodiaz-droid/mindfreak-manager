@@ -83,15 +83,26 @@ export function RegisterSupplierPaymentForm({
   const [method, setMethod] = useState(startMethod);
   const [amount, setAmount] = useState(balance);
   const [paymentDate, setPaymentDate] = useState(todayISO());
-  // Después de un pago exitoso el formulario vuelve a empezar.
+  // Después de un pago exitoso, o con "Cancelar", el formulario vuelve a empezar.
   const [seenKey, setSeenKey] = useState(formKey);
-  if (seenKey !== formKey) {
-    setSeenKey(formKey);
+  const [resets, setResets] = useState(0);
+  const [clearedState, setClearedState] = useState<ActionState | null>(null);
+  function restart() {
     setAccountId("");
     setMethod(startMethod);
     setAmount(balance);
     setPaymentDate(todayISO());
   }
+  if (seenKey !== formKey) {
+    setSeenKey(formKey);
+    restart();
+  }
+  function cancel() {
+    restart();
+    setResets((n) => n + 1);
+    setClearedState(state); // oculta el error que había
+  }
+  const shown = clearedState === state ? initialState : state;
   const account = bankAccounts.find((b) => b.id === accountId);
   // El método decide qué se lista: Tarjeta → tarjetas de crédito; el resto → cuentas de banco.
   const isCard = method === "CARD";
@@ -138,7 +149,7 @@ export function RegisterSupplierPaymentForm({
         </p>
       )}
       <form
-        key={formKey}
+        key={`${formKey}-${resets}`}
         action={formAction}
         className="flex flex-wrap items-end gap-2"
       >
@@ -207,7 +218,7 @@ export function RegisterSupplierPaymentForm({
         </Select>
         {account && foreign && (
           <ForeignPaymentBlock
-            key={`${account.id}-${formKey}`}
+            key={`${account.id}-${formKey}-${resets}`}
             documentCurrency={currency}
             accountCurrency={account.currency}
             accountName={account.name}
@@ -216,7 +227,8 @@ export function RegisterSupplierPaymentForm({
             date={paymentDate}
             rates={fxContext.rates}
             tolerance={fxContext.tolerance}
-            markMissing={state.field === "fx"}
+            markMissing={shown.field === "fx"}
+            missingKey={shown}
           />
         )}
         {accountId && (
@@ -229,8 +241,11 @@ export function RegisterSupplierPaymentForm({
         <Button type="submit" loading={pending}>
           Registrar pago
         </Button>
-        {state.error && (
-          <p className="w-full text-sm text-brand-danger">{state.error}</p>
+        <Button type="button" variant="ghost" onClick={cancel} disabled={pending} hint="Borra lo que escribiste en este pago y empieza de nuevo. No guarda nada.">
+          Cancelar
+        </Button>
+        {shown.error && (
+          <p className="w-full text-sm text-brand-danger">{shown.error}</p>
         )}
         {dialogs}
       </form>

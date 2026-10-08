@@ -225,6 +225,7 @@ export function NewExpenseForm({
           rates={fxContext.rates}
           tolerance={fxContext.tolerance}
           markMissing={state.field === "fx"}
+          missingKey={state}
         />
       )}
 
