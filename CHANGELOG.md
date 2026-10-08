@@ -1,5 +1,24 @@
 # CHANGELOG — Mindfreak Manager
 
+## Manual del sistema más corto y con buscador (2026-10-07)
+
+- `app/(dashboard)/help/page.tsx` (ahora componente de cliente; el
+  contenido no cambia de lugar en el código):
+  - **Buscador** arriba: busca en todos los módulos sin importar acentos ni
+    mayúsculas, ignora palabras como "de", "del", "la", y muestra solo los
+    párrafos y puntos que tienen todas las palabras, **resaltadas** en
+    amarillo. Chips de **temas frecuentes** (moneda diferente, tasa,
+    tarjeta, retención, transferencia, comisión, anular, PDF, categoría,
+    sobregiro).
+  - **Vista de temas**: al entrar se ve una cuadrícula de módulos (ícono,
+    nombre y resumen); al elegir uno se abre solo ese, con *Todos los
+    temas* y anterior / siguiente. El menú lateral abre el módulo y en una
+    búsqueda atenúa los que no tienen resultados. Los enlaces `/help#bancos`
+    siguen funcionando.
+  - Los puntos largos se muestran en 2 líneas con **Ver más**.
+- Los puntos de *Registrar pago* (orden, Cancelar, Usar tasa del día,
+  pagar después con tarjeta) pasan de *Retenciones* a *Cobros y pagos*.
+
 ## Registrar pago y Registrar cobro más ordenados (2026-10-07)
 
 - AM ✅ probado. Los formularios de *Registrar pago* (gasto) y *Registrar

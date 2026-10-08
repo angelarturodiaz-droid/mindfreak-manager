@@ -684,3 +684,7 @@ pulsa el botón.
 - **Registrar pago / Registrar cobro ordenados (7-oct)**: 3 bloques numerados
   (1 Datos · 2 Cuenta · 3 Proveedor/Clasificación), filtro *Ver moneda*
   debajo de la cuenta y Cancelar / botón principal abajo a la derecha.
+- **Manual del sistema (7-oct)**: buscador con resaltado y temas
+  frecuentes, cuadrícula de módulos (se abre uno a la vez, con anterior /
+  siguiente) y puntos largos con *Ver más*. Al agregar texto nuevo al
+  manual basta con sumarlo a `SECTIONS`; el buscador lo encuentra solo.

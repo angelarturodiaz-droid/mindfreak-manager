@@ -1,4 +1,18 @@
-import type { ReactNode } from "react";
+"use client";
+
+import {
+  Children,
+  Fragment,
+  cloneElement,
+  createContext,
+  isValidElement,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import {
   LayoutDashboard,
   Users,
@@ -19,6 +33,10 @@ import {
   PackageCheck,
   Smile,
   Scale,
+  Search,
+  X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { IconBadge, type IconBadgeTone } from "@/components/ui/icon-badge";
 import { Card } from "@/components/ui/card";
@@ -45,14 +63,162 @@ function StatusRow({ items }: { items: { label: string; status?: string; tone?: 
   );
 }
 
+/** Texto plano de un pedazo de JSX (para buscar en el manual). */
+function nodeText(node: ReactNode): string {
+  if (node === null || node === undefined || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(nodeText).join(" ");
+  if (isValidElement(node)) {
+    const props = node.props as { children?: ReactNode; items?: unknown[] };
+    let text = Children.toArray(props.children).map(nodeText).join(" ");
+    if (Array.isArray(props.items)) {
+      text +=
+        " " +
+        props.items
+          .map((it) =>
+            typeof it === "object" && it !== null && !isValidElement(it) && "label" in it
+              ? String((it as { label: string }).label)
+              : nodeText(it as ReactNode),
+          )
+          .join(" ");
+    }
+    return text;
+  }
+  return "";
+}
+
+/** Minúsculas y sin acentos: "Tasa" = "tasa", "retención" = "retencion". */
+function norm(text: string) {
+  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+/** Todas las palabras buscadas aparecen en el texto. */
+function matches(text: string, words: string[]) {
+  const t = norm(text);
+  return words.every((w) => wordAt(t, w, 0) >= 0);
+}
+
+/** Posición de la palabra buscada al inicio de una palabra del texto ("tasa" no encuentra "retasa"). */
+function wordAt(text: string, w: string, from: number) {
+  let at = text.indexOf(w, from);
+  while (at > 0 && /[a-z0-9]/.test(text[at - 1])) at = text.indexOf(w, at + 1);
+  return at;
+}
+
+/** Resalta en amarillo las palabras buscadas (sin importar acentos ni mayúsculas). */
+function highlightText(text: string, words: string[]): ReactNode {
+  if (!words.length) return text;
+  let flat = "";
+  const map: number[] = [];
+  for (let i = 0; i < text.length; i++) {
+    const n = norm(text[i]);
+    for (let k = 0; k < n.length; k++) {
+      flat += n[k];
+      map.push(i);
+    }
+  }
+  const hit = new Array<boolean>(text.length).fill(false);
+  for (const w of words) {
+    let from = 0;
+    for (;;) {
+      const at = wordAt(flat, w, from);
+      if (at < 0) break;
+      for (let j = at; j < at + w.length; j++) hit[map[j]] = true;
+      from = at + w.length;
+    }
+  }
+  if (!hit.includes(true)) return text;
+  const out: ReactNode[] = [];
+  let i = 0;
+  while (i < text.length) {
+    const on = hit[i];
+    let j = i;
+    while (j < text.length && hit[j] === on) j++;
+    const piece = text.slice(i, j);
+    out.push(on ? <mark key={i} className="rounded bg-yellow-200 px-0.5 text-inherit">{piece}</mark> : piece);
+    i = j;
+  }
+  return out;
+}
+
+function highlight(node: ReactNode, words: string[]): ReactNode {
+  if (!words.length) return node;
+  if (typeof node === "string") return highlightText(node, words);
+  if (Array.isArray(node)) return node.map((n, i) => <Fragment key={i}>{highlight(n, words)}</Fragment>);
+  if (isValidElement(node)) {
+    const props = node.props as { children?: ReactNode };
+    if (props.children === undefined || node.type === Bullets) return node;
+    return cloneElement(node as ReactElement<{ children?: ReactNode }>, undefined, highlight(props.children, words));
+  }
+  return node;
+}
+
+/**
+ * En una búsqueda, de cada módulo se dejan solo los bloques que mencionan lo
+ * buscado (las listas se filtran punto por punto).
+ */
+function filterContent(content: ReactNode, words: string[]): ReactNode {
+  if (!words.length) return content;
+  const top =
+    isValidElement(content) && content.type === Fragment
+      ? Children.toArray((content.props as { children?: ReactNode }).children)
+      : Children.toArray(content);
+  return top
+    .filter((child) => matches(nodeText(child), words))
+    .map((child, i) => <Fragment key={i}>{highlight(child, words)}</Fragment>);
+}
+
+/** Bloques de un módulo para buscar: párrafos sueltos y cada punto de las listas. */
+function contentUnits(content: ReactNode): ReactNode[] {
+  const top =
+    isValidElement(content) && content.type === Fragment
+      ? Children.toArray((content.props as { children?: ReactNode }).children)
+      : Children.toArray(content);
+  return top.flatMap((child) =>
+    isValidElement(child) && child.type === Bullets ? (child.props as { items: ReactNode[] }).items : [child],
+  );
+}
+
+/** Palabras que no ayudan a buscar ("tasa del día" busca "tasa" y "día"). */
+const STOP = new Set(["de", "del", "la", "las", "el", "los", "en", "y", "o", "un", "una", "con", "para", "por", "que", "al", "se", "es", "como"]);
+
+/** Palabras que se están buscando (vacío = sin búsqueda). */
+const SearchCtx = createContext<string[]>([]);
+
+const LONG = 260;
+
+function BulletItem({ item, words }: { item: ReactNode; words: string[] }) {
+  const searching = words.length > 0;
+  const [open, setOpen] = useState(false);
+  const long = nodeText(item).length > LONG;
+  const clamp = long && !open && !searching;
+  return (
+    <li className="flex gap-2">
+      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-brand-muted" />
+      <span className="min-w-0">
+        <span className={clamp ? "line-clamp-2" : undefined}>{searching ? highlight(item, words) : item}</span>
+        {long && !searching && (
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className="mt-0.5 text-xs font-medium text-brand-accent hover:underline"
+          >
+            {open ? "Ver menos" : "Ver más"}
+          </button>
+        )}
+      </span>
+    </li>
+  );
+}
+
 function Bullets({ items }: { items: ReactNode[] }) {
+  const words = useContext(SearchCtx);
+  const shown = words.length ? items.filter((it) => matches(nodeText(it), words)) : items;
+  if (shown.length === 0) return null;
   return (
     <ul className="flex flex-col gap-1.5 text-sm text-brand-text">
-      {items.map((it, i) => (
-        <li key={i} className="flex gap-2">
-          <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-brand-muted" />
-          <span>{it}</span>
-        </li>
+      {shown.map((it, i) => (
+        <BulletItem key={i} item={it} words={words} />
       ))}
     </ul>
   );
@@ -464,6 +630,10 @@ const SECTIONS: Section[] = [
             <><strong>Regla del banco: cada cuenta se mueve solo en su moneda.</strong> Una cuenta en dólares solo baja o sube en dólares; la factura o el gasto se quedan en su moneda. Se puede <strong>pagar un gasto</strong> y <strong>cobrar una factura</strong> con una cuenta en otra moneda (ver abajo): el sistema pide cuánto se movió realmente en el banco.</>,
             <><strong>Pago en moneda diferente</strong> (ej. un gasto de RD$97,000 pagado desde Promerica USD): al elegir la cuenta aparece el recuadro <em>Pago en moneda diferente</em>. Muestra el monto a pagar en la moneda del gasto, la <strong>tasa de referencia</strong> del día (la de Configuración → Monedas y tasas; se puede cambiar y queda marcada como manual) y el <strong>débito estimado</strong> (US$1,649.66). Tú escribes <strong>cuánto debitó realmente el banco</strong> (US$1,650) y, si hubo, la <strong>comisión</strong> (US$5). El sistema calcula la <strong>tasa efectiva</strong> (1 USD = 58.787879) y la <strong>diferencia informativa</strong> contra la referencia (RD$20; positiva = salió más de lo esperado). Resultado: el gasto baja RD$97,000; la cuenta baja US$1,650 y, aparte, US$5 de comisión en la categoría <em>Comisiones bancarias</em>. Diferencias de hasta la tolerancia (RD$1.00) se guardan como <strong>redondeo</strong>. La diferencia informativa <strong>no</strong> es una ganancia o pérdida contable. En el detalle del gasto, la columna <em>Salió del banco</em> muestra el monto en la moneda de la cuenta, la tasa efectiva y la diferencia. Lo mismo aplica al crear un gasto <strong>ya pagado</strong> con una cuenta o tarjeta en otra moneda (el cálculo usa el neto a pagar).</>,
             <><strong>Cobro en moneda diferente</strong> (ej. una factura de US$1,000 que el cliente pagó en tu cuenta en pesos): al elegir la cuenta aparece el recuadro <em>Cobro en moneda diferente</em> con la tasa de referencia del día y el <strong>crédito estimado</strong> (RD$58,800 a 58.80). Tú escribes <strong>cuánto entró realmente al banco</strong> (RD$58,500) y, si el banco cobró algo por recibirlo, la <strong>comisión del banco</strong>. Resultado: la factura baja US$1,000 (queda Pagada); la cuenta sube RD$58,500 y, aparte, baja la comisión en <em>Comisiones bancarias</em>. Tasa efectiva 1 USD = 58.50; diferencia informativa RD$300 (positiva = entró menos de lo esperado; negativa = entró más). Igual que en los pagos, no es ganancia ni pérdida contable y lo que esté dentro de la tolerancia se guarda como redondeo. En el detalle de la factura, la columna <em>Entró al banco</em> muestra el monto en la moneda de la cuenta, la comisión, la tasa efectiva y la diferencia. El cobro debe ser del mismo cliente de la factura y no puede ir a una tarjeta de crédito.</>,
+            <><strong>Si falta la tasa o el monto del banco</strong>: al guardar sale una ventana roja <em>Falta un dato</em> y el campo vacío queda marcado en rojo (tasa de referencia, monto que debitó o entró en el banco, tasa del documento o monto recibido en una transferencia entre monedas). Si la tasa estaba vacía, al cerrar la ventana vuelve a aparecer sola: la de la fecha del pago o, si esa fecha no tiene, la <strong>tasa del día</strong> (con el aviso <em>revísala</em>). Pasa con cada error, aunque la hayas borrado antes. También puedes pulsar <strong>↻ Usar tasa del día</strong> al lado de la tasa cuando está vacía o cambiada a mano.</>,
+            <><strong>Cómo está ordenado Registrar pago</strong>: <strong>1 Datos del pago</strong> (fecha, monto y método) · <strong>2 Cuenta de donde sale el dinero</strong> (o <em>Tarjeta con que se paga</em>; aquí aparecen la referencia, el recuadro de moneda diferente y lo disponible) · <strong>3 Proveedor (opcional)</strong>, con <em>Cancelar</em> y <em>Registrar pago</em> abajo a la derecha. <em>Registrar cobro</em> en una factura sigue el mismo orden: Datos del cobro · Cuenta donde entra el dinero · Clasificación.</>,
+            <><strong>Cancelar</strong>: en <em>Registrar pago</em> (gasto) y <em>Registrar cobro</em> (factura), el botón <strong>Cancelar</strong> borra lo que escribiste y quita el error, sin guardar nada. Ya no hace falta salir de la página.</>,
+            <><strong>Pagar después con tarjeta</strong>: un gasto pendiente también se puede pagar más tarde con una <strong>tarjeta de crédito</strong>. En <em>Registrar pago</em> elige el método <em>Tarjeta</em>: la lista muestra <strong>solo tus tarjetas</strong> (con cualquier otro método, solo las cuentas de banco). Debajo de la lista, el filtro <strong>Ver moneda</strong> (DOP · USD · Todas) arranca en la moneda del gasto para no elegir por error una cuenta en otra moneda. El pago sube la deuda de la tarjeta (si no alcanza el crédito disponible, sale <em>Crédito insuficiente</em> y no se registra). Si la tarjeta está en otra moneda, aparece el recuadro de moneda diferente. La tarjeta <em>Cómo se pagó</em> muestra el método y la cuenta de los pagos reales.</>,
             <><strong>Configuración → Monedas y tasas</strong>: monedas que usa la empresa (DOP y USD activas; se pueden agregar otras como EUR), la <strong>tasa de referencia</strong> de cada día (siempre &ldquo;1 USD = 58.80 DOP&rdquo;), de dónde sale (Banco Central/DGII, banco, manual u otra) y la <strong>tolerancia de redondeo</strong>. Cada operación guarda su propia tasa: cambiar o borrar una tasa no modifica lo ya registrado. La moneda funcional (la de los reportes) se elige en Organización y ya no se puede cambiar cuando hay documentos. Si eliges <em>Otra fuente</em>, escribe su nombre (ej. Infodolar). <strong>Borrar</strong> una moneda solo se puede si nunca se usó (sin cuentas, documentos ni movimientos); si ya se usó, el sistema te lo explica y la puedes <strong>desactivar</strong>. Al crear una <strong>cotización, factura o gasto</strong>, la moneda viene en pesos (la de la empresa); si eliges otra, la <strong>tasa se llena sola</strong> con la tasa del día y la puedes cambiar.</>,
             "No se puede cobrar o pagar más del balance pendiente.",
             "La pantalla Cobros y pagos resume lo cobrado y pagado en el mes, el neto del mes y lo cobrado en el año, con dos pestañas: Cobros de clientes y Pagos a proveedores.",
@@ -543,10 +713,6 @@ const SECTIONS: Section[] = [
             <><strong>Recalcular</strong>: si completaste los datos después, en el detalle del gasto pulsa <strong>Recalcular</strong> (solo mientras el gasto no tenga pagos). Hazlo <strong>antes del primer pago</strong>: una vez pagado, lo retenido queda como se pagó.</>,
             <><strong>Al pagar</strong>: el formulario de pago explica &ldquo;¿Cuánto le pago al proveedor?&rdquo; con el mismo desglose y propone el <strong>neto pendiente</strong>. Puedes pagar en abonos, pero no más que el neto. Del banco sale solo el neto. El comprobante de pago (PDF) muestra las retenciones.</>,
             <><strong>Pagado al crearlo</strong>: si al registrar el gasto eliges el banco o la tarjeta, se paga en ese momento <strong>el neto</strong>. Si dejas <em>Aún no — queda pendiente de pago</em> (también con método Tarjeta), el gasto queda <strong>Pendiente</strong> y lo pagas después, completo o en partes, con la cuenta o tarjeta que quieras. El método de pago va antes de la tarjeta <em>Tratamiento fiscal</em>, que queda al final.</>,
-            <><strong>Si falta la tasa o el monto del banco</strong>: al guardar sale una ventana roja <em>Falta un dato</em> y el campo vacío queda marcado en rojo (tasa de referencia, monto que debitó o entró en el banco, tasa del documento o monto recibido en una transferencia entre monedas). Si la tasa estaba vacía, al cerrar la ventana vuelve a aparecer sola: la de la fecha del pago o, si esa fecha no tiene, la <strong>tasa del día</strong> (con el aviso <em>revísala</em>). Pasa con cada error, aunque la hayas borrado antes. También puedes pulsar <strong>↻ Usar tasa del día</strong> al lado de la tasa cuando está vacía o cambiada a mano.</>,
-            <><strong>Cómo está ordenado Registrar pago</strong>: <strong>1 Datos del pago</strong> (fecha, monto y método) · <strong>2 Cuenta de donde sale el dinero</strong> (o <em>Tarjeta con que se paga</em>; aquí aparecen la referencia, el recuadro de moneda diferente y lo disponible) · <strong>3 Proveedor (opcional)</strong>, con <em>Cancelar</em> y <em>Registrar pago</em> abajo a la derecha. <em>Registrar cobro</em> en una factura sigue el mismo orden: Datos del cobro · Cuenta donde entra el dinero · Clasificación.</>,
-            <><strong>Cancelar</strong>: en <em>Registrar pago</em> (gasto) y <em>Registrar cobro</em> (factura), el botón <strong>Cancelar</strong> borra lo que escribiste y quita el error, sin guardar nada. Ya no hace falta salir de la página.</>,
-            <><strong>Pagar después con tarjeta</strong>: un gasto pendiente también se puede pagar más tarde con una <strong>tarjeta de crédito</strong>. En <em>Registrar pago</em> elige el método <em>Tarjeta</em>: la lista muestra <strong>solo tus tarjetas</strong> (con cualquier otro método, solo las cuentas de banco). Debajo de la lista, el filtro <strong>Ver moneda</strong> (DOP · USD · Todas) arranca en la moneda del gasto para no elegir por error una cuenta en otra moneda. El pago sube la deuda de la tarjeta (si no alcanza el crédito disponible, sale <em>Crédito insuficiente</em> y no se registra). Si la tarjeta está en otra moneda, aparece el recuadro de moneda diferente. La tarjeta <em>Cómo se pagó</em> muestra el método y la cuenta de los pagos reales.</>,
             <><strong>Las reglas cambian, los gastos no</strong>: cada gasto guarda la regla, la versión y los montos con los que se calculó. Si la DGII cambia una tasa, se crea una versión nueva de la regla y solo afecta a los gastos nuevos.</>,
             <><strong>Ajustar</strong> (solo quien puede aprobar gastos): si tu contador indica un tratamiento distinto, en el detalle del gasto pulsa <strong>Ajustar</strong>, corrige el ISR o ITBIS retenido y escribe el motivo. Queda marcado <em>Ajuste manual</em> y registrado en Auditoría con los montos de antes y después.</>,
             <><strong>Gastos anteriores</strong> a esta función quedan <em>Sin evaluar</em>: se pagan por el total, como siempre.</>,
@@ -851,53 +1017,225 @@ const SECTIONS: Section[] = [
   },
 ];
 
-export default function HelpPage() {
+const QUICK_TOPICS = [
+  "moneda diferente",
+  "tasa",
+  "tarjeta",
+  "retención",
+  "transferencia",
+  "comisión",
+  "anular",
+  "PDF",
+  "categoría",
+  "sobregiro",
+];
+
+function SectionCard({ s, words }: { s: Section; words: string[] }) {
+  const Icon = s.icon;
+  // Si el nombre del módulo coincide, se muestra completo.
+  const titleHit = words.length > 0 && matches(`${s.label} ${s.summary}`, words);
   return (
-    <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
-      <div>
-        <h1 className="text-xl font-semibold text-brand-primary">Manual del sistema</h1>
-        <p className="text-sm text-brand-muted">
-          Cómo funciona Mindfreak Manager, módulo por módulo.
-        </p>
+    <Card id={s.id} className="scroll-mt-20">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <IconBadge icon={<Icon size={18} />} tone={s.tone} size="md" />
+          <div>
+            <h2 className="text-base font-semibold text-brand-text">{s.label}</h2>
+            <p className="text-xs text-brand-muted">{s.summary}</p>
+          </div>
+        </div>
+        <SearchCtx.Provider value={titleHit ? [] : words}>
+          <div className="flex flex-col gap-3">{titleHit ? s.content : filterContent(s.content, words)}</div>
+        </SearchCtx.Provider>
+      </div>
+    </Card>
+  );
+}
+
+export default function HelpPage() {
+  const [query, setQuery] = useState("");
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  // Enlaces directos (/help#bancos) abren ese tema.
+  useEffect(() => {
+    function fromHash() {
+      const id = window.location.hash.slice(1);
+      if (SECTIONS.some((s) => s.id === id)) {
+        setOpenId(id);
+        setQuery("");
+      }
+    }
+    fromHash();
+    window.addEventListener("hashchange", fromHash);
+    return () => window.removeEventListener("hashchange", fromHash);
+  }, []);
+
+  const words = useMemo(
+    () => norm(query).split(/\s+/).filter((w) => w.length > 1 && !STOP.has(w)),
+    [query],
+  );
+  const index = useMemo(
+    () =>
+      SECTIONS.map((s) => ({
+        title: `${s.label} ${s.summary}`,
+        units: contentUnits(s.content).map(nodeText),
+      })),
+    [],
+  );
+  // Un módulo aparece si su nombre coincide o si algún párrafo o punto tiene todas las palabras.
+  const results = words.length
+    ? SECTIONS.filter((_, i) => matches(index[i].title, words) || index[i].units.some((t) => matches(t, words)))
+    : [];
+  const open = SECTIONS.find((s) => s.id === openId) ?? null;
+  const openIndex = open ? SECTIONS.indexOf(open) : -1;
+
+  function openSection(id: string | null) {
+    setOpenId(id);
+    setQuery("");
+    history.replaceState(null, "", id ? `#${id}` : window.location.pathname);
+    window.scrollTo({ top: 0 });
+  }
+
+  return (
+    <main className="flex flex-1 flex-col gap-5 p-4 md:p-8">
+      <div className="flex flex-col gap-3">
+        <div>
+          <h1 className="text-xl font-semibold text-brand-primary">Manual del sistema</h1>
+          <p className="text-sm text-brand-muted">
+            Busca un tema o elige un módulo. Las explicaciones largas se abren con <em>Ver más</em>.
+          </p>
+        </div>
+        <div className="relative max-w-2xl">
+          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar en el manual: tasa, tarjeta, retención, cobro, transferencia…"
+            aria-label="Buscar en el manual"
+            className="w-full rounded-[var(--radius-md)] border border-brand-border bg-brand-surface py-2.5 pl-9 pr-9 text-sm text-brand-text outline-none placeholder:text-brand-muted focus:border-brand-accent focus:ring-2 focus:ring-brand-accent-light"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="Borrar búsqueda"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-brand-muted hover:text-brand-text"
+            >
+              <X size={15} />
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="text-brand-muted">Temas frecuentes:</span>
+          {QUICK_TOPICS.map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setQuery(t)}
+              className={`rounded-full border px-2.5 py-0.5 ${
+                norm(query) === norm(t)
+                  ? "border-brand-accent bg-brand-accent-light font-medium text-brand-accent"
+                  : "border-brand-border text-brand-muted hover:text-brand-text"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col gap-6 md:flex-row md:items-start">
-        <aside className="w-full shrink-0 md:sticky md:top-20 md:w-64">
-          <nav className="flex flex-col gap-1 rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface p-2 shadow-[var(--shadow-sm)]">
+        <aside className="hidden w-full shrink-0 md:sticky md:top-20 md:block md:w-60">
+          <nav className="flex flex-col gap-0.5 rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface p-2 shadow-[var(--shadow-sm)]">
+            <button
+              type="button"
+              onClick={() => openSection(null)}
+              className={`rounded-[var(--radius-md)] px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-wide ${
+                !open && !words.length ? "text-brand-accent" : "text-brand-muted hover:text-brand-text"
+              }`}
+            >
+              Todos los temas
+            </button>
             {SECTIONS.map((s) => {
               const Icon = s.icon;
+              const active = open?.id === s.id && !words.length;
+              const hit = words.length > 0 && results.includes(s);
               return (
-                <a
+                <button
                   key={s.id}
-                  href={`#${s.id}`}
-                  className="flex items-center gap-2.5 rounded-[var(--radius-md)] px-2 py-2 text-sm font-medium text-brand-text transition-colors hover:bg-brand-surface-hover"
+                  type="button"
+                  onClick={() => openSection(s.id)}
+                  className={`flex items-center gap-2.5 rounded-[var(--radius-md)] px-2 py-1.5 text-left text-sm font-medium transition-colors ${
+                    active ? "bg-brand-accent-light text-brand-accent" : "text-brand-text hover:bg-brand-surface-hover"
+                  } ${words.length > 0 && !hit ? "opacity-40" : ""}`}
                 >
                   <IconBadge icon={<Icon size={15} />} tone={s.tone} size="sm" />
                   <span className="truncate">{s.label}</span>
-                </a>
+                </button>
               );
             })}
           </nav>
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col gap-4">
-          {SECTIONS.map((s) => {
-            const Icon = s.icon;
-            return (
-              <Card key={s.id} id={s.id} className="scroll-mt-20">
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-3">
+          {words.length > 0 ? (
+            <>
+              <p className="text-sm text-brand-muted">
+                {results.length === 0
+                  ? `No hay temas con “${query}”. Prueba con otra palabra (ej. tasa, cobro, tarjeta).`
+                  : `${results.length} ${results.length === 1 ? "módulo habla" : "módulos hablan"} de “${query}”. Solo se muestran los puntos que lo mencionan.`}
+              </p>
+              {results.map((s) => (
+                <SectionCard key={s.id} s={s} words={words} />
+              ))}
+            </>
+          ) : open ? (
+            <>
+              <button
+                type="button"
+                onClick={() => openSection(null)}
+                className="inline-flex w-fit items-center gap-1 text-sm text-brand-accent hover:underline"
+              >
+                <ChevronLeft size={15} /> Todos los temas
+              </button>
+              <SectionCard s={open} words={[]} />
+              <div className="flex justify-between gap-2 text-sm">
+                {openIndex > 0 ? (
+                  <button type="button" onClick={() => openSection(SECTIONS[openIndex - 1].id)} className="inline-flex items-center gap-1 text-brand-accent hover:underline">
+                    <ChevronLeft size={15} /> {SECTIONS[openIndex - 1].label}
+                  </button>
+                ) : (
+                  <span />
+                )}
+                {openIndex < SECTIONS.length - 1 && (
+                  <button type="button" onClick={() => openSection(SECTIONS[openIndex + 1].id)} className="inline-flex items-center gap-1 text-brand-accent hover:underline">
+                    {SECTIONS[openIndex + 1].label} <ChevronRight size={15} />
+                  </button>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {SECTIONS.map((s) => {
+                const Icon = s.icon;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => openSection(s.id)}
+                    className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface p-4 text-left shadow-[var(--shadow-sm)] transition-colors hover:border-brand-accent"
+                  >
                     <IconBadge icon={<Icon size={18} />} tone={s.tone} size="md" />
-                    <div>
-                      <h2 className="text-base font-semibold text-brand-text">{s.label}</h2>
-                      <p className="text-xs text-brand-muted">{s.summary}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-3">{s.content}</div>
-                </div>
-              </Card>
-            );
-          })}
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-brand-text">{s.label}</span>
+                      <span className="block text-xs text-brand-muted">{s.summary}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </main>
