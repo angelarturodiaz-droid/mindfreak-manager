@@ -26,6 +26,7 @@ import {
 import { EXPENSE_FISCAL_REVIEW } from "@/features/fiscal/expense-labels";
 import { ForeignPaymentBlock, type RateHistory } from "@/components/payments/foreign-payment-block";
 import { AccountPicker } from "@/components/payments/account-picker";
+import { FormSection, FormFooter } from "@/components/payments/form-section";
 
 const initialState: ActionState = { error: null };
 
@@ -151,102 +152,112 @@ export function RegisterSupplierPaymentForm({
       <form
         key={`${formKey}-${resets}`}
         action={formAction}
-        className="flex flex-wrap items-end gap-2"
+        className="space-y-5"
       >
-        <Input
-          label="Fecha"
-          name="payment_date"
-          type="date"
-          required
-          value={paymentDate}
-          onChange={(e) => setPaymentDate(e.target.value)}
-        />
-        <MoneyInput
-          label="Monto"
-          name="amount"
-          min={0.01}
-          required
-          defaultValue={balance}
-          hint={
-            fiscal
-              ? `Neto pendiente. Máx. ${formatMoney(balance, currency)}`
-              : `Máx. ${balance.toFixed(2)} ${currency}`
-          }
-          className="w-40"
-          onValueChange={setAmount}
-        />
-        <Select
-          label="Método"
-          name="method"
-          value={method}
-          onChange={(e) => {
-            const next = e.target.value;
-            // Tarjeta = tarjetas de crédito; los demás métodos = cuentas de banco.
-            if ((next === "CARD") !== (method === "CARD")) setAccountId("");
-            setMethod(next);
-          }}
-          hint={isCard ? "Muestra solo tarjetas de crédito." : "Muestra solo cuentas de banco."}
-        >
-          {PAYMENT_METHODS.map((m) => (
-            <option key={m} value={m}>
-              {PAYMENT_METHOD_LABELS[m]}
-            </option>
-          ))}
-        </Select>
-        <AccountPicker
-          accounts={bankAccounts}
-          kind={isCard ? "card" : "bank"}
-          documentCurrency={currency}
-          value={accountId}
-          onChange={setAccountId}
-          hint={isCard ? "El pago sube la deuda de la tarjeta." : undefined}
-        />
-        <Input label="Referencia" name="reference" />
-        <Select
-          label="Banco del proveedor (opcional)"
-          name="payee_bank_name"
-          defaultValue=""
-          hint="A dónde se le depositó a él, no tu cuenta de origen."
-          className="w-56"
-        >
-          <option value="">Sin especificar</option>
-          {bankCatalog.map((b) => (
-            <option key={b.id} value={b.name}>
-              {b.name}
-            </option>
-          ))}
-        </Select>
-        {account && foreign && (
-          <ForeignPaymentBlock
-            key={`${account.id}-${formKey}-${resets}`}
+        <FormSection step={1} title="Datos del pago">
+          <Input
+            label="Fecha"
+            name="payment_date"
+            type="date"
+            required
+            value={paymentDate}
+            onChange={(e) => setPaymentDate(e.target.value)}
+          />
+          <MoneyInput
+            label="Monto"
+            name="amount"
+            min={0.01}
+            required
+            defaultValue={balance}
+            hint={
+              fiscal
+                ? `Neto pendiente. Máx. ${formatMoney(balance, currency)}`
+                : `Máx. ${formatMoney(balance, currency)}`
+            }
+            onValueChange={setAmount}
+          />
+          <Select
+            label="Método"
+            name="method"
+            value={method}
+            onChange={(e) => {
+              const next = e.target.value;
+              // Tarjeta = tarjetas de crédito; los demás métodos = cuentas de banco.
+              if ((next === "CARD") !== (method === "CARD")) setAccountId("");
+              setMethod(next);
+            }}
+            hint={isCard ? "Muestra solo tarjetas de crédito." : "Muestra solo cuentas de banco."}
+          >
+            {PAYMENT_METHODS.map((m) => (
+              <option key={m} value={m}>
+                {PAYMENT_METHOD_LABELS[m]}
+              </option>
+            ))}
+          </Select>
+        </FormSection>
+
+        <FormSection step={2} title={isCard ? "Tarjeta con que se paga" : "Cuenta de donde sale el dinero"} cols={2}>
+          <AccountPicker
+            accounts={bankAccounts}
+            kind={isCard ? "card" : "bank"}
             documentCurrency={currency}
-            accountCurrency={account.currency}
-            accountName={account.name}
-            functionalCurrency={fxContext.functionalCurrency}
-            applied={amount}
-            date={paymentDate}
-            rates={fxContext.rates}
-            tolerance={fxContext.tolerance}
-            markMissing={shown.field === "fx"}
-            missingKey={shown}
+            value={accountId}
+            onChange={setAccountId}
+            hint={isCard ? "El pago sube la deuda de la tarjeta." : undefined}
           />
-        )}
-        {accountId && (
-          <AccountFundsHint
-            funds={funds[accountId]}
-            amount={foreign ? undefined : amount}
-            amountCurrency={currency}
-          />
-        )}
-        <Button type="submit" loading={pending}>
-          Registrar pago
-        </Button>
-        <Button type="button" variant="ghost" onClick={cancel} disabled={pending} hint="Borra lo que escribiste en este pago y empieza de nuevo. No guarda nada.">
-          Cancelar
-        </Button>
-        {shown.error && (
-          <p className="w-full text-sm text-brand-danger">{shown.error}</p>
-        )}
+          <Input label="Referencia" name="reference" placeholder="Opcional (ej. número de transferencia)" />
+          {account && foreign && (
+            <div className="sm:col-span-2">
+              <ForeignPaymentBlock
+                key={`${account.id}-${formKey}-${resets}`}
+                documentCurrency={currency}
+                accountCurrency={account.currency}
+                accountName={account.name}
+                functionalCurrency={fxContext.functionalCurrency}
+                applied={amount}
+                date={paymentDate}
+                rates={fxContext.rates}
+                tolerance={fxContext.tolerance}
+                markMissing={shown.field === "fx"}
+                missingKey={shown}
+              />
+            </div>
+          )}
+          {accountId && (
+            <div className="sm:col-span-2">
+              <AccountFundsHint
+                funds={funds[accountId]}
+                amount={foreign ? undefined : amount}
+                amountCurrency={currency}
+              />
+            </div>
+          )}
+        </FormSection>
+
+        <FormSection step={3} title="Proveedor (opcional)" cols={2}>
+          <Select
+            label="Banco del proveedor"
+            name="payee_bank_name"
+            defaultValue=""
+            hint="A dónde se le depositó a él, no tu cuenta de origen."
+          >
+            <option value="">Sin especificar</option>
+            {bankCatalog.map((b) => (
+              <option key={b.id} value={b.name}>
+                {b.name}
+              </option>
+            ))}
+          </Select>
+        </FormSection>
+
+        <FormFooter error={shown.error}>
+          <Button type="button" variant="ghost" onClick={cancel} disabled={pending} hint="Borra lo que escribiste en este pago y empieza de nuevo. No guarda nada.">
+            Cancelar
+          </Button>
+          <Button type="submit" loading={pending}>
+            Registrar pago
+          </Button>
+        </FormFooter>
         {dialogs}
       </form>
       {fiscal && (

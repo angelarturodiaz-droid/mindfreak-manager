@@ -1,5 +1,18 @@
 # CHANGELOG — Mindfreak Manager
 
+## Registrar pago y Registrar cobro más ordenados (2026-10-07)
+
+- AM ✅ probado. Los formularios de *Registrar pago* (gasto) y *Registrar
+  cobro* (factura) se ordenan en 3 bloques numerados en cuadrícula pareja
+  (`components/payments/form-section.tsx`): datos del pago/cobro · cuenta
+  (con referencia, recuadro de moneda diferente y disponible) · proveedor
+  (opcional) o clasificación. Pie con el error a la izquierda y *Cancelar* /
+  botón principal a la derecha. En el celular, una columna.
+- El filtro de moneda de la cuenta pasa **debajo** de la lista ("Ver
+  moneda") para que las etiquetas de los campos queden alineadas. El máximo
+  del monto se muestra con formato de moneda (Máx. RD$3,040.00).
+- Sin cambios de lógica ni de base de datos.
+
 ## Correcciones de la prueba AM — segunda ronda (2026-10-07)
 
 - **Lista de cuentas según el método** (`components/payments/account-picker.tsx`):

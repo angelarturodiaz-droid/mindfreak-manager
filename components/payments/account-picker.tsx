@@ -17,7 +17,7 @@ export type PickerAccount = {
  *
  * - `kind` decide qué se lista: "card" = solo tarjetas de crédito; "bank" =
  *   solo cuentas de banco. Lo decide el Método de pago del formulario.
- * - Filtro de **moneda** encima de la lista: arranca en la moneda del
+ * - Filtro de **moneda** debajo de la lista: arranca en la moneda del
  *   documento (gasto o factura) para no pagar por error desde una cuenta en
  *   otra moneda; se cambia a "Todas" u otra moneda a propósito.
  */
@@ -58,37 +58,6 @@ export function AccountPicker({
 
   return (
     <div className="flex flex-col gap-1">
-      {currencies.length > 1 && (
-        <div className="flex items-center gap-1 text-xs" role="group" aria-label={`Moneda de la ${noun}`}>
-          <span className="text-brand-muted">Moneda:</span>
-          {[...currencies, "ALL"].map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => {
-                setPicked(c);
-                // Si la elegida ya no está en la lista, se limpia.
-                const still = ofKind.find((a) => a.id === value && (c === "ALL" || a.currency === c));
-                if (value && !still) onChange("");
-              }}
-              className={`rounded-full border px-2 py-0.5 ${
-                filter === c
-                  ? "border-brand-accent bg-brand-accent-light font-medium text-brand-accent"
-                  : "border-brand-border text-brand-muted hover:text-brand-text"
-              }`}
-              title={
-                c === "ALL"
-                  ? `Ver todas las ${noun === "tarjeta" ? "tarjetas" : "cuentas"}`
-                  : c === documentCurrency
-                    ? `Solo ${noun === "tarjeta" ? "tarjetas" : "cuentas"} en ${c} (la moneda del documento)`
-                    : `Solo ${noun === "tarjeta" ? "tarjetas" : "cuentas"} en ${c}: pedirá cuánto se movió realmente y la tasa`
-              }
-            >
-              {c === "ALL" ? "Todas" : c}
-            </button>
-          ))}
-        </div>
-      )}
       <Select
         label={label ?? (kind === "card" ? "Tarjeta de crédito" : "Cuenta bancaria")}
         name={name}
@@ -120,6 +89,37 @@ export function AccountPicker({
           </option>
         ))}
       </Select>
+      {currencies.length > 1 && (
+        <div className="flex items-center gap-1 text-xs" role="group" aria-label={`Moneda de la ${noun}`}>
+          <span className="text-brand-muted">Ver moneda:</span>
+          {[...currencies, "ALL"].map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => {
+                setPicked(c);
+                // Si la elegida ya no está en la lista, se limpia.
+                const still = ofKind.find((a) => a.id === value && (c === "ALL" || a.currency === c));
+                if (value && !still) onChange("");
+              }}
+              className={`rounded-full border px-2 py-0.5 ${
+                filter === c
+                  ? "border-brand-accent bg-brand-accent-light font-medium text-brand-accent"
+                  : "border-brand-border text-brand-muted hover:text-brand-text"
+              }`}
+              title={
+                c === "ALL"
+                  ? `Ver todas las ${noun === "tarjeta" ? "tarjetas" : "cuentas"}`
+                  : c === documentCurrency
+                    ? `Solo ${noun === "tarjeta" ? "tarjetas" : "cuentas"} en ${c} (la moneda del documento)`
+                    : `Solo ${noun === "tarjeta" ? "tarjetas" : "cuentas"} en ${c}: pedirá cuánto se movió realmente y la tasa`
+              }
+            >
+              {c === "ALL" ? "Todas" : c}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

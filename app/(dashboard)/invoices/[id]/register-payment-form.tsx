@@ -8,7 +8,9 @@ import { Input, Select } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 import { todayISO } from "@/lib/utils/dates";
+import { formatMoney } from "@/lib/utils/money";
 import { AccountPicker } from "@/components/payments/account-picker";
+import { FormSection, FormFooter } from "@/components/payments/form-section";
 import { ForeignPaymentBlock, type RateHistory } from "@/components/payments/foreign-payment-block";
 
 const initialState: ActionState = { error: null };
@@ -74,78 +76,93 @@ export function RegisterPaymentForm({
   const foreign = Boolean(account && account.currency !== currency);
 
   return (
-    <form key={`${formKey}-${resets}`} action={formAction} className="flex flex-wrap items-end gap-2">
-      <Input
-        label="Fecha"
-        name="payment_date"
-        type="date"
-        required
-        value={paymentDate}
-        onChange={(e) => setPaymentDate(e.target.value)}
-      />
-      <MoneyInput
-        label="Monto"
-        name="amount"
-        min={0.01}
-        required
-        defaultValue={balance}
-        hint={`Máx. ${balance.toFixed(2)} ${currency}`}
-        className="w-40"
-        onValueChange={setAmount}
-      />
-      <Select label="Método" name="method" defaultValue="TRANSFER">
-        {PAYMENT_METHODS.map((m) => (
-          <option key={m} value={m}>
-            {PAYMENT_METHOD_LABELS[m]}
-          </option>
-        ))}
-      </Select>
-      <AccountPicker
-        accounts={bankAccounts}
-        kind="bank"
-        documentCurrency={currency}
-        value={accountId}
-        onChange={setAccountId}
-        label="Cuenta bancaria"
-      />
-      <Select
-        label="Categoría"
-        name="category_id"
-        defaultValue={defaultCategory?.id ?? ""}
-        hint="Cómo se clasifica el ingreso en Bancos y reportes"
-      >
-        {!defaultCategory && <option value="">Cobro de factura (automática)</option>}
-        {categories.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
-      </Select>
-      <Input label="Referencia" name="reference" />
-      {account && foreign && (
-        <ForeignPaymentBlock
-          key={`${account.id}-${formKey}-${resets}`}
-          kind="COBRO"
-          documentLabel="factura"
-          documentCurrency={currency}
-          accountCurrency={account.currency}
-          accountName={account.name}
-          functionalCurrency={fxContext.functionalCurrency}
-          applied={amount}
-          date={paymentDate}
-          rates={fxContext.rates}
-          tolerance={fxContext.tolerance}
-          markMissing={shown.field === "fx"}
-          missingKey={shown}
+    <form
+      key={`${formKey}-${resets}`}
+      action={formAction}
+      className="space-y-5"
+    >
+      <FormSection step={1} title="Datos del cobro">
+        <Input
+          label="Fecha"
+          name="payment_date"
+          type="date"
+          required
+          value={paymentDate}
+          onChange={(e) => setPaymentDate(e.target.value)}
         />
-      )}
-      <Button type="submit" loading={pending}>
-        Registrar cobro
-      </Button>
-      <Button type="button" variant="ghost" onClick={cancel} disabled={pending} hint="Borra lo que escribiste en este cobro y empieza de nuevo. No guarda nada.">
-        Cancelar
-      </Button>
-      {shown.error && <p className="w-full text-sm text-brand-danger">{shown.error}</p>}
+        <MoneyInput
+          label="Monto"
+          name="amount"
+          min={0.01}
+          required
+          defaultValue={balance}
+          hint={`Máx. ${formatMoney(balance, currency)}`}
+          onValueChange={setAmount}
+        />
+        <Select label="Método" name="method" defaultValue="TRANSFER">
+          {PAYMENT_METHODS.map((m) => (
+            <option key={m} value={m}>
+              {PAYMENT_METHOD_LABELS[m]}
+            </option>
+          ))}
+        </Select>
+      </FormSection>
+
+      <FormSection step={2} title="Cuenta donde entra el dinero" cols={2}>
+        <AccountPicker
+          accounts={bankAccounts}
+          kind="bank"
+          documentCurrency={currency}
+          value={accountId}
+          onChange={setAccountId}
+          label="Cuenta bancaria"
+        />
+        <Input label="Referencia" name="reference" placeholder="Opcional (ej. número de transferencia)" />
+        {account && foreign && (
+          <div className="sm:col-span-2">
+            <ForeignPaymentBlock
+              key={`${account.id}-${formKey}-${resets}`}
+              kind="COBRO"
+              documentLabel="factura"
+              documentCurrency={currency}
+              accountCurrency={account.currency}
+              accountName={account.name}
+              functionalCurrency={fxContext.functionalCurrency}
+              applied={amount}
+              date={paymentDate}
+              rates={fxContext.rates}
+              tolerance={fxContext.tolerance}
+              markMissing={shown.field === "fx"}
+              missingKey={shown}
+            />
+          </div>
+        )}
+      </FormSection>
+
+      <FormSection step={3} title="Clasificación" cols={2}>
+        <Select
+          label="Categoría"
+          name="category_id"
+          defaultValue={defaultCategory?.id ?? ""}
+          hint="Cómo se clasifica el ingreso en Bancos y reportes"
+        >
+          {!defaultCategory && <option value="">Cobro de factura (automática)</option>}
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </Select>
+      </FormSection>
+
+      <FormFooter error={shown.error}>
+        <Button type="button" variant="ghost" onClick={cancel} disabled={pending} hint="Borra lo que escribiste en este cobro y empieza de nuevo. No guarda nada.">
+          Cancelar
+        </Button>
+        <Button type="submit" loading={pending}>
+          Registrar cobro
+        </Button>
+      </FormFooter>
       {dialogs}
     </form>
   );

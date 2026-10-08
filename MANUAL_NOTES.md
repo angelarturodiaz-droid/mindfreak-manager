@@ -681,3 +681,6 @@ pulsa el botón.
   la ventana roja *Falta un dato* y el campo queda en rojo.
   Si la tasa estaba vacía, después del error vuelve sola la tasa del día.
   Botón **↻ Usar tasa del día** junto a la tasa y **Cancelar** en Registrar pago / Registrar cobro.
+- **Registrar pago / Registrar cobro ordenados (7-oct)**: 3 bloques numerados
+  (1 Datos · 2 Cuenta · 3 Proveedor/Clasificación), filtro *Ver moneda*
+  debajo de la cuenta y Cancelar / botón principal abajo a la derecha.
