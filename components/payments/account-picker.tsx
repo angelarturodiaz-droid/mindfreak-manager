@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Select } from "@/components/ui/field";
+import { FIELD_HINTS } from "@/lib/ui/field-hints";
 
 export type PickerAccount = {
   id: string;
@@ -32,6 +33,7 @@ export function AccountPicker({
   required = true,
   emptyOptionLabel,
   hint,
+  direction = "out",
 }: {
   accounts: PickerAccount[];
   kind: "bank" | "card";
@@ -44,6 +46,8 @@ export function AccountPicker({
   /** Opción vacía seleccionable (ej. "Aún no lo sé — queda pendiente"). Sin ella, la opción vacía es solo un aviso. */
   emptyOptionLabel?: string;
   hint?: string;
+  /** "out" = sale dinero (pago o gasto); "in" = entra dinero (cobro). Cambia la explicación del ⓘ. */
+  direction?: "out" | "in";
 }) {
   const ofKind = accounts.filter((a) => (kind === "card" ? a.type === "CREDIT_CARD" : a.type !== "CREDIT_CARD"));
   const currencies = Array.from(new Set(ofKind.map((a) => a.currency))).sort((a, b) =>
@@ -66,6 +70,7 @@ export function AccountPicker({
         aria-required={required && !emptyOptionLabel}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        info={direction === "in" ? FIELD_HINTS.accountIn : kind === "card" ? FIELD_HINTS.cardOut : FIELD_HINTS.accountOut}
         hint={
           hint ??
           (ofKind.length === 0

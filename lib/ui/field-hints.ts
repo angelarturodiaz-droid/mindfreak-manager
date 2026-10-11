@@ -45,6 +45,12 @@ export const FIELD_HINTS = {
     "De dónde sale la tasa de referencia: la publicada por el Banco Central/DGII, la que te da tu banco, una que escribes a mano u otra fuente.",
   roundingTolerance:
     "Diferencias muy pequeñas (hasta este monto, en moneda funcional) entre lo esperado y lo que el banco debitó se registran como redondeo y no como diferencia. Ej.: 1.00 = hasta un peso.",
+  accountOut:
+    "Tu cuenta de banco de donde sale el dinero. Solo salen cuentas activas; con «Ver moneda» filtras pesos o dólares. Si la cuenta está en otra moneda que el gasto, se pide cuánto debitó realmente el banco y la tasa. Abajo ves lo disponible en la cuenta.",
+  cardOut:
+    "La tarjeta de crédito con que se paga. El pago sube la deuda de la tarjeta y se valida el crédito disponible. Con «Ver moneda» filtras tarjetas en pesos o en dólares.",
+  accountIn:
+    "Tu cuenta de banco donde entró el dinero del cliente. Solo salen cuentas de banco activas (nunca tarjetas); con «Ver moneda» filtras pesos o dólares. Si la cuenta está en otra moneda que la factura, se pide cuánto entró realmente y la tasa.",
   foreignPayment:
     "La cuenta está en otra moneda que el documento. El documento (gasto o factura) baja por el monto en su moneda; la cuenta se mueve solo por lo que el banco realmente debitó o acreditó, en la moneda de la cuenta. Si el banco cobró comisión, se registra aparte como Comisiones bancarias. La tasa efectiva sale de esos dos montos; la diferencia con la tasa de referencia es solo informativa (no es ganancia ni pérdida contable).",
   informativeDifference:

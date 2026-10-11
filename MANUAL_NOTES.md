@@ -693,3 +693,6 @@ pulsa el botón.
   convertidos a pesos con la tasa de cada documento; incluyen ITBIS. Los
   borradores de factura no cuentan como ventas (en ningún reporte). El anillo muestra como máximo
   ">999%".
+- **10-oct**: tasa automática en Movimiento manual (cuentas en otra moneda);
+  ⓘ junto a la cuenta en pagos/cobros/gastos; validación del navegador en
+  español en toda la app (ventana "Falta un dato" + campo en rojo).

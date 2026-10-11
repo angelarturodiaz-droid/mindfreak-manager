@@ -451,6 +451,7 @@ export default async function BankAccountDetailPage({
                 accountCurrency={account.currency}
                 baseCurrency={company.base_currency}
                 feeLinks={feeLinks}
+                rates={fxContext.rates}
               />
             </div>
           </details>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { FormValidationGuard } from "@/components/ui/form-validation-guard";
 
 // TODO (F5+): mover a companies.platform_name vía Settings (sección 26 del prompt maestro).
 export const metadata: Metadata = {
@@ -18,6 +19,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-brand-background text-brand-text font-sans">
         {children}
         <Toaster />
+        <FormValidationGuard />
       </body>
     </html>
   );

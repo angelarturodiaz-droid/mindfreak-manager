@@ -1,5 +1,20 @@
 # CHANGELOG — Mindfreak Manager
 
+## Ajustes de la prueba del 10-oct
+
+- **Movimiento manual** en una cuenta en otra moneda: la tasa se llena sola
+  con la tasa de referencia de la fecha (cambia si cambias la fecha), con
+  la fuente debajo y "cambiada a mano" si se edita. Sin `required`/`min`
+  del navegador (el servidor ya pedía la tasa en español).
+- **ⓘ en la cuenta** de Registrar pago, Registrar cobro y Nuevo gasto
+  (`AccountPicker`, textos `accountOut` / `cardOut` / `accountIn`).
+- **Adiós a "Please fill out this field" en toda la aplicación**: nuevo
+  `components/ui/form-validation-guard.tsx` en el layout raíz. Escucha los
+  avisos de validación del navegador, los cancela, marca los campos en rojo
+  y muestra una ventana en español con la lista ("Descripción: falta
+  completarlo", "Correo: no tiene un formato válido…"); al cerrar lleva al
+  primero. El rojo se quita al corregir.
+
 ## Los borradores de factura ya no cuentan como ventas (2026-10-07)
 
 - Decisión del usuario: una factura en **Borrador** está en espera y no es

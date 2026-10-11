@@ -306,6 +306,8 @@ const SECTIONS: Section[] = [
             <><strong>Filtros sin resultados</strong>: si un filtro no encuentra nada, aparece un aviso amarillo <em>&ldquo;No se encontraron … con los filtros aplicados&rdquo;</em> con el botón <strong>Limpiar filtros</strong>. Así sabes que la lista está vacía por el filtro y no porque no existan registros. Desde ese aviso <strong>no tienes que limpiar</strong>: si eliges otra opción en los filtros de arriba (otro estado, otro cliente, otra categoría…), se busca <strong>solo por esa opción</strong> y se muestran sus registros. Mientras la lista sí tiene resultados, los filtros se combinan (ej. estado + cliente). En Bancos, los números de cada botón de filtro ya cuentan los otros filtros activos, así un 0 te avisa antes de hacer clic. Aplica a todos los listados, al detalle de cada cuenta de banco y a los reportes.</>,
             <><strong>Volver al proyecto</strong>: todo lo que abras desde un proyecto (una factura, cotización, gasto, proveedor o el cliente) o crees desde él (<em>Nueva factura</em>, <em>Nuevo gasto</em>) muestra arriba <em>&ldquo;← Volver al proyecto&rdquo;</em> y te regresa a la pestaña del proyecto donde estabas. Una factura nueva creada desde el proyecto ya viene con el proyecto elegido.</>,
             <><strong>Pasos de avance</strong> (Facturas, Cotizaciones, Proyectos y Clientes): cada paso <strong>completado se pinta en verde</strong> con ✓, el paso en curso en azul y los que faltan en gris. Al llegar al último paso (Pagada, Proyecto, Completado o Cliente) también queda en verde, porque ya se completó. Si una factura está vencida, su paso en curso se ve en rojo.</>,
+            <><strong>Si falta un dato al guardar</strong>: en cualquier formulario, si dejas vacío un campo obligatorio (o un correo mal escrito), sale una ventana roja <em>Falta un dato</em> con la lista de lo que falta, el campo queda <strong>en rojo</strong> y al cerrar te lleva al primero. El rojo se quita al escribir.</>,
+            <><strong>ⓘ al elegir la cuenta</strong>: en Registrar pago, Registrar cobro y Nuevo gasto, el ⓘ junto a la cuenta (o tarjeta) explica de dónde sale o a dónde entra el dinero y para qué sirve <em>Ver moneda</em>.</>,
           ]}
         />
       </>
@@ -783,6 +785,7 @@ const SECTIONS: Section[] = [
             <>Columna <strong>Saldo</strong>: cómo quedó la cuenta después de cada movimiento, como un estado de cuenta (se oculta al filtrar).</>,
             "Filtros por tipo, por conciliación y por categoría (incluida Sin categoría).",
             "Movimiento manual, Transferir y Editar cuenta están en paneles plegables arriba de la tabla: haz clic en el título para abrirlos.",
+            <><strong>Movimiento manual en una cuenta en dólares</strong>: la <strong>tasa se llena sola</strong> con la tasa de referencia de la fecha del movimiento (Configuración → Monedas y tasas); si cambias la fecha, cambia la tasa. La puedes escribir a mano (queda marcada <em>cambiada a mano</em>).</>,
             "Cada cuenta tiene su propia moneda.",
           ]}
         />

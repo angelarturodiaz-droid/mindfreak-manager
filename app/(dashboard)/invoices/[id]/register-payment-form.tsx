@@ -112,6 +112,7 @@ export function RegisterPaymentForm({
         <AccountPicker
           accounts={bankAccounts}
           kind="bank"
+          direction="in"
           documentCurrency={currency}
           value={accountId}
           onChange={setAccountId}

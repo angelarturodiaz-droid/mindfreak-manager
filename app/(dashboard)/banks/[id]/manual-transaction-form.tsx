@@ -10,6 +10,8 @@ import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 import { todayISO } from "@/lib/utils/dates";
 import { FIELD_HINTS } from "@/lib/ui/field-hints";
+import { rateOn, type RateHistory } from "@/components/payments/foreign-payment-block";
+import { RATE_SOURCE_LABELS, type RateSource } from "@/features/currencies/schema";
 
 const initialState: ActionState = { error: null };
 
@@ -19,6 +21,7 @@ export function ManualTransactionForm({
   accountCurrency,
   baseCurrency,
   feeLinks = [],
+  rates = {},
 }: {
   bankAccountId: string;
   /** Moneda de la cuenta; si no es la moneda base se pide la tasa. */
@@ -28,6 +31,8 @@ export function ManualTransactionForm({
   categories: { id: string; name: string }[];
   /** Pagos, cobros y transferencias recientes de esta cuenta, para ligar una comisión ("tipo:id"). */
   feeLinks?: { value: string; label: string }[];
+  /** Tasas de referencia (Configuración → Monedas y tasas) para llenar la tasa sola. */
+  rates?: RateHistory;
 }) {
   const createWithId = createManualTransactionAction.bind(null, bankAccountId);
   // Éxito: aviso corto y el formulario queda en blanco (key). Sin fondos: ventana.
@@ -35,11 +40,19 @@ export function ManualTransactionForm({
     successAs: "toast",
   });
   const [type, setType] = useState("INCOME");
+  const [date, setDate] = useState(todayISO());
+  // null = no la escribió: se usa la tasa de referencia de la fecha del movimiento.
+  const [rateTyped, setRateTyped] = useState<string | null>(null);
   const [seenKey, setSeenKey] = useState(formKey);
   if (seenKey !== formKey) {
     setSeenKey(formKey);
     setType("INCOME");
+    setDate(todayISO());
+    setRateTyped(null);
   }
+  const foreign = accountCurrency !== baseCurrency;
+  const found = foreign ? rateOn(rates, accountCurrency, date) : null;
+  const rate = rateTyped ?? (found ? String(found.rate) : "");
 
   return (
     <form key={formKey} action={formAction} className="flex flex-wrap items-end gap-2">
@@ -47,7 +60,14 @@ export function ManualTransactionForm({
         <option value="INCOME">Ingreso</option>
         <option value="EXPENSE">Gasto</option>
       </Select>
-      <Input label="Fecha" name="transaction_date" type="date" required defaultValue={todayISO()} />
+      <Input
+        label="Fecha"
+        name="transaction_date"
+        type="date"
+        required
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+      />
       <MoneyInput label="Monto" name="amount" min={0.01} required defaultValue={0} className="w-28" />
       <Select label="Categoría" name="category_id" defaultValue="" className="w-56">
         <option value="">Sin categoría (clasificar después)</option>
@@ -64,17 +84,22 @@ export function ManualTransactionForm({
         className="w-56"
       />
       <Input label="Referencia" name="reference" placeholder="Cheque / No. transacción" className="w-44" />
-      {accountCurrency !== baseCurrency && (
+      {foreign && (
         <Input
-          label={`Tasa (${baseCurrency} por 1 ${accountCurrency})`}
+          label={`Tasa (1 ${accountCurrency} = ? ${baseCurrency})`}
           name="exchange_rate"
           type="number"
-          step="0.0001"
-          min={0.0001}
-          required
-          placeholder="Ej. 59.50"
-          className="w-44"
-          hint="Para convertir este movimiento a pesos en los reportes."
+          step="0.000001"
+          value={rate}
+          onChange={(e) => setRateTyped(e.target.value)}
+          placeholder="Ej. 58.80"
+          className="w-48"
+          info={`Para convertir este movimiento a ${baseCurrency} en los reportes. Se llena sola con la tasa de referencia de la fecha (Configuración → Monedas y tasas) y la puedes cambiar.`}
+          hint={
+            found
+              ? `${RATE_SOURCE_LABELS[found.source as RateSource] ?? found.source} · ${found.date}${rateTyped !== null && Number(rateTyped) !== found.rate ? " · cambiada a mano" : ""}`
+              : `No hay tasa de ${accountCurrency} registrada para esa fecha: escríbela.`
+          }
         />
       )}
       {type === "EXPENSE" && feeLinks.length > 0 && (
