@@ -257,7 +257,7 @@ export function SupplierReceiptPdfDocument({
 
           {(expense.totalWithheld ?? 0) > 0 && (
             <View>
-              <Text style={styles.sectionTitle}>RETENCIONES APLICADAS AL GASTO</Text>
+              <Text style={styles.sectionTitle}>RETENCIONES APLICADAS A SU FACTURA</Text>
               <View style={styles.withholdBox}>
                 <View style={styles.withholdRow}>
                   <Text style={styles.withholdLabel}>Total de la factura</Text>
