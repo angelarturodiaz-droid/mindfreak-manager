@@ -19,6 +19,13 @@
   recibe el proveedor. Confirmado por el usuario.
   El título de las retenciones pasa a "RETENCIONES APLICADAS A SU FACTURA"
   (los montos son los de toda la factura del proveedor, no de cada pago).
+- **Comprobantes de pagos parciales**: el balance pendiente del comprobante
+  (pago a proveedor y recibo de cobro) es el que quedaba **justo después
+  de ese pago**, no el balance de hoy. Antes, al reimprimir el comprobante
+  del primer pago de "Pago Parcial 2" (RD$20,000) salía RD$0.00 porque el
+  gasto ya estaba pagado; ahora sale RD$15,400.00. Se calcula: balance de
+  hoy + pagos posteriores (por fecha y hora de registro). Sin cambios en la
+  base ni en los montos.
 - Revisado: el redondeo con comisión del pago "Redondeo Gasto 2" es
   correcto (RD$354 → US$6.02 a 58.80; efectiva 58.803987; redondeo
   −RD$0.02; la comisión de US$20 va aparte).

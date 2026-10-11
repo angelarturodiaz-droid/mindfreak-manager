@@ -260,6 +260,21 @@ async function getPrimaryCompanyId(): Promise<string> {
  * hace en el navegador — ver `getInvoicePdfDataAction` en
  * features/invoices/actions.ts para el porqué.
  */
+/**
+ * Balance pendiente del documento JUSTO DESPUÉS de este pago (para el
+ * comprobante): el balance de hoy más lo que se pagó después. Así el
+ * comprobante de un pago parcial sigue diciendo lo que faltaba en ese
+ * momento, aunque luego se haya pagado el resto.
+ */
+type PaymentRow = { id: string; amount: number; payment_date: string; created_at: string };
+function balanceAfterPayment(currentBalance: number, rows: PaymentRow[], paymentId: string) {
+  const key = (r: PaymentRow) => `${r.payment_date}|${r.created_at}|${r.id}`;
+  const me = rows.find((r) => r.id === paymentId);
+  if (!me) return currentBalance;
+  const later = rows.filter((r) => key(r) > key(me)).reduce((a, r) => a + Number(r.amount), 0);
+  return Math.round((currentBalance + later) * 100) / 100;
+}
+
 export async function getPaymentReceiptDataAction(
   paymentId: string,
 ): Promise<{ data: ReceiptPdfData | null; error: string | null }> {
@@ -272,7 +287,7 @@ export async function getPaymentReceiptDataAction(
     supabase
       .from("customer_payments")
       .select(
-        "id, payment_date, amount, method, reference, currency, invoices(number, balance), clients(name, tax_id, email, phone), bank_accounts(name, bank_name)",
+        "id, invoice_id, payment_date, amount, method, reference, currency, invoices(number, balance), clients(name, tax_id, email, phone), bank_accounts(name, bank_name)",
       )
       .eq("id", paymentId)
       .single(),
@@ -287,7 +302,14 @@ export async function getPaymentReceiptDataAction(
 
   type One<T> = T | T[] | null;
   const invoiceData = payment.invoices as One<{ number: string; balance: number }>;
-  const invoice = Array.isArray(invoiceData) ? invoiceData[0] : invoiceData;
+  const invoiceNow = Array.isArray(invoiceData) ? invoiceData[0] : invoiceData;
+  const { data: invoicePayments } = await supabase
+    .from("customer_payments")
+    .select("id, amount, payment_date, created_at")
+    .eq("invoice_id", payment.invoice_id);
+  const invoice = invoiceNow
+    ? { ...invoiceNow, balance: balanceAfterPayment(Number(invoiceNow.balance), invoicePayments ?? [], payment.id) }
+    : null;
   const clientData = payment.clients as One<{
     name: string;
     tax_id: string | null;
@@ -363,7 +385,7 @@ export async function getSupplierPaymentReceiptDataAction(
     supabase
       .from("supplier_payments")
       .select(
-        "id, payment_date, amount, method, reference, currency, payee_bank_name, expenses(description, balance, total, ncf, isr_withheld, itbis_withheld, total_withheld, net_payable), suppliers(name, tax_id, email, phone), bank_accounts(name, bank_name)",
+        "id, expense_id, payment_date, amount, method, reference, currency, payee_bank_name, expenses(description, balance, total, ncf, isr_withheld, itbis_withheld, total_withheld, net_payable), suppliers(name, tax_id, email, phone), bank_accounts(name, bank_name)",
       )
       .eq("id", paymentId)
       .single(),
@@ -389,12 +411,17 @@ export async function getSupplierPaymentReceiptDataAction(
   };
   const expenseData = payment.expenses as One<ExpenseData>;
   const rawExpense = Array.isArray(expenseData) ? expenseData[0] : expenseData;
+  const { data: expensePayments } = await supabase
+    .from("supplier_payments")
+    .select("id, amount, payment_date, created_at")
+    .eq("expense_id", payment.expense_id);
   // Retenciones del gasto (migración 074): el comprobante muestra cómo se
   // llegó al neto que se le paga al proveedor.
   const expense = rawExpense
     ? {
         description: rawExpense.description,
-        balance: Number(rawExpense.balance),
+        // Lo que faltaba justo después de ESTE pago (no el balance de hoy).
+        balance: balanceAfterPayment(Number(rawExpense.balance), expensePayments ?? [], payment.id),
         total: Number(rawExpense.total ?? 0),
         ncf: rawExpense.ncf ?? null,
         isrWithheld: Number(rawExpense.isr_withheld ?? 0),
