@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { addInvoiceItemAction, type ActionState } from "@/features/invoices/actions";
 import { Input, Select } from "@/components/ui/field";
+import { SearchSelect, type SearchOption } from "@/components/ui/search-select";
 import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 
@@ -17,9 +18,18 @@ type Service = {
   default_price: number;
   default_tax_rate_id: string | null;
   tax_rates: TaxRateRef | TaxRateRef[] | null;
+  service_categories?: { name: string } | { name: string }[] | null;
 };
 type ProjectItem = { id: string; description: string; quantity: number; unit_price: number };
 type TaxRate = { id: string; name: string; rate: number; is_default: boolean };
+
+/** Opciones del buscador de servicios: agrupadas por categoría, se encuentran con o sin tildes. */
+function serviceOptions(services: Service[]): SearchOption[] {
+  return services.map((s) => {
+    const cat = Array.isArray(s.service_categories) ? s.service_categories[0]?.name : s.service_categories?.name;
+    return { value: s.id, label: s.name, group: cat ?? "Sin categoría" };
+  });
+}
 
 function serviceTaxRateId(service: Service | null): string | null {
   if (!service) return null;
@@ -104,24 +114,20 @@ export function NewInvoiceItemForm({
           ))}
         </Select>
       )}
-      <Select
-        label="Servicio"
-        name="service_id"
-        defaultValue=""
-        onChange={(e) => {
-          const svc = services.find((s) => s.id === e.target.value) ?? null;
-          setSelectedService(svc);
-          if (svc) setPrefill({ description: svc.name, unit_price: svc.default_price, quantity: 1 });
-        }}
-        className="w-44"
-      >
-        <option value="">Servicio personalizado</option>
-        {services.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.name}
-          </option>
-        ))}
-      </Select>
+      <div className="w-64">
+        <SearchSelect
+          label="Servicio"
+          name="service_id"
+          options={serviceOptions(services)}
+          emptyLabel="Servicio personalizado"
+          placeholder="Escribe para buscar (con o sin tildes)…"
+          onChange={(value) => {
+            const svc = services.find((s) => s.id === value) ?? null;
+            setSelectedService(svc);
+            if (svc) setPrefill({ description: svc.name, unit_price: svc.default_price, quantity: 1 });
+          }}
+        />
+      </div>
       <Input
         label="Descripción"
         name="description"

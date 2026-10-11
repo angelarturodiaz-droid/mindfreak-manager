@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { LiveSearchInput } from "@/components/ui/live-search-input";
 import { DataTable, type Column } from "@/components/ui/data-table";
+import { stripAccents } from "@/lib/utils/search";
 import { Pagination } from "@/components/ui/pagination";
 import { PAGE_SIZE, paginate, parsePage } from "@/lib/utils/pagination";
 import { AutoSubmitSelect } from "@/components/ui/auto-submit-select";
@@ -46,12 +47,13 @@ export default async function ServicesPage({
 
   // Filtros de presentación sobre el catálogo ya cargado.
   const type = params.type === "PRODUCTO" || params.type === "SERVICIO" ? params.type : undefined;
-  const search = params.q?.trim().toLowerCase() || undefined;
+  // Sin importar tildes ni mayúsculas ("produccion" encuentra "Producción").
+  const search = params.q?.trim() ? stripAccents(params.q.trim()) : undefined;
   const filtered = services.filter(
     (s) =>
       (!type || s.type === type) &&
       (!params.category || s.category_id === params.category) &&
-      (!search || s.name.toLowerCase().includes(search)),
+      (!search || stripAccents(`${s.name} ${s.description ?? ""}`).includes(search)),
   );
   // 15 por página.
   const page = parsePage(params.page);

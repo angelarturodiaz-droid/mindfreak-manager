@@ -702,3 +702,6 @@ pulsa el botón.
 - **Listas (10-oct, 2.ª)**: 10 por página; clientes y tareas del más nuevo
   al más viejo; los catálogos de Configuración y las categorías de
   Productos y servicios se paginan cuando pasan de 10.
+- **Búsquedas (10-oct)**: todas sin importar tildes ni mayúsculas. En
+  cotizaciones y facturas, *Servicio* es un buscador agrupado por
+  categoría.

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { PAGE_SIZE, pageRange } from "@/lib/utils/pagination";
+import { accentPattern } from "@/lib/utils/search";
 import { todayISO } from "@/lib/utils/dates";
 import { isInvoiceOverdue } from "@/features/invoices/overdue";
 
@@ -29,7 +30,8 @@ export async function listClients(filters: ClientListFilters = {}) {
     .range(from, to);
 
   if (filters.stage) query = query.eq("stage", filters.stage);
-  if (filters.search) query = query.ilike("name", `%${filters.search}%`);
+  // Con o sin tildes ("maria" encuentra "María").
+  if (filters.search) query = query.filter("name", "imatch", accentPattern(filters.search));
   if (filters.status === "active") query = query.eq("is_active", true);
   if (filters.status === "inactive") query = query.eq("is_active", false);
 

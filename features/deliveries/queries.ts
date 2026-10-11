@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { PAGE_SIZE, pageRange } from "@/lib/utils/pagination";
+import { cleanSearch, searchOr } from "@/lib/utils/search";
 
 export type DeliveryListFilters = {
   status?: string;
@@ -10,9 +11,10 @@ export type DeliveryListFilters = {
 };
 
 /** Texto de búsqueda seguro para el filtro .or() de PostgREST. */
+/** Búsqueda con o sin tildes en número, referencia y destinatario. */
 function searchTerm(q: string | undefined): string | null {
-  const clean = (q ?? "").replace(/[,()%*\\]/g, " ").trim();
-  return clean ? `%${clean}%` : null;
+  const clean = cleanSearch(q);
+  return clean ? searchOr(clean, ["number", "reference", "recipient_name"]) : null;
 }
 
 export async function listDeliveries(filters: DeliveryListFilters = {}) {
@@ -33,7 +35,7 @@ export async function listDeliveries(filters: DeliveryListFilters = {}) {
   if (filters.clientId) query = query.eq("client_id", filters.clientId);
   if (filters.type) query = query.eq("delivery_type", filters.type);
   const term = searchTerm(filters.q);
-  if (term) query = query.or(`number.ilike.${term},reference.ilike.${term},recipient_name.ilike.${term}`);
+  if (term) query = query.or(term);
 
   const { data, error, count } = await query.range(from, to);
   if (error) throw new Error(error.message);

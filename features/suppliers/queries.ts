@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { PAGE_SIZE, pageRange } from "@/lib/utils/pagination";
+import { accentPattern } from "@/lib/utils/search";
 
 export type SupplierListFilters = {
   search?: string;
@@ -20,7 +21,8 @@ export async function listSuppliers(filters: SupplierListFilters = {}) {
     .order("name", { ascending: true })
     .range(from, to);
 
-  if (filters.search) query = query.ilike("name", `%${filters.search}%`);
+  // Con o sin tildes.
+  if (filters.search) query = query.filter("name", "imatch", accentPattern(filters.search));
   if (filters.status === "active") query = query.eq("is_active", true);
   if (filters.status === "inactive") query = query.eq("is_active", false);
 

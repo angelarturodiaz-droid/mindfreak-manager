@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { addQuotationItemAction, type ActionState } from "@/features/quotations/actions";
 import { Input, Select } from "@/components/ui/field";
+import { SearchSelect, type SearchOption } from "@/components/ui/search-select";
 import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 
@@ -18,8 +19,17 @@ type Service = {
   default_cost: number;
   default_tax_rate_id: string | null;
   tax_rates: TaxRateRef | TaxRateRef[] | null;
+  service_categories?: { name: string } | { name: string }[] | null;
 };
 type TaxRate = { id: string; name: string; rate: number; is_default: boolean };
+
+/** Opciones del buscador de servicios: agrupadas por categoría, se encuentran con o sin tildes. */
+function serviceOptions(services: Service[]): SearchOption[] {
+  return services.map((s) => {
+    const cat = Array.isArray(s.service_categories) ? s.service_categories[0]?.name : s.service_categories?.name;
+    return { value: s.id, label: s.name, group: cat ?? "Sin categoría" };
+  });
+}
 
 function serviceTaxRateId(service: Service | null): string | null {
   if (!service) return null;
@@ -67,23 +77,19 @@ export function NewItemForm({
 
   return (
     <form ref={formRef} action={formAction} className="flex flex-wrap items-end gap-2">
-      <Select
-        label="Servicio"
-        name="service_id"
-        defaultValue=""
-        onChange={(e) => {
-          const svc = services.find((s) => s.id === e.target.value) ?? null;
-          setSelectedService(svc);
-        }}
-        className="w-44"
-      >
-        <option value="">Servicio personalizado</option>
-        {services.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.name}
-          </option>
-        ))}
-      </Select>
+      <div className="w-64">
+        <SearchSelect
+          label="Servicio"
+          name="service_id"
+          options={serviceOptions(services)}
+          emptyLabel="Servicio personalizado"
+          placeholder="Escribe para buscar (con o sin tildes)…"
+          onChange={(value) => {
+            const svc = services.find((s) => s.id === value) ?? null;
+            setSelectedService(svc);
+          }}
+        />
+      </div>
       <Input
         label="Descripción"
         name="description"

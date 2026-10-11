@@ -1,5 +1,22 @@
 # CHANGELOG — Mindfreak Manager
 
+## Búsquedas sin tildes y buscador de servicios (2026-10-10)
+
+- Todas las búsquedas encuentran el texto **con o sin tildes y sin
+  importar mayúsculas**: en la base se usa `imatch` con un patrón que
+  cubre cada vocal acentuada, la ñ y la ç (`accentPattern` en
+  `lib/utils/search.ts`); en las listas cargadas en memoria se compara sin
+  tildes (`stripAccents`). Aplica a facturas, cotizaciones, proyectos,
+  gastos, cobros, pagos, clientes, proveedores, entregas y productos y
+  servicios (antes Productos y servicios, clientes, proveedores y entregas
+  distinguían tildes).
+- **Agregar línea** en cotizaciones y facturas: la lista *Servicio* pasa a
+  ser un buscador (agrupado por categoría) — con 112 servicios ya no hace
+  falta bajar por toda la lista.
+- Catálogo cargado (datos, sin código): 112 productos y servicios en 20
+  categorías; 4 de prueba inactivos.
+
+
 ## Listas: 10 por página, clientes y tareas del más nuevo al más viejo (2026-10-10)
 
 - `PAGE_SIZE` baja de 15 a **10** en todas las listas.
