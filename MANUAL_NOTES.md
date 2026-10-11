@@ -705,3 +705,6 @@ pulsa el botón.
 - **Búsquedas (10-oct)**: todas sin importar tildes ni mayúsculas. En
   cotizaciones y facturas, *Servicio* es un buscador agrupado por
   categoría.
+- **Agregar línea (10-oct)**: en 3 partes (servicio + descripción;
+  cantidad, precio, descuento, impuesto; vista previa del total). Impuesto
+  predeterminado = ITBIS 18 %.

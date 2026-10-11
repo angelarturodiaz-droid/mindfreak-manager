@@ -490,6 +490,7 @@ export default async function InvoiceDetailPage({
                   projectItems={projectItems}
                   defaultTaxRate={defaultTaxRate}
                   taxRates={taxRates}
+                  currency={invoice.currency}
                 />
               </Card>
             )}

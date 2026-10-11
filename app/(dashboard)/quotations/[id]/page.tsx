@@ -397,7 +397,7 @@ export default async function QuotationDetailPage({
           {isEditable && canUpdate && (
             <Card>
               <p className="mb-3 text-sm font-medium text-brand-text">Agregar línea</p>
-              <NewItemForm quotationId={quotation.id} services={services} defaultTaxRate={defaultTaxRate} taxRates={taxRates} />
+              <NewItemForm quotationId={quotation.id} services={services} defaultTaxRate={defaultTaxRate} taxRates={taxRates} currency={quotation.currency} />
             </Card>
           )}
         </section>

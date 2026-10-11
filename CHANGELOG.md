@@ -1,5 +1,20 @@
 # CHANGELOG — Mindfreak Manager
 
+## Agregar línea más clara en cotizaciones y facturas (2026-10-10)
+
+- Nuevo `components/documents/line-item-fields.tsx`, usado por las dos
+  pantallas: 1) *Producto o servicio* (buscador agrupado por categoría, sin
+  importar tildes, o *Línea libre*) + *Descripción*; 2) cantidad (con la
+  unidad del servicio), precio unitario, descuento e impuesto; 3) vista
+  previa en vivo (importe, descuento, impuesto y total de la línea, mismo
+  cálculo que el servidor) y, en cotizaciones, costo unitario estimado con
+  margen. Botón *Agregar línea* abajo a la derecha; tras agregar, todo
+  vuelve a quedar en blanco.
+- **Configuración → Impuestos**: la tasa predeterminada era *Exento 0%*;
+  se cambió a **ITBIS 18%** (decisión del 10-oct al cargar el catálogo:
+  "vacío = ITBIS 18 % por defecto").
+
+
 ## Búsquedas sin tildes y buscador de servicios (2026-10-10)
 
 - Todas las búsquedas encuentran el texto **con o sin tildes y sin
