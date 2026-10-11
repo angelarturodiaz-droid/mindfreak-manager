@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { ArrowDownLeft, ArrowUpRight, Scale, TrendingUp } from "lucide-react";
 import {
-  listAllPayments,
-  listAllSupplierPayments,
+  listCustomerPaymentsPage,
+  listSupplierPaymentsPage,
+  countPaymentsByKind,
   getPaymentStats,
 } from "@/features/payments/queries";
+import { LiveSearchInput } from "@/components/ui/live-search-input";
+import { Pagination } from "@/components/ui/pagination";
+import { parsePage } from "@/lib/utils/pagination";
+import { cleanSearch } from "@/lib/utils/search";
 import { PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { InitialsAvatar, SectionHeader, StatCard, StatGrid } from "@/components/ui/page-kit";
@@ -17,8 +22,8 @@ function formatMoney(amount: number) {
   );
 }
 
-type PaymentRow = Awaited<ReturnType<typeof listAllPayments>>[number];
-type SupplierPaymentRow = Awaited<ReturnType<typeof listAllSupplierPayments>>[number];
+type PaymentRow = Awaited<ReturnType<typeof listCustomerPaymentsPage>>["rows"][number];
+type SupplierPaymentRow = Awaited<ReturnType<typeof listSupplierPaymentsPage>>["rows"][number];
 
 function bankLabel(bankAccounts: unknown) {
   const a = relationRow<{ name: string; bank_name: string | null }>(bankAccounts);
@@ -34,15 +39,20 @@ const TABS = [
 export default async function PaymentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; q?: string; page?: string }>;
 }) {
-  const { tab } = await searchParams;
-  const activeTab = tab === "pagos" ? "pagos" : "cobros";
-  const [payments, supplierPayments, stats] = await Promise.all([
-    listAllPayments(),
-    listAllSupplierPayments(),
+  const params = await searchParams;
+  const activeTab = params.tab === "pagos" ? "pagos" : "cobros";
+  const q = cleanSearch(params.q);
+  const page = parsePage(params.page);
+  // Solo se pide la pestaña abierta (15 por página); las pestañas muestran el total.
+  const [list, counts, stats] = await Promise.all([
+    activeTab === "cobros" ? listCustomerPaymentsPage({ search: q, page }) : listSupplierPaymentsPage({ search: q, page }),
+    countPaymentsByKind(),
     getPaymentStats(),
   ]);
+  const payments = activeTab === "cobros" ? (list.rows as PaymentRow[]) : [];
+  const supplierPayments = activeTab === "pagos" ? (list.rows as SupplierPaymentRow[]) : [];
   const monthName = new Intl.DateTimeFormat("es-DO", {
     month: "long",
     timeZone: "America/Santo_Domingo",
@@ -171,7 +181,7 @@ export default async function PaymentsPage({
         {TABS.map((t) => {
           const Icon = t.icon;
           const active = activeTab === t.key;
-          const count = t.key === "cobros" ? payments.length : supplierPayments.length;
+          const count = t.key === "cobros" ? counts.cobros : counts.pagos;
           return (
             <Link
               key={t.key}
@@ -192,33 +202,57 @@ export default async function PaymentsPage({
         })}
       </nav>
 
+      <form action="/payments" method="get" className="flex flex-wrap items-center gap-2">
+        <input type="hidden" name="tab" value={activeTab} />
+        <LiveSearchInput
+          defaultValue={q ?? ""}
+          placeholder={activeTab === "cobros" ? "Buscar cliente o referencia…" : "Buscar proveedor o referencia…"}
+          ariaLabel={activeTab === "cobros" ? "Buscar cobro" : "Buscar pago"}
+          className="w-72"
+        />
+        {q && (
+          <span className="text-sm text-brand-muted">
+            {list.total} {list.total === 1 ? "resultado" : "resultados"} con “<span className="font-medium text-brand-text">{q}</span>” ·{" "}
+            <Link href={`/payments?tab=${activeTab}`} className="text-brand-accent hover:underline">
+              Quitar búsqueda
+            </Link>
+          </span>
+        )}
+      </form>
+
       {activeTab === "cobros" ? (
         <section>
           <SectionHeader
             title="Cobros de clientes"
-            description="Los últimos 100 cobros registrados, del más reciente al más antiguo."
+            description="Del más reciente al más antiguo."
           />
           <DataTable
             columns={paymentColumns}
             rows={payments}
             keyFor={(p) => p.id}
             maxWidth="max-w-none"
-            emptyMessage="Aún no se ha registrado ningún cobro."
+            emptyMessage={q ? "Ningún cobro coincide con la búsqueda." : "Aún no se ha registrado ningún cobro."}
           />
+          <div className="mt-4">
+            <Pagination basePath="/payments" page={page} pageSize={list.pageSize} total={list.total} params={{ tab: "cobros", q }} />
+          </div>
         </section>
       ) : (
         <section>
           <SectionHeader
             title="Pagos a proveedores"
-            description="Los últimos 100 pagos registrados, del más reciente al más antiguo."
+            description="Del más reciente al más antiguo."
           />
           <DataTable
             columns={supplierPaymentColumns}
             rows={supplierPayments}
             keyFor={(p) => p.id}
             maxWidth="max-w-none"
-            emptyMessage="Aún no se ha registrado ningún pago a proveedor."
+            emptyMessage={q ? "Ningún pago coincide con la búsqueda." : "Aún no se ha registrado ningún pago a proveedor."}
           />
+          <div className="mt-4">
+            <Pagination basePath="/payments" page={page} pageSize={list.pageSize} total={list.total} params={{ tab: "pagos", q }} />
+          </div>
         </section>
       )}
     </main>

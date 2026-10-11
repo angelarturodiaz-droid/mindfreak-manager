@@ -1,11 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { PAGE_SIZE, pageRange } from "@/lib/utils/pagination";
+import { idsByName, searchOr } from "@/lib/utils/search";
 import { todayISO } from "@/lib/utils/dates";
 import { effectiveInvoiceStatus } from "./overdue";
 
 export type InvoiceListFilters = {
   status?: string;
   clientId?: string;
+  /** Busca por número, NCF o nombre del cliente. */
+  search?: string;
   page?: number;
 };
 
@@ -38,6 +41,10 @@ export async function listInvoices(filters: InvoiceListFilters = {}) {
     query = query.eq("status", filters.status);
   }
   if (filters.clientId) query = query.eq("client_id", filters.clientId);
+  if (filters.search) {
+    const ids = await idsByName(supabase, "clients", filters.search);
+    query = query.or(searchOr(filters.search, ["number", "ncf"], { column: "client_id", ids }));
+  }
 
   const { data, error, count } = await query;
   if (error) throw new Error(error.message);

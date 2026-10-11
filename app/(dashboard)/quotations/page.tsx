@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Pagination } from "@/components/ui/pagination";
+import { LiveSearchInput } from "@/components/ui/live-search-input";
+import { cleanSearch } from "@/lib/utils/search";
 import { AutoSubmitSelect } from "@/components/ui/auto-submit-select";
 import {
   Chip,
@@ -41,16 +43,17 @@ type QuotationRow = Awaited<ReturnType<typeof listQuotations>>["rows"][number];
 export default async function QuotationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; client?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; client?: string; q?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const page = parsePage(params.page);
+  const q = cleanSearch(params.q);
   const [{ rows: quotations, total, pageSize }, clientOptions, stats] = await Promise.all([
-    listQuotations({ status: params.status, clientId: params.client, page }),
+    listQuotations({ status: params.status, clientId: params.client, search: q, page }),
     listClientOptions(),
     getQuotationStats(params.client),
   ]);
-  const hasFilters = Boolean(params.status || params.client);
+  const hasFilters = Boolean(params.status || params.client || q);
   const selectedClientName = params.client
     ? clientOptions.find((c) => c.id === params.client)?.name
     : undefined;
@@ -181,10 +184,11 @@ export default async function QuotationsPage({
               count: s ? stats.byStatus[s] ?? 0 : stats.total,
               active: (params.status ?? undefined) === s,
               // Sin resultados: elegir otro estado busca solo por ese (no arrastra el cliente).
-              href: listHref("/quotations", { status: s, client: noResults ? undefined : params.client }),
+              href: listHref("/quotations", { status: s, client: noResults ? undefined : params.client, q: noResults ? undefined : q }),
             }))}
           />
-          <form action="/quotations" method="get" className="flex items-center gap-2">
+          <form action="/quotations" method="get" className="flex flex-wrap items-center gap-2">
+            <LiveSearchInput defaultValue={q ?? ""} placeholder="Buscar número o cliente…" ariaLabel="Buscar cotización" className="w-64" />
             {params.status && <input type="hidden" name="status" value={params.status} />}
             <AutoSubmitSelect
               resetOthers={noResults}
@@ -217,6 +221,11 @@ export default async function QuotationsPage({
                 {" "}de <span className="font-medium text-brand-text">{selectedClientName}</span>
               </>
             )}
+            {q && (
+              <>
+                {" "}con “<span className="font-medium text-brand-text">{q}</span>”
+              </>
+            )}
             {" · "}
             <Link href="/quotations" className="text-brand-accent hover:underline">
               Limpiar filtros
@@ -247,7 +256,7 @@ export default async function QuotationsPage({
               page={page}
               pageSize={pageSize}
               total={total}
-              params={{ status: params.status, client: params.client }}
+              params={{ status: params.status, client: params.client, q }}
             />
           </div>
         )}

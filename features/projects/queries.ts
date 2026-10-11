@@ -1,10 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { PAGE_SIZE, pageRange } from "@/lib/utils/pagination";
+import { idsByName, searchOr } from "@/lib/utils/search";
 
 export type ProjectListFilters = {
   status?: string;
   clientId?: string;
+  /** Busca por número, nombre del evento, lugar o nombre del cliente. */
+  search?: string;
   page?: number;
 };
 
@@ -18,12 +21,17 @@ export async function listProjects(filters: ProjectListFilters = {}) {
       "id, number, name, status, event_date, event_time, location_name, budget, client_id, clients(name)",
       { count: "exact" },
     )
-    .order("event_date", { ascending: true, nullsFirst: false })
-    .order("number", { ascending: true })
+    // Más reciente primero (fecha del evento), igual que el resto de listas.
+    .order("event_date", { ascending: false, nullsFirst: false })
+    .order("number", { ascending: false })
     .range(from, to);
 
   if (filters.status) query = query.eq("status", filters.status);
   if (filters.clientId) query = query.eq("client_id", filters.clientId);
+  if (filters.search) {
+    const ids = await idsByName(supabase, "clients", filters.search);
+    query = query.or(searchOr(filters.search, ["number", "name", "location_name"], { column: "client_id", ids }));
+  }
 
   const { data, error, count } = await query;
   if (error) throw new Error(error.message);

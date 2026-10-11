@@ -11,6 +11,8 @@ import { ActionLink } from "@/components/ui/action-link";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { InfoHint } from "@/components/ui/info-hint";
 import { DataTable, type Column } from "@/components/ui/data-table";
+import { Pagination } from "@/components/ui/pagination";
+import { PAGE_SIZE, parsePage } from "@/lib/utils/pagination";
 import { SectionHeader } from "@/components/ui/page-kit";
 import { CurrencySettingsForm } from "./currency-settings-form";
 import { NewCurrencyForm } from "./new-currency-form";
@@ -21,12 +23,17 @@ import { ExchangeRateForm } from "./exchange-rate-form";
  * Catálogo de monedas, fuente de la tasa de referencia, tolerancia de
  * redondeo y tasas de referencia por fecha.
  */
-export default async function CurrenciesSettingsPage() {
+export default async function CurrenciesSettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const page = parsePage((await searchParams).page);
   const [company, settings, currencies, rates, canManage] = await Promise.all([
     getCompany(),
     getCurrencySettings(),
     listCurrencies(false),
-    listExchangeRates(60),
+    listExchangeRates(500),
     hasPermission("settings.manage"),
   ]);
   const functional = company.base_currency;
@@ -183,11 +190,14 @@ export default async function CurrenciesSettingsPage() {
         )}
         <DataTable
           columns={rateColumns}
-          rows={rates}
+          rows={rates.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
           keyFor={(r) => r.id}
           maxWidth="max-w-4xl"
           emptyMessage="Todavía no hay tasas registradas."
         />
+        <div className="mt-4 max-w-4xl">
+          <Pagination basePath="/settings/currencies" page={page} pageSize={PAGE_SIZE} total={rates.length} />
+        </div>
       </section>
 
       <section>

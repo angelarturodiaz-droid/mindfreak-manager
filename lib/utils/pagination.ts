@@ -1,5 +1,5 @@
-/** Cantidad de filas por página en las listas paginadas (cotizaciones, facturas). */
-export const PAGE_SIZE = 25;
+/** Filas por página en todas las listas (15: la página no baja tanto). */
+export const PAGE_SIZE = 15;
 
 /** Convierte el query param `?page=` en un número de página válido (1 si falta o es inválido). */
 export function parsePage(raw: string | undefined): number {

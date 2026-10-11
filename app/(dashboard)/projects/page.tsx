@@ -31,6 +31,8 @@ import { IconBadge, type IconBadgeTone } from "@/components/ui/icon-badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Pagination } from "@/components/ui/pagination";
+import { LiveSearchInput } from "@/components/ui/live-search-input";
+import { cleanSearch } from "@/lib/utils/search";
 import { AutoSubmitSelect } from "@/components/ui/auto-submit-select";
 import { relationName } from "@/lib/utils/relation";
 import { parsePage } from "@/lib/utils/pagination";
@@ -67,25 +69,27 @@ function StatCard({
 export default async function ProjectsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; client?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; client?: string; q?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const page = parsePage(params.page);
+  const q = cleanSearch(params.q);
   const [{ rows: projects, total, pageSize }, convertibleQuotations, clientOptions, stats] =
     await Promise.all([
-      listProjects({ status: params.status, clientId: params.client, page }),
+      listProjects({ status: params.status, clientId: params.client, search: q, page }),
       listConvertibleQuotations(),
       listClientOptions(),
       getProjectStats(params.client),
     ]);
 
   // Filtro sin resultados: el siguiente filtro que se elija empieza de cero.
-  const noResults = Boolean(params.status || params.client) && projects.length === 0;
+  const noResults = Boolean(params.status || params.client || q) && projects.length === 0;
   const statusHref = (status?: string) => {
     const qs = new URLSearchParams();
     if (status) qs.set("status", status);
     // Sin resultados: elegir otro estado busca solo por ese (no arrastra el cliente).
     if (params.client && !noResults) qs.set("client", params.client);
+    if (q && !noResults) qs.set("q", q);
     const s = qs.toString();
     return s ? `/projects?${s}` : "/projects";
   };
@@ -290,7 +294,8 @@ export default async function ProjectsPage({
             })}
           </nav>
 
-          <form action="/projects" method="get" className="flex items-center gap-2">
+          <form action="/projects" method="get" className="flex flex-wrap items-center gap-2">
+            <LiveSearchInput defaultValue={q ?? ""} placeholder="Buscar número, evento, lugar o cliente…" ariaLabel="Buscar proyecto" className="w-72" />
             {params.status && <input type="hidden" name="status" value={params.status} />}
             <AutoSubmitSelect
               resetOthers={noResults}
@@ -315,7 +320,7 @@ export default async function ProjectsPage({
           </form>
         </div>
 
-        {(params.status || params.client) && (
+        {(params.status || params.client || q) && (
           <p className="text-sm text-brand-muted">
             Mostrando
             {params.status && (
@@ -332,6 +337,11 @@ export default async function ProjectsPage({
                 <span className="font-medium text-brand-text">{selectedClientName}</span>
               </>
             )}
+            {q && (
+              <>
+                {" "}con “<span className="font-medium text-brand-text">{q}</span>”
+              </>
+            )}
             {" · "}
             <Link href="/projects" className="text-brand-accent hover:underline">
               Limpiar filtros
@@ -341,12 +351,12 @@ export default async function ProjectsPage({
 
         {projects.length === 0 ? (
           <EmptyState
-            filtered={Boolean(params.status || params.client)}
+            filtered={Boolean(params.status || params.client || q)}
             clearHref="/projects"
             what="proyectos"
             icon={<CalendarDays size={28} />}
             title={
-              params.status || params.client
+              params.status || params.client || q
                 ? "No hay proyectos que coincidan con este filtro."
                 : "Aún no tienes proyectos."
             }
@@ -371,7 +381,7 @@ export default async function ProjectsPage({
               page={page}
               pageSize={pageSize}
               total={total}
-              params={{ status: params.status, client: params.client }}
+              params={{ status: params.status, client: params.client, q }}
             />
           </div>
         )}

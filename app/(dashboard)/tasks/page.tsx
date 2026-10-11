@@ -9,6 +9,10 @@ import { Card } from "@/components/ui/card";
 import { FilterPills, StatCard, StatGrid, listHref } from "@/components/ui/page-kit";
 import { todayISO } from "@/lib/utils/dates";
 import { NoResults } from "@/components/ui/no-results";
+import { LiveSearchInput } from "@/components/ui/live-search-input";
+import { Pagination } from "@/components/ui/pagination";
+import { PAGE_SIZE, parsePage } from "@/lib/utils/pagination";
+import { cleanSearch } from "@/lib/utils/search";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente",
@@ -20,7 +24,7 @@ const STATUS_LABELS: Record<string, string> = {
 export default async function TasksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; page?: string }>;
 }) {
   const params = await searchParams;
   // Todas las tareas para los conteos; la lista usa el filtro de estado.
@@ -29,7 +33,14 @@ export default async function TasksPage({
     listCompanyMembers(),
     listProjectsForSelect(),
   ]);
-  const tasks = params.status ? allTasks.filter((t) => t.status === params.status) : allTasks;
+  const q = cleanSearch(params.q);
+  const page = parsePage(params.page);
+  const norm = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const filtered = allTasks
+    .filter((t) => !params.status || t.status === params.status)
+    .filter((t) => !q || norm(`${t.title} ${t.description ?? ""}`).includes(norm(q)));
+  // 15 por página (las tareas se ordenan por fecha límite: la más cercana primero).
+  const tasks = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const today = todayISO();
   const byStatus: Record<string, number> = {};
@@ -93,13 +104,20 @@ export default async function TasksPage({
             label: s ? STATUS_LABELS[s] ?? s : "Todas",
             count: s ? byStatus[s] ?? 0 : allTasks.length,
             active: (params.status ?? undefined) === s,
-            href: listHref("/tasks", { status: s }),
+            href: listHref("/tasks", { status: s, q }),
           }))}
         />
-        {params.status && tasks.length === 0 ? (
+        <form action="/tasks" method="get" className="flex flex-wrap items-center gap-2">
+          {params.status && <input type="hidden" name="status" value={params.status} />}
+          <LiveSearchInput defaultValue={q ?? ""} placeholder="Buscar tarea…" ariaLabel="Buscar tarea" className="w-64" />
+        </form>
+        {(params.status || q) && filtered.length === 0 ? (
           <NoResults what="tareas" clearHref="/tasks" />
         ) : (
-          <TaskList tasks={tasks} revalidatePathValue="/tasks" />
+          <>
+            <TaskList tasks={tasks} revalidatePathValue="/tasks" />
+            <Pagination basePath="/tasks" page={page} pageSize={PAGE_SIZE} total={filtered.length} params={{ status: params.status, q }} />
+          </>
         )}
       </section>
     </main>

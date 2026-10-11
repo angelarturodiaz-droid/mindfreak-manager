@@ -10,6 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DataTable, type Column } from "@/components/ui/data-table";
+import { Pagination } from "@/components/ui/pagination";
+import { LiveSearchInput } from "@/components/ui/live-search-input";
+import { PAGE_SIZE, parsePage } from "@/lib/utils/pagination";
+import { cleanSearch } from "@/lib/utils/search";
 import { AutoSubmitSelect } from "@/components/ui/auto-submit-select";
 import { InfoHint } from "@/components/ui/info-hint";
 import { RuleTester } from "@/components/fiscal/rule-tester";
@@ -21,7 +25,7 @@ import { RuleTester } from "@/components/fiscal/rule-tester";
 export default async function FiscalRulesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ kind?: string; class?: string; state?: string }>;
+  searchParams: Promise<{ kind?: string; class?: string; state?: string; q?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const [rules, classifications] = await Promise.all([listFiscalRules(), listFiscalClassifications()]);
@@ -32,13 +36,18 @@ export default async function FiscalRulesPage({
   for (const r of withState) counts[r.state]++;
   const toReview = withState.filter((r) => r.needs_review && r.state !== "EXPIRED").length;
 
+  const q = cleanSearch(params.q);
+  const norm = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const filtered = withState.filter(
     (r) =>
       (!params.kind || !r.supplier_kinds?.length || r.supplier_kinds.includes(params.kind)) &&
       (!params.class || r.fiscal_classification_id === params.class) &&
-      (!params.state || r.state === params.state),
+      (!params.state || r.state === params.state) &&
+      (!q || norm(r.name ?? "").includes(norm(q))),
   );
-  const hasFilters = Boolean(params.kind || params.class || params.state);
+  const hasFilters = Boolean(params.kind || params.class || params.state || q);
+  const page = parsePage(params.page);
+  const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const columns: Column<(typeof withState)[number]>[] = [
     {
@@ -106,6 +115,7 @@ export default async function FiscalRulesPage({
 
       <section className="flex flex-col gap-3">
         <form action="/settings/fiscal-rules" method="get" className="flex flex-wrap items-center gap-2">
+          <LiveSearchInput defaultValue={q ?? ""} placeholder="Buscar regla por nombre…" ariaLabel="Buscar regla" className="w-56" />
           <AutoSubmitSelect name="kind" defaultValue={params.kind ?? ""} className="w-52" aria-label="Filtrar por tipo de proveedor">
             <option value="">Todo tipo de proveedor</option>
             {SUPPLIER_KINDS.map((k) => (
@@ -139,13 +149,20 @@ export default async function FiscalRulesPage({
         </form>
         <DataTable
           columns={columns}
-          rows={filtered}
+          rows={pageRows}
           keyFor={(r) => r.id}
           maxWidth="max-w-none"
           emptyMessage="Sin reglas todavía."
           filtered={hasFilters}
           clearHref="/settings/fiscal-rules"
           what="reglas"
+        />
+        <Pagination
+          basePath="/settings/fiscal-rules"
+          page={page}
+          pageSize={PAGE_SIZE}
+          total={filtered.length}
+          params={{ kind: params.kind, class: params.class, state: params.state, q }}
         />
       </section>
 

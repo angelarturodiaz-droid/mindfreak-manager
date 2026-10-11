@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { PAGE_SIZE, pageRange } from "@/lib/utils/pagination";
+import { idsByName, searchOr } from "@/lib/utils/search";
 
 export async function listPaymentsForInvoice(invoiceId: string) {
   const supabase = await createClient();
@@ -21,9 +23,70 @@ export async function listAllPayments() {
       "id, invoice_id, payment_date, amount, method, invoices(number), clients(name), bank_accounts(name, bank_name)",
     )
     .order("payment_date", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(100);
   if (error) throw new Error(error.message);
   return data;
+}
+
+/**
+ * Cobros de clientes paginados (PAGE_SIZE), del más reciente al más antiguo.
+ * Busca por referencia o por nombre del cliente.
+ */
+export async function listCustomerPaymentsPage(filters: { search?: string; page?: number } = {}) {
+  const supabase = await createClient();
+  const [from, to] = pageRange(filters.page ?? 1);
+  let query = supabase
+    .from("customer_payments")
+    .select(
+      "id, invoice_id, payment_date, amount, method, invoices(number), clients(name), bank_accounts(name, bank_name)",
+      { count: "exact" },
+    )
+    .order("payment_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+  if (filters.search) {
+    const ids = await idsByName(supabase, "clients", filters.search);
+    query = query.or(searchOr(filters.search, ["reference"], { column: "client_id", ids }));
+  }
+  const { data, error, count } = await query;
+  if (error) throw new Error(error.message);
+  return { rows: data ?? [], total: count ?? 0, pageSize: PAGE_SIZE };
+}
+
+/**
+ * Pagos a proveedores paginados (PAGE_SIZE), del más reciente al más
+ * antiguo. Busca por referencia o por nombre del proveedor.
+ */
+export async function listSupplierPaymentsPage(filters: { search?: string; page?: number } = {}) {
+  const supabase = await createClient();
+  const [from, to] = pageRange(filters.page ?? 1);
+  let query = supabase
+    .from("supplier_payments")
+    .select(
+      "id, expense_id, payment_date, amount, method, expenses(description), suppliers(name), bank_accounts(name, bank_name)",
+      { count: "exact" },
+    )
+    .order("payment_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+  if (filters.search) {
+    const ids = await idsByName(supabase, "suppliers", filters.search);
+    query = query.or(searchOr(filters.search, ["reference"], { column: "supplier_id", ids }));
+  }
+  const { data, error, count } = await query;
+  if (error) throw new Error(error.message);
+  return { rows: data ?? [], total: count ?? 0, pageSize: PAGE_SIZE };
+}
+
+/** Cantidad total de cobros y de pagos (para las pestañas). */
+export async function countPaymentsByKind() {
+  const supabase = await createClient();
+  const [c, s] = await Promise.all([
+    supabase.from("customer_payments").select("id", { count: "exact", head: true }),
+    supabase.from("supplier_payments").select("id", { count: "exact", head: true }),
+  ]);
+  return { cobros: c.count ?? 0, pagos: s.count ?? 0 };
 }
 
 export async function listBankAccounts() {
@@ -59,6 +122,7 @@ export async function listAllSupplierPayments() {
       "id, expense_id, payment_date, amount, method, expenses(description), suppliers(name), bank_accounts(name, bank_name)",
     )
     .order("payment_date", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(100);
   if (error) throw new Error(error.message);
   return data;

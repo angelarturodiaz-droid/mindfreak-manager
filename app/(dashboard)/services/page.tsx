@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { LiveSearchInput } from "@/components/ui/live-search-input";
 import { DataTable, type Column } from "@/components/ui/data-table";
+import { Pagination } from "@/components/ui/pagination";
+import { PAGE_SIZE, parsePage } from "@/lib/utils/pagination";
 import { AutoSubmitSelect } from "@/components/ui/auto-submit-select";
 import { Chip, FilterPills, StatCard, StatGrid, listHref } from "@/components/ui/page-kit";
 import { relationName, relationRow } from "@/lib/utils/relation";
@@ -33,7 +35,7 @@ type ServiceRow = Awaited<ReturnType<typeof listServices>>[number];
 export default async function ServicesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string; category?: string; q?: string }>;
+  searchParams: Promise<{ type?: string; category?: string; q?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const [categories, services, taxRates] = await Promise.all([
@@ -51,6 +53,9 @@ export default async function ServicesPage({
       (!params.category || s.category_id === params.category) &&
       (!search || s.name.toLowerCase().includes(search)),
   );
+  // 15 por página.
+  const page = parsePage(params.page);
+  const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const active = services.filter((s) => s.is_active);
   const margins = active
     .map((s) => marginPct(s.default_price, s.default_cost))
@@ -213,13 +218,20 @@ export default async function ServicesPage({
 
           <DataTable
             columns={columns}
-            rows={filtered}
+            rows={pageRows}
             keyFor={(s) => s.id}
             maxWidth="max-w-none"
             emptyMessage={hasFilters ? "No hay productos ni servicios con este filtro." : "Aún no tienes productos ni servicios."}
             filtered={hasFilters}
             clearHref="/services"
             what="productos ni servicios"
+          />
+          <Pagination
+            basePath="/services"
+            page={page}
+            pageSize={PAGE_SIZE}
+            total={filtered.length}
+            params={{ type, category: params.category, q: params.q?.trim() || undefined }}
           />
         </section>
 

@@ -31,6 +31,10 @@ import { ConfirmButton } from "@/components/ui/confirm-button";
 import { ActionLink } from "@/components/ui/action-link";
 import { Card } from "@/components/ui/card";
 import { DataTable, type Column } from "@/components/ui/data-table";
+import { Pagination } from "@/components/ui/pagination";
+import { LiveSearchInput } from "@/components/ui/live-search-input";
+import { PAGE_SIZE, parsePage } from "@/lib/utils/pagination";
+import { cleanSearch } from "@/lib/utils/search";
 import { Badge } from "@/components/ui/badge";
 import { IconBadge } from "@/components/ui/icon-badge";
 import {
@@ -120,7 +124,7 @@ export default async function BankAccountDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ type?: string; rec?: string; cat?: string }>;
+  searchParams: Promise<{ type?: string; rec?: string; cat?: string; q?: string; page?: string }>;
 }) {
   const { id } = await params;
   const filters = await searchParams;
@@ -199,17 +203,25 @@ export default async function BankAccountDetailPage({
   const typeFilter = ["INCOME", "EXPENSE", "TRANSFER"].includes(filters.type ?? "") ? filters.type : undefined;
   const recFilter = filters.rec === "no" ? "no" : filters.rec === "si" ? "si" : undefined;
   const catFilter = filters.cat || undefined;
+  const q = cleanSearch(filters.q);
+  const page = parsePage(filters.page);
+  const norm = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const matchQ = (t: TransactionRow) =>
+    !q || norm(`${t.description ?? ""} ${t.reference ?? ""} ${relationName(t.expense_categories) ?? ""}`).includes(norm(q));
   const filtered = rows.filter(
     (t) =>
       (!typeFilter || t.type === typeFilter) &&
       (!catFilter || (catFilter === "none" ? !t.category_id : t.category_id === catFilter)) &&
-      (!recFilter || (recFilter === "si" ? t.reconciled : !t.reconciled)),
+      (!recFilter || (recFilter === "si" ? t.reconciled : !t.reconciled)) &&
+      matchQ(t),
   );
+  // 15 por página; el saldo de cada fila ya viene calculado sobre todos los movimientos.
+  const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const uncategorized = rows.filter((t) => !t.category_id).length;
   // Filtro sin resultados: el siguiente filtro que se elija empieza de cero
   // (no arrastra los otros filtros, que son los que dejaban la lista vacía).
-  const noResults = filtered.length === 0 && Boolean(typeFilter || recFilter || catFilter);
+  const noResults = filtered.length === 0 && Boolean(typeFilter || recFilter || catFilter || q);
   const keep = <T,>(v: T) => (noResults ? undefined : v);
   // Conteos de cada botón según los otros filtros activos (así un 0 avisa antes de hacer clic).
   const matchRec = (t: TransactionRow) => !recFilter || (recFilter === "si" ? t.reconciled : !t.reconciled);
@@ -516,32 +528,33 @@ export default async function BankAccountDetailPage({
               label: f.label,
               count: f.key ? typeBase.filter((t) => t.type === f.key).length : typeBase.length,
               active: typeFilter === f.key,
-              href: listHref(`/banks/${id}`, { type: f.key, rec: keep(recFilter), cat: keep(catFilter) }),
+              href: listHref(`/banks/${id}`, { type: f.key, rec: keep(recFilter), cat: keep(catFilter), q: keep(q) }),
             }))}
           />
           <FilterPills
             label="Filtrar por conciliación"
             items={[
-              { key: "all", label: "Todos", active: !recFilter, href: listHref(`/banks/${id}`, { type: keep(typeFilter), cat: keep(catFilter) }) },
+              { key: "all", label: "Todos", active: !recFilter, href: listHref(`/banks/${id}`, { type: keep(typeFilter), cat: keep(catFilter), q: keep(q) }) },
               {
                 key: "no",
                 label: "Sin conciliar",
                 count: recBase.filter((t) => !t.reconciled).length,
                 active: recFilter === "no",
-                href: listHref(`/banks/${id}`, { type: keep(typeFilter), rec: "no", cat: keep(catFilter) }),
+                href: listHref(`/banks/${id}`, { type: keep(typeFilter), rec: "no", cat: keep(catFilter), q: keep(q) }),
               },
               {
                 key: "si",
                 label: "Conciliados",
                 count: recBase.filter((t) => t.reconciled).length,
                 active: recFilter === "si",
-                href: listHref(`/banks/${id}`, { type: keep(typeFilter), rec: "si", cat: keep(catFilter) }),
+                href: listHref(`/banks/${id}`, { type: keep(typeFilter), rec: "si", cat: keep(catFilter), q: keep(q) }),
               },
             ]}
           />
-          <form action={`/banks/${id}`} method="get">
+          <form action={`/banks/${id}`} method="get" className="flex flex-wrap items-center gap-2">
             {typeFilter && <input type="hidden" name="type" value={typeFilter} />}
             {recFilter && <input type="hidden" name="rec" value={recFilter} />}
+            <LiveSearchInput defaultValue={q ?? ""} placeholder="Buscar detalle, referencia o categoría…" ariaLabel="Buscar movimiento" className="w-64" />
             <AutoSubmitSelect resetOthers={noResults} name="cat" defaultValue={catFilter ?? ""} className="w-52" aria-label="Filtrar por categoría">
               <option value="">Todas las categorías</option>
               <option value="none">Sin categoría ({rows.filter((t) => !t.category_id).length})</option>
@@ -555,13 +568,20 @@ export default async function BankAccountDetailPage({
         </div>
         <DataTable
           columns={columns}
-          rows={filtered}
+          rows={pageRows}
           keyFor={(t) => t.id}
           maxWidth="max-w-none"
           emptyMessage="Sin movimientos todavía."
-          filtered={Boolean(typeFilter || recFilter || catFilter)}
+          filtered={Boolean(typeFilter || recFilter || catFilter || q)}
           clearHref={`/banks/${id}`}
           what="movimientos"
+        />
+        <Pagination
+          basePath={`/banks/${id}`}
+          page={page}
+          pageSize={PAGE_SIZE}
+          total={filtered.length}
+          params={{ type: typeFilter, rec: recFilter, cat: catFilter, q }}
         />
       </section>
     </main>

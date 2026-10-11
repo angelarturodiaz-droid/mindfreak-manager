@@ -5,6 +5,8 @@ import { Select } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
+import { Pagination } from "@/components/ui/pagination";
+import { parsePage } from "@/lib/utils/pagination";
 
 const ENTITY_LABELS: Record<string, string> = {
   client: "Cliente",
@@ -45,20 +47,21 @@ const ACTION_TONES: Record<string, BadgeTone> = {
   STATUS_CANCELLED: "danger",
 };
 
-type LogRow = Awaited<ReturnType<typeof listAuditLogs>>[number];
+type LogRow = Awaited<ReturnType<typeof listAuditLogs>>["rows"][number];
 
 export default async function AuditPage({
   searchParams,
 }: {
-  searchParams: Promise<{ entity_type?: string; action?: string }>;
+  searchParams: Promise<{ entity_type?: string; action?: string; page?: string }>;
 }) {
   if (!(await hasPermission("settings.manage"))) {
     redirect("/dashboard");
   }
 
   const params = await searchParams;
-  const [logs, entityTypes] = await Promise.all([
-    listAuditLogs({ entityType: params.entity_type, action: params.action }),
+  const page = parsePage(params.page);
+  const [{ rows: logs, total, pageSize }, entityTypes] = await Promise.all([
+    listAuditLogs({ entityType: params.entity_type, action: params.action, page }),
     listAuditEntityTypes(),
   ]);
 
@@ -115,8 +118,8 @@ export default async function AuditPage({
       <div>
         <h1 className="text-xl font-semibold text-brand-primary">Auditoría</h1>
         <p className="text-sm text-brand-muted">
-          Registro inmutable de cambios en el sistema (últimos 200). Nunca se
-          edita ni se borra un registro de auditoría.
+          Registro inmutable de cambios en el sistema, del más reciente al más
+          antiguo. Nunca se edita ni se borra un registro de auditoría.
         </p>
       </div>
 
@@ -151,6 +154,13 @@ export default async function AuditPage({
         clearHref="/audit"
         noResultsHint="Cambia la entidad o la acción y pulsa Filtrar, o limpia los filtros para ver todo."
         maxWidth="max-w-none"
+      />
+      <Pagination
+        basePath="/audit"
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        params={{ entity_type: params.entity_type, action: params.action }}
       />
     </main>
   );

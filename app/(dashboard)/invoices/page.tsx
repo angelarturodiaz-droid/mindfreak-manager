@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Pagination } from "@/components/ui/pagination";
+import { LiveSearchInput } from "@/components/ui/live-search-input";
+import { cleanSearch } from "@/lib/utils/search";
 import { AutoSubmitSelect } from "@/components/ui/auto-submit-select";
 import {
   Chip,
@@ -39,16 +41,17 @@ type InvoiceRow = Awaited<ReturnType<typeof listInvoices>>["rows"][number];
 export default async function InvoicesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; client?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; client?: string; q?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const page = parsePage(params.page);
+  const q = cleanSearch(params.q);
   const [{ rows: invoices, total, pageSize }, clientOptions, stats] = await Promise.all([
-    listInvoices({ status: params.status, clientId: params.client, page }),
+    listInvoices({ status: params.status, clientId: params.client, search: q, page }),
     listClientOptions(),
     getInvoiceStats(params.client),
   ]);
-  const hasFilters = Boolean(params.status || params.client);
+  const hasFilters = Boolean(params.status || params.client || q);
   const selectedClientName = params.client
     ? clientOptions.find((c) => c.id === params.client)?.name
     : undefined;
@@ -197,11 +200,12 @@ export default async function InvoicesPage({
               count: s ? stats.byStatus[s] ?? 0 : stats.total,
               active: (params.status ?? undefined) === s,
               // Sin resultados: elegir otro estado busca solo por ese (no arrastra el cliente).
-              href: listHref("/invoices", { status: s, client: noResults ? undefined : params.client }),
+              href: listHref("/invoices", { status: s, client: noResults ? undefined : params.client, q: noResults ? undefined : q }),
             }))}
           />
-          <form action="/invoices" method="get" className="flex items-center gap-2">
+          <form action="/invoices" method="get" className="flex flex-wrap items-center gap-2">
             {params.status && <input type="hidden" name="status" value={params.status} />}
+            <LiveSearchInput defaultValue={q ?? ""} placeholder="Buscar número, NCF o cliente…" ariaLabel="Buscar factura" className="w-64" />
             <AutoSubmitSelect
               resetOthers={noResults}
               name="client"
@@ -231,6 +235,11 @@ export default async function InvoicesPage({
             {selectedClientName && (
               <>
                 {" "}de <span className="font-medium text-brand-text">{selectedClientName}</span>
+              </>
+            )}
+            {q && (
+              <>
+                {" "}con “<span className="font-medium text-brand-text">{q}</span>”
               </>
             )}
             {" · "}
@@ -263,7 +272,7 @@ export default async function InvoicesPage({
               page={page}
               pageSize={pageSize}
               total={total}
-              params={{ status: params.status, client: params.client }}
+              params={{ status: params.status, client: params.client, q }}
             />
           </div>
         )}

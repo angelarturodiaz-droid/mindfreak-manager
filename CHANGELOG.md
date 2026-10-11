@@ -1,5 +1,27 @@
 # CHANGELOG — Mindfreak Manager
 
+## Listas: 15 por página, buscador y más reciente primero (2026-10-10)
+
+- `PAGE_SIZE` baja de 25 a **15** en todas las listas paginadas.
+- **Paginación nueva** en: Cobros y pagos (cada pestaña; antes solo los
+  últimos 100), movimientos de cada cuenta de Bancos, Tareas, Auditoría
+  (antes los últimos 200), Productos y servicios, Reglas fiscales y el
+  historial de tasas (Monedas y tasas).
+- **Buscador en vivo nuevo** (`lib/utils/search.ts`: texto limpio para
+  `or()`, valores entre comillas, búsqueda por nombre de cliente/proveedor
+  vía sus ids) en: Facturas (número, NCF, cliente), Cotizaciones (número,
+  cliente), Proyectos (número, evento, lugar, cliente), Gastos
+  (descripción, NCF, proveedor), Cobros (cliente, referencia), Pagos
+  (proveedor, referencia), movimientos de banco (detalle, referencia,
+  categoría), Tareas y Reglas fiscales. Se combina con los filtros y la
+  paginación.
+- **Orden**: Proyectos pasan a fecha del evento **descendente** (antes
+  ascendente); Gastos, Cobros y Pagos desempatan por hora de registro (el
+  más nuevo primero). Clientes, proveedores y catálogos siguen por nombre;
+  tareas por fecha límite.
+- Prueba unitaria `tests/unit/search.test.ts`.
+
+
 ## Ajustes de la prueba del 10-oct
 
 - **Movimiento manual** en una cuenta en otra moneda: la tasa se llena sola

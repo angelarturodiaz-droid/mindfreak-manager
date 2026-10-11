@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
+import { LiveSearchInput } from "@/components/ui/live-search-input";
+import { cleanSearch } from "@/lib/utils/search";
 import { Pagination } from "@/components/ui/pagination";
 import { FilterPills, StatCard, StatGrid, listHref } from "@/components/ui/page-kit";
 import { relationName, relationRow } from "@/lib/utils/relation";
@@ -32,12 +34,13 @@ type ExpenseRow = Awaited<ReturnType<typeof listExpenses>>["rows"][number];
 export default async function ExpensesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; fiscal?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; fiscal?: string; q?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const page = parsePage(params.page);
+  const q = cleanSearch(params.q);
   const [{ rows: expenses, total, pageSize }, stats] = await Promise.all([
-    listExpenses({ status: params.status, fiscal: params.fiscal, page }),
+    listExpenses({ status: params.status, fiscal: params.fiscal, search: q, page }),
     getExpenseStats(),
   ]);
   const monthName = new Intl.DateTimeFormat("es-DO", {
@@ -175,7 +178,7 @@ export default async function ExpensesPage({
             label: s ? STATUS_LABELS[s] ?? s : "Todos",
             count: s ? stats.byStatus[s] ?? 0 : stats.total,
             active: (params.status ?? undefined) === s,
-            href: listHref("/expenses", { status: s, fiscal: params.fiscal }),
+            href: listHref("/expenses", { status: s, fiscal: params.fiscal, q }),
           }))}
         />
         {(stats.fiscalReview > 0 || stats.withheldCount > 0 || params.fiscal) && (
@@ -190,21 +193,35 @@ export default async function ExpensesPage({
               label: it.label,
               count: it.count,
               active: (params.fiscal ?? undefined) === it.value,
-              href: listHref("/expenses", { status: params.status, fiscal: it.value }),
+              href: listHref("/expenses", { status: params.status, fiscal: it.value, q }),
             }))}
           />
         )}
 
+        <form action="/expenses" method="get" className="flex flex-wrap items-center gap-2">
+          {params.status && <input type="hidden" name="status" value={params.status} />}
+          {params.fiscal && <input type="hidden" name="fiscal" value={params.fiscal} />}
+          <LiveSearchInput defaultValue={q ?? ""} placeholder="Buscar descripción, NCF o proveedor…" ariaLabel="Buscar gasto" className="w-72" />
+          {q && (
+            <span className="text-sm text-brand-muted">
+              {total} {total === 1 ? "gasto" : "gastos"} con “<span className="font-medium text-brand-text">{q}</span>” ·{" "}
+              <Link href={listHref("/expenses", { status: params.status, fiscal: params.fiscal })} className="text-brand-accent hover:underline">
+                Quitar búsqueda
+              </Link>
+            </span>
+          )}
+        </form>
+
         {expenses.length === 0 ? (
           <EmptyState
-            filtered={Boolean(params.status || params.fiscal)}
+            filtered={Boolean(params.status || params.fiscal || q)}
             clearHref="/expenses"
             what="gastos"
             icon={<CreditCard size={28} />}
             title={
               params.fiscal === "review"
                 ? "No hay gastos con el tratamiento fiscal por revisar."
-                : params.status || params.fiscal
+                : params.status || params.fiscal || q
                   ? "No hay gastos con este filtro."
                   : "Aún no tienes gastos."
             }
@@ -224,7 +241,7 @@ export default async function ExpensesPage({
               page={page}
               pageSize={pageSize}
               total={total}
-              params={{ status: params.status, fiscal: params.fiscal }}
+              params={{ status: params.status, fiscal: params.fiscal, q }}
             />
           </div>
         )}

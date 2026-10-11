@@ -1,10 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { PAGE_SIZE, pageRange } from "@/lib/utils/pagination";
+import { idsByName, searchOr } from "@/lib/utils/search";
 
 export type ExpenseListFilters = {
   status?: string;
   /** "review": tratamiento fiscal por revisar · "withheld": con retenciones. */
   fiscal?: string;
+  /** Busca por descripción, NCF o nombre del proveedor. */
+  search?: string;
   page?: number;
 };
 
@@ -22,11 +25,16 @@ export async function listExpenses(filters: ExpenseListFilters = {}) {
       { count: "exact" },
     )
     .order("expense_date", { ascending: false })
+    .order("created_at", { ascending: false })
     .range(from, to);
 
   if (filters.status) query = query.eq("status", filters.status);
   if (filters.fiscal === "review") query = query.in("fiscal_status", FISCAL_REVIEW).neq("status", "CANCELLED");
   if (filters.fiscal === "withheld") query = query.gt("total_withheld", 0);
+  if (filters.search) {
+    const ids = await idsByName(supabase, "suppliers", filters.search);
+    query = query.or(searchOr(filters.search, ["description", "ncf"], { column: "supplier_id", ids }));
+  }
 
   const { data, error, count } = await query;
   if (error) throw new Error(error.message);

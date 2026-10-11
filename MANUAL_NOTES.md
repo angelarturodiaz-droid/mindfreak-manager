@@ -696,3 +696,6 @@ pulsa el botón.
 - **10-oct**: tasa automática en Movimiento manual (cuentas en otra moneda);
   ⓘ junto a la cuenta en pagos/cobros/gastos; validación del navegador en
   español en toda la app (ventana "Falta un dato" + campo en rojo).
+- **Listas (10-oct)**: 15 por página en todas; buscador en vivo en todas
+  las listas principales; fechas de la más reciente a la más antigua
+  (proyectos incluidos). Catálogos por nombre y tareas por fecha límite.
