@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { LiveSearchInput } from "@/components/ui/live-search-input";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Pagination } from "@/components/ui/pagination";
-import { PAGE_SIZE, parsePage } from "@/lib/utils/pagination";
+import { PAGE_SIZE, paginate, parsePage } from "@/lib/utils/pagination";
 import { AutoSubmitSelect } from "@/components/ui/auto-submit-select";
 import { Chip, FilterPills, StatCard, StatGrid, listHref } from "@/components/ui/page-kit";
 import { relationName, relationRow } from "@/lib/utils/relation";
@@ -35,7 +35,7 @@ type ServiceRow = Awaited<ReturnType<typeof listServices>>[number];
 export default async function ServicesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string; category?: string; q?: string; page?: string }>;
+  searchParams: Promise<{ type?: string; category?: string; q?: string; page?: string; catpage?: string }>;
 }) {
   const params = await searchParams;
   const [categories, services, taxRates] = await Promise.all([
@@ -246,7 +246,7 @@ export default async function ServicesPage({
               {categories.length === 0 ? (
                 <p className="text-sm text-brand-muted">Sin categorías todavía.</p>
               ) : (
-                categories.map((c) => (
+                paginate(categories, parsePage(params.catpage)).map((c) => (
                   <Link
                     key={c.id}
                     href={listHref("/services", { category: c.id })}
@@ -264,6 +264,19 @@ export default async function ServicesPage({
                 ))
               )}
             </div>
+            {categories.length > PAGE_SIZE && (
+              <div className="mb-3">
+                <Pagination
+                  basePath="/services"
+                  page={parsePage(params.catpage)}
+                  pageSize={PAGE_SIZE}
+                  total={categories.length}
+                  pageParam="catpage"
+                  compact
+                  params={{ type, category: params.category, q: params.q?.trim() || undefined, page: params.page }}
+                />
+              </div>
+            )}
             <NewCategoryForm />
           </Card>
         </aside>

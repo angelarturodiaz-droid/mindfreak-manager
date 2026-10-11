@@ -8,10 +8,18 @@ import { Badge } from "@/components/ui/badge";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { ActionButton } from "@/components/ui/action-button";
 import { DataTable, type Column } from "@/components/ui/data-table";
+import { Pagination } from "@/components/ui/pagination";
+import { PAGE_SIZE, paginate, parsePage } from "@/lib/utils/pagination";
+
 
 type BankEntry = Awaited<ReturnType<typeof listBankCatalog>>[number];
 
-export default async function BankCatalogSettingsPage() {
+export default async function BankCatalogSettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const page = parsePage((await searchParams).page);
   const banks = await listBankCatalog(false);
 
   const columns: Column<BankEntry>[] = [
@@ -54,7 +62,10 @@ export default async function BankCatalogSettingsPage() {
         </p>
       </div>
 
-      <DataTable columns={columns} rows={banks} keyFor={(b) => b.id} maxWidth="max-w-md" emptyMessage="Sin bancos en el catálogo todavía." />
+      <DataTable columns={columns} rows={paginate(banks, page)} keyFor={(b) => b.id} maxWidth="max-w-md" emptyMessage="Sin bancos en el catálogo todavía." />
+      <div className="max-w-md">
+        <Pagination basePath="/settings/banks" page={page} pageSize={PAGE_SIZE} total={banks.length} />
+      </div>
 
       <section className="max-w-md">
         <h2 className="mb-3 text-sm font-medium text-brand-text">

@@ -39,7 +39,7 @@ export default async function TasksPage({
   const filtered = allTasks
     .filter((t) => !params.status || t.status === params.status)
     .filter((t) => !q || norm(`${t.title} ${t.description ?? ""}`).includes(norm(q)));
-  // 15 por página (las tareas se ordenan por fecha límite: la más cercana primero).
+  // 10 por página, de la más nueva a la más vieja.
   const tasks = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const today = todayISO();

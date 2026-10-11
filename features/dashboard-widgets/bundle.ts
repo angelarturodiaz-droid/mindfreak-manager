@@ -34,7 +34,10 @@ export async function getDashboardWidgetBundle() {
     receivables,
     recentPayments: recentPayments.slice(0, 5),
     recentSupplierPayments: recentSupplierPayments.slice(0, 5),
-    pendingTasks: pendingTasks.slice(0, 5),
+    // En el Dashboard, las pendientes que vencen antes van primero.
+    pendingTasks: [...pendingTasks]
+      .sort((a, b) => (a.due_date ?? "9999-12-31").localeCompare(b.due_date ?? "9999-12-31"))
+      .slice(0, 5),
     topProjects: [...profitability]
       .sort((a, b) => (b.margenReal ?? -Infinity) - (a.margenReal ?? -Infinity))
       .slice(0, 5),

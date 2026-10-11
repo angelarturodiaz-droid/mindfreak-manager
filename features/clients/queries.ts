@@ -24,7 +24,8 @@ export async function listClients(filters: ClientListFilters = {}) {
   let query = supabase
     .from("clients")
     .select("id, name, tax_id, email, phone, stage, is_active, created_at", { count: "exact" })
-    .order("name", { ascending: true })
+    // Del más nuevo al más viejo (fecha en que se agregó).
+    .order("created_at", { ascending: false })
     .range(from, to);
 
   if (filters.stage) query = query.eq("stage", filters.stage);

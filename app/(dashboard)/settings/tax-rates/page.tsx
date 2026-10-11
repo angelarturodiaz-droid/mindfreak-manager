@@ -9,10 +9,17 @@ import { NewTaxRateForm } from "./new-tax-rate-form";
 import { Badge } from "@/components/ui/badge";
 import { ActionLink } from "@/components/ui/action-link";
 import { DataTable, type Column } from "@/components/ui/data-table";
+import { Pagination } from "@/components/ui/pagination";
+import { PAGE_SIZE, paginate, parsePage } from "@/lib/utils/pagination";
 
 type TaxRateRow = Awaited<ReturnType<typeof listTaxRates>>[number];
 
-export default async function TaxRatesPage() {
+export default async function TaxRatesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const page = parsePage((await searchParams).page);
   const [rates, canManage] = await Promise.all([
     listTaxRates(false),
     hasPermission("settings.manage"),
@@ -72,11 +79,14 @@ export default async function TaxRatesPage() {
 
       <DataTable
         columns={columns}
-        rows={rates}
+        rows={paginate(rates, page)}
         keyFor={(r) => r.id}
         maxWidth="max-w-2xl"
         emptyMessage="Sin tasas configuradas todavía."
       />
+      <div className="max-w-2xl">
+        <Pagination basePath="/settings/tax-rates" page={page} pageSize={PAGE_SIZE} total={rates.length} />
+      </div>
 
       {canManage && (
         <section className="max-w-2xl">

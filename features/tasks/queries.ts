@@ -7,7 +7,8 @@ export async function listTasks(filters: { status?: string; projectId?: string }
     .select(
       "id, title, description, due_date, status, priority, project_id, assigned_to, projects(number, name), profiles!assigned_to(full_name)",
     )
-    .order("due_date", { ascending: true, nullsFirst: false });
+    // De la más nueva a la más vieja (fecha de creación).
+    .order("created_at", { ascending: false });
 
   if (filters.status) query = query.eq("status", filters.status);
   if (filters.projectId) query = query.eq("project_id", filters.projectId);

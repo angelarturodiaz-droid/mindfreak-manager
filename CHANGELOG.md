@@ -1,5 +1,18 @@
 # CHANGELOG — Mindfreak Manager
 
+## Listas: 10 por página, clientes y tareas del más nuevo al más viejo (2026-10-10)
+
+- `PAGE_SIZE` baja de 15 a **10** en todas las listas.
+- **Clientes** y **Tareas** se ordenan por fecha de creación, del más
+  nuevo al más viejo (antes: clientes por nombre, tareas por fecha
+  límite). El widget de tareas del Dashboard sigue mostrando primero las
+  que vencen antes.
+- **Paginación también en catálogos** (se ve sola cuando pasan de 10):
+  Configuración → Bancos, Impuestos, Condiciones de pago y Usuarios, y las
+  categorías de Productos y servicios (`?catpage=`; `Pagination` acepta
+  `pageParam` y `compact`). Nuevo `paginate()` en `lib/utils/pagination.ts`.
+
+
 ## Listas: 15 por página, buscador y más reciente primero (2026-10-10)
 
 - `PAGE_SIZE` baja de 25 a **15** en todas las listas paginadas.

@@ -699,3 +699,6 @@ pulsa el botón.
 - **Listas (10-oct)**: 15 por página en todas; buscador en vivo en todas
   las listas principales; fechas de la más reciente a la más antigua
   (proyectos incluidos). Catálogos por nombre y tareas por fecha límite.
+- **Listas (10-oct, 2.ª)**: 10 por página; clientes y tareas del más nuevo
+  al más viejo; los catálogos de Configuración y las categorías de
+  Productos y servicios se paginan cuando pasan de 10.

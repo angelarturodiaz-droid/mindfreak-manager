@@ -9,10 +9,18 @@ import { Badge } from "@/components/ui/badge";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { ActionButton } from "@/components/ui/action-button";
 import { DataTable, type Column } from "@/components/ui/data-table";
+import { Pagination } from "@/components/ui/pagination";
+import { PAGE_SIZE, paginate, parsePage } from "@/lib/utils/pagination";
+
 
 type Term = Awaited<ReturnType<typeof listPaymentTerms>>[number];
 
-export default async function PaymentTermsSettingsPage() {
+export default async function PaymentTermsSettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const page = parsePage((await searchParams).page);
   const terms = await listPaymentTerms(false);
 
   const columns: Column<Term>[] = [
@@ -58,7 +66,10 @@ export default async function PaymentTermsSettingsPage() {
         </p>
       </div>
 
-      <DataTable columns={columns} rows={terms} keyFor={(t) => t.id} maxWidth="max-w-4xl" emptyMessage="Sin condiciones de pago todavía." />
+      <DataTable columns={columns} rows={paginate(terms, page)} keyFor={(t) => t.id} maxWidth="max-w-4xl" emptyMessage="Sin condiciones de pago todavía." />
+      <div className="max-w-4xl">
+        <Pagination basePath="/settings/payment-terms" page={page} pageSize={PAGE_SIZE} total={terms.length} />
+      </div>
 
       <section className="max-w-3xl">
         <h2 className="mb-3 text-sm font-medium text-brand-text">

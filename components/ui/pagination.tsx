@@ -12,12 +12,18 @@ export function Pagination({
   pageSize,
   total,
   params = {},
+  pageParam = "page",
+  compact = false,
 }: {
   basePath: string;
   page: number;
   pageSize: number;
   total: number;
   params?: Record<string, string | undefined>;
+  /** Nombre del parámetro de página en la URL (para tener dos paginaciones en una pantalla). */
+  pageParam?: string;
+  /** Versión corta (para listas dentro de una tarjeta). */
+  compact?: boolean;
 }) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   if (total <= pageSize) return null;
@@ -25,9 +31,9 @@ export function Pagination({
   const hrefFor = (p: number) => {
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
-      if (v && k !== "page") qs.set(k, v);
+      if (v && k !== pageParam) qs.set(k, v);
     }
-    if (p > 1) qs.set("page", String(p));
+    if (p > 1) qs.set(pageParam, String(p));
     const s = qs.toString();
     return s ? `${basePath}?${s}` : basePath;
   };
@@ -44,9 +50,11 @@ export function Pagination({
       aria-label="Paginación"
       className="flex flex-wrap items-center justify-between gap-3 text-sm text-brand-muted"
     >
-      <span>
-        Mostrando {from}–{to} de {total}
-      </span>
+      {!compact && (
+        <span>
+          Mostrando {from}–{to} de {total}
+        </span>
+      )}
       <div className="flex items-center gap-2">
         {page > 1 ? (
           <Link href={hrefFor(page - 1)} className={linkClasses}>

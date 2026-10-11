@@ -7,10 +7,18 @@ import { ResetPasswordButton } from "./reset-password-button";
 import { DeleteUserButton } from "./delete-user-button";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
+import { Pagination } from "@/components/ui/pagination";
+import { PAGE_SIZE, paginate, parsePage } from "@/lib/utils/pagination";
+
 
 type UserRow = Awaited<ReturnType<typeof getCompanyUsersWithRoleIds>>[number];
 
-export default async function UsersSettingsPage() {
+export default async function UsersSettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const page = parsePage((await searchParams).page);
   const [users, roles, emailConfirmations] = await Promise.all([
     getCompanyUsersWithRoleIds(),
     listRoles(),
@@ -59,7 +67,10 @@ export default async function UsersSettingsPage() {
           registró actividad en el sistema — si ya creó algo, usa
           &ldquo;Desactivar&rdquo; en su lugar.
         </p>
-        <DataTable columns={columns} rows={users} keyFor={(u) => u.id} maxWidth="max-w-4xl" emptyMessage="Sin usuarios registrados." />
+        <DataTable columns={columns} rows={paginate(users, page)} keyFor={(u) => u.id} maxWidth="max-w-4xl" emptyMessage="Sin usuarios registrados." />
+      <div className="max-w-4xl">
+        <Pagination basePath="/settings/users" page={page} pageSize={PAGE_SIZE} total={users.length} />
+      </div>
       </div>
 
       <section className="max-w-md">
