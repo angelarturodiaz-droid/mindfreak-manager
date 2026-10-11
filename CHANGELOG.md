@@ -14,6 +14,12 @@
   y muestra una ventana en español con la lista ("Descripción: falta
   completarlo", "Correo: no tiene un formato válido…"); al cerrar lleva al
   primero. El rojo se quita al corregir.
+- **Comprobante de pago al proveedor (PDF)**: la franja final dice
+  "BALANCE PENDIENTE DE PAGO" (antes "…DEL GASTO"), porque el comprobante lo
+  recibe el proveedor. Confirmado por el usuario.
+- Revisado: el redondeo con comisión del pago "Redondeo Gasto 2" es
+  correcto (RD$354 → US$6.02 a 58.80; efectiva 58.803987; redondeo
+  −RD$0.02; la comisión de US$20 va aparte).
 
 ## Los borradores de factura ya no cuentan como ventas (2026-10-07)
 

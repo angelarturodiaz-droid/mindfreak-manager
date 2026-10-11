@@ -292,7 +292,7 @@ export function SupplierReceiptPdfDocument({
           </View>
 
           <View style={styles.grandTotalRow}>
-            <Text style={styles.grandTotalLabel}>BALANCE PENDIENTE DEL GASTO</Text>
+            <Text style={styles.grandTotalLabel}>BALANCE PENDIENTE DE PAGO</Text>
             <Text style={styles.grandTotalValue}>
               {money(expense.balance, payment.currency)}
             </Text>
