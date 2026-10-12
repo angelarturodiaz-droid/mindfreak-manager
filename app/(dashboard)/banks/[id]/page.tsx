@@ -31,6 +31,7 @@ import { ConfirmButton } from "@/components/ui/confirm-button";
 import { ActionLink } from "@/components/ui/action-link";
 import { Card } from "@/components/ui/card";
 import { DataTable, type Column } from "@/components/ui/data-table";
+import { RegisteredDate } from "@/components/ui/registered-date";
 import { Pagination } from "@/components/ui/pagination";
 import { LiveSearchInput } from "@/components/ui/live-search-input";
 import { PAGE_SIZE, parsePage } from "@/lib/utils/pagination";
@@ -45,7 +46,7 @@ import {
   SectionHeader,
   listHref,
 } from "@/components/ui/page-kit";
-import { formatDate, todayISO } from "@/lib/utils/dates";
+import { formatDate, formatRegistered, todayISO } from "@/lib/utils/dates";
 import { listCategoryOptions } from "@/features/expense-categories/queries";
 import { getCompany } from "@/features/settings/queries";
 import { TransactionCategorySelect } from "@/components/banks/transaction-category-select";
@@ -168,15 +169,20 @@ export default async function BankAccountDetailPage({
 
   // Operaciones de esta cuenta a las que se les puede ligar una comisión
   // (multimoneda V5, paso 4) y etiqueta de las comisiones ya ligadas.
-  const feeLinkMap = new Map<string, { label: string; href: string | null }>();
+  // label = qué operación (para la lista del formulario); detail = fecha,
+  // hora de registro y monto (para reconocerla en la columna Origen).
+  const feeLinkMap = new Map<string, { label: string; href: string | null; detail: string }>();
+  // Página de esta cuenta donde está cada movimiento (10 por página, orden de la lista).
+  const pageOf = new Map(rows.map((r, i) => [r.id, Math.floor(i / PAGE_SIZE) + 1]));
   for (const t of transactions) {
-    const date = formatDate(t.transaction_date);
+    const date = `${formatDate(t.transaction_date)}${t.created_at ? `, ${formatRegistered(t.created_at).split(", ")[1] ?? ""}` : ""}`;
     const amt = formatMoney(Math.abs(Number(t.amount)), account.currency);
     if (t.customer_payment_id) {
       const p = relationRow<{ invoice_id: string; invoices: unknown }>(t.customer_payments);
       const n = p ? relationRow<{ number: string }>(p.invoices)?.number : null;
       feeLinkMap.set(`customer_payment:${t.customer_payment_id}`, {
         label: `Cobro factura ${n ?? ""} · ${date} · ${amt}`,
+        detail: `${date} · ${amt}`,
         href: p ? `/invoices/${p.invoice_id}` : null,
       });
     } else if (t.supplier_payment_id) {
@@ -184,20 +190,23 @@ export default async function BankAccountDetailPage({
       const d = sp ? relationRow<{ description: string }>(sp.expenses)?.description : null;
       feeLinkMap.set(`supplier_payment:${t.supplier_payment_id}`, {
         label: `Pago: ${d ?? "proveedor"} · ${date} · ${amt}`,
+        detail: `${date} · ${amt}`,
         href: sp?.expense_id ? `/expenses/${sp.expense_id}` : null,
       });
     } else if (t.type === "TRANSFER" && t.transfer_group_id) {
       const other = relationName(t.counterpart);
       feeLinkMap.set(`bank_transfer:${t.transfer_group_id}`, {
         label: `Transferencia ${Number(t.amount) < 0 ? "a" : "desde"} ${other ?? "otra cuenta"} · ${date} · ${amt}`,
-        href: t.counterpart_account_id ? `/banks/${t.counterpart_account_id}` : null,
+        detail: `${date} · ${Number(t.amount) < 0 ? "−" : "+"}${amt}`,
+        // El movimiento de la transferencia en ESTA cuenta (resaltado), no la otra cuenta.
+        href: `/banks/${id}?page=${pageOf.get(t.id) ?? 1}#tx-${t.id}`,
       });
     }
   }
   const feeLinks = [...feeLinkMap.entries()].slice(0, 40).map(([value, v]) => ({ value, label: v.label }));
   const feeOrigin = (t: TransactionRow) =>
     t.system_concept === "BANK_FEE" && t.related_source_type && t.related_source_id
-      ? (feeLinkMap.get(`${t.related_source_type}:${t.related_source_id}`) ?? { label: "Comisión de una operación", href: null })
+      ? (feeLinkMap.get(`${t.related_source_type}:${t.related_source_id}`) ?? { label: "Comisión de una operación", href: null, detail: "" })
       : null;
 
   const typeFilter = ["INCOME", "EXPENSE", "TRANSFER"].includes(filters.type ?? "") ? filters.type : undefined;
@@ -237,7 +246,7 @@ export default async function BankAccountDetailPage({
   const monthName = new Intl.DateTimeFormat("es-DO", { month: "long", timeZone: "America/Santo_Domingo" }).format(new Date());
 
   const columns: Column<TransactionRow>[] = [
-    { header: "Fecha", accessor: (t) => <span className="whitespace-nowrap text-brand-muted">{formatDate(t.transaction_date)}</span> },
+    { header: "Fecha", accessor: (t) => <RegisteredDate date={t.transaction_date} createdAt={t.created_at} /> },
     {
       header: "Movimiento",
       accessor: (t) => {
@@ -281,12 +290,17 @@ export default async function BankAccountDetailPage({
         const fee = feeOrigin(t);
         if (!fee) return <TransactionOrigin t={t} />;
         const text = `Comisión de: ${fee.label.split(" · ")[0]}`;
-        return fee.href ? (
-          <Link href={fee.href} className="line-clamp-2 block max-w-[11rem] break-words text-brand-accent hover:underline">
-            {text}
-          </Link>
-        ) : (
-          <span className="text-brand-muted">{text}</span>
+        return (
+          <span className="flex max-w-[13rem] flex-col">
+            {fee.href ? (
+              <Link href={fee.href} className="line-clamp-2 break-words text-brand-accent hover:underline">
+                {text}
+              </Link>
+            ) : (
+              <span className="text-brand-muted">{text}</span>
+            )}
+            {fee.detail && <span className="text-[11px] text-brand-muted">{fee.detail}</span>}
+          </span>
         );
       },
     },
@@ -570,6 +584,7 @@ export default async function BankAccountDetailPage({
           columns={columns}
           rows={pageRows}
           keyFor={(t) => t.id}
+          rowId={(t) => `tx-${t.id}`}
           maxWidth="max-w-none"
           emptyMessage="Sin movimientos todavía."
           filtered={Boolean(typeFilter || recFilter || catFilter || q)}

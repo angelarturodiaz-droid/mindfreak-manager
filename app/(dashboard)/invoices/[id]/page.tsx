@@ -49,6 +49,7 @@ import { Badge } from "@/components/ui/badge";
 import { isInvoiceOverdue } from "@/features/invoices/overdue";
 import { Card } from "@/components/ui/card";
 import { ConfirmButton } from "@/components/ui/confirm-button";
+import { RegisteredDate } from "@/components/ui/registered-date";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Chip, ProgressBar, SectionHeader } from "@/components/ui/page-kit";
 import { relationName, relationRow } from "@/lib/utils/relation";
@@ -183,7 +184,7 @@ export default async function InvoiceDetailPage({
   ];
 
   const paymentColumns: Column<PaymentRow>[] = [
-    { header: "Fecha", accessor: (p) => <span className="whitespace-nowrap">{formatDate(p.payment_date)}</span> },
+    { header: "Fecha", accessor: (p) => <RegisteredDate date={p.payment_date} createdAt={p.created_at} className="text-brand-text" /> },
     {
       header: "Monto",
       className: "text-right",

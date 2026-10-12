@@ -61,3 +61,17 @@ export function dueLabel(dateISO: string): { label: string; days: number } {
   if (d > 1) return { label: `Vence en ${pluralDays(d)}`, days: d };
   return { label: `Vencida hace ${pluralDays(-d)}`, days: d };
 }
+
+/** Cuándo se registró algo (sin el año): "11 oct, 8:30 p. m.". */
+export function formatRegistered(timestamp: string | null | undefined): string {
+  if (!timestamp) return "";
+  return new Intl.DateTimeFormat("es-DO", {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: TIME_ZONE,
+  })
+    .format(new Date(timestamp))
+    .replace(" de ", " ");
+}

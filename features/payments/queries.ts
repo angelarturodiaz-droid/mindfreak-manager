@@ -7,7 +7,7 @@ export async function listPaymentsForInvoice(invoiceId: string) {
   const { data, error } = await supabase
     .from("customer_payments")
     .select(
-      "id, payment_date, amount, method, reference, notes, account_currency, account_amount, bank_fee_amount, effective_rate, effective_rate_currency, reference_rate, reference_rate_document, rate_manual_override, rounding_difference, informative_difference, functional_currency, bank_accounts(name, bank_name)",
+      "id, payment_date, created_at, amount, method, reference, notes, account_currency, account_amount, bank_fee_amount, effective_rate, effective_rate_currency, reference_rate, reference_rate_document, rate_manual_override, rounding_difference, informative_difference, functional_currency, bank_accounts(name, bank_name)",
     )
     .eq("invoice_id", invoiceId)
     .order("payment_date", { ascending: false });
@@ -20,7 +20,7 @@ export async function listAllPayments() {
   const { data, error } = await supabase
     .from("customer_payments")
     .select(
-      "id, invoice_id, payment_date, amount, method, invoices(number), clients(name), bank_accounts(name, bank_name)",
+      "id, invoice_id, payment_date, created_at, amount, method, invoices(number), clients(name), bank_accounts(name, bank_name)",
     )
     .order("payment_date", { ascending: false })
     .order("created_at", { ascending: false })
@@ -39,7 +39,7 @@ export async function listCustomerPaymentsPage(filters: { search?: string; page?
   let query = supabase
     .from("customer_payments")
     .select(
-      "id, invoice_id, payment_date, amount, method, invoices(number), clients(name), bank_accounts(name, bank_name)",
+      "id, invoice_id, payment_date, created_at, amount, method, invoices(number), clients(name), bank_accounts(name, bank_name)",
       { count: "exact" },
     )
     .order("payment_date", { ascending: false })
@@ -64,7 +64,7 @@ export async function listSupplierPaymentsPage(filters: { search?: string; page?
   let query = supabase
     .from("supplier_payments")
     .select(
-      "id, expense_id, payment_date, amount, method, expenses(description), suppliers(name), bank_accounts(name, bank_name)",
+      "id, expense_id, payment_date, created_at, amount, method, expenses(description), suppliers(name), bank_accounts(name, bank_name)",
       { count: "exact" },
     )
     .order("payment_date", { ascending: false })
@@ -106,7 +106,7 @@ export async function listPaymentsForExpense(expenseId: string) {
   const { data, error } = await supabase
     .from("supplier_payments")
     .select(
-      "id, payment_date, amount, method, reference, notes, payee_bank_name, account_currency, account_amount, bank_fee_amount, effective_rate, effective_rate_currency, reference_rate, reference_rate_document, rate_manual_override, rounding_difference, informative_difference, functional_currency, bank_accounts(name, bank_name)",
+      "id, payment_date, created_at, amount, method, reference, notes, payee_bank_name, account_currency, account_amount, bank_fee_amount, effective_rate, effective_rate_currency, reference_rate, reference_rate_document, rate_manual_override, rounding_difference, informative_difference, functional_currency, bank_accounts(name, bank_name)",
     )
     .eq("expense_id", expenseId)
     .order("payment_date", { ascending: false });
@@ -119,7 +119,7 @@ export async function listAllSupplierPayments() {
   const { data, error } = await supabase
     .from("supplier_payments")
     .select(
-      "id, expense_id, payment_date, amount, method, expenses(description), suppliers(name), bank_accounts(name, bank_name)",
+      "id, expense_id, payment_date, created_at, amount, method, expenses(description), suppliers(name), bank_accounts(name, bank_name)",
     )
     .order("payment_date", { ascending: false })
     .order("created_at", { ascending: false })

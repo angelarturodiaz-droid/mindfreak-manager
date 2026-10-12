@@ -11,6 +11,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { parsePage } from "@/lib/utils/pagination";
 import { cleanSearch } from "@/lib/utils/search";
 import { PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
+import { RegisteredDate } from "@/components/ui/registered-date";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { InitialsAvatar, SectionHeader, StatCard, StatGrid } from "@/components/ui/page-kit";
 import { relationName, relationRow } from "@/lib/utils/relation";
@@ -59,7 +60,7 @@ export default async function PaymentsPage({
   }).format(new Date());
 
   const paymentColumns: Column<PaymentRow>[] = [
-    { header: "Fecha", accessor: (p) => <span className="whitespace-nowrap text-brand-muted">{formatDate(p.payment_date)}</span> },
+    { header: "Fecha", accessor: (p) => <RegisteredDate date={p.payment_date} createdAt={p.created_at} /> },
     {
       header: "Cliente",
       accessor: (p) => {
@@ -97,7 +98,7 @@ export default async function PaymentsPage({
   ];
 
   const supplierPaymentColumns: Column<SupplierPaymentRow>[] = [
-    { header: "Fecha", accessor: (p) => <span className="whitespace-nowrap text-brand-muted">{formatDate(p.payment_date)}</span> },
+    { header: "Fecha", accessor: (p) => <RegisteredDate date={p.payment_date} createdAt={p.created_at} /> },
     {
       header: "Proveedor",
       accessor: (p) => {

@@ -1,5 +1,20 @@
 # CHANGELOG — Mindfreak Manager
 
+## Hora de registro y origen de las comisiones (2026-10-11)
+
+- **Hora de registro** (`components/ui/registered-date.tsx`,
+  `formatRegistered`): debajo de la fecha del movimiento sale "Registrado
+  11 oct, 8:30 p. m." (`created_at` en hora de RD) en los movimientos de
+  cada cuenta, Cobros y pagos, los cobros de la factura y los pagos del
+  gasto. La fecha del movimiento sigue siendo la del formulario.
+- **Comisión de una operación**: la columna Origen muestra la operación,
+  su fecha y hora y su monto ("11 oct 2026, 8:30 p. m. · −RD$59,500.00").
+  En una transferencia el enlace lleva al movimiento de la transferencia
+  **en la misma cuenta** (página correcta y fila resaltada; `DataTable`
+  acepta `rowId`), en vez de a la otra cuenta. La lista "¿Comisión de una
+  operación?" también trae la hora.
+
+
 ## Cancelar pregunta y vuelve a la lista (2026-10-11)
 
 - Prueba AN (multimoneda paso 3) ✅. En *Registrar cobro* y *Registrar

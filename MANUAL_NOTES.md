@@ -708,3 +708,6 @@ pulsa el botón.
 - **Agregar línea (10-oct)**: en 3 partes (servicio + descripción;
   cantidad, precio, descuento, impuesto; vista previa del total). Impuesto
   predeterminado = ITBIS 18 %.
+- **Hora de registro (11-oct)**: "Registrado … h" debajo de la fecha en
+  banco, cobros y pagos. Las comisiones ligadas muestran fecha, hora y
+  monto de la operación; la de una transferencia enlaza a su fila.

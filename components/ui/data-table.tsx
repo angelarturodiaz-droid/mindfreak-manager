@@ -17,6 +17,7 @@ export function DataTable<T>({
   columns,
   rows,
   keyFor,
+  rowId,
   emptyMessage = "Sin resultados.",
   maxWidth = "max-w-4xl",
   filtered = false,
@@ -27,6 +28,8 @@ export function DataTable<T>({
   columns: Column<T>[];
   rows: T[];
   keyFor: (row: T) => string;
+  /** id HTML de la fila (para enlazar a ella con #id; se resalta al llegar). */
+  rowId?: (row: T) => string;
   emptyMessage?: string;
   maxWidth?: string;
   /** Hay filtros activos: si no hay filas se muestra el aviso "No se encontraron…". */
@@ -58,7 +61,8 @@ export function DataTable<T>({
           {rows.map((row) => (
             <tr
               key={keyFor(row)}
-              className="border-b border-brand-border/60 bg-brand-surface transition-colors last:border-0 hover:bg-brand-surface-hover"
+              id={rowId?.(row)}
+              className="scroll-mt-24 border-b border-brand-border/60 bg-brand-surface transition-colors last:border-0 hover:bg-brand-surface-hover target:bg-brand-accent-light target:ring-2 target:ring-inset target:ring-brand-accent"
             >
               {columns.map((col, i) => (
                 <td key={i} className={`px-4 py-3 ${col.className ?? ""}`}>
