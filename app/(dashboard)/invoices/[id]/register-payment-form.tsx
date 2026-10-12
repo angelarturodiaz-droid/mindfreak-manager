@@ -11,6 +11,7 @@ import { todayISO } from "@/lib/utils/dates";
 import { formatMoney } from "@/lib/utils/money";
 import { AccountPicker } from "@/components/payments/account-picker";
 import { FormSection, FormFooter } from "@/components/payments/form-section";
+import { CancelConfirm } from "@/components/payments/cancel-confirm";
 import { ForeignPaymentBlock, type RateHistory } from "@/components/payments/foreign-payment-block";
 
 const initialState: ActionState = { error: null };
@@ -157,9 +158,7 @@ export function RegisterPaymentForm({
       </FormSection>
 
       <FormFooter error={shown.error}>
-        <Button type="button" variant="ghost" onClick={cancel} disabled={pending} hint="Borra lo que escribiste en este cobro y empieza de nuevo. No guarda nada.">
-          Cancelar
-        </Button>
+        <CancelConfirm what="cobro" backHref="/invoices" backLabel="Facturas" onDiscard={cancel} disabled={pending} />
         <Button type="submit" loading={pending}>
           Registrar cobro
         </Button>

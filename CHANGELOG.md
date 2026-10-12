@@ -1,5 +1,13 @@
 # CHANGELOG — Mindfreak Manager
 
+## Cancelar pregunta y vuelve a la lista (2026-10-11)
+
+- Prueba AN (multimoneda paso 3) ✅. En *Registrar cobro* y *Registrar
+  pago*, **Cancelar** ahora abre una pregunta (`components/payments/
+  cancel-confirm.tsx`): *Seguir aquí* o *Sí, volver a Facturas / Gastos*,
+  que descarta lo escrito sin guardar y lleva a la lista.
+
+
 ## Agregar línea más clara en cotizaciones y facturas (2026-10-10)
 
 - Nuevo `components/documents/line-item-fields.tsx`, usado por las dos

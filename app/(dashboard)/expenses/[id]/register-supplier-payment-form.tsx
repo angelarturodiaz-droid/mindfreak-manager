@@ -27,6 +27,7 @@ import { EXPENSE_FISCAL_REVIEW } from "@/features/fiscal/expense-labels";
 import { ForeignPaymentBlock, type RateHistory } from "@/components/payments/foreign-payment-block";
 import { AccountPicker } from "@/components/payments/account-picker";
 import { FormSection, FormFooter } from "@/components/payments/form-section";
+import { CancelConfirm } from "@/components/payments/cancel-confirm";
 
 const initialState: ActionState = { error: null };
 
@@ -251,9 +252,7 @@ export function RegisterSupplierPaymentForm({
         </FormSection>
 
         <FormFooter error={shown.error}>
-          <Button type="button" variant="ghost" onClick={cancel} disabled={pending} hint="Borra lo que escribiste en este pago y empieza de nuevo. No guarda nada.">
-            Cancelar
-          </Button>
+          <CancelConfirm what="pago" backHref="/expenses" backLabel="Gastos" onDiscard={cancel} disabled={pending} />
           <Button type="submit" loading={pending}>
             Registrar pago
           </Button>
