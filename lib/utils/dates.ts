@@ -75,3 +75,14 @@ export function formatRegistered(timestamp: string | null | undefined): string {
     .format(new Date(timestamp))
     .replace(" de ", " ");
 }
+
+/** Fecha (YYYY-MM-DD) de un timestamp en la zona de la empresa. */
+export function localDateOf(timestamp: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE }).format(new Date(timestamp));
+}
+
+/** Solo la hora de un timestamp: "8:30 p. m.". */
+export function formatTime(timestamp: string): string {
+  return new Intl.DateTimeFormat("es-DO", { hour: "numeric", minute: "2-digit", timeZone: TIME_ZONE }).format(new Date(timestamp));
+}
+

@@ -6,7 +6,11 @@
   `formatRegistered`): debajo de la fecha del movimiento sale "Registrado
   11 oct, 8:30 p. m." (`created_at` en hora de RD) en los movimientos de
   cada cuenta, Cobros y pagos, los cobros de la factura y los pagos del
-  gasto. La fecha del movimiento sigue siendo la del formulario.
+  gasto. La fecha del movimiento sigue siendo la del formulario. Sin
+  repetir la fecha: si se registró el mismo día sale en una línea ("11 oct
+  2026 · 8:30 p. m."); solo si se registró otro día aparece debajo
+  "Registrado 13 oct, 9:15 a. m.". Las listas de documentos (facturas,
+  gastos) siguen solo con la fecha del documento.
 - **Comisión de una operación**: la columna Origen muestra la operación,
   su fecha y hora y su monto ("11 oct 2026, 8:30 p. m. · −RD$59,500.00").
   En una transferencia el enlace lleva al movimiento de la transferencia
