@@ -6,6 +6,8 @@
   pago*, **Cancelar** ahora abre una pregunta (`components/payments/
   cancel-confirm.tsx`): *Seguir aquí* o *Sí, volver a Facturas / Gastos*,
   que descarta lo escrito sin guardar y lleva a la lista.
+- **Transferencia entre monedas**: botón **↻ Usar tasa del día** junto a la
+  tasa cuando está vacía o cambiada a mano (igual que en pagos y cobros).
 
 
 ## Agregar línea más clara en cotizaciones y facturas (2026-10-10)

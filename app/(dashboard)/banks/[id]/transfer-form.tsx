@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useOverdraftConfirmAction } from "@/components/ui/overdraft-confirm";
-import { ArrowLeftRight, ArrowRightLeft } from "lucide-react";
+import { ArrowLeftRight, ArrowRightLeft, RotateCcw } from "lucide-react";
 import { createTransferAction, type ActionState } from "@/features/banks/actions";
 import { Input, Select } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
@@ -87,6 +87,8 @@ export function TransferForm({
   const refText = refTyped ?? (refFound ? String(refFound.rate) : "");
   const ref = Number(refText) || 0;
   const refOverride = refFound !== null && ref > 0 && ref !== refFound.rate;
+  // Tasa para el botón "Usar tasa del día": la de la fecha; si no hay, la última hasta hoy.
+  const restoreRate = crossCurrency ? (refFound ?? rateOn(rates, foreign, todayISO()) ?? rates[foreign]?.[0] ?? null) : null;
 
   // Todo en "1 moneda extranjera = X moneda base"; diferencia positiva = desfavorable.
   const fx = crossCurrency ? computeTransferFx({ fromIsBase, amount, received, ref }) : null;
@@ -175,6 +177,16 @@ export function TransferForm({
               }
               className="w-48"
             />
+            {restoreRate && (!(ref > 0) || refOverride) && (
+              <button
+                type="button"
+                onClick={() => setRefTyped(refFound ? null : String(restoreRate.rate))}
+                className="mb-6 inline-flex items-center gap-1 rounded-[var(--radius-md)] border border-brand-border bg-white px-2 py-1.5 text-xs text-brand-accent hover:bg-brand-accent-light"
+                title="Vuelve a poner la tasa de referencia (la de la fecha o, si no hay, la del día)."
+              >
+                <RotateCcw size={13} /> Usar tasa del día
+              </button>
+            )}
             <MoneyInput
               label={`¿Cuánto entró en ${to.name}? (${to.currency})`}
               name="to_amount"
