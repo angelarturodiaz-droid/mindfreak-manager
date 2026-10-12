@@ -359,6 +359,8 @@ export default async function ExpenseDetailPage({
                         : null
                     }
                     fiscalStatus={expense.fiscal_status ?? "NOT_EVALUATED"}
+                    fiscalMissing={(expense.fiscal_snapshot as { missing?: string[] } | null)?.missing ?? []}
+                    fiscalRule={(expense.fiscal_snapshot as { rule?: { id?: string; name: string } | null } | null)?.rule ?? null}
                     bankAccounts={paymentAccounts}
                     bankCatalog={bankCatalog}
                     funds={funds}

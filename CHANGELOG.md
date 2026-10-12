@@ -1,5 +1,16 @@
 # CHANGELOG — Mindfreak Manager
 
+## Aviso fiscal de Registrar pago según el caso (2026-10-11)
+
+- Observación AF (mejora aprobada): el aviso amarillo de *Registrar pago*
+  ya no dice siempre "completa los datos y pulsa Recalcular". Ahora:
+  **Faltan datos** → lista lo que falta y enlaza a la ficha del proveedor;
+  **Sin regla** → revisarlo con el contador o crear la regla;
+  **Por revisar** → "Los datos están completos, pero la regla «…» pide que
+  alguien revise este caso… No hace falta recalcular", con enlace a la
+  regla. Solo textos: no cambia ningún cálculo.
+
+
 ## Hora de registro y origen de las comisiones (2026-10-11)
 
 - **Hora de registro** (`components/ui/registered-date.tsx`,

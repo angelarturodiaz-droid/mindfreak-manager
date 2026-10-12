@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useOverdraftConfirmAction } from "@/components/ui/overdraft-confirm";
 import { AccountFundsHint } from "@/components/banks/account-funds-hint";
@@ -52,6 +53,8 @@ export function RegisterSupplierPaymentForm({
   funds = {},
   fiscal = null,
   fiscalStatus = "NOT_EVALUATED",
+  fiscalMissing = [],
+  fiscalRule = null,
   fxContext,
   defaultMethod,
 }: {
@@ -67,6 +70,10 @@ export function RegisterSupplierPaymentForm({
   /** Retenciones guardadas en el gasto (null si no hay): se explica el neto. */
   fiscal?: FiscalAmounts | null;
   fiscalStatus?: string;
+  /** Lo que falta para evaluar (del cálculo fiscal guardado), para el aviso. */
+  fiscalMissing?: string[];
+  /** Regla que pidió revisión (estado "Por revisar"). */
+  fiscalRule?: { id?: string; name: string } | null;
   /** Moneda funcional, tolerancia y tasas de referencia (pago en moneda diferente). */
   fxContext: { functionalCurrency: string; tolerance: number; rates: RateHistory };
   /** Método elegido al crear el gasto (ej. CARD): es el que viene seleccionado. */
@@ -143,12 +150,48 @@ export function RegisterSupplierPaymentForm({
         </details>
       )}
       {!fiscal && EXPENSE_FISCAL_REVIEW.includes(fiscalStatus) && (
-        <p className="rounded-[var(--radius-md)] bg-brand-warning-bg px-3 py-2 text-xs text-brand-warning">
-          El tratamiento fiscal de este gasto está <strong>por revisar</strong>{" "}
-          (ver la tarjeta “Tratamiento fiscal”). Si pagas ahora se le paga el
-          total, sin retenciones. Si le corresponde retención, completa los
-          datos y pulsa “Recalcular” <strong>antes</strong> del primer pago.
-        </p>
+        <div className="rounded-[var(--radius-md)] bg-brand-warning-bg px-3 py-2 text-xs text-brand-warning">
+          {fiscalStatus === "MISSING_DATA" ? (
+            <>
+              <strong>Faltan datos fiscales</strong>
+              {fiscalMissing.length > 0 && <>: {fiscalMissing.map((m) => m.replace(/\.$/, "").replace(/^Falta definir /, "")).join("; ")}</>}. Si pagas ahora
+              se le paga el total, sin retenciones. Si le corresponde retención,{" "}
+              {supplierId ? (
+                <Link href={`/suppliers/${supplierId}`} target="_blank" className="font-medium underline">
+                  completa la ficha del proveedor
+                </Link>
+              ) : (
+                "completa los datos"
+              )}{" "}
+              y pulsa “Recalcular” en la tarjeta Tratamiento fiscal <strong>antes</strong> del primer pago.
+            </>
+          ) : fiscalStatus === "NO_RULE" ? (
+            <>
+              <strong>Ninguna regla fiscal aplica</strong> a este gasto. Revísalo con tu contador antes de pagar;
+              si pagas ahora se le paga el total, sin retenciones. Si hace falta una regla, se crea en
+              Configuración → Reglas fiscales y luego se pulsa “Recalcular”.
+            </>
+          ) : (
+            <>
+              <strong>Los datos están completos</strong>, pero la regla
+              {fiscalRule ? (
+                <>
+                  {" "}
+                  {fiscalRule.id ? (
+                    <Link href={`/settings/fiscal-rules/${fiscalRule.id}`} target="_blank" className="font-medium underline">
+                      «{fiscalRule.name}»
+                    </Link>
+                  ) : (
+                    <>«{fiscalRule.name}»</>
+                  )}
+                </>
+              ) : null}{" "}
+              pide que alguien revise este caso antes de pagar (ver “¿Por qué se aplicó esto?” en la tarjeta
+              Tratamiento fiscal). <strong>No hace falta recalcular.</strong> Si pagas ahora se le paga el total, sin
+              retenciones.
+            </>
+          )}
+        </div>
       )}
       <form
         key={`${formKey}-${resets}`}
