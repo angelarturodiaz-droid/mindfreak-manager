@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { RotateCcw } from "lucide-react";
+import { ActionButton } from "@/components/ui/action-button";
 import { fiscalSummary } from "@/features/suppliers/fiscal";
 import { formatTaxId } from "@/lib/fiscal/tax-id";
 import { safeReturnTo, returnToLabel, withReturnTo } from "@/lib/utils/return-to";
@@ -20,7 +22,7 @@ import { getSupplier, getSupplierActivity, listSupplierContacts } from "@/featur
 import { PAYMENT_METHOD_LABELS } from "@/features/payments/schema";
 import { listBankCatalog } from "@/features/bank-catalog/queries";
 import {
-  deactivateSupplierAction,
+  deactivateSupplierAction, reactivateSupplierAction,
   deleteSupplierContactAction,
 } from "@/features/suppliers/actions";
 import { SupplierEditForm } from "./supplier-edit-form";
@@ -236,12 +238,21 @@ export default async function SupplierDetailPage({
             </dl>
           </div>
         </div>
-        {supplier.is_active && (
+        {supplier.is_active ? (
           <ConfirmButton
             label="Desactivar proveedor"
             confirmTitle={`¿Desactivar a "${supplier.name}"?`}
             onConfirm={deactivateSupplierAction.bind(null, supplier.id)}
           />
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] bg-brand-surface-hover px-4 py-3 text-sm text-brand-muted">
+            <span className="font-medium">Proveedor inactivo — no aparece al crear gastos nuevos.</span>
+            <ActionButton
+              label="Reactivar proveedor"
+              icon={<RotateCcw size={14} />}
+              onAction={reactivateSupplierAction.bind(null, supplier.id)}
+            />
+          </div>
         )}
       </Card>
 

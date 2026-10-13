@@ -1,5 +1,15 @@
 # CHANGELOG — Mindfreak Manager
 
+## Reactivar proveedor (2026-10-12)
+
+- Faltaba: un proveedor desactivado no se podía volver a activar desde la
+  app. Nuevo `reactivateSupplierAction` (permiso `suppliers.delete`,
+  auditoría `REACTIVATE`), botón **Reactivar proveedor** en la ficha y
+  **Reactivar** en la lista, igual que en Clientes.
+- "Empresa Prueba" se reactivó directo en la base (con registro en
+  Auditoría) para la prueba AY.
+
+
 ## Aviso fiscal de Registrar pago según el caso (2026-10-11)
 
 - Observación AF (mejora aprobada): el aviso amarillo de *Registrar pago*

@@ -207,6 +207,26 @@ export async function deactivateSupplierAction(supplierId: string): Promise<void
   revalidatePath("/suppliers");
 }
 
+/** Reactivar un proveedor previamente desactivado (vuelve a salir al crear gastos). */
+export async function reactivateSupplierAction(supplierId: string): Promise<void> {
+  await requirePermission("suppliers.delete");
+
+  const supabase = await createSupabaseClient();
+  const { error } = await supabase.from("suppliers").update({ is_active: true }).eq("id", supplierId);
+  if (error) throw new Error(error.message);
+
+  const companyId = await getPrimaryCompanyId();
+  await logAudit({
+    companyId,
+    action: "REACTIVATE",
+    entityType: "supplier",
+    entityId: supplierId,
+  });
+
+  revalidatePath(`/suppliers/${supplierId}`);
+  revalidatePath("/suppliers");
+}
+
 export async function createSupplierContactAction(
   supplierId: string,
   _prevState: ActionState,

@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { ActionLink } from "@/components/ui/action-link";
 import { CalendarCheck, ChevronRight, Landmark, Mail, Phone, Plus, Truck, Upload, Wallet } from "lucide-react";
 import {
   listSuppliers,
   getSupplierStats,
   getSupplierListAggregates,
 } from "@/features/suppliers/queries";
-import { deactivateSupplierAction } from "@/features/suppliers/actions";
+import { deactivateSupplierAction, reactivateSupplierAction } from "@/features/suppliers/actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LiveSearchInput } from "@/components/ui/live-search-input";
@@ -117,12 +118,14 @@ export default async function SuppliersPage({
       className: "text-right",
       accessor: (s) => (
         <div className="flex items-center justify-end gap-2 whitespace-nowrap">
-          {s.is_active && (
+          {s.is_active ? (
             <ConfirmButton
               label="Desactivar"
               confirmTitle={`¿Desactivar a "${s.name}"?`}
               onConfirm={deactivateSupplierAction.bind(null, s.id)}
             />
+          ) : (
+            <ActionLink label="Reactivar" pendingLabel="Guardando…" onAction={reactivateSupplierAction.bind(null, s.id)} />
           )}
           <Link href={`/suppliers/${s.id}`} aria-label={`Abrir ${s.name}`} className="text-brand-muted hover:text-brand-accent">
             <ChevronRight size={16} />
