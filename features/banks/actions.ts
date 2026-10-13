@@ -544,5 +544,7 @@ export async function updateBankAccountAction(
 
   revalidatePath(`/banks/${accountId}`);
   revalidatePath("/banks");
-  return { error: null };
+  // successId: la pantalla vuelve a montar el formulario con lo guardado
+  // (React reinicia el formulario al enviarlo y las casillas se veían vacías).
+  return { error: null, success: "Cuenta guardada.", successId: Date.now() };
 }

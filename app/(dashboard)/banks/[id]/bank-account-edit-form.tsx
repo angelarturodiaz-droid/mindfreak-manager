@@ -5,6 +5,7 @@ import { updateBankAccountAction, type ActionState } from "@/features/banks/acti
 import { Input, Select } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
+import { useSuccessToast } from "@/components/ui/use-success-toast";
 import { AccountKindFields, CardFavorField, InvoiceDisplayFields } from "@/components/banks/account-rule-fields";
 
 const initialState: ActionState = { error: null };
@@ -35,9 +36,13 @@ export function BankAccountEditForm({
   const updateWithId = updateBankAccountAction.bind(null, account.id);
   const [state, formAction, pending] = useActionState(updateWithId, initialState);
   const isCard = account.type === "CREDIT_CARD";
+  useSuccessToast(state);
 
   return (
-    <form action={formAction} className="max-w-md space-y-4">
+    // key: al guardar se vuelve a montar con los datos guardados (React 19
+    // reinicia el formulario después de enviarlo y las casillas y el tipo de
+    // cuenta se veían en blanco aunque sí se guardaron).
+    <form key={state.successId ?? 0} action={formAction} className="max-w-md space-y-4">
       <Input label="Nombre" name="name" defaultValue={account.name} required />
       {!isCard && (
         <AccountKindFields

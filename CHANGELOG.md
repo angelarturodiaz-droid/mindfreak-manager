@@ -27,6 +27,11 @@
   en factura tradicional, factura electrónica y cotización.
 - Titular por defecto = nombre legal de la empresa con su RNC; si la cuenta
   tiene titular propio, no se pone el RNC de la empresa.
+- Arreglo (prueba AZ): en *Editar cuenta*, después de *Guardar cambios* la
+  casilla *Mostrar en facturas* y el *Tipo de cuenta* se veían en blanco
+  (React 19 reinicia el formulario al enviarlo) aunque sí se guardaban. Ahora
+  el formulario se vuelve a montar con lo guardado y sale el aviso verde
+  "Cuenta guardada."
 - Pruebas: `tests/unit/bank-details.test.ts` (99 en total). No toca montos,
   impuestos, cobros ni la lógica fiscal.
 
