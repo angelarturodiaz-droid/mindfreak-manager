@@ -32,6 +32,8 @@
   (React 19 reinicia el formulario al enviarlo) aunque sí se guardaban. Ahora
   el formulario se vuelve a montar con lo guardado y sale el aviso verde
   "Cuenta guardada."
+- Las etiquetas (badges) ya no se parten en dos líneas (ej. *En facturas*
+  en la tarjeta de la cuenta se veía desalineada).
 - Pruebas: `tests/unit/bank-details.test.ts` (99 en total). No toca montos,
   impuestos, cobros ni la lógica fiscal.
 
