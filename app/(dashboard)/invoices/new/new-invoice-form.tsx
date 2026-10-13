@@ -216,6 +216,11 @@ export function NewInvoiceForm({
         sección R). Se pueden completar después en el detalle.
       </p>
 
+      <p className="text-xs text-brand-muted">
+        Datos bancarios para el pago: se ponen solas las cuentas marcadas en Bancos para facturas en la
+        moneda de la factura. Puedes cambiarlas después en el detalle.
+      </p>
+
       <MissingDataDialog state={state} />
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}

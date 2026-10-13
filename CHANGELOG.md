@@ -1,5 +1,36 @@
 # CHANGELOG — Mindfreak Manager
 
+## Datos bancarios para el pago en facturas y cotizaciones (2026-10-12)
+
+- Pedido del usuario: elegir qué cuenta(s) de banco salen abajo en el PDF
+  para que el cliente pague (antes se escribía a mano).
+- **Migración 082** (`082_bank_details_on_documents.sql`, aplicada):
+  `bank_accounts.show_on_invoices` (solo `type = 'BANK'`, con check) y
+  `bank_accounts.holder_name` (titular si no es la empresa);
+  `invoices.bank_details` y `quotations.bank_details` (jsonb, arreglo):
+  **copia congelada** de las cuentas elegidas (banco, número, tipo, moneda,
+  titular, RNC). Editar la cuenta en Bancos no cambia documentos ya hechos.
+- **Bancos**: casilla *Mostrar en facturas y cotizaciones* y *Titular* en
+  crear/editar cuenta (no en tarjetas); el campo se llama *Número de
+  cuenta* (en tarjetas sigue *Número (enmascarado)*); marca *En facturas*
+  en la lista.
+- **Facturas**: al crearla se sugieren solas las cuentas marcadas en la
+  moneda de la factura; al duplicar se copian las mismas cuentas con sus
+  datos al día. Tarjeta *Datos bancarios para el pago* en el detalle
+  (`BankDetailsPicker`): marcar/desmarcar, *Guardar cuentas*, *Usar la
+  sugerida*, *Actualizar datos*; aviso si la cuenta es de otra moneda o le
+  falta el número. Editable salvo Pagada o Cancelada
+  (`updateInvoiceBankDetailsAction`, con auditoría).
+- **Cotizaciones**: igual pero opcional (vacía por defecto); editable salvo
+  Cancelada o Rechazada (`updateQuotationBankDetailsAction`).
+- **PDF**: recuadro *Datos bancarios para el pago* (`lib/pdf/bank-details-block.tsx`)
+  en factura tradicional, factura electrónica y cotización.
+- Titular por defecto = nombre legal de la empresa con su RNC; si la cuenta
+  tiene titular propio, no se pone el RNC de la empresa.
+- Pruebas: `tests/unit/bank-details.test.ts` (99 en total). No toca montos,
+  impuestos, cobros ni la lógica fiscal.
+
+
 ## Reactivar proveedor (2026-10-12)
 
 - Faltaba: un proveedor desactivado no se podía volver a activar desde la

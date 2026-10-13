@@ -1,5 +1,7 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 import { registerPdfFonts } from "./fonts";
+import { BankDetailsBlock } from "./bank-details-block";
+import { parseBankDetails } from "@/features/banks/bank-details";
 
 function money(amount: number, currency: string) {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency }).format(amount);
@@ -48,6 +50,8 @@ export type InvoiceElectronicPdfData = {
     payment_type_code: string | null;
     security_code: string | null;
     digital_signature_at: string | null;
+    /** Copia congelada de las cuentas para el pago (migración 082). */
+    bank_details?: unknown;
   };
   client: { name: string; tax_id: string | null; email: string | null; phone: string | null };
   project: { number: string; name: string } | null;
@@ -259,6 +263,8 @@ export function InvoiceElectronicPdfDocument({
             <Text style={styles.grandTotalValue}>{money(invoice.balance, invoice.currency)}</Text>
           </View>
         </View>
+
+        <BankDetailsBlock details={parseBankDetails(invoice.bank_details)} accent={accent} dark={dark} />
 
         <View style={styles.signatureRow}>
           <View style={styles.signatureBox}>

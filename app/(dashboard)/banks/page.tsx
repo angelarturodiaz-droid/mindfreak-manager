@@ -4,6 +4,7 @@ import { listBankAccountsWithBalance } from "@/features/banks/queries";
 import { availableCash, cardPosition, type CashSummary } from "@/features/banks/display";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip } from "@/components/ui/tooltip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { NoResults } from "@/components/ui/no-results";
@@ -77,6 +78,13 @@ function AccountCard({ a }: { a: AccountRow }) {
         </div>
         <div className="flex items-center gap-1.5">
           {!a.is_active && <Badge tone="neutral">Inactiva</Badge>}
+          {a.show_on_invoices && (
+            <Tooltip text="Sale en los datos bancarios para el pago de facturas y cotizaciones.">
+              <span>
+                <Badge tone="info">En facturas</Badge>
+              </span>
+            </Tooltip>
+          )}
           <Badge tone="neutral">{a.currency}</Badge>
           <ChevronRight size={16} className="text-brand-muted group-hover:text-brand-accent" />
         </div>

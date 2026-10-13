@@ -29,6 +29,10 @@ export const bankAccountSchema = z.object({
   allow_overdraft: z.boolean().default(false),
   /** Solo tarjetas: el saldo a favor aumenta el poder de compra por encima del límite. */
   favor_increases_limit: z.boolean().default(false),
+  /** Solo cuentas de banco: se ofrece en "Datos bancarios para el pago" de facturas/cotizaciones. */
+  show_on_invoices: z.boolean().default(false),
+  /** Titular si no es el nombre legal de la empresa (opcional). */
+  holder_name: z.string().trim().max(150).optional().or(z.literal("")),
 });
 
 export const bankAccountEditSchema = z.object({
@@ -42,6 +46,10 @@ export const bankAccountEditSchema = z.object({
   account_kind: z.enum(ACCOUNT_KINDS).optional(),
   allow_overdraft: z.boolean().default(false),
   favor_increases_limit: z.boolean().default(false),
+  /** Solo cuentas de banco: se ofrece en "Datos bancarios para el pago" de facturas/cotizaciones. */
+  show_on_invoices: z.boolean().default(false),
+  /** Titular si no es el nombre legal de la empresa (opcional). */
+  holder_name: z.string().trim().max(150).optional().or(z.literal("")),
 });
 
 export type BankAccountEditInput = z.infer<typeof bankAccountEditSchema>;

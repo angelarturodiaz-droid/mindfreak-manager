@@ -15,6 +15,8 @@ import {
   calculateItemSubtotal,
   calculateQuotationTotals,
 } from "./schema";
+import { buildBankDetails } from "@/features/banks/bank-details-server";
+import { parseBankDetails } from "@/features/banks/bank-details";
 import type { QuotationPdfData } from "@/lib/pdf/quotation-document";
 
 export type ActionState = MoneyActionState;
@@ -242,6 +244,52 @@ export async function updateQuotationHeaderAction(
     entityType: "quotation",
     entityId: quotationId,
     newValues: parsed.data,
+  });
+
+  revalidatePath(`/quotations/${quotationId}`);
+  return { error: null };
+}
+
+/**
+ * Datos bancarios para el pago (migración 082), opcional en cotizaciones:
+ * qué cuentas salen en el recuadro DATOS BANCARIOS del PDF (ej. para el
+ * anticipo). Informativo; se puede cambiar mientras no esté cancelada ni
+ * rechazada. Se guarda una copia de los datos de cada cuenta.
+ */
+export async function updateQuotationBankDetailsAction(
+  quotationId: string,
+  accountIds: string[],
+): Promise<{ error: string | null }> {
+  await requirePermission("quotations.update");
+  const supabase = await createSupabaseClient();
+  const companyId = await getPrimaryCompanyId();
+
+  const { data: quotation, error: fetchError } = await supabase
+    .from("quotations")
+    .select("status, currency, bank_details")
+    .eq("id", quotationId)
+    .single();
+  if (fetchError || !quotation) return { error: "Cotización no encontrada." };
+  if (quotation.status === "CANCELLED" || quotation.status === "REJECTED") {
+    return { error: "La cotización está cancelada o rechazada: ya no se cambian sus datos bancarios." };
+  }
+
+  const { details, error } = await buildBankDetails(supabase, companyId, accountIds, quotation.currency);
+  if (error) return { error };
+
+  const { error: updateError } = await supabase
+    .from("quotations")
+    .update({ bank_details: details })
+    .eq("id", quotationId);
+  if (updateError) return { error: updateError.message };
+
+  await logAudit({
+    companyId,
+    action: "UPDATE",
+    entityType: "quotation",
+    entityId: quotationId,
+    oldValues: { bank_details: quotation.bank_details },
+    newValues: { bank_details: details },
   });
 
   revalidatePath(`/quotations/${quotationId}`);
@@ -569,7 +617,7 @@ export async function duplicateQuotationAction(quotationId: string): Promise<voi
   const { data: original, error: origError } = await supabase
     .from("quotations")
     .select(
-      "client_id, contact_id, currency, exchange_rate, terms, payment_terms_id, credit_days, payment_method, advance_percent, balance_percent, commission_percent, commission_tax_rate_id, commission_tax_treatment, commission_tax_rate_percent",
+      "client_id, contact_id, currency, exchange_rate, terms, payment_terms_id, credit_days, payment_method, advance_percent, balance_percent, commission_percent, commission_tax_rate_id, commission_tax_treatment, commission_tax_rate_percent, bank_details",
     )
     .eq("id", quotationId)
     .single();
@@ -583,6 +631,15 @@ export async function duplicateQuotationAction(quotationId: string): Promise<voi
     .eq("quotation_id", quotationId)
     .order("sort_order");
   if (itemsError) throw new Error(itemsError.message);
+
+  // Mismas cuentas para el pago que el original, con sus datos al día.
+  const { details: dupBankDetails } = await buildBankDetails(
+    supabase,
+    companyId,
+    parseBankDetails(original.bank_details).map((d) => d.bank_account_id),
+    original.currency,
+    true,
+  );
 
   const number = await generateQuotationNumber(companyId);
   const {
@@ -616,6 +673,7 @@ export async function duplicateQuotationAction(quotationId: string): Promise<voi
       // Marca visual: de dónde salió esta copia (ver duplicate-quotation-
       // button y el badge "Duplicada de ..." en la lista/detalle).
       duplicated_from_id: quotationId,
+      bank_details: dupBankDetails,
       status: "DRAFT",
       created_by: user?.id,
     })

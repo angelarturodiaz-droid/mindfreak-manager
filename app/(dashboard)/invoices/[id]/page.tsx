@@ -27,7 +27,11 @@ import {
   cancelInvoiceAction,
   markInvoiceSentAction,
   unmarkInvoiceSentAction,
+  updateInvoiceBankDetailsAction,
 } from "@/features/invoices/actions";
+import { listBankDetailOptions } from "@/features/banks/bank-details-server";
+import { parseBankDetails } from "@/features/banks/bank-details";
+import { BankDetailsPicker, BankDetailsTitle } from "@/components/documents/bank-details-picker";
 import { listCategoryOptions } from "@/features/expense-categories/queries";
 import { ResponsibleSelector } from "./responsible-selector";
 import { AddCollectionHistoryForm } from "./add-collection-history-form";
@@ -102,7 +106,7 @@ export default async function InvoiceDetailPage({
   }
   if (!invoice) notFound();
 
-  const [items, services, canEdit, canPay, projectItems, payments, bankAccounts, paymentTerms, defaultTaxRate, companyUsers, collectionHistory, taxRates, categories, fxContext] =
+  const [items, services, canEdit, canPay, projectItems, payments, bankAccounts, paymentTerms, defaultTaxRate, companyUsers, collectionHistory, taxRates, categories, fxContext, bankDetailOptions] =
     await Promise.all([
       listInvoiceItems(id),
       listActiveServices(),
@@ -119,6 +123,8 @@ export default async function InvoiceDetailPage({
       // Categorías para el cobro; si no se pueden leer, el cobro usa la automática.
       listCategoryOptions().catch(() => []),
       getFxContext(),
+      // Cuentas que se pueden poner en "Datos bancarios para el pago".
+      listBankDetailOptions().catch(() => []),
     ]);
 
   const clientData = invoice.clients as { name: string } | { name: string }[] | null;
@@ -590,6 +596,27 @@ export default async function InvoiceDetailPage({
                 </span>
               </div>
             </div>
+          </Card>
+
+          <Card>
+            <BankDetailsTitle docLabel="factura" />
+            <BankDetailsPicker
+              docLabel="factura"
+              currency={invoice.currency}
+              options={bankDetailOptions}
+              current={parseBankDetails(invoice.bank_details)}
+              editable={canEdit && invoice.status !== "CANCELLED" && invoice.status !== "PAID"}
+              lockedReason={
+                !canEdit
+                  ? undefined
+                  : invoice.status === "CANCELLED"
+                    ? "La factura está cancelada."
+                    : invoice.status === "PAID"
+                      ? "La factura ya está pagada."
+                      : undefined
+              }
+              onSave={updateInvoiceBankDetailsAction.bind(null, invoice.id)}
+            />
           </Card>
 
           {isEditable && canEdit && (

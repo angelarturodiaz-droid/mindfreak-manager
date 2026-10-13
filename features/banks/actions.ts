@@ -43,6 +43,8 @@ export async function createBankAccountAction(
     account_kind: formData.get("account_kind") ? String(formData.get("account_kind")) : undefined,
     allow_overdraft: formData.get("allow_overdraft") === "on",
     favor_increases_limit: formData.get("favor_increases_limit") === "on",
+    show_on_invoices: formData.get("show_on_invoices") === "on",
+    holder_name: String(formData.get("holder_name") ?? ""),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -83,6 +85,8 @@ export async function createBankAccountAction(
       allow_overdraft:
         parsed.data.type === "BANK" && parsed.data.account_kind === "CHECKING" && parsed.data.allow_overdraft,
       favor_increases_limit: parsed.data.type === "CREDIT_CARD" && parsed.data.favor_increases_limit,
+      show_on_invoices: parsed.data.type === "BANK" && parsed.data.show_on_invoices,
+      holder_name: parsed.data.type === "BANK" ? parsed.data.holder_name || null : null,
     })
     .select("id")
     .single();
@@ -464,6 +468,8 @@ export async function updateBankAccountAction(
     account_kind: formData.get("account_kind") ? String(formData.get("account_kind")) : undefined,
     allow_overdraft: formData.get("allow_overdraft") === "on",
     favor_increases_limit: formData.get("favor_increases_limit") === "on",
+    show_on_invoices: formData.get("show_on_invoices") === "on",
+    holder_name: String(formData.get("holder_name") ?? ""),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -501,6 +507,9 @@ export async function updateBankAccountAction(
     updatePayload.account_kind = parsed.data.account_kind ?? null;
     // Sobregiro solo en cuenta corriente; al pasarla a ahorro se apaga.
     updatePayload.allow_overdraft = parsed.data.account_kind === "CHECKING" && parsed.data.allow_overdraft;
+    // Datos para el pago en facturas y cotizaciones (nunca en tarjetas).
+    updatePayload.show_on_invoices = parsed.data.show_on_invoices;
+    updatePayload.holder_name = parsed.data.holder_name || null;
   } else {
     updatePayload.favor_increases_limit = parsed.data.favor_increases_limit;
   }

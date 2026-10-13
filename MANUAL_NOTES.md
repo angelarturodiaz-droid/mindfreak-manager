@@ -39,6 +39,23 @@ parciales — la factura no cambia, pero cada abono genera su propio recibo.
 
 ---
 
+
+## Módulo: Facturas y Cotizaciones — Datos bancarios para el pago (2026-10-12)
+
+- **Dónde se configura**: Bancos → cuenta → *Editar cuenta* → *Mostrar en
+  facturas y cotizaciones* (solo cuentas de banco, nunca tarjetas). El
+  *Número de cuenta* es el que verá el cliente. Titular y RNC salen de
+  Configuración → Empresa (nombre legal); *Titular* solo si la cuenta está
+  a otro nombre (entonces no se pone el RNC de la empresa).
+- **Factura**: al crearla se ponen solas las cuentas marcadas en la moneda
+  de la factura. Se cambian en la tarjeta *Datos bancarios para el pago*
+  del detalle mientras no esté Pagada ni Cancelada.
+- **Cotización**: opcional, vacía por defecto (útil para el anticipo).
+- **Copia congelada**: el documento guarda los datos de la cuenta. Si se
+  cambian en Bancos, el documento no cambia hasta pulsar *Actualizar datos*.
+- **PDF**: recuadro *DATOS BANCARIOS PARA EL PAGO* debajo de los totales.
+- Solo informativo: no afecta montos, impuestos, cobros ni reportes.
+
 ## Módulo: Configuración → Usuarios
 
 ### MFA (autenticación de dos factores) — pendiente, opciones evaluadas

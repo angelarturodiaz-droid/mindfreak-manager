@@ -16,6 +16,8 @@ import {
   calculateInvoiceItemSubtotal,
   calculateInvoiceTotals,
 } from "./schema";
+import { buildBankDetails } from "@/features/banks/bank-details-server";
+import { parseBankDetails } from "@/features/banks/bank-details";
 import type { InvoicePdfData } from "@/lib/pdf/invoice-document";
 import type { InvoiceElectronicPdfData } from "@/lib/pdf/invoice-electronic-document";
 
@@ -180,6 +182,10 @@ export async function createInvoiceAction(
     commissionTaxRatePercent = Number(commissionTaxRate.rate);
   }
 
+  // Datos bancarios para el pago: se sugieren solas las cuentas marcadas
+  // "Mostrar en facturas" en la moneda de la factura (se cambian en el detalle).
+  const { details: bankDetails } = await buildBankDetails(supabase, companyId, null, parsed.data.currency);
+
   const { data, error } = await supabase
     .from("invoices")
     .insert({
@@ -204,6 +210,7 @@ export async function createInvoiceAction(
       e_ncf: parsed.data.e_ncf || null,
       e_ncf_valid_until: parsed.data.e_ncf_valid_until || null,
       payment_type_code: parsed.data.payment_type_code || null,
+      bank_details: bankDetails,
       status: "DRAFT",
       created_by: user?.id,
     })
@@ -275,6 +282,52 @@ export async function updateInvoiceHeaderAction(
     .eq("id", invoiceId);
 
   if (error) return { error: error.message };
+
+  revalidatePath(`/invoices/${invoiceId}`);
+  return { error: null };
+}
+
+/**
+ * Datos bancarios para el pago (migración 082): guarda qué cuentas salen en
+ * el recuadro DATOS BANCARIOS del PDF. Es informativo (no toca montos ni
+ * impuestos), por eso se puede cambiar mientras la factura no esté
+ * cancelada ni pagada. Se guarda una copia de los datos de cada cuenta.
+ */
+export async function updateInvoiceBankDetailsAction(
+  invoiceId: string,
+  accountIds: string[],
+): Promise<{ error: string | null }> {
+  await requirePermission("invoices.create");
+  const supabase = await createSupabaseClient();
+  const companyId = await getPrimaryCompanyId();
+
+  const { data: invoice, error: fetchError } = await supabase
+    .from("invoices")
+    .select("status, currency, bank_details")
+    .eq("id", invoiceId)
+    .single();
+  if (fetchError || !invoice) return { error: "Factura no encontrada." };
+  if (invoice.status === "CANCELLED" || invoice.status === "PAID") {
+    return { error: "La factura está cancelada o pagada: ya no se cambian sus datos bancarios." };
+  }
+
+  const { details, error } = await buildBankDetails(supabase, companyId, accountIds, invoice.currency);
+  if (error) return { error };
+
+  const { error: updateError } = await supabase
+    .from("invoices")
+    .update({ bank_details: details })
+    .eq("id", invoiceId);
+  if (updateError) return { error: updateError.message };
+
+  await logAudit({
+    companyId,
+    action: "UPDATE",
+    entityType: "invoice",
+    entityId: invoiceId,
+    oldValues: { bank_details: invoice.bank_details },
+    newValues: { bank_details: details },
+  });
 
   revalidatePath(`/invoices/${invoiceId}`);
   return { error: null };
@@ -683,7 +736,7 @@ export async function duplicateInvoiceAction(invoiceId: string): Promise<void> {
   const { data: original, error: origError } = await supabase
     .from("invoices")
     .select(
-      "client_id, project_id, quotation_id, currency, exchange_rate, ncf_type, billing_type, payment_terms_id, credit_days, commission_percent, commission_tax_rate_id, commission_tax_treatment, commission_tax_rate_percent",
+      "client_id, project_id, quotation_id, currency, exchange_rate, ncf_type, billing_type, payment_terms_id, credit_days, commission_percent, commission_tax_rate_id, commission_tax_treatment, commission_tax_rate_percent, bank_details",
     )
     .eq("id", invoiceId)
     .single();
@@ -695,6 +748,15 @@ export async function duplicateInvoiceAction(invoiceId: string): Promise<void> {
     .eq("invoice_id", invoiceId)
     .order("sort_order");
   if (itemsError) throw new Error(itemsError.message);
+
+  // Mismas cuentas para el pago que el original, con sus datos al día.
+  const { details: dupBankDetails } = await buildBankDetails(
+    supabase,
+    companyId,
+    parseBankDetails(original.bank_details).map((d) => d.bank_account_id),
+    original.currency,
+    true,
+  );
 
   const number = await generateInvoiceNumber(companyId);
   const {
@@ -727,6 +789,7 @@ export async function duplicateInvoiceAction(invoiceId: string): Promise<void> {
       // Marca visual: de dónde salió esta copia (ver duplicate-invoice-
       // button y el badge "Duplicada de ..." en la lista/detalle).
       duplicated_from_id: invoiceId,
+      bank_details: dupBankDetails,
       status: "DRAFT",
       created_by: user?.id,
     })

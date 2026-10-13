@@ -5,7 +5,7 @@ import { updateBankAccountAction, type ActionState } from "@/features/banks/acti
 import { Input, Select } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
-import { AccountKindFields, CardFavorField } from "@/components/banks/account-rule-fields";
+import { AccountKindFields, CardFavorField, InvoiceDisplayFields } from "@/components/banks/account-rule-fields";
 
 const initialState: ActionState = { error: null };
 
@@ -23,6 +23,8 @@ export function BankAccountEditForm({
     account_kind?: string | null;
     allow_overdraft?: boolean | null;
     favor_increases_limit?: boolean | null;
+    show_on_invoices?: boolean | null;
+    holder_name?: string | null;
     credit_limit: number | null;
     opening_balance: number;
     opening_balance_date: string;
@@ -56,10 +58,21 @@ export function BankAccountEditForm({
         ))}
       </Select>
       <Input
-        label="Número (enmascarado)"
+        label={isCard ? "Número (enmascarado)" : "Número de cuenta"}
         name="account_number_masked"
         defaultValue={account.account_number_masked ?? ""}
+        hint={
+          isCard
+            ? "De la tarjeta solo se guardan los últimos dígitos."
+            : "Si la cuenta sale en facturas, el cliente ve este número para pagarte."
+        }
       />
+      {!isCard && (
+        <InvoiceDisplayFields
+          defaultChecked={Boolean(account.show_on_invoices)}
+          defaultHolder={account.holder_name ?? ""}
+        />
+      )}
 
       {isCard && (
         <MoneyInput

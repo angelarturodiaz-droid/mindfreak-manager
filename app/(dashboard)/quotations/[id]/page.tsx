@@ -27,7 +27,11 @@ import {
   rejectQuotationAction,
   cancelQuotationAction,
   negotiateQuotationAction,
+  updateQuotationBankDetailsAction,
 } from "@/features/quotations/actions";
+import { listBankDetailOptions } from "@/features/banks/bank-details-server";
+import { parseBankDetails } from "@/features/banks/bank-details";
+import { BankDetailsPicker, BankDetailsTitle } from "@/components/documents/bank-details-picker";
 import { hasPermission } from "@/lib/auth/permissions";
 import { getDefaultTaxRate, listTaxRates } from "@/features/tax-rates/queries";
 import { TAX_TREATMENT_LABELS } from "@/features/tax-rates/schema";
@@ -84,13 +88,15 @@ export default async function QuotationDetailPage({
   }
   if (!quotation) notFound();
 
-  const [items, services, canUpdate, canApprove, defaultTaxRate, taxRates] = await Promise.all([
+  const [items, services, canUpdate, canApprove, defaultTaxRate, taxRates, bankDetailOptions] = await Promise.all([
     listQuotationItems(id),
     listActiveServices(),
     hasPermission("quotations.update"),
     hasPermission("quotations.approve"),
     getDefaultTaxRate(),
     listTaxRates(),
+    // Cuentas que se pueden poner en "Datos bancarios para el pago" (opcional).
+    listBankDetailOptions().catch(() => []),
   ]);
 
   const clientData = quotation.clients as { name: string } | { name: string }[] | null;
@@ -478,6 +484,28 @@ export default async function QuotationDetailPage({
               <p className="whitespace-pre-line text-brand-muted">{quotation.terms}</p>
             </Card>
           )}
+
+          <Card>
+            <BankDetailsTitle docLabel="cotización" />
+            {quotation.status !== "CANCELLED" && quotation.status !== "REJECTED" && canUpdate && (
+              <p className="-mt-1 mb-3 text-xs text-brand-muted">
+                Opcional: márcalas si quieres que el cliente vea dónde pagar (ej. el anticipo).
+              </p>
+            )}
+            <BankDetailsPicker
+              docLabel="cotización"
+              currency={quotation.currency}
+              options={bankDetailOptions}
+              current={parseBankDetails(quotation.bank_details)}
+              editable={canUpdate && quotation.status !== "CANCELLED" && quotation.status !== "REJECTED"}
+              lockedReason={
+                canUpdate && (quotation.status === "CANCELLED" || quotation.status === "REJECTED")
+                  ? "La cotización está cancelada o rechazada."
+                  : undefined
+              }
+              onSave={updateQuotationBankDetailsAction.bind(null, quotation.id)}
+            />
+          </Card>
         </aside>
       </div>
     </main>

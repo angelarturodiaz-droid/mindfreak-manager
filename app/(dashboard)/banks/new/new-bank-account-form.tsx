@@ -7,7 +7,7 @@ import { Input, Select } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 import { todayISO } from "@/lib/utils/dates";
-import { AccountKindFields, CardFavorField } from "@/components/banks/account-rule-fields";
+import { AccountKindFields, CardFavorField, InvoiceDisplayFields } from "@/components/banks/account-rule-fields";
 
 const initialState: ActionState = { error: null };
 
@@ -54,11 +54,16 @@ export function NewBankAccountForm({
         ))}
       </Select>
       <Input
-        label="Número (enmascarado)"
+        label={isCard ? "Número (enmascarado)" : "Número de cuenta"}
         name="account_number_masked"
-        placeholder="****1234"
-        hint="Nunca se guardan credenciales bancarias/de tarjeta, solo un número de referencia enmascarado."
+        placeholder={isCard ? "****1234" : "Ej. 51181787815"}
+        hint={
+          isCard
+            ? "De la tarjeta solo se guardan los últimos dígitos, nunca el número completo ni claves."
+            : "Si la cuenta sale en facturas, el cliente ve este número para pagarte. Nunca escribas claves ni PIN."
+        }
       />
+      {!isCard && <InvoiceDisplayFields />}
 
       <div className="grid grid-cols-2 gap-3">
         <Select
