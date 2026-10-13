@@ -25,6 +25,7 @@ export function BankDetailsPicker({
   current,
   editable,
   lockedReason,
+  paidIn,
   onSave,
 }: {
   /** "factura" o "cotización" (para los textos). */
@@ -35,6 +36,8 @@ export function BankDetailsPicker({
   editable: boolean;
   /** Por qué no se puede cambiar (si editable = false). */
   lockedReason?: string;
+  /** Factura pagada: cuentas donde realmente entraron los cobros. */
+  paidIn?: string[];
   onSave: (ids: string[]) => Promise<{ error: string | null }>;
 }) {
   const optionIds = new Set(options.map((o) => o.id));
@@ -64,6 +67,24 @@ export function BankDetailsPicker({
         toast.success(ids.length ? "Datos bancarios guardados." : "Se quitaron los datos bancarios del PDF.");
       }
     });
+  }
+
+  // Factura pagada: lo útil es dónde entró el dinero; las cuentas del PDF, en la ⓘ.
+  if (!editable && paidIn && paidIn.length > 0) {
+    const pdfText = current.length
+      ? `Cuentas que salieron en el PDF: ${current
+          .map((d) => `${d.bank_name ?? d.account_name}${d.number ? ` ${d.number}` : ""} (${d.currency})`)
+          .join("; ")}. Ya no se cambian porque la factura está pagada.`
+      : "El PDF no lleva datos bancarios. Ya no se cambian porque la factura está pagada.";
+    return (
+      <p className="flex items-center gap-1.5 text-sm text-brand-text">
+        <Landmark size={14} className="shrink-0 text-brand-success" aria-hidden />
+        <span>
+          Cobrada en: <span className="font-medium">{paidIn.join(", ")}</span>
+        </span>
+        <InfoHint text={pdfText} />
+      </p>
+    );
   }
 
   // Solo lectura: lo que sale en el PDF.
@@ -199,17 +220,5 @@ function SavedLine({ d }: { d: BankDetail }) {
         </p>
       </div>
     </div>
-  );
-}
-
-/** Título de la tarjeta con su explicación. */
-export function BankDetailsTitle({ docLabel }: { docLabel: string }) {
-  return (
-    <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-brand-text">
-      Datos bancarios para el pago
-      <InfoHint
-        text={`Las cuentas que marques salen abajo en el PDF de la ${docLabel} para que el cliente sepa dónde pagar. Se ofrecen las cuentas marcadas en Bancos como "Mostrar en facturas y cotizaciones"; nunca tarjetas.`}
-      />
-    </p>
   );
 }

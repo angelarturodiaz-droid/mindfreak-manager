@@ -31,7 +31,8 @@ import {
 } from "@/features/invoices/actions";
 import { listBankDetailOptions } from "@/features/banks/bank-details-server";
 import { parseBankDetails } from "@/features/banks/bank-details";
-import { BankDetailsPicker, BankDetailsTitle } from "@/components/documents/bank-details-picker";
+import { BankDetailsPicker } from "@/components/documents/bank-details-picker";
+import { NextStepBar, SideSection, TotalsStrip } from "@/components/documents/doc-layout";
 import { listCategoryOptions } from "@/features/expense-categories/queries";
 import { ResponsibleSelector } from "./responsible-selector";
 import { AddCollectionHistoryForm } from "./add-collection-history-form";
@@ -55,7 +56,7 @@ import { Card } from "@/components/ui/card";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { RegisteredDate } from "@/components/ui/registered-date";
 import { DataTable, type Column } from "@/components/ui/data-table";
-import { Chip, ProgressBar, SectionHeader } from "@/components/ui/page-kit";
+import { Chip, SectionHeader } from "@/components/ui/page-kit";
 import { relationName, relationRow } from "@/lib/utils/relation";
 import { dueLabel, formatDate, formatDateTime } from "@/lib/utils/dates";
 import { DownloadReceiptButton } from "@/components/payments/download-receipt-button";
@@ -270,6 +271,47 @@ export default async function InvoiceDetailPage({
             ? 3
             : -1;
 
+  // Qué hacer ahora, según el estado (franja "Siguiente paso").
+  const balanceText = formatMoney(invoice.balance, invoice.currency);
+  const nextStep: { tone: "next" | "warning" | "done"; text: string } | null =
+    invoice.status === "CANCELLED"
+      ? null
+      : invoice.status === "DRAFT"
+        ? items.length === 0
+          ? { tone: "next", text: "agrega las líneas de la factura (abajo, en Agregar línea)." }
+          : { tone: "next", text: "revisa las líneas, el NCF y el vencimiento, y pulsa Emitir factura." }
+        : invoice.status === "PAID"
+          ? { tone: "done", text: "la factura está pagada. No queda nada pendiente." }
+          : overdueNow && due
+            ? {
+                tone: "warning",
+                text: `${due.label.toLowerCase()}. Anota la gestión de cobro (a la derecha) y registra el cobro cuando pague. Falta ${balanceText}.`,
+              }
+            : !invoice.sent_to_client_at
+              ? { tone: "next", text: "envíasela al cliente (Compartir o PDF) y pulsa Marcar como enviada al cliente." }
+              : { tone: "next", text: `registra los cobros a medida que el cliente pague (abajo, en Registrar cobro). Falta ${balanceText}.` };
+
+  // Datos bancarios: lo guardado en la factura y, si está pagada, dónde entró el dinero.
+  const invoiceBankDetails = parseBankDetails(invoice.bank_details);
+  const paidInAccounts = [
+    ...new Set(
+      payments
+        .map((p) => relationRow<{ name: string; bank_name: string | null }>(p.bank_accounts)?.name)
+        .filter((n): n is string => Boolean(n)),
+    ),
+  ];
+  const bankSummary =
+    invoice.status === "PAID" && paidInAccounts.length
+      ? `Cobrada en: ${paidInAccounts.join(", ")}`
+      : invoiceBankDetails.length
+        ? `En el PDF: ${invoiceBankDetails.map((d) => d.account_name).join(", ")}`
+        : "Sin cuentas en el PDF";
+  const responsibleName =
+    companyUsers.find((u) => u.id === invoice.responsible_user_id)?.full_name ?? null;
+  const collectionSummary = `${responsibleName ? `Responsable: ${responsibleName}` : "Sin responsable"} · ${
+    collectionHistory.length === 1 ? "1 gestión" : `${collectionHistory.length} gestiones`
+  }`;
+
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
       <Link
@@ -357,28 +399,6 @@ export default async function InvoiceDetailPage({
               )}
             </dl>
           </div>
-          <div className="grid grid-cols-2 gap-6 text-left sm:text-right">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">Total</p>
-              <p className="whitespace-nowrap text-xl font-semibold tracking-tight tabular-nums text-brand-primary">
-                {formatMoney(invoice.total, invoice.currency)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">Balance</p>
-              <p
-                className={`whitespace-nowrap text-xl font-semibold tracking-tight tabular-nums ${
-                  invoice.balance > 0 && isOpen
-                    ? overdueNow
-                      ? "text-brand-danger"
-                      : "text-brand-warning"
-                    : "text-brand-text"
-                }`}
-              >
-                {formatMoney(invoice.balance, invoice.currency)}
-              </p>
-            </div>
-          </div>
         </div>
 
         {flowIndex >= 0 ? (
@@ -430,6 +450,8 @@ export default async function InvoiceDetailPage({
           </div>
         )}
 
+        {nextStep && <NextStepBar tone={nextStep.tone}>{nextStep.text}</NextStepBar>}
+
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-brand-border pt-4">
           <div className="flex flex-wrap gap-2">
             {isEditable && canEdit && (
@@ -478,9 +500,50 @@ export default async function InvoiceDetailPage({
         </div>
       </Card>
 
+      <TotalsStrip
+        items={[
+          { label: "Subtotal", value: formatMoney(invoice.subtotal, invoice.currency) },
+          ...(invoice.commission_percent > 0
+            ? [
+                {
+                  label: `Comisión (${invoice.commission_percent}%)`,
+                  value: formatMoney(invoice.commission_amount, invoice.currency),
+                  note:
+                    TAX_TREATMENT_LABELS[invoice.commission_tax_treatment as keyof typeof TAX_TREATMENT_LABELS] ??
+                    invoice.commission_tax_treatment,
+                },
+              ]
+            : []),
+          {
+            label: "Descuento",
+            value: invoice.discount > 0 ? `−${formatMoney(invoice.discount, invoice.currency)}` : "—",
+            tone: invoice.discount > 0 ? ("default" as const) : ("muted" as const),
+          },
+          { label: "Impuesto", value: formatMoney(invoice.tax, invoice.currency) },
+          { label: "Total", value: formatMoney(invoice.total, invoice.currency), tone: "strong" as const },
+          { label: "Pagado", value: formatMoney(invoice.paid_amount, invoice.currency), tone: "success" as const },
+          {
+            label: "Balance pendiente",
+            value: formatMoney(invoice.balance, invoice.currency),
+            tone:
+              invoice.balance > 0 && isOpen
+                ? overdueNow
+                  ? ("danger" as const)
+                  : ("warning" as const)
+                : ("default" as const),
+          },
+        ]}
+        progress={
+          invoice.status === "DRAFT" || invoice.status === "CANCELLED"
+            ? undefined
+            : { pct: paidPct, label: `${Math.round(paidPct)} % cobrado`, danger: overdueNow }
+        }
+      />
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="flex min-w-0 flex-col gap-8 lg:col-span-2">
-          <section className="flex flex-col gap-4">
+          {/* En Borrador lo primero son las líneas; ya emitida, los cobros. */}
+          <section className={`flex flex-col gap-4 ${isEditable ? "order-1" : "order-2"}`}>
             <SectionHeader
               title="Líneas de factura"
               count={items.length}
@@ -503,7 +566,9 @@ export default async function InvoiceDetailPage({
             )}
           </section>
 
-          <section className="flex flex-col gap-4">
+          {/* Una factura en Borrador todavía no recibe cobros. */}
+          {invoice.status !== "DRAFT" && (
+          <section className={`flex flex-col gap-4 ${isEditable ? "order-2" : "order-1"}`}>
             <SectionHeader title="Cobros" count={payments.length} />
             <DataTable columns={paymentColumns} rows={payments} keyFor={(p) => p.id} maxWidth="max-w-none" emptyMessage="Sin cobros registrados todavía." />
 
@@ -536,98 +601,47 @@ export default async function InvoiceDetailPage({
                 </Card>
               )}
           </section>
+          )}
         </div>
 
         <aside className="flex flex-col gap-4">
-          <Card className="text-sm">
-            <p className="mb-3 text-sm font-semibold text-brand-text">Resumen</p>
-            <div className="flex items-center justify-between">
-              <span className="text-brand-muted">Subtotal</span>
-              <span className="font-medium tabular-nums">
-                {formatMoney(invoice.subtotal, invoice.currency)}
-              </span>
-            </div>
-            {invoice.commission_percent > 0 && (
-              <div className="mt-1.5 flex items-center justify-between gap-2">
-                <span className="text-brand-muted">
-                  Comisión ({invoice.commission_percent}%){" "}
-                  <span className="text-xs">
-                    (
-                    {TAX_TREATMENT_LABELS[invoice.commission_tax_treatment as keyof typeof TAX_TREATMENT_LABELS] ??
-                      invoice.commission_tax_treatment}
-                    )
-                  </span>
-                </span>
-                <span className="font-medium tabular-nums">
-                  {formatMoney(invoice.commission_amount, invoice.currency)}
-                </span>
-              </div>
-            )}
-            <div className="mt-1.5 flex items-center justify-between">
-              <span className="text-brand-muted">Descuento</span>
-              <span className="font-medium tabular-nums">
-                -{formatMoney(invoice.discount, invoice.currency)}
-              </span>
-            </div>
-            <div className="mt-1.5 flex items-center justify-between">
-              <span className="text-brand-muted">Impuesto</span>
-              <span className="font-medium tabular-nums">
-                {formatMoney(invoice.tax, invoice.currency)}
-              </span>
-            </div>
-            <div className="mt-3 flex items-center justify-between border-t border-brand-border pt-3">
-              <span className="font-medium text-brand-text">Total</span>
-              <span className="text-lg font-semibold tabular-nums text-brand-primary">
-                {formatMoney(invoice.total, invoice.currency)}
-              </span>
-            </div>
-            <div className="mt-3 flex flex-col gap-2 border-t border-brand-border pt-3">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-brand-muted">Pagado</span>
-                <span className="font-medium tabular-nums text-brand-success">
-                  {formatMoney(invoice.paid_amount, invoice.currency)}
-                </span>
-              </div>
-              <ProgressBar pct={paidPct} />
-              <div className="flex items-center justify-between">
-                <span className="text-brand-muted">Balance pendiente</span>
-                <span className="font-semibold tabular-nums text-brand-text">
-                  {formatMoney(invoice.balance, invoice.currency)}
-                </span>
-              </div>
-            </div>
-          </Card>
-
-          <Card>
-            <BankDetailsTitle docLabel="factura" />
+          <SideSection
+            title={invoice.status === "PAID" ? "Datos bancarios" : "Datos bancarios para el pago"}
+            info={
+              invoice.status === "PAID"
+                ? "Cuenta(s) donde entraron los cobros de esta factura. En la ⓘ de abajo están las cuentas que salieron en el PDF."
+                : "Las cuentas que marques salen abajo en el PDF para que el cliente sepa dónde pagar. Se ofrecen las cuentas marcadas en Bancos como \"Mostrar en facturas y cotizaciones\"; nunca tarjetas."
+            }
+            summary={bankSummary}
+            defaultOpen={invoice.status !== "PAID" && invoice.status !== "CANCELLED"}
+          >
             <BankDetailsPicker
               docLabel="factura"
               currency={invoice.currency}
               options={bankDetailOptions}
-              current={parseBankDetails(invoice.bank_details)}
+              current={invoiceBankDetails}
               editable={canEdit && invoice.status !== "CANCELLED" && invoice.status !== "PAID"}
-              lockedReason={
-                !canEdit
-                  ? undefined
-                  : invoice.status === "CANCELLED"
-                    ? "La factura está cancelada."
-                    : invoice.status === "PAID"
-                      ? "La factura ya está pagada."
-                      : undefined
-              }
+              lockedReason={invoice.status === "CANCELLED" ? "La factura está cancelada." : undefined}
+              paidIn={invoice.status === "PAID" ? paidInAccounts : undefined}
               onSave={updateInvoiceBankDetailsAction.bind(null, invoice.id)}
             />
-          </Card>
+          </SideSection>
 
           {isEditable && canEdit && (
-            <Card>
-              <p className="mb-3 text-sm font-semibold text-brand-text">NCF / Vencimiento</p>
+            <SideSection
+              title="NCF / Vencimiento"
+              info="Comprobante fiscal y fecha de vencimiento. Se editan mientras la factura está en Borrador."
+            >
               <InvoiceHeaderForm invoice={invoice} paymentTerms={paymentTerms} />
-            </Card>
+            </SideSection>
           )}
 
-          <Card>
-            <p className="mb-3 text-sm font-semibold text-brand-text">Gestión de cobro</p>
+          <SideSection
+            title="Gestión de cobro"
+            info="Quién da seguimiento al cobro y las gestiones hechas (llamadas, correos, WhatsApp…)."
+            summary={collectionSummary}
+            defaultOpen={isOpen}
+          >
             <ResponsibleSelector
               invoiceId={invoice.id}
               currentUserId={invoice.responsible_user_id}
@@ -668,7 +682,7 @@ export default async function InvoiceDetailPage({
               )}
               <AddCollectionHistoryForm invoiceId={invoice.id} />
             </div>
-          </Card>
+          </SideSection>
         </aside>
       </div>
     </main>

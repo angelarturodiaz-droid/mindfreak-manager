@@ -56,6 +56,17 @@ parciales — la factura no cambia, pero cada abono genera su propio recibo.
 - **PDF**: recuadro *DATOS BANCARIOS PARA EL PAGO* debajo de los totales.
 - Solo informativo: no afecta montos, impuestos, cobros ni reportes.
 
+
+## Módulo: Facturas y Cotizaciones — Orden del detalle y PDF de varias páginas (2026-10-12)
+
+- Arriba: pasos + **Siguiente paso** (qué hacer ahora). Debajo: franja de
+  montos. Izquierda: lo de trabajo (Borrador: líneas; emitida: cobros y
+  luego líneas). Derecha: tarjetas plegables con resumen de una línea.
+- Factura pagada: *Datos bancarios → Cobrada en: …* (cuentas reales de
+  los cobros); las cuentas del PDF en la ⓘ.
+- PDF: si las líneas no caben, sigue en otra página con el encabezado de
+  la tabla repetido y *Página X de Y*; las líneas y los totales no se parten.
+
 ## Módulo: Configuración → Usuarios
 
 ### MFA (autenticación de dos factores) — pendiente, opciones evaluadas

@@ -76,7 +76,7 @@ export function InvoicePdfDocument({ company, invoice, client, items }: InvoiceP
   registerPdfFonts();
 
   const styles = StyleSheet.create({
-    page: { fontSize: 8.5, fontFamily: "Roboto", color: "#1a1a1a", padding: 28 },
+    page: { fontSize: 8.5, fontFamily: "Roboto", color: "#1a1a1a", padding: 28, paddingBottom: 46 },
     headerRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 14 },
     logoWrap: {
       width: 42,
@@ -210,7 +210,7 @@ export function InvoicePdfDocument({ company, invoice, client, items }: InvoiceP
         </View>
 
         <View style={styles.table}>
-          <View style={styles.tableHeader}>
+          <View style={styles.tableHeader} fixed>
             <Text style={[styles.th, styles.colNum]}>#</Text>
             <Text style={[styles.th, styles.colDesc]}>DESCRIPCIÓN</Text>
             <Text style={[styles.th, styles.colQty]}>CANT.</Text>
@@ -220,6 +220,7 @@ export function InvoicePdfDocument({ company, invoice, client, items }: InvoiceP
           {items.map((item, i) => (
             <View
               key={i}
+              wrap={false}
               style={[styles.tableRow, i % 2 === 0 ? { backgroundColor: accentLight } : {}]}
             >
               <Text style={[styles.colNum, { color: accent, fontWeight: 700 }]}>{i + 1}</Text>
@@ -233,7 +234,7 @@ export function InvoicePdfDocument({ company, invoice, client, items }: InvoiceP
           ))}
         </View>
 
-        <View style={styles.totals}>
+        <View style={styles.totals} wrap={false}>
           <View style={styles.totalsRow}>
             <Text style={styles.totalsLabel}>SUBTOTAL (NETO)</Text>
             <Text style={styles.totalsValue}>{money(invoice.subtotal, invoice.currency)}</Text>
@@ -274,10 +275,15 @@ export function InvoicePdfDocument({ company, invoice, client, items }: InvoiceP
 
         <BankDetailsBlock details={parseBankDetails(invoice.bank_details)} accent={accent} dark={dark} />
 
-        <Text style={styles.footer}>
-          {company.legal_name ?? company.name}
-          {company.tax_id ? ` · RNC ${company.tax_id}` : ""}
-        </Text>
+        <Text
+          style={styles.footer}
+          fixed
+          render={({ pageNumber, totalPages }) =>
+            `${company.legal_name ?? company.name}${company.tax_id ? ` · RNC ${company.tax_id}` : ""}${
+              totalPages > 1 ? ` · Página ${pageNumber} de ${totalPages}` : ""
+            }`
+          }
+        />
       </Page>
     </Document>
   );

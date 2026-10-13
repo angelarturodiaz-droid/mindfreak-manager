@@ -87,7 +87,7 @@ export function InvoiceElectronicPdfDocument({
   registerPdfFonts();
 
   const styles = StyleSheet.create({
-    page: { fontSize: 8.5, fontFamily: "Roboto", color: "#1a1a1a", padding: 28 },
+    page: { fontSize: 8.5, fontFamily: "Roboto", color: "#1a1a1a", padding: 28, paddingBottom: 46 },
     headerRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 14 },
     logoWrap: {
       width: 42,
@@ -223,14 +223,14 @@ export function InvoiceElectronicPdfDocument({
         </View>
 
         <View style={styles.table}>
-          <View style={styles.tableHeader}>
+          <View style={styles.tableHeader} fixed>
             <Text style={[styles.th, styles.colDesc]}>DESCRIPCIÓN</Text>
             <Text style={[styles.th, styles.colQty]}>CANTIDAD</Text>
             <Text style={[styles.th, styles.colPrice]}>PRECIO UNITARIO</Text>
             <Text style={[styles.th, styles.colTotal]}>TOTAL</Text>
           </View>
           {items.map((item, i) => (
-            <View key={i} style={[styles.tableRow, i % 2 === 0 ? { backgroundColor: accentLight } : {}]}>
+            <View key={i} wrap={false} style={[styles.tableRow, i % 2 === 0 ? { backgroundColor: accentLight } : {}]}>
               <Text style={styles.colDesc}>{item.description}</Text>
               <Text style={styles.colQty}>{item.quantity}</Text>
               <Text style={styles.colPrice}>{money(item.unit_price, invoice.currency)}</Text>
@@ -239,7 +239,7 @@ export function InvoiceElectronicPdfDocument({
           ))}
         </View>
 
-        <View style={styles.totals}>
+        <View style={styles.totals} wrap={false}>
           <View style={styles.totalsRow}>
             <Text style={styles.totalsLabel}>SUBTOTAL</Text>
             <Text style={styles.totalsValue}>{money(invoice.subtotal, invoice.currency)}</Text>
@@ -294,6 +294,11 @@ export function InvoiceElectronicPdfDocument({
             </>
           )}
         </View>
+        <Text
+          fixed
+          style={{ position: "absolute", bottom: 20, left: 28, right: 28, fontSize: 7, color: "#9ca3af", textAlign: "center" }}
+          render={({ pageNumber, totalPages }) => (totalPages > 1 ? `Página ${pageNumber} de ${totalPages}` : "")}
+        />
       </Page>
     </Document>
   );

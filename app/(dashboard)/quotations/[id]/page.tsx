@@ -31,7 +31,8 @@ import {
 } from "@/features/quotations/actions";
 import { listBankDetailOptions } from "@/features/banks/bank-details-server";
 import { parseBankDetails } from "@/features/banks/bank-details";
-import { BankDetailsPicker, BankDetailsTitle } from "@/components/documents/bank-details-picker";
+import { BankDetailsPicker } from "@/components/documents/bank-details-picker";
+import { NextStepBar, SideSection, TotalsStrip } from "@/components/documents/doc-layout";
 import { hasPermission } from "@/lib/auth/permissions";
 import { getDefaultTaxRate, listTaxRates } from "@/features/tax-rates/queries";
 import { TAX_TREATMENT_LABELS } from "@/features/tax-rates/schema";
@@ -180,6 +181,31 @@ export default async function QuotationDetailPage({
       ? daysFromToday(quotation.valid_until)
       : null;
 
+  // Qué hacer ahora, según el estado (franja "Siguiente paso").
+  const nextStep: { tone: "next" | "warning" | "done"; text: string } | null =
+    ["CANCELLED", "REJECTED"].includes(quotation.status)
+      ? null
+      : quotation.status === "DRAFT"
+        ? items.length === 0
+          ? { tone: "next", text: "agrega las líneas de servicio (abajo, en Agregar línea)." }
+          : { tone: "next", text: "comparte el PDF con el cliente y pulsa Marcar como enviada." }
+        : quotation.status === "NEGOTIATING"
+          ? { tone: "next", text: "ajusta las líneas y precios y pulsa Marcar como enviada de nuevo." }
+          : quotation.status === "APPROVED"
+            ? quotation.project_id
+              ? { tone: "done", text: "ya es un proyecto. Sigue el trabajo desde Ver proyecto." }
+              : { tone: "next", text: "pulsa Convertir a Proyecto para empezar a organizar el evento." }
+            : shownStatus === "EXPIRED"
+              ? {
+                  tone: "warning",
+                  text: "la fecha de validez ya pasó. Si el cliente acepta igual, puedes Aprobarla; si no, Rechazar o Cancelar.",
+                }
+              : {
+                  tone: "next",
+                  text: "espera la respuesta del cliente: Aprobar, Rechazar o Pasar a negociación si pide cambios.",
+                };
+  const quotationBankDetails = parseBankDetails(quotation.bank_details);
+
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
       <Link
@@ -263,12 +289,6 @@ export default async function QuotationDetailPage({
               )}
             </dl>
           </div>
-          <div className="text-left sm:text-right">
-            <p className="text-xs font-medium uppercase tracking-wide text-brand-muted">Total</p>
-            <p className="whitespace-nowrap text-2xl font-semibold tracking-tight tabular-nums text-brand-primary">
-              {formatMoney(quotation.total, quotation.currency)}
-            </p>
-          </div>
         </div>
 
         {flowIndex >= 0 ? (
@@ -312,6 +332,8 @@ export default async function QuotationDetailPage({
             {closedLabel[quotation.status] ?? STATUS_LABELS[quotation.status]}
           </div>
         )}
+
+        {nextStep && <NextStepBar tone={nextStep.tone}>{nextStep.text}</NextStepBar>}
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-brand-border pt-4">
           <div className="flex flex-wrap gap-2">
@@ -391,6 +413,42 @@ export default async function QuotationDetailPage({
         </div>
       </Card>
 
+      <TotalsStrip
+        items={[
+          { label: "Subtotal", value: formatMoney(quotation.subtotal, quotation.currency) },
+          ...(quotation.commission_percent > 0
+            ? [
+                {
+                  label: `Comisión (${quotation.commission_percent}%)`,
+                  value: formatMoney(quotation.commission_amount, quotation.currency),
+                  note:
+                    TAX_TREATMENT_LABELS[quotation.commission_tax_treatment as keyof typeof TAX_TREATMENT_LABELS] ??
+                    quotation.commission_tax_treatment,
+                },
+              ]
+            : []),
+          {
+            label: "Descuento",
+            value: quotation.discount > 0 ? `−${formatMoney(quotation.discount, quotation.currency)}` : "—",
+            tone: quotation.discount > 0 ? ("default" as const) : ("muted" as const),
+          },
+          { label: "Impuesto", value: formatMoney(quotation.tax, quotation.currency) },
+          { label: "Total", value: formatMoney(quotation.total, quotation.currency), tone: "strong" as const },
+          {
+            label: "Costo estimado",
+            value: formatMoney(quotation.estimated_cost, quotation.currency),
+            info: "Suma de los costos unitarios estimados de las líneas. Es interno: no sale en el PDF ni lo ve el cliente.",
+            tone: "muted" as const,
+          },
+          {
+            label: "Margen estimado",
+            value: `${quotation.estimated_margin?.toFixed(1) ?? "0.0"} %`,
+            info: "Margen sobre el total según los costos estimados. Interno: no lo ve el cliente.",
+            tone: "muted" as const,
+          },
+        ]}
+      />
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <section className="flex min-w-0 flex-col gap-4 lg:col-span-2">
           <SectionHeader
@@ -409,94 +467,37 @@ export default async function QuotationDetailPage({
         </section>
 
         <aside className="flex flex-col gap-4">
-          <Card className="text-sm lg:sticky lg:top-4">
-            <p className="mb-3 text-sm font-semibold text-brand-text">Resumen</p>
-            <div className="flex items-center justify-between">
-              <span className="text-brand-muted">Subtotal</span>
-              <span className="font-medium tabular-nums">
-                {formatMoney(quotation.subtotal, quotation.currency)}
-              </span>
-            </div>
-            {quotation.commission_percent > 0 && (
-              <div className="mt-1.5 flex items-center justify-between gap-2">
-                <span className="text-brand-muted">
-                  Comisión ({quotation.commission_percent}%){" "}
-                  <span className="text-xs">
-                    (
-                    {TAX_TREATMENT_LABELS[quotation.commission_tax_treatment as keyof typeof TAX_TREATMENT_LABELS] ??
-                      quotation.commission_tax_treatment}
-                    )
-                  </span>
-                </span>
-                <span className="font-medium tabular-nums">
-                  {formatMoney(quotation.commission_amount, quotation.currency)}
-                </span>
-              </div>
-            )}
-            <div className="mt-1.5 flex items-center justify-between">
-              <span className="text-brand-muted">Descuento</span>
-              <span className="font-medium tabular-nums">
-                -{formatMoney(quotation.discount, quotation.currency)}
-              </span>
-            </div>
-            <div className="mt-1.5 flex items-center justify-between">
-              <span className="text-brand-muted">Impuesto</span>
-              <span className="font-medium tabular-nums">
-                {formatMoney(quotation.tax, quotation.currency)}
-              </span>
-            </div>
-            <div className="mt-3 flex items-center justify-between border-t border-brand-border pt-3 text-base">
-              <span className="font-medium text-brand-text">Total</span>
-              <span className="text-lg font-semibold tabular-nums text-brand-primary">
-                {formatMoney(quotation.total, quotation.currency)}
-              </span>
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-brand-border pt-3 text-xs">
-              <div>
-                <p className="text-brand-muted">Costo estimado</p>
-                <p className="font-medium tabular-nums text-brand-text">
-                  {formatMoney(quotation.estimated_cost, quotation.currency)}
-                </p>
-              </div>
-              <div>
-                <p className="text-brand-muted">Margen estimado</p>
-                <p className="font-medium tabular-nums text-brand-text">
-                  {quotation.estimated_margin?.toFixed(1) ?? "0.0"}%
-                </p>
-              </div>
-            </div>
-          </Card>
-
           {quotation.payment_terms_id && (
-            <Card className="text-sm">
-              <p className="mb-2 text-sm font-semibold text-brand-text">Condición de pago</p>
-              <p className="text-brand-text">{pt ?? "—"}</p>
-              <p className="mt-1 text-brand-muted">
+            <SideSection title="Condición de pago" summary={pt ?? undefined}>
+              <p className="text-sm text-brand-text">{pt ?? "—"}</p>
+              <p className="mt-1 text-sm text-brand-muted">
                 {quotation.credit_days} días de crédito · {quotation.advance_percent}% anticipo /{" "}
                 {quotation.balance_percent}% saldo
               </p>
-            </Card>
+            </SideSection>
           )}
 
           {quotation.terms && (
-            <Card className="text-sm">
-              <p className="mb-2 text-sm font-semibold text-brand-text">Condiciones</p>
-              <p className="whitespace-pre-line text-brand-muted">{quotation.terms}</p>
-            </Card>
+            <SideSection title="Condiciones" summary="Texto que sale en el PDF">
+              <p className="whitespace-pre-line text-sm text-brand-muted">{quotation.terms}</p>
+            </SideSection>
           )}
 
-          <Card>
-            <BankDetailsTitle docLabel="cotización" />
-            {quotation.status !== "CANCELLED" && quotation.status !== "REJECTED" && canUpdate && (
-              <p className="-mt-1 mb-3 text-xs text-brand-muted">
-                Opcional: márcalas si quieres que el cliente vea dónde pagar (ej. el anticipo).
-              </p>
-            )}
+          <SideSection
+            title="Datos bancarios para el pago"
+            info="Opcional en cotizaciones: las cuentas que marques salen abajo en el PDF (ej. para el anticipo). Se ofrecen las cuentas marcadas en Bancos como «Mostrar en facturas y cotizaciones»; nunca tarjetas."
+            summary={
+              quotationBankDetails.length
+                ? `En el PDF: ${quotationBankDetails.map((d) => d.account_name).join(", ")}`
+                : "Opcional · no sale en el PDF"
+            }
+            defaultOpen={quotationBankDetails.length > 0}
+          >
             <BankDetailsPicker
               docLabel="cotización"
               currency={quotation.currency}
               options={bankDetailOptions}
-              current={parseBankDetails(quotation.bank_details)}
+              current={quotationBankDetails}
               editable={canUpdate && quotation.status !== "CANCELLED" && quotation.status !== "REJECTED"}
               lockedReason={
                 canUpdate && (quotation.status === "CANCELLED" || quotation.status === "REJECTED")
@@ -505,7 +506,7 @@ export default async function QuotationDetailPage({
               }
               onSave={updateQuotationBankDetailsAction.bind(null, quotation.id)}
             />
-          </Card>
+          </SideSection>
         </aside>
       </div>
     </main>

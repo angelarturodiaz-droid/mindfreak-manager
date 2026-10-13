@@ -1,5 +1,32 @@
 # CHANGELOG — Mindfreak Manager
 
+## Detalle de factura y cotización más ordenado + PDF de varias páginas (2026-10-12)
+
+- **Siguiente paso** (`components/documents/doc-layout.tsx` → `NextStepBar`):
+  franja bajo los pasos que dice qué hacer según el estado (Borrador sin
+  líneas / con líneas, emitida sin enviar, con saldo, vencida en rojo,
+  pagada en verde; en cotizaciones: enviar, esperar respuesta, negociar,
+  expirada, convertir a proyecto, ya es proyecto).
+- **Montos en una franja** (`TotalsStrip`) debajo del encabezado: Subtotal,
+  Comisión, Descuento, Impuesto, Total, Pagado y Balance con barra de lo
+  cobrado (factura); en cotización Total + costo y margen estimados
+  (internos). Se quitó la tarjeta *Resumen* de la derecha y el total del
+  encabezado (no se repiten).
+- **Columna derecha compacta** (`SideSection`, `<details>`): Datos
+  bancarios, NCF / Vencimiento (solo Borrador), Gestión de cobro
+  (abierta solo si la factura está por cobrar), Condición de pago y
+  Condiciones; cerradas muestran un resumen de una línea.
+- **Factura**: en Borrador primero las líneas y sin la sección Cobros; ya
+  emitida, primero los cobros y luego las líneas.
+- **Factura pagada**: la tarjeta se llama *Datos bancarios* y dice
+  *Cobrada en: (cuentas de los cobros)*; las cuentas del PDF van en la ⓘ.
+- **PDF con muchas líneas** (factura, factura electrónica y cotización):
+  encabezado de la tabla repetido en cada página, *Página X de Y* en el pie
+  (el pie sale en todas las páginas), una línea nunca se parte entre
+  páginas y los totales no se separan.
+- Solo diseño y textos: no cambia ningún cálculo.
+
+
 ## Datos bancarios para el pago en facturas y cotizaciones (2026-10-12)
 
 - Pedido del usuario: elegir qué cuenta(s) de banco salen abajo en el PDF
