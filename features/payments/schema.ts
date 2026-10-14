@@ -32,6 +32,17 @@ export const registerPaymentSchema = z.object({
 export type RegisterPaymentInput = z.infer<typeof registerPaymentSchema>;
 
 /**
+ * Cobro de factura (migración 083): el monto recibido puede ser 0 cuando
+ * el cobro es solo una retención del cliente (llega el certificado
+ * después); entonces la cuenta no hace falta. La base de datos valida que
+ * dinero + retenciones sea mayor a 0 y no pase del saldo.
+ */
+export const customerPaymentSchema = registerPaymentSchema.extend({
+  bank_account_id: z.string().uuid("Elige la cuenta donde entró el dinero.").optional().or(z.literal("")),
+  amount: z.coerce.number().min(0, "El monto recibido no puede ser negativo."),
+});
+
+/**
  * Datos del bloque "Pago/Cobro en moneda diferente" (multimoneda V5). Todos
  * opcionales: con la cuenta en la misma moneda del documento no se envían.
  * El servidor (fx_settlement en la base) recalcula y valida todo.

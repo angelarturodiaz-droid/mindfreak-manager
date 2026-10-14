@@ -69,6 +69,23 @@ parciales — la factura no cambia, pero cada abono genera su propio recibo.
 - PDF: si las líneas no caben, sigue en otra página con el encabezado de
   la tabla repetido y *Página X de Y*; las líneas y los totales no se parten.
 
+
+## Módulo: Cobros — Retenciones del cliente (2026-10-13)
+
+- El cliente retiene (ISR/ITBIS) y paga el neto: Registrar cobro → *¿El
+  cliente realizó retenciones? Sí* → filas por retención. Recibido en banco
+  + Retenciones = Total aplicado. El banco sube solo con lo recibido.
+- Factura en dólares: se escribe el monto del certificado en RD$ y se
+  convierte con la tasa de la factura (editable). Se guardan ambos.
+- Certificado después: cobro con recibido 0 + retención (sin cuenta, sin
+  banco). *Agregar certificado* en la lista de cobros de la factura.
+- Anular retención: permiso `payments.void` (ADMIN, FINANCE), motivo
+  obligatorio, nunca se borra, no toca el banco, la factura recupera el saldo.
+- La factura dice *Aplicado* (dinero + retenciones); el estado sigue
+  *Pagada*. Dashboard y rentabilidad cuentan solo dinero.
+- Reporte *Retenciones de clientes* (Reportes → Cobros), con filtro *Solo
+  sin certificado*.
+
 ## Módulo: Configuración → Usuarios
 
 ### MFA (autenticación de dos factores) — pendiente, opciones evaluadas

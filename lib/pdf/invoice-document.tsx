@@ -52,6 +52,8 @@ export type InvoicePdfData = {
     tax: number;
     total: number;
     paid_amount: number;
+    /** Retenciones del cliente incluidas en lo aplicado (migración 083). */
+    withholding_total?: number;
     balance: number;
     ncf: string | null;
     payment_terms_name: string | null;
@@ -205,7 +207,12 @@ export function InvoicePdfDocument({ company, invoice, client, items }: InvoiceP
               <Text style={styles.boxLine}>Condición: {invoice.payment_terms_name}</Text>
             )}
             <Text style={styles.boxLine}>Estado: {INVOICE_STATUS_LABELS[invoice.status] ?? invoice.status}</Text>
-            <Text style={styles.boxLine}>Pagado: {money(invoice.paid_amount, invoice.currency)}</Text>
+            <Text style={styles.boxLine}>Aplicado: {money(invoice.paid_amount, invoice.currency)}</Text>
+            {Number(invoice.withholding_total ?? 0) > 0 && (
+              <Text style={styles.boxLine}>
+                (incluye retenciones {money(Number(invoice.withholding_total), invoice.currency)})
+              </Text>
+            )}
           </View>
         </View>
 

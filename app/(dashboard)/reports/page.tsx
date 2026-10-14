@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { listCurrencies } from "@/features/currencies/queries";
 import { redirect } from "next/navigation";
-import { ArrowDownCircle, AlertTriangle, Clock, CalendarClock, CalendarDays, CalendarRange } from "lucide-react";
+import { ArrowDownCircle, AlertTriangle, Clock, CalendarClock, CalendarDays, CalendarRange, Receipt, FileCheck2, FileWarning } from "lucide-react";
 import { hasPermission } from "@/lib/auth/permissions";
 import {
   getProjectsProfitabilityReport,
@@ -12,6 +12,7 @@ import {
   getReceivablesDashboard,
   getCashflowByCategoryReport,
   getPaymentsByCurrencyReport,
+  getCustomerWithholdingsReport,
   CASHFLOW_ORIGINS,
   type CashflowOrigin,
   listBankAccountsForFilter,
@@ -74,6 +75,7 @@ const REPORT_CATALOG: { category: string; reports: { key: string; label: string 
     reports: [
       { key: "vencimientos", label: "Cuentas por Cobrar y Vencimientos" },
       { key: "cxc", label: "Cuentas por cobrar (detalle)" },
+      { key: "retenciones-clientes", label: "Retenciones de clientes" },
     ],
   },
   { category: "Pagos", reports: [{ key: "cxp", label: "Cuentas por pagar" }] },
@@ -107,6 +109,9 @@ type Params = {
   origin?: string;
   direction?: string;
   only_foreign?: string;
+  wh_type?: string;
+  wh_status?: string;
+  missing_cert?: string;
 };
 
 /** Monedas del catálogo (Configuración → Monedas y tasas), incluidas las inactivas: puede haber documentos en ellas. */
@@ -177,6 +182,7 @@ export default async function ReportsPage({
         {activeReport === "flujo-categoria" && <CashflowByCategoryReport params={params} />}
         {activeReport === "gastos-categoria" && <ExpensesByCategoryReport params={params} />}
         {activeReport === "por-moneda" && <PaymentsByCurrencyReport params={params} />}
+        {activeReport === "retenciones-clientes" && <CustomerWithholdingsReport params={params} />}
       </section>
     </main>
   );
@@ -1469,3 +1475,213 @@ async function PaymentsByCurrencyReport({ params }: { params: Params }) {
   );
 }
 
+
+
+type WithholdingRow = Awaited<ReturnType<typeof getCustomerWithholdingsReport>>["rows"][number];
+const WH_TYPE_LABELS: Record<string, string> = { ITBIS: "ITBIS", ISR: "ISR", OTRO: "Otra" };
+
+async function CustomerWithholdingsReport({ params }: { params: Params }) {
+  const onlyMissingCert = params.missing_cert === "1";
+  const [report, clients] = await Promise.all([
+    getCustomerWithholdingsReport({
+      from: params.from,
+      to: params.to,
+      clientId: params.client_id,
+      type: params.wh_type,
+      status: params.wh_status,
+      onlyMissingCert,
+    }),
+    listClientsForFilter(),
+  ]);
+  const { rows, summary } = report;
+
+  const columns: Column<WithholdingRow>[] = [
+    { header: "Fecha", accessor: (r) => <span className="whitespace-nowrap text-brand-muted">{formatDate(r.date)}</span> },
+    {
+      header: "Cliente / factura",
+      accessor: (r) => (
+        <span className="flex flex-col">
+          <span className="font-medium text-brand-text">{r.clientName}</span>
+          <Link href={`/invoices/${r.invoiceId}`} className="text-xs text-brand-accent hover:underline">
+            {r.invoiceNumber}
+          </Link>
+        </span>
+      ),
+    },
+    {
+      header: "Tipo",
+      accessor: (r) => <Badge tone={r.type === "ITBIS" ? "info" : r.type === "ISR" ? "warning" : "neutral"}>{WH_TYPE_LABELS[r.type] ?? r.type}</Badge>,
+    },
+    {
+      header: "Monto",
+      className: "text-right",
+      accessor: (r) => (
+        <span className={r.status === "VOIDED" ? "text-brand-muted line-through" : ""}>
+          <Money value={r.amount} currency={r.currency} strong />
+        </span>
+      ),
+    },
+    {
+      header: "Certificado",
+      accessor: (r) => (
+        <span className="flex flex-col text-xs">
+          {r.certificateNumber ? (
+            <span className="text-brand-text">n.º {r.certificateNumber}</span>
+          ) : r.hasDocument ? (
+            <span className="text-brand-text">Archivo adjunto</span>
+          ) : (
+            <span className="w-fit rounded-full bg-brand-warning-bg px-2 py-0.5 font-medium text-brand-warning">Sin certificado</span>
+          )}
+          {r.certificateAmount !== null && r.certificateCurrency && r.certificateCurrency !== r.currency && (
+            <span className="text-brand-muted">Certificado {formatMoney(r.certificateAmount, r.certificateCurrency)}</span>
+          )}
+        </span>
+      ),
+    },
+    {
+      header: "Cobro",
+      accessor: (r) => <span className="whitespace-nowrap text-xs text-brand-muted">{r.paymentDate ? formatDate(r.paymentDate) : "—"}</span>,
+    },
+    {
+      header: "Estado",
+      accessor: (r) =>
+        r.status === "VOIDED" ? (
+          <span className="flex flex-col text-xs">
+            <Badge tone="danger">Anulada</Badge>
+            {r.voidReason && <span className="mt-0.5 text-brand-muted">{r.voidReason}</span>}
+          </span>
+        ) : (
+          <Badge tone="success">Activa</Badge>
+        ),
+    },
+  ];
+
+  return (
+    <div>
+      <ReportTitle
+        title="Retenciones de clientes"
+        description="Lo que los clientes retuvieron al pagar las facturas (ISR, ITBIS u otras). Rebaja el saldo de la factura pero no entra al banco: el cliente lo paga a la DGII y entrega un certificado."
+      />
+      <FilterBar report="retenciones-clientes">
+        <DateRangeFields from={params.from} to={params.to} />
+        <Select label="Cliente" name="client_id" defaultValue={params.client_id ?? ""}>
+          <option value="">Todos</option>
+          {clients.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </Select>
+        <Select label="Tipo" name="wh_type" defaultValue={params.wh_type ?? ""}>
+          <option value="">Todos</option>
+          <option value="ITBIS">ITBIS</option>
+          <option value="ISR">ISR</option>
+          <option value="OTRO">Otra</option>
+        </Select>
+        <Select label="Estado" name="wh_status" defaultValue={params.wh_status ?? ""}>
+          <option value="">Activas</option>
+          <option value="VOIDED">Anuladas</option>
+          <option value="all">Todas</option>
+        </Select>
+        <label className="flex items-center gap-2 pb-2 text-sm text-brand-text">
+          <input type="checkbox" name="missing_cert" value="1" defaultChecked={onlyMissingCert} />
+          Solo sin certificado
+        </label>
+      </FilterBar>
+
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {summary.byType.length === 0 ? (
+          <StatCard label="Retenciones" value="—" icon={<Receipt size={18} />} />
+        ) : (
+          summary.byType.map((t) => (
+            <StatCard
+              key={`${t.type}-${t.currency}`}
+              label={`${WH_TYPE_LABELS[t.type] ?? t.type} retenido (${t.currency})`}
+              value={formatMoney(t.total, t.currency)}
+              icon={<Receipt size={18} />}
+              tone={t.type === "ITBIS" ? "blue" : "amber"}
+            />
+          ))
+        )}
+        {summary.certificates.map((c) => (
+          <StatCard
+            key={`cert-${c.currency}`}
+            label={`Según certificados (${c.currency})`}
+            value={formatMoney(c.total, c.currency)}
+            icon={<FileCheck2 size={18} />}
+            tone="violet"
+            hint="Montos de los certificados de la DGII, en pesos."
+          />
+        ))}
+        <StatCard
+          label="Sin certificado"
+          value={String(summary.missingCert)}
+          icon={<FileWarning size={18} />}
+          tone={summary.missingCert > 0 ? "amber" : "green"}
+          valueTone={summary.missingCert > 0 ? "warning" : undefined}
+          hint="Retenciones activas sin número ni archivo del certificado."
+        />
+      </div>
+
+      {report.receivedVsApplied.length > 0 && (
+        <Card className="mb-5">
+          <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-brand-text">
+            Recibido en banco vs aplicado
+            <InfoHint text="De los cobros del período: dinero que entró al banco, retenciones y el total que rebajó las facturas, en la moneda de cada factura." />
+          </p>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-brand-muted">
+                <th className="py-1 font-medium">Moneda</th>
+                <th className="py-1 text-right font-medium">Recibido en banco</th>
+                <th className="py-1 text-right font-medium">Retenciones</th>
+                <th className="py-1 text-right font-medium">Aplicado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.receivedVsApplied.map((r) => (
+                <tr key={r.currency} className="border-t border-brand-border">
+                  <td className="py-1.5">{r.currency}</td>
+                  <td className="py-1.5 text-right"><Money value={r.received} currency={r.currency} /></td>
+                  <td className="py-1.5 text-right"><Money value={r.withheld} currency={r.currency} /></td>
+                  <td className="py-1.5 text-right"><Money value={r.applied} currency={r.currency} strong /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )}
+
+      {summary.byClient.length > 1 && (
+        <Card className="mb-5">
+          <p className="mb-2 text-sm font-semibold text-brand-text">Por cliente</p>
+          <ul className="flex flex-col gap-1 text-sm">
+            {summary.byClient.map((c) => (
+              <li key={`${c.client}-${c.currency}`} className="flex justify-between gap-3">
+                <span className="text-brand-text">
+                  {c.client} <span className="text-xs text-brand-muted">({c.count})</span>
+                </span>
+                <Money value={c.total} currency={c.currency} strong />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {rows.length === 0 ? (
+        hasReportFilters(params) ? (
+          <NoResults what="retenciones" clearHref="/reports?report=retenciones-clientes" />
+        ) : (
+          <Card>
+            <p className="text-sm text-brand-muted">
+              Todavía no hay retenciones de clientes. Se registran en la factura → Registrar cobro → ¿El cliente realizó
+              retenciones? Sí.
+            </p>
+          </Card>
+        )
+      ) : (
+        <DataTable columns={columns} rows={rows} keyFor={(r) => r.id} maxWidth="max-w-none" />
+      )}
+    </div>
+  );
+}

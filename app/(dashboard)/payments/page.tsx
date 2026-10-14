@@ -92,7 +92,18 @@ export default async function PaymentsPage({
       header: "Monto",
       className: "text-right",
       accessor: (p) => (
-        <span className="whitespace-nowrap font-medium tabular-nums text-brand-success">+{formatMoney(p.amount)}</span>
+        <span className="flex flex-col items-end">
+          {Number(p.amount) > 0 ? (
+            <span className="whitespace-nowrap font-medium tabular-nums text-brand-success">+{formatMoney(p.amount)}</span>
+          ) : (
+            <span className="text-xs text-brand-muted">Solo retención</span>
+          )}
+          {Number(p.withholding_total) > 0 && (
+            <span className="whitespace-nowrap text-xs text-brand-muted">
+              + retenciones {formatMoney(Number(p.withholding_total))}
+            </span>
+          )}
+        </span>
       ),
     },
   ];

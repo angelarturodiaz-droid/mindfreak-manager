@@ -5,6 +5,7 @@ import {
   type PaymentFxRow,
   type RawFxPayment,
 } from "./payments-by-currency";
+import { receivedVsApplied, summarizeWithholdings, type WithholdingReportRow } from "./customer-withholdings";
 
 // ---- Catálogos para los selects de filtro ----
 
@@ -598,7 +599,8 @@ export async function getPaymentsByCurrencyReport(filters: PaymentsByCurrencyFil
 
   const fetchCobros = async () => {
     if (!wantCobros) return { data: [] as unknown[], error: null };
-    let q = supabase.from("customer_payments").select(`${FX_COLUMNS}, invoice_id, invoices(number), clients(name)`);
+    // Solo cobros con dinero (un cobro solo de retención no movió el banco).
+    let q = supabase.from("customer_payments").select(`${FX_COLUMNS}, invoice_id, invoices(number), clients(name)`).gt("amount", 0);
     if (filters.from) q = q.gte("payment_date", filters.from);
     if (filters.to) q = q.lte("payment_date", filters.to);
     if (filters.bankAccountId) q = q.eq("bank_account_id", filters.bankAccountId);
@@ -646,4 +648,74 @@ export async function getPaymentsByCurrencyReport(filters: PaymentsByCurrencyFil
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
   return { rows, summary: summarizePaymentsByCurrency(rows), functionalCurrency: functional };
+}
+
+// ---- Retenciones de clientes (migración 083) ----
+
+export async function getCustomerWithholdingsReport(filters: {
+  from?: string;
+  to?: string;
+  clientId?: string;
+  type?: string;
+  status?: string;
+  onlyMissingCert?: boolean;
+}) {
+  const supabase = await createClient();
+  let q = supabase
+    .from("customer_payment_withholdings")
+    .select(
+      "id, withholding_date, withholding_type, amount, currency, certificate_amount, certificate_currency, certificate_number, document_id, status, void_reason, invoice_id, client_id, invoices(number), clients(name), customer_payments(payment_date)",
+    )
+    .order("withholding_date", { ascending: false })
+    .order("created_at", { ascending: false });
+  if (filters.from) q = q.gte("withholding_date", filters.from);
+  if (filters.to) q = q.lte("withholding_date", filters.to);
+  if (filters.clientId) q = q.eq("client_id", filters.clientId);
+  if (filters.type) q = q.eq("withholding_type", filters.type);
+  // Activas por defecto; "all" = también las anuladas.
+  if (filters.status !== "all") q = q.eq("status", filters.status === "VOIDED" ? "VOIDED" : "ACTIVE");
+  if (filters.onlyMissingCert) q = q.is("certificate_number", null).is("document_id", null);
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+
+  type One<T> = T | T[] | null;
+  const one = <T,>(v: One<T>) => (Array.isArray(v) ? v[0] ?? null : v);
+  const rows: WithholdingReportRow[] = (data ?? []).map((w) => ({
+    id: w.id,
+    date: w.withholding_date,
+    type: w.withholding_type,
+    amount: Number(w.amount),
+    currency: w.currency,
+    certificateAmount: w.certificate_amount === null ? null : Number(w.certificate_amount),
+    certificateCurrency: w.certificate_currency,
+    certificateNumber: w.certificate_number,
+    hasDocument: Boolean(w.document_id),
+    status: w.status,
+    voidReason: w.void_reason,
+    invoiceId: w.invoice_id,
+    invoiceNumber: one(w.invoices as One<{ number: string }>)?.number ?? "—",
+    clientId: w.client_id,
+    clientName: one(w.clients as One<{ name: string }>)?.name ?? "—",
+    paymentDate: one(w.customer_payments as One<{ payment_date: string }>)?.payment_date ?? null,
+  }));
+
+  // Recibido en banco vs aplicado en el mismo período (fecha del cobro).
+  let pq = supabase.from("customer_payments").select("currency, amount, withholding_total");
+  if (filters.from) pq = pq.gte("payment_date", filters.from);
+  if (filters.to) pq = pq.lte("payment_date", filters.to);
+  if (filters.clientId) pq = pq.eq("client_id", filters.clientId);
+  const { data: payments, error: pError } = await pq;
+  if (pError) throw new Error(pError.message);
+
+  return {
+    rows,
+    summary: summarizeWithholdings(rows),
+    receivedVsApplied: receivedVsApplied(
+      (payments ?? []).map((p) => ({
+        currency: p.currency,
+        amount: Number(p.amount),
+        withholding_total: Number(p.withholding_total),
+      })),
+    ),
+  };
 }

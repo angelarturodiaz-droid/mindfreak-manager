@@ -61,6 +61,7 @@ import { Chip, SectionHeader } from "@/components/ui/page-kit";
 import { relationName, relationRow } from "@/lib/utils/relation";
 import { dueLabel, formatDate, formatDateTime } from "@/lib/utils/dates";
 import { DownloadReceiptButton } from "@/components/payments/download-receipt-button";
+import { WithholdingList, type WithholdingItem } from "@/components/payments/withholding-list";
 
 const COLLECTION_ACTION_LABELS: Record<string, string> = {
   CALL: "Llamada",
@@ -130,6 +131,8 @@ export default async function InvoiceDetailPage({
       // Saldo de las cuentas (informativo en Registrar cobro).
       getAccountFunds(),
     ]);
+  // Anular retenciones del cliente (migración 083).
+  const canVoid = await hasPermission("payments.void");
 
   const clientData = invoice.clients as { name: string } | { name: string }[] | null;
   const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
@@ -193,13 +196,45 @@ export default async function InvoiceDetailPage({
     },
   ];
 
+  // Hay retenciones (activas o anuladas) en algún cobro: columnas Recibido / Retenciones / Aplicado.
+  const hasWithholdings = payments.some((p) => (p.customer_payment_withholdings ?? []).length > 0);
   const paymentColumns: Column<PaymentRow>[] = [
     { header: "Fecha", accessor: (p) => <RegisteredDate date={p.payment_date} createdAt={p.created_at} className="text-brand-text" /> },
     {
-      header: "Monto",
+      header: hasWithholdings ? "Recibido" : "Monto",
       className: "text-right",
-      accessor: (p) => <span className="font-medium tabular-nums text-brand-success">{formatMoney(p.amount, invoice.currency)}</span>,
+      accessor: (p) =>
+        Number(p.amount) > 0 ? (
+          <span className="font-medium tabular-nums text-brand-success">{formatMoney(p.amount, invoice.currency)}</span>
+        ) : (
+          <span className="text-xs text-brand-muted">Solo retención</span>
+        ),
     },
+    ...(hasWithholdings
+      ? [
+          {
+            header: "Retenciones",
+            accessor: (p: PaymentRow) => (
+              <WithholdingList
+                items={(p.customer_payment_withholdings ?? []) as WithholdingItem[]}
+                invoiceId={invoice.id}
+                functionalCurrency={fxContext.functionalCurrency}
+                canEdit={canPay}
+                canVoid={canVoid && invoice.status !== "CANCELLED"}
+              />
+            ),
+          },
+          {
+            header: "Aplicado",
+            className: "text-right",
+            accessor: (p: PaymentRow) => (
+              <span className="font-semibold tabular-nums text-brand-text">
+                {formatMoney(Number(p.amount_applied ?? p.amount), invoice.currency)}
+              </span>
+            ),
+          } as Column<PaymentRow>,
+        ]
+      : []),
     {
       // Multimoneda V5: cobro recibido en una cuenta en otra moneda (o con comisión).
       header: "Entró al banco",
@@ -524,7 +559,16 @@ export default async function InvoiceDetailPage({
           },
           { label: "Impuesto", value: formatMoney(invoice.tax, invoice.currency) },
           { label: "Total", value: formatMoney(invoice.total, invoice.currency), tone: "strong" as const },
-          { label: "Pagado", value: formatMoney(invoice.paid_amount, invoice.currency), tone: "success" as const },
+          {
+            label: "Aplicado",
+            value: formatMoney(invoice.paid_amount, invoice.currency),
+            tone: "success" as const,
+            info: "Lo que ya rebajó el saldo: dinero recibido en banco + retenciones del cliente.",
+            note:
+              Number(invoice.withholding_total) > 0
+                ? `Recibido ${formatMoney(invoice.paid_amount - Number(invoice.withholding_total), invoice.currency)} · Retenciones ${formatMoney(Number(invoice.withholding_total), invoice.currency)}`
+                : undefined,
+          },
           {
             label: "Balance pendiente",
             value: formatMoney(invoice.balance, invoice.currency),
@@ -539,7 +583,7 @@ export default async function InvoiceDetailPage({
         progress={
           invoice.status === "DRAFT" || invoice.status === "CANCELLED"
             ? undefined
-            : { pct: paidPct, label: `${Math.round(paidPct)} % cobrado`, danger: overdueNow }
+            : { pct: paidPct, label: `${Math.round(paidPct)} % aplicado`, danger: overdueNow }
         }
       />
 
@@ -600,6 +644,7 @@ export default async function InvoiceDetailPage({
                       categories={categories}
                       fxContext={fxContext}
                       funds={funds}
+                      invoiceRate={Number(invoice.exchange_rate) || 1}
                     />
                   )}
                 </Card>

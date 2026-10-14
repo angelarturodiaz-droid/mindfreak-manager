@@ -1,5 +1,53 @@
 # CHANGELOG — Mindfreak Manager
 
+## Retenciones de clientes al cobrar (2026-10-13)
+
+- Propuesta `claude/propuesta-retenciones-clientes.md` (decisiones del 5-oct,
+  revisión final del 13-oct). **Migración 083** (`083_customer_withholdings.sql`,
+  aplicada y probada en la base con 10 casos dentro de una transacción
+  revertida):
+  - Tabla `customer_payment_withholdings` (tipo ISR/ITBIS/OTRO, monto en la
+    moneda de la factura, `certificate_amount`/`certificate_currency` en RD$,
+    certificado, documento, estado ACTIVE/VOIDED con motivo). RLS de lectura
+    igual que cobros; sin escritura directa.
+  - `customer_payments.withholding_total` y `amount_applied` (calculada =
+    dinero + retenciones); `amount` sigue siendo solo el dinero.
+    `invoices.withholding_total`; `paid_amount` = total aplicado.
+  - `register_customer_payment` con `p_withholdings` (la anterior queda como
+    `register_customer_payment_old_077`): recibido ≥ 0, recibido +
+    retenciones ≤ saldo, ITBIS retenido ≤ ITBIS de la factura, ISR ≤ base;
+    recibido 0 = solo retención, sin cuenta ni movimiento de banco. El
+    banco se mueve solo con el dinero; en moneda diferente la tasa efectiva
+    y la diferencia usan solo el dinero.
+  - `update_customer_withholding_support` (certificado después) y
+    `void_customer_withholding` (anular con motivo, permiso nuevo
+    `payments.void` para ADMIN y FINANCE; no toca el banco).
+- **Registrar cobro**: pregunta *¿El cliente realizó retenciones?*, filas
+  (`components/payments/customer-withholdings-fields.tsx`), *Recibido en
+  banco* que se ajusta solo (saldo − retenciones), resumen *Recibido +
+  Retenciones = Total aplicado → saldo después* (rojo si se pasa). Factura
+  en otra moneda: *Monto del certificado (RD$)* ÷ tasa de la factura
+  (editable). Recibido 0: no pide cuenta, botón *Aplicar retención*.
+- **Factura**: franja de montos *Aplicado* (antes *Pagado*) con desglose;
+  cobros con columnas Recibido / Retenciones / Aplicado; retención con
+  *Sin certificado*, *Agregar certificado* (número, RD$, PDF o foto en los
+  documentos de la factura), *Ver certificado* y *Anular*
+  (`components/payments/withholding-list.tsx`). PDF: *Aplicado* (+ "incluye
+  retenciones").
+- **Recibo de cobro**: *Recibido en banco*, retenciones (una línea cada una,
+  anuladas tachadas), *Total aplicado* y saldo después de ese cobro (ahora
+  cuenta lo aplicado de los cobros posteriores). Solo retención:
+  *Constancia de retención aplicada*, sin "Depositado en".
+- **Reporte nuevo** *Retenciones de clientes* (Cobros): totales por tipo,
+  según certificados (RD$), sin certificado, recibido en banco vs aplicado,
+  por cliente; filtros de fechas, cliente, tipo, estado y solo sin
+  certificado. *Pagos y cobros por moneda* ignora los cobros solo de
+  retención. *Cobros y pagos* muestra "Solo retención" y "+ retenciones".
+- Pruebas: `tests/unit/customer-withholdings.test.ts` (110 en total). No
+  toca el motor fiscal de proveedores, `net_payable`, `fiscal_snapshot` ni
+  anticipos.
+
+
 ## Saldo de la cuenta al registrar un cobro (2026-10-13)
 
 - Prueba BA: el usuario esperaba ver el saldo de la cuenta al cobrar, como

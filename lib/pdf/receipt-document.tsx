@@ -41,6 +41,20 @@ export type ReceiptPdfData = {
     method: string;
     reference: string | null;
     currency: string;
+    /** Retenciones del cliente (migración 083). */
+    withholding_total?: number | null;
+    amount_applied?: number | null;
+    customer_payment_withholdings?: {
+      withholding_type: string;
+      amount: number;
+      currency: string;
+      certificate_amount: number | null;
+      certificate_currency: string | null;
+      certificate_number: string | null;
+      status: string;
+      voided_at: string | null;
+      void_reason: string | null;
+    }[] | null;
   };
   invoice: { number: string; balance: number };
   client: { name: string; tax_id: string | null; email: string | null; phone: string | null };
@@ -58,6 +72,12 @@ export function ReceiptPdfDocument({
   const accent = company.brand_accent || "#17a6b8";
   const accentLight = tintWithWhite(accent, 0.9);
   const receiptNumber = `REC-${payment.id.slice(0, 8).toUpperCase()}`;
+  const withholdings = payment.customer_payment_withholdings ?? [];
+  const hasWithholdings = withholdings.length > 0;
+  // Cobro solo con retención (no entró dinero): constancia, sin "Depositado en".
+  const onlyWithholding = Number(payment.amount) <= 0 && hasWithholdings;
+  const docTitle = onlyWithholding ? "CONSTANCIA DE RETENCIÓN APLICADA" : "RECIBO DE COBRO";
+  const WH_LABEL: Record<string, string> = { ITBIS: "ITBIS", ISR: "ISR", OTRO: "Otra" };
 
   registerPdfFonts();
 
@@ -125,6 +145,19 @@ export function ReceiptPdfDocument({
     },
     amountLabel: { fontSize: 9, color: "#374151", marginBottom: 4, letterSpacing: 0.5 },
     amountValue: { fontSize: 22, fontWeight: 700, color: accent },
+    whBox: { marginTop: 12 },
+    whRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingVertical: 3,
+      borderBottomWidth: 0.5,
+      borderBottomColor: "#e5e7eb",
+    },
+    whLabel: { fontSize: 8.5, color: "#374151", flex: 1, paddingRight: 8 },
+    whValue: { fontSize: 8.5, fontWeight: 700 },
+    whVoided: { color: "#9ca3af", textDecoration: "line-through" },
+    whTotal: { borderBottomWidth: 0, marginTop: 2 },
+    whTotalLabel: { fontSize: 9, fontWeight: 700, color: dark },
     grandTotalRow: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -158,10 +191,10 @@ export function ReceiptPdfDocument({
               </View>
             )}
             <Text style={styles.companyName}>{company.name}</Text>
-            <Text style={styles.docPill}>RECIBO DE COBRO</Text>
+            <Text style={styles.docPill}>{docTitle}</Text>
           </View>
           <View>
-            <Text style={styles.docType}>RECIBO DE COBRO</Text>
+            <Text style={styles.docType}>{docTitle}</Text>
             <View style={styles.metaRow}>
               <Text style={styles.metaLabel}>No. RECIBO</Text>
               <Text style={styles.metaValue}>{receiptNumber}</Text>
@@ -212,14 +245,16 @@ export function ReceiptPdfDocument({
                   {PAYMENT_METHOD_LABELS[payment.method] ?? payment.method}
                 </Text>
               </View>
-              <View style={styles.fieldRow}>
-                <Text style={styles.fieldLabel}>Depositado en</Text>
-                <Text style={styles.fieldValue}>
-                  {bankAccount
-                    ? `${bankAccount.name}${bankAccount.bank_name ? ` (${bankAccount.bank_name})` : ""}`
-                    : ""}
-                </Text>
-              </View>
+              {!onlyWithholding && (
+                <View style={styles.fieldRow}>
+                  <Text style={styles.fieldLabel}>Depositado en</Text>
+                  <Text style={styles.fieldValue}>
+                    {bankAccount
+                      ? `${bankAccount.name}${bankAccount.bank_name ? ` (${bankAccount.bank_name})` : ""}`
+                      : ""}
+                  </Text>
+                </View>
+              )}
               <View style={styles.fieldRow}>
                 <Text style={styles.fieldLabel}>Referencia</Text>
                 <Text style={styles.fieldValue}>{payment.reference ?? ""}</Text>
@@ -228,12 +263,46 @@ export function ReceiptPdfDocument({
           </View>
 
           <View style={styles.amountBox}>
-            <Text style={styles.amountLabel}>MONTO RECIBIDO</Text>
-            <Text style={styles.amountValue}>{money(payment.amount, payment.currency)}</Text>
+            <Text style={styles.amountLabel}>
+              {onlyWithholding ? "RETENCIÓN APLICADA" : hasWithholdings ? "RECIBIDO EN BANCO" : "MONTO RECIBIDO"}
+            </Text>
+            <Text style={styles.amountValue}>
+              {money(onlyWithholding ? Number(payment.withholding_total ?? 0) : payment.amount, payment.currency)}
+            </Text>
           </View>
 
+          {hasWithholdings && (
+            <View style={styles.whBox}>
+              <Text style={styles.sectionTitle}>RETENCIONES DEL CLIENTE</Text>
+              {withholdings.map((w, i) => {
+                const voided = w.status === "VOIDED";
+                return (
+                  <View key={i} style={styles.whRow}>
+                    <Text style={[styles.whLabel, voided ? styles.whVoided : {}]}>
+                      Retención {WH_LABEL[w.withholding_type] ?? w.withholding_type}
+                      {w.certificate_number ? ` (cert. ${w.certificate_number})` : ""}
+                      {w.certificate_amount && w.certificate_currency && w.certificate_currency !== w.currency
+                        ? ` · certificado ${money(Number(w.certificate_amount), w.certificate_currency)}`
+                        : ""}
+                      {voided ? ` — anulada${w.voided_at ? ` el ${w.voided_at.slice(0, 10)}` : ""}${w.void_reason ? `: ${w.void_reason}` : ""}` : ""}
+                    </Text>
+                    <Text style={[styles.whValue, voided ? styles.whVoided : {}]}>{money(Number(w.amount), w.currency)}</Text>
+                  </View>
+                );
+              })}
+              <View style={[styles.whRow, styles.whTotal]}>
+                <Text style={styles.whTotalLabel}>TOTAL APLICADO A LA FACTURA</Text>
+                <Text style={styles.whTotalLabel}>
+                  {money(Number(payment.amount_applied ?? Number(payment.amount) + Number(payment.withholding_total ?? 0)), payment.currency)}
+                </Text>
+              </View>
+            </View>
+          )}
+
           <View style={styles.grandTotalRow}>
-            <Text style={styles.grandTotalLabel}>BALANCE PENDIENTE DE LA FACTURA</Text>
+            <Text style={styles.grandTotalLabel}>
+              {hasWithholdings ? "SALDO DE LA FACTURA DESPUÉS DE ESTE COBRO" : "BALANCE PENDIENTE DE LA FACTURA"}
+            </Text>
             <Text style={styles.grandTotalValue}>
               {money(invoice.balance, payment.currency)}
             </Text>

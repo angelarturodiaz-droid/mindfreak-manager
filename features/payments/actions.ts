@@ -3,7 +3,19 @@
 import { revalidatePath } from "next/cache";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
-import { foreignPaymentErrorState, foreignPaymentRpcParams, parseForeignPayment, registerPaymentSchema } from "./schema";
+import {
+  customerPaymentSchema,
+  foreignPaymentErrorState,
+  foreignPaymentRpcParams,
+  parseForeignPayment,
+  registerPaymentSchema,
+} from "./schema";
+import {
+  parseWithholdings,
+  withholdingErrorMessage,
+  withholdingsRpcParam,
+  WITHHOLDING_TYPE_LABELS,
+} from "./withholdings";
 import type { ReceiptPdfData } from "@/lib/pdf/receipt-document";
 import { bankRuleState, overdraftConfirmed, type MoneyActionState } from "@/lib/utils/bank-errors";
 import { formatMoney } from "@/lib/utils/money";
@@ -29,7 +41,7 @@ export async function registerPaymentAction(
 ): Promise<ActionState> {
   await requirePermission("payments.create"); // capa de aplicación; la función RPC también lo exige
 
-  const parsed = registerPaymentSchema.safeParse({
+  const parsed = customerPaymentSchema.safeParse({
     bank_account_id: String(formData.get("bank_account_id") ?? ""),
     payment_date: String(formData.get("payment_date") ?? ""),
     amount: String(formData.get("amount") ?? "0"),
@@ -40,6 +52,17 @@ export async function registerPaymentAction(
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+  }
+  // Retenciones del cliente (migración 083): llegan como JSON del formulario.
+  const wh = formData.get("has_withholdings") === "1" ? parseWithholdings(String(formData.get("withholdings") ?? "")) : parseWithholdings(null);
+  if (!wh.success) return { error: wh.error.issues[0]?.message ?? "Revisa las retenciones." };
+  const withholdings = wh.data;
+  const received = parsed.data.amount;
+  if (received <= 0 && withholdings.length === 0) {
+    return { error: "Escribe el monto recibido en banco (o agrega la retención del cliente)." };
+  }
+  if (received > 0 && !parsed.data.bank_account_id) {
+    return { error: "Elige la cuenta donde entró el dinero." };
   }
 
   const companyIds = await getCurrentUserCompanyIds();
@@ -67,9 +90,10 @@ export async function registerPaymentAction(
     p_client_id: clientId,
     p_invoice_id: invoiceId,
     p_project_id: projectId,
-    p_bank_account_id: parsed.data.bank_account_id,
+    // Solo retención (recibido 0): sin cuenta ni movimiento de banco.
+    p_bank_account_id: received > 0 ? parsed.data.bank_account_id || null : null,
     p_payment_date: parsed.data.payment_date,
-    p_amount: parsed.data.amount,
+    p_amount: received,
     p_method: parsed.data.method,
     p_reference: parsed.data.reference || null,
     p_currency: invoice.currency,
@@ -77,19 +101,27 @@ export async function registerPaymentAction(
     p_notes: parsed.data.notes || null,
     // Vacío = null: la base de datos pone "Cobro de factura" automáticamente.
     p_category_id: parsed.data.category_id || null,
-    ...foreignPaymentRpcParams(fx.data),
+    ...(received > 0 ? foreignPaymentRpcParams(fx.data) : {}),
+    p_withholdings: withholdingsRpcParam(withholdings),
   });
 
   if (error) {
     const fxState = foreignPaymentErrorState(error.message, "COBRO");
     if (fxState) return fxState;
+    const whMessage = withholdingErrorMessage(error.message);
+    if (whMessage) return { error: whMessage };
     // Traducir los errores conocidos de la función a mensajes claros
     if (error.message.includes("amount_exceeds_balance")) {
       return {
         error: null,
         blockedTitle: "Monto mayor a lo pendiente",
-        blocked: "El monto que escribiste es mayor a lo que falta por cobrar de esta factura. Revisa el monto e inténtalo de nuevo.",
+        blocked: withholdings.length
+          ? "El dinero recibido más las retenciones supera lo que falta por cobrar de esta factura. Revisa los montos e inténtalo de nuevo."
+          : "El monto que escribiste es mayor a lo que falta por cobrar de esta factura. Revisa el monto e inténtalo de nuevo.",
       };
+    }
+    if (error.message.includes("bank_account_required")) {
+      return { error: "Elige la cuenta donde entró el dinero." };
     }
     if (error.message.includes("invalid_status")) {
       return { error: "Esta factura no admite cobros en su estado actual." };
@@ -114,16 +146,30 @@ export async function registerPaymentAction(
   revalidatePath("/invoices");
   revalidatePath("/payments");
 
+  const whTotal = Math.round(withholdings.reduce((a, w) => a + w.amount, 0) * 100) / 100;
+  const whText = whTotal
+    ? `${received > 0 ? " y " : ""}retenciones del cliente por ${formatMoney(whTotal, invoice.currency)} (${withholdings
+        .map((w) => WITHHOLDING_TYPE_LABELS[w.type])
+        .join(", ")})`
+    : "";
+  if (received <= 0) {
+    return {
+      error: null,
+      successTitle: "Retención aplicada",
+      success: `Se aplicaron ${whText.trim()} a la factura. No entró dinero al banco.`,
+      successId: Date.now(),
+    };
+  }
   const { data: account } = await supabase
     .from("bank_accounts")
     .select("name, currency")
-    .eq("id", parsed.data.bank_account_id)
+    .eq("id", parsed.data.bank_account_id!)
     .single();
   const foreign = account && account.currency !== invoice.currency && fx.data.account_amount;
   return {
     error: null,
     successTitle: "Cobro registrado",
-    success: `Se registró el cobro de ${formatMoney(parsed.data.amount, invoice.currency)}${
+    success: `Se registró el cobro de ${formatMoney(received, invoice.currency)}${
       account ? ` en ${account.name}` : ""
     }${
       foreign
@@ -131,7 +177,7 @@ export async function registerPaymentAction(
             fx.data.bank_fee ? `; comisión del banco ${formatMoney(fx.data.bank_fee, account.currency)} registrada aparte` : ""
           })`
         : ""
-    }. Ya se ve en la factura y en Bancos.`,
+    }${whText}. Ya se ve en la factura y en Bancos.`,
     successId: Date.now(),
   };
 }
@@ -266,12 +312,13 @@ async function getPrimaryCompanyId(): Promise<string> {
  * comprobante de un pago parcial sigue diciendo lo que faltaba en ese
  * momento, aunque luego se haya pagado el resto.
  */
-type PaymentRow = { id: string; amount: number; payment_date: string; created_at: string };
+type PaymentRow = { id: string; amount: number; amount_applied?: number | null; payment_date: string; created_at: string };
 function balanceAfterPayment(currentBalance: number, rows: PaymentRow[], paymentId: string) {
   const key = (r: PaymentRow) => `${r.payment_date}|${r.created_at}|${r.id}`;
   const me = rows.find((r) => r.id === paymentId);
   if (!me) return currentBalance;
-  const later = rows.filter((r) => key(r) > key(me)).reduce((a, r) => a + Number(r.amount), 0);
+  // Lo que rebajó el saldo cada cobro posterior: dinero + retenciones activas.
+  const later = rows.filter((r) => key(r) > key(me)).reduce((a, r) => a + Number(r.amount_applied ?? r.amount), 0);
   return Math.round((currentBalance + later) * 100) / 100;
 }
 
@@ -287,7 +334,7 @@ export async function getPaymentReceiptDataAction(
     supabase
       .from("customer_payments")
       .select(
-        "id, invoice_id, payment_date, amount, method, reference, currency, invoices(number, balance), clients(name, tax_id, email, phone), bank_accounts(name, bank_name)",
+        "id, invoice_id, payment_date, amount, withholding_total, amount_applied, method, reference, currency, invoices(number, balance), clients(name, tax_id, email, phone), bank_accounts(name, bank_name), customer_payment_withholdings(withholding_type, amount, currency, certificate_amount, certificate_currency, certificate_number, status, voided_at, void_reason)",
       )
       .eq("id", paymentId)
       .single(),
@@ -305,7 +352,7 @@ export async function getPaymentReceiptDataAction(
   const invoiceNow = Array.isArray(invoiceData) ? invoiceData[0] : invoiceData;
   const { data: invoicePayments } = await supabase
     .from("customer_payments")
-    .select("id, amount, payment_date, created_at")
+    .select("id, amount, amount_applied, payment_date, created_at")
     .eq("invoice_id", payment.invoice_id);
   const invoice = invoiceNow
     ? { ...invoiceNow, balance: balanceAfterPayment(Number(invoiceNow.balance), invoicePayments ?? [], payment.id) }
@@ -487,4 +534,118 @@ export async function uploadSupplierPaymentReceiptAction(
   }
 
   return { url: signed.signedUrl, error: null };
+}
+
+/**
+ * Retención del cliente — agregar el certificado después (número, monto en
+ * RD$ si la factura es en otra moneda, nota y el archivo). No toca montos:
+ * la base de datos (update_customer_withholding_support) lo audita.
+ */
+export async function updateWithholdingSupportAction(
+  withholdingId: string,
+  invoiceId: string,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requirePermission("payments.create");
+  const supabase = await createSupabaseClient();
+  const companyId = await getPrimaryCompanyId();
+
+  const certificateNumber = String(formData.get("certificate_number") ?? "").trim();
+  const notes = String(formData.get("notes") ?? "").trim();
+  const certRaw = String(formData.get("certificate_amount") ?? "").replace(/,/g, "").trim();
+  const certificateAmount = certRaw ? Number(certRaw) : null;
+  if (certificateAmount !== null && !(certificateAmount > 0)) {
+    return { error: "El monto del certificado debe ser mayor a 0." };
+  }
+
+  // Archivo del certificado (opcional): se guarda en Documentos de la factura.
+  let documentId: string | null = null;
+  const file = formData.get("file");
+  if (file instanceof File && file.size > 0) {
+    if (file.size > 15 * 1024 * 1024) return { error: "El archivo no puede superar 15MB." };
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${companyId}/invoice/${invoiceId}/${Date.now()}-retencion-${safeName}`;
+    const { error: upError } = await supabase.storage
+      .from("documents")
+      .upload(path, Buffer.from(await file.arrayBuffer()), { contentType: file.type || "application/octet-stream" });
+    if (upError) return { error: `No se pudo subir el archivo: ${upError.message}` };
+    const { data: doc, error: docError } = await supabase
+      .from("documents")
+      .insert({
+        company_id: companyId,
+        entity_type: "invoice",
+        entity_id: invoiceId,
+        file_name: `Certificado de retención — ${file.name}`,
+        storage_path: path,
+        mime_type: file.type || "application/octet-stream",
+        size_bytes: file.size,
+        uploaded_by: user?.id,
+      })
+      .select("id")
+      .single();
+    if (docError || !doc) {
+      await supabase.storage.from("documents").remove([path]);
+      return { error: docError?.message ?? "No se pudo guardar el archivo." };
+    }
+    documentId = doc.id;
+  }
+
+  if (!certificateNumber && !notes && certificateAmount === null && !documentId) {
+    return { error: "Escribe el número del certificado o adjunta el archivo." };
+  }
+
+  const { error } = await supabase.rpc("update_customer_withholding_support", {
+    p_withholding_id: withholdingId,
+    p_certificate_number: certificateNumber || null,
+    p_certificate_amount: certificateAmount,
+    p_reference: null,
+    p_notes: notes || null,
+    p_document_id: documentId,
+  });
+  if (error) {
+    if (error.message.includes("invalid_status")) return { error: "La retención está anulada." };
+    return { error: error.message };
+  }
+
+  revalidatePath(`/invoices/${invoiceId}`);
+  revalidatePath("/reports");
+  return { error: null, success: "Certificado guardado.", successId: Date.now() };
+}
+
+/**
+ * Anular una retención del cliente: motivo obligatorio, nunca se borra y no
+ * toca el banco. La factura vuelve a tener ese saldo por cobrar. Permiso
+ * payments.void (Administrador y Finanzas por defecto).
+ */
+export async function voidWithholdingAction(
+  withholdingId: string,
+  invoiceId: string,
+  reason: string,
+): Promise<{ error: string | null }> {
+  await requirePermission("payments.void");
+  const supabase = await createSupabaseClient();
+  const clean = reason.trim();
+  if (clean.length < 10) return { error: "Escribe el motivo de la anulación (mínimo 10 letras)." };
+  const { error } = await supabase.rpc("void_customer_withholding", {
+    p_withholding_id: withholdingId,
+    p_reason: clean,
+  });
+  if (error) {
+    if (error.message.includes("invalid_status")) {
+      const i = error.message.indexOf("invalid_status:");
+      return { error: `No se puede anular: ${error.message.slice(i + 15).trim()}.` };
+    }
+    if (error.message.includes("insufficient_privilege")) {
+      return { error: "No tienes permiso para anular retenciones." };
+    }
+    return { error: error.message };
+  }
+  revalidatePath(`/invoices/${invoiceId}`);
+  revalidatePath("/invoices");
+  revalidatePath("/reports");
+  return { error: null };
 }
