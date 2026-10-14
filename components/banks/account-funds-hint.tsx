@@ -91,15 +91,21 @@ export function AccountIncomingHint({
   funds,
   amount,
   amountCurrency,
+  bank,
 }: {
   funds: AccountFunds | undefined;
   amount?: number;
   amountCurrency?: string;
+  /** Cuenta en otra moneda: lo que se escribió en "¿Cuánto acreditó realmente el banco?" y la comisión. */
+  bank?: { amount: number; fee: number };
 }) {
   if (!funds) return null;
   const cur = funds.currency;
   const sameCurrency = !amountCurrency || amountCurrency === cur;
-  const after = sameCurrency && amount && amount > 0 ? Math.round((funds.balance + amount) * 100) / 100 : null;
+  // Misma moneda: entra el monto del cobro. Otra moneda: entra lo que el
+  // banco acreditó, menos la comisión (se registra aparte en la misma cuenta).
+  const incoming = sameCurrency ? (amount ?? 0) : bank ? bank.amount - bank.fee : 0;
+  const after = incoming > 0 ? Math.round((funds.balance + incoming) * 100) / 100 : null;
   return (
     <Box tone="info" icon={<Wallet size={14} />}>
       <span>
@@ -110,7 +116,14 @@ export function AccountIncomingHint({
           </>
         )}
       </span>
-      {!sameCurrency && <span>Sube con lo que entre al banco en {cur} (lo escribes abajo, en Cobro en moneda diferente).</span>}
+      {!sameCurrency &&
+        (after === null ? (
+          <span>Escribe abajo cuánto acreditó el banco en {cur} para ver cómo queda.</span>
+        ) : bank && bank.fee > 0 ? (
+          <span>
+            Entra {formatMoney(bank.amount, cur)} menos la comisión de {formatMoney(bank.fee, cur)}.
+          </span>
+        ) : null)}
     </Box>
   );
 }

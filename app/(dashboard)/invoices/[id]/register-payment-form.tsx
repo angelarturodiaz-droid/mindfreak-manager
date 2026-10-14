@@ -58,12 +58,15 @@ export function RegisterPaymentForm({
   const [accountId, setAccountId] = useState("");
   const [amount, setAmount] = useState(balance);
   const [paymentDate, setPaymentDate] = useState(todayISO());
+  // Cuenta en otra moneda: lo que el banco acreditó (para el saldo "quedará en").
+  const [bankIn, setBankIn] = useState<{ amount: number; fee: number }>({ amount: 0, fee: 0 });
   // Después de un cobro exitoso, o con "Cancelar", el formulario vuelve a empezar.
   const [seenKey, setSeenKey] = useState(formKey);
   const [resets, setResets] = useState(0);
   const [clearedState, setClearedState] = useState<ActionState | null>(null);
   function restart() {
     setAccountId("");
+    setBankIn({ amount: 0, fee: 0 });
     setAmount(balance);
     setPaymentDate(todayISO());
   }
@@ -121,13 +124,21 @@ export function RegisterPaymentForm({
           direction="in"
           documentCurrency={currency}
           value={accountId}
-          onChange={setAccountId}
+          onChange={(id) => {
+            setAccountId(id);
+            setBankIn({ amount: 0, fee: 0 });
+          }}
           label="Cuenta bancaria"
         />
         <Input label="Referencia" name="reference" placeholder="Opcional (ej. número de transferencia)" />
         {accountId && (
           <div className="sm:col-span-2">
-            <AccountIncomingHint funds={funds[accountId]} amount={amount} amountCurrency={currency} />
+            <AccountIncomingHint
+              funds={funds[accountId]}
+              amount={amount}
+              amountCurrency={currency}
+              bank={foreign ? bankIn : undefined}
+            />
           </div>
         )}
         {account && foreign && (
@@ -146,6 +157,7 @@ export function RegisterPaymentForm({
               tolerance={fxContext.tolerance}
               markMissing={shown.field === "fx"}
               missingKey={shown}
+              onBankChange={setBankIn}
             />
           </div>
         )}

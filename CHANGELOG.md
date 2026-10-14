@@ -7,6 +7,10 @@
   dinero entra): "Saldo actual de la cuenta: X → con este cobro quedará en
   Y"; cuenta en otra moneda: solo el saldo actual. `RegisterPaymentForm`
   recibe `funds` (`getAccountFunds`).
+- Ajuste (prueba BA-3b): en una cuenta de otra moneda el "quedará en" ahora
+  se calcula con lo que se escribe en *¿Cuánto acreditó realmente el
+  banco?* menos la comisión (`ForeignPaymentBlock` avisa con
+  `onBankChange`). Antes solo mostraba el saldo actual.
 
 
 ## Detalle de factura y cotización más ordenado + PDF de varias páginas (2026-10-12)

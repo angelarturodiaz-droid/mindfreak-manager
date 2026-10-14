@@ -43,6 +43,7 @@ export function ForeignPaymentBlock({
   tolerance,
   markMissing = false,
   missingKey,
+  onBankChange,
 }: {
   kind?: FxKind;
   documentCurrency: string;
@@ -60,6 +61,8 @@ export function ForeignPaymentBlock({
   markMissing?: boolean;
   /** Cambia con cada respuesta del servidor (el estado del formulario): cada error nuevo vuelve a llenar la tasa vacía. */
   missingKey?: unknown;
+  /** Avisa lo que se escribió que movió el banco y la comisión (ej. para el saldo "quedará en"). */
+  onBankChange?: (bank: { amount: number; fee: number }) => void;
 }) {
   const needAcc = accountCurrency !== functionalCurrency;
   const needDoc = needsDocumentRate({ documentCurrency, accountCurrency, functionalCurrency });
@@ -240,7 +243,10 @@ export function ForeignPaymentBlock({
           label={`¿Cuánto ${verb} realmente el banco? (${accountCurrency})`}
           name="account_amount"
           defaultValue={0}
-          onValueChange={setAccountAmount}
+          onValueChange={(v) => {
+            setAccountAmount(v);
+            onBankChange?.({ amount: v, fee });
+          }}
           className="w-52"
           error={amountMissing ? `${missing} Copia el monto del estado de cuenta.` : undefined}
           hint={
@@ -258,7 +264,10 @@ export function ForeignPaymentBlock({
           name="bank_fee"
           min={0}
           defaultValue={0}
-          onValueChange={setFee}
+          onValueChange={(v) => {
+            setFee(v);
+            onBankChange?.({ amount: accountAmount, fee: v });
+          }}
           className="w-52"
           hint={
             kind === "PAGO"
