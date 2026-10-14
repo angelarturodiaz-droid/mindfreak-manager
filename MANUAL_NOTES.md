@@ -64,6 +64,8 @@ parciales — la factura no cambia, pero cada abono genera su propio recibo.
   luego líneas). Derecha: tarjetas plegables con resumen de una línea.
 - Factura pagada: *Datos bancarios → Cobrada en: …* (cuentas reales de
   los cobros); las cuentas del PDF en la ⓘ.
+- Registrar cobro: al elegir la cuenta sale el saldo actual y cómo queda
+  después del cobro (informativo; en pagos de gastos sí avisa si no alcanza).
 - PDF: si las líneas no caben, sigue en otra página con el encabezado de
   la tabla repetido y *Página X de Y*; las líneas y los totales no se parten.
 

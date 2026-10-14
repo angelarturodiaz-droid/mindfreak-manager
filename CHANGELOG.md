@@ -1,5 +1,14 @@
 # CHANGELOG — Mindfreak Manager
 
+## Saldo de la cuenta al registrar un cobro (2026-10-13)
+
+- Prueba BA: el usuario esperaba ver el saldo de la cuenta al cobrar, como
+  al pagar un gasto. Nuevo `AccountIncomingHint` (solo informativo, el
+  dinero entra): "Saldo actual de la cuenta: X → con este cobro quedará en
+  Y"; cuenta en otra moneda: solo el saldo actual. `RegisterPaymentForm`
+  recibe `funds` (`getAccountFunds`).
+
+
 ## Detalle de factura y cotización más ordenado + PDF de varias páginas (2026-10-12)
 
 - **Siguiente paso** (`components/documents/doc-layout.tsx` → `NextStepBar`):

@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { todayISO } from "@/lib/utils/dates";
 import { formatMoney } from "@/lib/utils/money";
 import { AccountPicker } from "@/components/payments/account-picker";
+import { AccountIncomingHint } from "@/components/banks/account-funds-hint";
+import type { AccountFunds } from "@/features/banks/queries";
 import { FormSection, FormFooter } from "@/components/payments/form-section";
 import { CancelConfirm } from "@/components/payments/cancel-confirm";
 import { ForeignPaymentBlock, type RateHistory } from "@/components/payments/foreign-payment-block";
@@ -33,6 +35,7 @@ export function RegisterPaymentForm({
   bankAccounts,
   categories,
   fxContext,
+  funds = {},
 }: {
   invoiceId: string;
   clientId: string;
@@ -43,6 +46,8 @@ export function RegisterPaymentForm({
   categories: CategoryOption[];
   /** Moneda funcional, tolerancia y tasas de referencia (cobro en moneda diferente). */
   fxContext: { functionalCurrency: string; tolerance: number; rates: RateHistory };
+  /** Saldo de cada cuenta (solo informativo en el cobro). */
+  funds?: Record<string, AccountFunds>;
 }) {
   const registerWithIds = registerPaymentAction.bind(null, invoiceId, clientId, projectId);
   // Ventana verde al terminar, roja si el monto pasa de lo pendiente.
@@ -120,6 +125,11 @@ export function RegisterPaymentForm({
           label="Cuenta bancaria"
         />
         <Input label="Referencia" name="reference" placeholder="Opcional (ej. número de transferencia)" />
+        {accountId && (
+          <div className="sm:col-span-2">
+            <AccountIncomingHint funds={funds[accountId]} amount={amount} amountCurrency={currency} />
+          </div>
+        )}
         {account && foreign && (
           <div className="sm:col-span-2">
             <ForeignPaymentBlock

@@ -30,6 +30,7 @@ import {
   updateInvoiceBankDetailsAction,
 } from "@/features/invoices/actions";
 import { listBankDetailOptions } from "@/features/banks/bank-details-server";
+import { getAccountFunds } from "@/features/banks/queries";
 import { parseBankDetails } from "@/features/banks/bank-details";
 import { BankDetailsPicker } from "@/components/documents/bank-details-picker";
 import { NextStepBar, SideSection, TotalsStrip } from "@/components/documents/doc-layout";
@@ -107,7 +108,7 @@ export default async function InvoiceDetailPage({
   }
   if (!invoice) notFound();
 
-  const [items, services, canEdit, canPay, projectItems, payments, bankAccounts, paymentTerms, defaultTaxRate, companyUsers, collectionHistory, taxRates, categories, fxContext, bankDetailOptions] =
+  const [items, services, canEdit, canPay, projectItems, payments, bankAccounts, paymentTerms, defaultTaxRate, companyUsers, collectionHistory, taxRates, categories, fxContext, bankDetailOptions, funds] =
     await Promise.all([
       listInvoiceItems(id),
       listActiveServices(),
@@ -126,6 +127,8 @@ export default async function InvoiceDetailPage({
       getFxContext(),
       // Cuentas que se pueden poner en "Datos bancarios para el pago".
       listBankDetailOptions().catch(() => []),
+      // Saldo de las cuentas (informativo en Registrar cobro).
+      getAccountFunds(),
     ]);
 
   const clientData = invoice.clients as { name: string } | { name: string }[] | null;
@@ -596,6 +599,7 @@ export default async function InvoiceDetailPage({
                       bankAccounts={bankAccounts}
                       categories={categories}
                       fxContext={fxContext}
+                      funds={funds}
                     />
                   )}
                 </Card>

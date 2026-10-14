@@ -80,3 +80,37 @@ function Box({
     </div>
   );
 }
+
+/**
+ * Cobro (el dinero ENTRA): solo informativo, no hay nada que validar.
+ * Misma moneda: saldo actual → saldo después del cobro. Cuenta en otra
+ * moneda: solo el saldo actual (lo que entre se escribe en "Cobro en
+ * moneda diferente").
+ */
+export function AccountIncomingHint({
+  funds,
+  amount,
+  amountCurrency,
+}: {
+  funds: AccountFunds | undefined;
+  amount?: number;
+  amountCurrency?: string;
+}) {
+  if (!funds) return null;
+  const cur = funds.currency;
+  const sameCurrency = !amountCurrency || amountCurrency === cur;
+  const after = sameCurrency && amount && amount > 0 ? Math.round((funds.balance + amount) * 100) / 100 : null;
+  return (
+    <Box tone="info" icon={<Wallet size={14} />}>
+      <span>
+        Saldo actual de la cuenta: <strong>{formatMoney(funds.balance, cur)}</strong>
+        {after !== null && (
+          <>
+            {" "}→ con este cobro quedará en <strong>{formatMoney(after, cur)}</strong>
+          </>
+        )}
+      </span>
+      {!sameCurrency && <span>Sube con lo que entre al banco en {cur} (lo escribes abajo, en Cobro en moneda diferente).</span>}
+    </Box>
+  );
+}
