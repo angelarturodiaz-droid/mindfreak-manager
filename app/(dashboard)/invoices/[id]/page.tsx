@@ -274,19 +274,26 @@ export default async function InvoiceDetailPage({
         );
       },
     } as Column<PaymentRow>] : []),
-    { header: "Método", accessor: (p) => <span className="text-brand-muted">{PAYMENT_METHOD_LABELS[p.method] ?? p.method}</span> },
     {
-      header: "Banco",
+      // Cuenta, método y referencia juntos para que la tabla quepa sin barra de desplazamiento.
+      header: "Cuenta / método",
       accessor: (p) => {
         const account = p.bank_accounts as
           | { name: string; bank_name: string | null }
           | { name: string; bank_name: string | null }[]
           | null;
         const a = Array.isArray(account) ? account[0] : account;
-        return <span className="text-brand-muted">{a ? `${a.name}${a.bank_name ? ` (${a.bank_name})` : ""}` : "—"}</span>;
+        return (
+          <span className="flex flex-col text-xs">
+            <span className="whitespace-nowrap text-sm text-brand-text">{a ? a.name : "Sin banco"}</span>
+            <span className="text-brand-muted">
+              {PAYMENT_METHOD_LABELS[p.method] ?? p.method}
+              {p.reference ? ` · ${p.reference}` : ""}
+            </span>
+          </span>
+        );
       },
     },
-    { header: "Referencia", accessor: (p) => <span className="text-brand-muted">{p.reference || "—"}</span> },
     {
       header: "",
       className: "text-right",

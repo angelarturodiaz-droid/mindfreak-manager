@@ -69,6 +69,8 @@
   solo sale si algún cobro fue a una cuenta de otra moneda o con comisión
   (antes salía "—" y confundía); con retenciones la columna del dinero se
   llama *Recibido en banco*. La columna de retenciones ya no se aprieta.
+  Cuenta, método y referencia van juntos en *Cuenta / método* para que la
+  tabla quepa sin barra de desplazamiento (el botón *Recibo* se veía cortado).
 - Pruebas: `tests/unit/customer-withholdings.test.ts` (110 en total). No
   toca el motor fiscal de proveedores, `net_payable`, `fiscal_snapshot` ni
   anticipos.

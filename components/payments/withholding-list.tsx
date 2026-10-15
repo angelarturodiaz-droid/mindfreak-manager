@@ -56,7 +56,7 @@ export function WithholdingList({
   if (items.length === 0) return <span className="text-brand-muted">—</span>;
 
   return (
-    <div className="flex min-w-[13rem] flex-col items-start gap-1.5 text-xs">
+    <div className="flex min-w-[11rem] flex-col items-start gap-1.5 text-xs">
       {items.map((w) => {
         const voided = w.status === "VOIDED";
         const doc = docOf(w);
