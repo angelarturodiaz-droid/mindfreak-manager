@@ -198,10 +198,15 @@ export default async function InvoiceDetailPage({
 
   // Hay retenciones (activas o anuladas) en algún cobro: columnas Recibido / Retenciones / Aplicado.
   const hasWithholdings = payments.some((p) => (p.customer_payment_withholdings ?? []).length > 0);
+  // Algún cobro entró en una cuenta de otra moneda o con comisión del banco.
+  const anyBankDetail = payments.some(
+    (p) => (p.account_currency && p.account_currency !== invoice.currency) || Number(p.bank_fee_amount ?? 0) > 0,
+  );
   const paymentColumns: Column<PaymentRow>[] = [
     { header: "Fecha", accessor: (p) => <RegisteredDate date={p.payment_date} createdAt={p.created_at} className="text-brand-text" /> },
     {
-      header: hasWithholdings ? "Recibido" : "Monto",
+      // Con retenciones: lo que entró al banco (moneda de la factura).
+      header: hasWithholdings ? (anyBankDetail ? "Recibido" : "Recibido en banco") : "Monto",
       className: "text-right",
       accessor: (p) =>
         Number(p.amount) > 0 ? (
@@ -235,8 +240,9 @@ export default async function InvoiceDetailPage({
           } as Column<PaymentRow>,
         ]
       : []),
-    {
+    ...(anyBankDetail ? [{
       // Multimoneda V5: cobro recibido en una cuenta en otra moneda (o con comisión).
+      // Solo se muestra si algún cobro lo necesita (si no, sería una columna de "—").
       header: "Entró al banco",
       className: "text-right",
       accessor: (p) => {
@@ -267,7 +273,7 @@ export default async function InvoiceDetailPage({
           </span>
         );
       },
-    },
+    } as Column<PaymentRow>] : []),
     { header: "Método", accessor: (p) => <span className="text-brand-muted">{PAYMENT_METHOD_LABELS[p.method] ?? p.method}</span> },
     {
       header: "Banco",

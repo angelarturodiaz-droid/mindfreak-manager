@@ -56,7 +56,7 @@ export function WithholdingList({
   if (items.length === 0) return <span className="text-brand-muted">—</span>;
 
   return (
-    <div className="flex flex-col items-start gap-1.5 text-xs">
+    <div className="flex min-w-[13rem] flex-col items-start gap-1.5 text-xs">
       {items.map((w) => {
         const voided = w.status === "VOIDED";
         const doc = docOf(w);
@@ -66,7 +66,7 @@ export function WithholdingList({
           <div key={w.id} className="flex flex-col gap-0.5">
             <span className={`flex flex-wrap items-center gap-1.5 ${voided ? "text-brand-muted line-through" : "text-brand-text"}`}>
               <span className="rounded-full bg-brand-accent-light px-2 py-0.5 font-medium text-brand-accent">{label}</span>
-              <span className="font-medium tabular-nums">{formatMoney(w.amount, w.currency)}</span>
+              <span className="whitespace-nowrap font-medium tabular-nums">{formatMoney(w.amount, w.currency)}</span>
               {w.certificate_amount && w.certificate_currency && w.certificate_currency !== w.currency && (
                 <span className="text-brand-muted">(cert. {formatMoney(w.certificate_amount, w.certificate_currency)})</span>
               )}
