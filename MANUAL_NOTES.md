@@ -86,6 +86,19 @@ parciales — la factura no cambia, pero cada abono genera su propio recibo.
 - Reporte *Retenciones de clientes* (Reportes → Cobros), con filtro *Solo
   sin certificado*.
 
+
+## Módulo: Gastos — Comisiones comerciales (2026-10-14)
+
+- Para pagar a quien consigue clientes o proyectos: categoría **Comisiones
+  comerciales** + tipo *referido / captación*, *intermediación comercial* o
+  *gestión de ventas* (clasificación fiscal COMISION). Registrar el gasto en
+  el proyecto para que cuente en su costo y rentabilidad.
+- Retenciones: las reglas de Comisión existentes (persona física
+  registrada o informal), pendientes de revisar con el contador. Empresas:
+  sin regla por ahora (aviso "Sin regla").
+- No confundir con la comisión de la empresa en facturas/cotizaciones ni
+  con Comisiones bancarias.
+
 ## Módulo: Configuración → Usuarios
 
 ### MFA (autenticación de dos factores) — pendiente, opciones evaluadas

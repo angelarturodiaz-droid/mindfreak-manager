@@ -63,6 +63,10 @@ const stem = (w: string) => (w.length > 5 ? w.slice(0, 5) : w.replace(/s$/, ""))
 const HINTS: { roots: string[]; types: string[]; weight: number }[] = [
   { roots: ["incend", "extint", "bomber", "fuego", "fire"], types: ["Sistemas contra incendios", "Prevención de incendios"], weight: 5 },
   { roots: ["alarm"], types: ["Monitoreo de alarmas"], weight: 4 },
+  // Comisiones comerciales (14-oct): quien nos consigue clientes o proyectos.
+  { roots: ["referid", "captac"], types: ["Comisión por referido / captación de clientes"], weight: 5 },
+  { roots: ["intermed", "corred", "broker"], types: ["Comisión por intermediación comercial"], weight: 4 },
+  { roots: ["comisi"], types: ["Comisión por referido / captación de clientes", "Comisión por intermediación comercial", "Comisión por gestión de ventas"], weight: 3 },
   { roots: ["cctv", "=camaras"], types: ["Cámaras de seguridad"], weight: 2 },
   { roots: ["=seguridad", "vigil", "guard", "securi", "custod", "escolt"], types: ["Seguridad", "Vigilancia de instalaciones"], weight: 4 },
   { roots: ["=seguro", "=seguros", "asegur", "insuran"], types: ["Pólizas de seguro"], weight: 5 },

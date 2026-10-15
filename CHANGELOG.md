@@ -1,5 +1,24 @@
 # CHANGELOG — Mindfreak Manager
 
+## Comisiones comerciales en el catálogo de gastos (2026-10-14)
+
+- Revisión: no existía nada específico para pagar a quien nos consigue
+  clientes. Había la categoría genérica *Comisión* ("Comisiones cobradas o
+  pagadas", 2 movimientos de prueba, sin tipos de servicio), *Comisiones
+  bancarias* (del banco) y la clasificación fiscal **COMISION** con sus
+  reglas (`PF_COMISION`, `INF_PF_COMISION`, "Revisar con su contador"),
+  usada solo por Agencia de viajes, Gestión de alojamiento y Venta de
+  entradas.
+- Agregado (datos, `supabase/data/2026-10-14_comisiones_comerciales.sql`,
+  aplicado con auditoría): categoría de gastos **Comisiones comerciales** y
+  los tipos de servicio **Comisión por referido / captación de clientes**,
+  **Comisión por intermediación comercial** y **Comisión por gestión de
+  ventas**, clasificados como COMISION. Sin reglas ni porcentajes nuevos.
+  No se tocó el catálogo de productos y servicios que se venden.
+- Sugerencia por nombre del proveedor: "referido", "captación",
+  "intermediación", "corredor", "broker" y "comisión" apuntan a esos tipos.
+
+
 ## Retenciones de clientes al cobrar (2026-10-13)
 
 - Propuesta `claude/propuesta-retenciones-clientes.md` (decisiones del 5-oct,
