@@ -81,6 +81,16 @@ parciales — la factura no cambia, pero cada abono genera su propio recibo.
   banco). *Agregar certificado* en la lista de cobros de la factura.
 - Anular retención: permiso `payments.void` (ADMIN, FINANCE), motivo
   obligatorio, nunca se borra, no toca el banco, la factura recupera el saldo.
+- **¿Para qué sirve anular?** Corregir una retención mal registrada sin
+  borrar la historia (los cobros no se borran ni se editan, para que todo
+  cuadre con el banco y la DGII):
+  1. Monto equivocado (ej. 349.38 en vez de 300) → anular y registrar la
+     correcta con un cobro de recibido 0.
+  2. El cliente al final no retuvo y paga esa parte en dinero → anular; la
+     factura vuelve a tener el saldo y se registra el cobro cuando pague.
+  3. Tipo equivocado (ISR/ITBIS) o factura equivocada → anular y registrar
+     bien.
+  Queda tachada con quién, cuándo y el motivo, y en Auditoría (VOID).
 - La pantalla de la factura dice *Aplicado* (dinero + retenciones); el estado
   sigue *Pagada*. El PDF de la factura no muestra nada del pago (sale igual
   al entregado); el detalle está en los recibos de cobro. Dashboard y rentabilidad cuentan solo dinero.
