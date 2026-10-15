@@ -62,6 +62,9 @@
   por cliente; filtros de fechas, cliente, tipo, estado y solo sin
   certificado. *Pagos y cobros por moneda* ignora los cobros solo de
   retención. *Cobros y pagos* muestra "Solo retención" y "+ retenciones".
+- Ajuste (prueba BB, 14-oct): ⓘ en *N.º de certificado* (qué número poner,
+  ej. CR-2026-00123, y qué hacer si el papel no trae número), en el cobro y
+  en *Agregar certificado*.
 - Pruebas: `tests/unit/customer-withholdings.test.ts` (110 en total). No
   toca el motor fiscal de proveedores, `net_payable`, `fiscal_snapshot` ni
   anticipos.

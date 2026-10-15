@@ -11,7 +11,7 @@ import { formatMoney } from "@/lib/utils/money";
 import { formatDate, formatDateTime } from "@/lib/utils/dates";
 import { updateWithholdingSupportAction, voidWithholdingAction, type ActionState } from "@/features/payments/actions";
 import { getDocumentDownloadUrlAction } from "@/features/documents/actions";
-import { WITHHOLDING_TYPE_LABELS, type WithholdingType } from "@/features/payments/withholdings";
+import { CERT_INFO, WITHHOLDING_TYPE_LABELS, type WithholdingType } from "@/features/payments/withholdings";
 
 export type WithholdingItem = {
   id: string;
@@ -171,9 +171,10 @@ function CertificateModal({
         </p>
         <Input
           label="N.º de certificado"
+          info={CERT_INFO}
           name="certificate_number"
           defaultValue={item.certificate_number ?? ""}
-          placeholder="Ej. el número del certificado de la DGII"
+          placeholder="Ej. CR-2026-00123"
         />
         {foreign && (
           <MoneyInput

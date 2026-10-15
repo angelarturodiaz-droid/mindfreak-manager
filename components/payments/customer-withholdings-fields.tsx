@@ -9,6 +9,7 @@ import { formatMoney } from "@/lib/utils/money";
 import {
   WITHHOLDING_TYPES,
   WITHHOLDING_TYPE_LABELS,
+  CERT_INFO,
   certificateToDocument,
   type WithholdingType,
 } from "@/features/payments/withholdings";
@@ -145,10 +146,11 @@ export function CustomerWithholdingsFields({
           <div className="sm:col-span-3">
             <Input
               label="N.º de certificado"
+              info={CERT_INFO}
               name={`wh_num_${r.id}`}
               value={r.certificate_number}
               onChange={(e) => update(r.id, { certificate_number: e.target.value })}
-              placeholder="Opcional; se puede agregar después"
+              placeholder="Ej. CR-2026-00123 (opcional)"
             />
           </div>
 

@@ -21,6 +21,10 @@ export const WITHHOLDING_TYPE_LABELS: Record<WithholdingType, string> = {
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
+/** ⓘ del campo "N.º de certificado" (registrar cobro y Agregar certificado). */
+export const CERT_INFO =
+  "El número que aparece en el certificado o constancia de retención que te entrega el cliente (ej. CR-2026-00123; cada cliente usa su propio formato). Si el papel no trae número, escribe una referencia para encontrarlo, como la fecha y el nombre del cliente. Es opcional: se puede agregar después con «Agregar certificado».";
+
 /** Monto del certificado (RD$) → moneda de la factura con su tasa. */
 export function certificateToDocument(certificateAmount: number, rate: number): number {
   if (!(certificateAmount > 0) || !(rate > 0)) return 0;
