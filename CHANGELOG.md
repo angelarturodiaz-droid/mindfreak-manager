@@ -1,5 +1,15 @@
 # CHANGELOG — Mindfreak Manager
 
+## PDF de la factura igual al entregado (2026-10-14)
+
+- Decisión del usuario (formalidad común de un ERP): el PDF de la factura ya
+  no muestra datos de seguimiento del pago (Estado, Pagado/Aplicado,
+  "incluye retenciones" ni Balance pendiente). Sale siempre igual al que se
+  entregó al cliente; lo cobrado se ve en el sistema y en los recibos de
+  cobro. Borrador y Cancelada llevan "no válida como factura". En la factura
+  electrónica la franja final pasa de *BALANCE* a *TOTAL*.
+
+
 ## Comisiones comerciales en el catálogo de gastos (2026-10-14)
 
 - Revisión: no existía nada específico para pagar a quien nos consigue

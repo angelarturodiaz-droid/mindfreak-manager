@@ -206,11 +206,12 @@ export function InvoicePdfDocument({ company, invoice, client, items }: InvoiceP
             {invoice.payment_terms_name && (
               <Text style={styles.boxLine}>Condición: {invoice.payment_terms_name}</Text>
             )}
-            <Text style={styles.boxLine}>Estado: {INVOICE_STATUS_LABELS[invoice.status] ?? invoice.status}</Text>
-            <Text style={styles.boxLine}>Aplicado: {money(invoice.paid_amount, invoice.currency)}</Text>
-            {Number(invoice.withholding_total ?? 0) > 0 && (
-              <Text style={styles.boxLine}>
-                (incluye retenciones {money(Number(invoice.withholding_total), invoice.currency)})
+            {/* La factura sale siempre igual a la que se entregó al cliente: sin
+                estado de pago, aplicado ni balance (eso está en el sistema y en
+                los recibos de cobro). Solo se marca si no es válida. */}
+            {(invoice.status === "DRAFT" || invoice.status === "CANCELLED") && (
+              <Text style={[styles.boxLine, { color: "#b42318", fontWeight: 700 }]}>
+                {INVOICE_STATUS_LABELS[invoice.status]}: no válida como factura
               </Text>
             )}
           </View>
@@ -270,14 +271,6 @@ export function InvoicePdfDocument({ company, invoice, client, items }: InvoiceP
             <Text style={styles.grandTotalLabel}>TOTAL {invoice.currency}</Text>
             <Text style={styles.grandTotalValue}>{money(invoice.total, invoice.currency)}</Text>
           </View>
-          {invoice.balance > 0 && (
-            <View style={styles.balanceRow}>
-              <Text style={styles.balanceLabel}>BALANCE PENDIENTE</Text>
-              <Text style={styles.balanceValue}>
-                {money(invoice.balance, invoice.currency)}
-              </Text>
-            </View>
-          )}
         </View>
 
         <BankDetailsBlock details={parseBankDetails(invoice.bank_details)} accent={accent} dark={dark} />

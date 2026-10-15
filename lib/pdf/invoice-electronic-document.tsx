@@ -259,8 +259,9 @@ export function InvoiceElectronicPdfDocument({
             <Text style={styles.totalsValue}>{money(invoice.tax, invoice.currency)}</Text>
           </View>
           <View style={styles.grandTotalRow}>
-            <Text style={styles.grandTotalLabel}>BALANCE</Text>
-            <Text style={styles.grandTotalValue}>{money(invoice.balance, invoice.currency)}</Text>
+            {/* Total del documento (no el saldo): sale igual que cuando se entregó. */}
+            <Text style={styles.grandTotalLabel}>TOTAL {invoice.currency}</Text>
+            <Text style={styles.grandTotalValue}>{money(invoice.total, invoice.currency)}</Text>
           </View>
         </View>
 

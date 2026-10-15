@@ -81,8 +81,9 @@ parciales — la factura no cambia, pero cada abono genera su propio recibo.
   banco). *Agregar certificado* en la lista de cobros de la factura.
 - Anular retención: permiso `payments.void` (ADMIN, FINANCE), motivo
   obligatorio, nunca se borra, no toca el banco, la factura recupera el saldo.
-- La factura dice *Aplicado* (dinero + retenciones); el estado sigue
-  *Pagada*. Dashboard y rentabilidad cuentan solo dinero.
+- La pantalla de la factura dice *Aplicado* (dinero + retenciones); el estado
+  sigue *Pagada*. El PDF de la factura no muestra nada del pago (sale igual
+  al entregado); el detalle está en los recibos de cobro. Dashboard y rentabilidad cuentan solo dinero.
 - Reporte *Retenciones de clientes* (Reportes → Cobros), con filtro *Solo
   sin certificado*.
 
