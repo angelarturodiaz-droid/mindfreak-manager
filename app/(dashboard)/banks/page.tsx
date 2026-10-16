@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { RememberChoice } from "@/components/ui/remember-choice";
 import { AlertTriangle, ChevronRight, CreditCard, DollarSign, LayoutGrid, Landmark, List, Plus, ShieldCheck, Wallet } from "lucide-react";
 import { listBankAccountsWithBalance } from "@/features/banks/queries";
 import { availableCash, cardPosition, type CashSummary } from "@/features/banks/display";
@@ -245,7 +247,10 @@ export default async function BanksPage({
   const kindFilter =
     params.kind === "SAVINGS" || params.kind === "CHECKING" || params.kind === "CARD" ? params.kind : undefined;
   // Vista: tarjetas (por defecto) o lista compacta para muchas cuentas.
-  const listView = params.view === "lista";
+  // La última elegida se recuerda (cookie) al salir y volver a Bancos.
+  const savedView = (await cookies()).get("mf_banks_view")?.value;
+  const chosenView = params.view === "lista" || params.view === "tarjetas" ? params.view : null;
+  const listView = (chosenView ?? savedView) === "lista";
   const [accounts, brandOf] = await Promise.all([listBankAccountsWithBalance(), getBankBrands()]);
   // Monedas con cuentas (catálogo de Configuración → Monedas y tasas).
   const accountCurrencies = Array.from(new Set(accounts.map((a) => a.currency))).sort();
@@ -423,9 +428,10 @@ export default async function BanksPage({
                 ]}
               />
             </div>
+            <RememberChoice name="mf_banks_view" value={chosenView} />
             <nav aria-label="Vista" className="flex gap-1 rounded-full border border-brand-border bg-brand-surface p-1">
               {[
-                { key: undefined, label: "Tarjetas", icon: <LayoutGrid size={14} /> },
+                { key: "tarjetas", label: "Tarjetas", icon: <LayoutGrid size={14} /> },
                 { key: "lista", label: "Lista", icon: <List size={14} /> },
               ].map((v) => {
                 const active = (v.key === "lista") === listView;

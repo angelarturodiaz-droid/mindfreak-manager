@@ -1,5 +1,11 @@
 # CHANGELOG — Mindfreak Manager
 
+## Bancos recuerda la vista Lista/Tarjetas (2026-10-15 noche)
+
+- Al elegir *Lista* o *Tarjetas* en Bancos, la elección se guarda en una
+  cookie (`mf_banks_view`, solo preferencia visual) y se respeta al salir y
+  volver. Componente `components/ui/remember-choice.tsx`.
+
 ## Bancos con color y logo de cada banco (2026-10-15 noche)
 
 - Migración **084** (aplicada): `bank_catalog.brand_color` (#rrggbb) y

@@ -784,7 +784,8 @@ const SECTIONS: Section[] = [
           reduce solo; sin logo salen las iniciales en el color del banco. Las
           cuentas con banco <em>Otro</em> se ven blancas, como antes. En
           <em> Cobros y pagos</em> cada cuenta lleva el cuadrito de su banco. Es
-          solo visual: no cambia saldos ni movimientos.
+          solo visual: no cambia saldos ni movimientos. La vista
+          <em> Tarjetas</em> o <em>Lista</em> que elijas se recuerda la próxima vez que entres.
         </p>
         <p className="text-sm text-brand-text">
           Cada movimiento tiene dos datos <strong>independientes</strong>:
