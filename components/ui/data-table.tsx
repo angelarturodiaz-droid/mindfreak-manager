@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
 import { NoResults } from "./no-results";
+import { InfoHint } from "./info-hint";
 
 export interface Column<T> {
   header: string;
+  /** Texto del ⓘ junto al encabezado (qué significa la columna). */
+  info?: string;
   accessor: (row: T) => ReactNode;
   className?: string;
 }
@@ -52,7 +55,14 @@ export function DataTable<T>({
           <tr className="border-b border-brand-border bg-brand-background text-left text-xs font-medium uppercase tracking-wide text-brand-muted">
             {columns.map((col, i) => (
               <th key={i} className={`px-4 py-3 ${col.className ?? ""}`}>
-                {col.header}
+                {col.info ? (
+                  <span className="inline-flex items-center gap-1 normal-case tracking-normal">
+                    <span className="uppercase tracking-wide">{col.header}</span>
+                    <InfoHint text={col.info} label={`Qué es ${col.header}`} />
+                  </span>
+                ) : (
+                  col.header
+                )}
               </th>
             ))}
           </tr>

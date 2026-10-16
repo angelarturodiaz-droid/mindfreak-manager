@@ -804,3 +804,12 @@ pulsa el botón.
 - **Roles y permisos**: se trabaja un rol a la vez; cada módulo en una
   tarjeta con *Todo / Nada / n de m*. Se guarda al marcar. Administrador no
   se edita (siempre tiene todo) para no perder acceso a Configuración.
+- (15-oct noche) **Roles: botón Guardar.** Marcar no guarda solo; los cambios
+  quedan en amarillo hasta *Guardar cambios* (barra de abajo). Si sales con
+  cambios pendientes, el navegador avisa.
+- **Las tarjetas de los reportes siguen al filtro**: al filtrar cambian (es lo
+  correcto); al cambiar de página no cambian.
+- **Reportes con varias tablas**: bloques desplegables con cantidad y total.
+- **Completar certificado**: así se llama el botón cuando la retención tiene el
+  monto en RD$ pero falta el número o el archivo. Abre la misma ventana que
+  *Agregar/Editar certificado*.

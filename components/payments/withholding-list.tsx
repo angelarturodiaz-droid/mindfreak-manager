@@ -81,7 +81,7 @@ export function WithholdingList({
             ) : (
               <span className="flex flex-wrap items-center gap-2">
                 {noCert && (
-                  <span className="rounded-full bg-brand-warning-bg px-2 py-0.5 font-medium text-brand-warning">Sin certificado</span>
+                  <span className="rounded-full bg-brand-warning-bg px-2 py-0.5 font-medium text-brand-warning" title="Falta el número o el archivo (PDF o foto) del certificado.">Sin certificado</span>
                 )}
                 {doc && <OpenDocLink path={doc.storage_path} />}
                 {canEdit && (
@@ -91,7 +91,8 @@ export function WithholdingList({
                     className="inline-flex items-center gap-1 text-brand-accent hover:underline"
                   >
                     {noCert ? <FilePlus2 size={12} /> : <FileCheck2 size={12} />}
-                    {noCert ? "Agregar certificado" : "Editar certificado"}
+                    {/* Con el monto en RD$ pero sin número ni archivo: falta completarlo. */}
+                    {noCert ? (w.certificate_amount ? "Completar certificado" : "Agregar certificado") : "Editar certificado"}
                   </button>
                 )}
                 {canVoid && (

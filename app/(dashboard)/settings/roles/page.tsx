@@ -1,8 +1,6 @@
-import Link from "next/link";
-import { ShieldCheck, Lock } from "lucide-react";
 import { listRoles, listPermissions, listRolePermissionMatrix } from "@/features/users/queries";
 import { InfoHint } from "@/components/ui/info-hint";
-import { PermissionCheckbox } from "./permission-checkbox";
+import { RolesEditor } from "./roles-editor";
 
 const ROLE_LABELS: Record<string, string> = {
   ADMIN: "Administrador",
@@ -61,9 +59,6 @@ export default async function RolesSettingsPage({
     sortedRoles.find((r) => r.name === roleParam) ??
     sortedRoles.find((r) => r.name !== "ADMIN") ??
     sortedRoles[0];
-  const isAdmin = active?.name === "ADMIN";
-  const has = (roleId: string, roleName: string, permId: string) =>
-    roleName === "ADMIN" || matrix.has(`${roleId}:${permId}`);
 
   const known = new Set(MODULES.map((m) => m.key));
   const modules = [
@@ -84,99 +79,39 @@ export default async function RolesSettingsPage({
     }))
     .filter((m) => m.perms.length > 0);
 
+  const editorRoles = sortedRoles.map((r) => ({
+    id: r.id,
+    name: r.name,
+    label: ROLE_LABELS[r.name] ?? r.name,
+    hint: ROLE_HINTS[r.name] ?? r.description ?? "",
+    isAdmin: r.name === "ADMIN",
+  }));
+  const initial = Object.fromEntries(
+    sortedRoles.map((r) => [r.id, permissions.filter((p) => matrix.has(`${r.id}:${p.id}`)).map((p) => p.id)]),
+  );
+
   return (
     <div className="flex flex-col gap-5">
       <div>
         <h2 className="flex items-center gap-2 text-lg font-semibold text-brand-primary">
           Roles y permisos
-          <InfoHint text="Elige un rol arriba y marca o desmarca lo que puede hacer. Cada cambio se guarda solo, al momento. Los usuarios ven el cambio la próxima vez que abran una pantalla. El rol de cada persona se asigna en Configuración → Usuarios." />
+          <InfoHint text="Elige un rol arriba, marca o desmarca lo que puede hacer y pulsa «Guardar cambios» abajo. Puedes cambiar varios roles y guardar todo junto. Los usuarios ven el cambio la próxima vez que abran una pantalla. El rol de cada persona se asigna en Configuración → Usuarios." />
         </h2>
-        <p className="text-sm text-brand-muted">Elige un rol y marca lo que puede hacer. Se guarda al momento.</p>
+        <p className="text-sm text-brand-muted">Elige un rol, marca lo que puede hacer y pulsa Guardar cambios.</p>
       </div>
-
-      {/* Un rol a la vez: así la lista cabe en pantalla sin bajar tanto. */}
-      <nav aria-label="Roles" className="flex flex-wrap gap-2">
-        {sortedRoles.map((r) => {
-          const count = permissions.filter((p) => has(r.id, r.name, p.id)).length;
-          const selected = r.id === active?.id;
-          return (
-            <Link
-              key={r.id}
-              href={`/settings/roles?role=${r.name}`}
-              title={ROLE_HINTS[r.name] ?? r.description ?? undefined}
-              className={`flex items-center gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-sm transition-colors ${
-                selected
-                  ? "border-brand-accent bg-brand-accent-light font-medium text-brand-accent"
-                  : "border-brand-border bg-brand-surface text-brand-text hover:bg-brand-surface-hover"
-              }`}
-            >
-              {r.name === "ADMIN" ? <Lock size={14} aria-hidden /> : <ShieldCheck size={14} aria-hidden />}
-              {ROLE_LABELS[r.name] ?? r.name}
-              <span className="rounded-full bg-brand-background px-1.5 text-xs tabular-nums text-brand-muted">
-                {count}/{permissions.length}
-              </span>
-            </Link>
-          );
-        })}
-      </nav>
-
       {active && (
-        <p className="-mt-2 text-sm text-brand-muted">
-          <strong className="text-brand-text">{ROLE_LABELS[active.name] ?? active.name}:</strong>{" "}
-          {ROLE_HINTS[active.name] ?? active.description ?? ""}
-        </p>
-      )}
-
-      {active && (
-        <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {modules.map((m) => {
-            const on = m.perms.filter((p) => has(active.id, active.name, p.id)).length;
-            return (
-              <section
-                key={m.key}
-                className="rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface p-3"
-              >
-                <h3 className="mb-2 flex items-center justify-between text-sm font-semibold text-brand-text">
-                  {m.label}
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium tabular-nums ${
-                      on === m.perms.length
-                        ? "bg-brand-success-bg text-brand-success"
-                        : on === 0
-                          ? "bg-brand-background text-brand-muted"
-                          : "bg-brand-accent-light text-brand-accent"
-                    }`}
-                  >
-                    {on === m.perms.length ? "Todo" : on === 0 ? "Nada" : `${on} de ${m.perms.length}`}
-                  </span>
-                </h3>
-                <ul className="flex flex-col gap-1">
-                  {m.perms.map((perm) => (
-                    <li key={perm.id}>
-                      <label
-                        className={`flex items-start gap-2 rounded-[var(--radius-md)] px-1.5 py-0.5 text-sm ${
-                          isAdmin ? "cursor-not-allowed" : "cursor-pointer hover:bg-brand-surface-hover"
-                        }`}
-                        title={perm.code}
-                      >
-                        <span className="pt-0.5">
-                          <PermissionCheckbox
-                            key={`${active.id}:${perm.id}`}
-                            roleId={active.id}
-                            permissionId={perm.id}
-                            granted={has(active.id, active.name, perm.id)}
-                            disabled={isAdmin}
-                          />
-                        </span>
-                        <span className="text-brand-text">{perm.description ?? perm.code}</span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            );
-          })}
-        </div>
+        <RolesEditor
+          // Al guardar llega lo nuevo del servidor: se vuelve a montar limpio.
+          key={JSON.stringify(initial)}
+          roles={editorRoles}
+          modules={modules.map((m) => ({
+            key: m.key,
+            label: m.label,
+            perms: m.perms.map((p) => ({ id: p.id, code: p.code, description: p.description ?? p.code })),
+          }))}
+          initial={initial}
+          initialRoleId={active.id}
+        />
       )}
     </div>
   );

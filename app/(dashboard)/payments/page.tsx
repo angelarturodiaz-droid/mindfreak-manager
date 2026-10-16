@@ -93,6 +93,7 @@ export default async function PaymentsPage({
     },
     {
       header: "Recibido",
+      info: "El dinero que pagó el cliente en ese cobro, en la moneda de la factura. «Solo retención» = no pagó dinero, solo se aplicó una retención (recibido 0).",
       className: "text-right",
       accessor: (p) =>
         Number(p.amount) > 0 ? (
@@ -110,6 +111,7 @@ export default async function PaymentsPage({
     },
     {
       header: "Retenciones",
+      info: "ITBIS o ISR que el cliente retuvo y paga a la DGII. Rebaja la factura, pero no entra al banco. El detalle y el certificado están en la factura.",
       className: "text-right",
       accessor: (p) =>
         Number(p.withholding_total) > 0 ? (

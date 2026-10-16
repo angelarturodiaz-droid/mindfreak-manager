@@ -429,3 +429,66 @@ export async function resendEmailVerificationAction(email: string): Promise<void
   });
   if (error) throw new Error(error.message);
 }
+
+/**
+ * Guarda de una vez los permisos de uno o varios roles (botón "Guardar
+ * cambios" de Configuración → Roles y permisos). Para cada rol recibe la
+ * lista completa de permisos marcados y aplica solo la diferencia. El rol
+ * Administrador no se toca nunca (siempre tiene todo).
+ */
+export async function saveRolePermissionsAction(
+  changes: { roleId: string; permissionIds: string[] }[],
+): Promise<{ error: string | null; changed: number }> {
+  await requirePermission("users.manage");
+  const supabase = await createSupabaseClient();
+  if (!Array.isArray(changes) || changes.length === 0) return { error: null, changed: 0 };
+
+  const roleIds = changes.map((c) => c.roleId);
+  const { data: roles, error: rolesError } = await supabase.from("roles").select("id, name").in("id", roleIds);
+  if (rolesError) return { error: "No se pudieron leer los roles. Intenta de nuevo.", changed: 0 };
+  if ((roles ?? []).some((r) => r.name === "ADMIN")) {
+    return { error: "El rol Administrador no se puede editar: siempre tiene todos los permisos.", changed: 0 };
+  }
+
+  const { data: current, error: curError } = await supabase
+    .from("role_permissions")
+    .select("role_id, permission_id")
+    .in("role_id", roleIds);
+  if (curError) return { error: "No se pudieron leer los permisos actuales. Intenta de nuevo.", changed: 0 };
+
+  const companyId = await getPrimaryCompanyId();
+  let changed = 0;
+  for (const c of changes) {
+    const before = new Set((current ?? []).filter((r) => r.role_id === c.roleId).map((r) => r.permission_id));
+    const after = new Set(c.permissionIds);
+    const grant = [...after].filter((id) => !before.has(id));
+    const revoke = [...before].filter((id) => !after.has(id));
+    if (grant.length > 0) {
+      const { error } = await supabase
+        .from("role_permissions")
+        .insert(grant.map((permission_id) => ({ role_id: c.roleId, permission_id })));
+      if (error) return { error: "No se pudieron guardar los permisos. No tienes acceso o hubo un problema de conexión.", changed };
+    }
+    if (revoke.length > 0) {
+      const { error } = await supabase
+        .from("role_permissions")
+        .delete()
+        .eq("role_id", c.roleId)
+        .in("permission_id", revoke);
+      if (error) return { error: "No se pudieron quitar los permisos. No tienes acceso o hubo un problema de conexión.", changed };
+    }
+    if (grant.length + revoke.length > 0) {
+      changed += grant.length + revoke.length;
+      await logAudit({
+        companyId,
+        action: "UPDATE",
+        entityType: "role_permission",
+        entityId: c.roleId,
+        newValues: { granted: grant, revoked: revoke },
+      });
+    }
+  }
+
+  revalidatePath("/settings/roles");
+  return { error: null, changed };
+}

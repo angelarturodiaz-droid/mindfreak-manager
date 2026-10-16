@@ -31,6 +31,7 @@ import { relationName } from "@/lib/utils/relation";
 import { formatDate, pluralDays } from "@/lib/utils/dates";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { PagedDataTable } from "@/components/ui/paged-data-table";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { NoResults } from "@/components/ui/no-results";
 import { InfoHint } from "@/components/ui/info-hint";
 import { FIELD_HINTS } from "@/lib/ui/field-hints";
@@ -533,13 +534,14 @@ async function ReceivablesDashboardReport({ params }: { params: Params }) {
         <p className="mt-3 text-xs text-brand-muted">Los rangos son acumulados: 30 días incluye lo de 7 y 15.</p>
       </Card>
 
-      <section>
-        <SectionHeader title="Calendario de vencimientos" description="Próximos 30 días, agrupado por fecha." />
-        <ReceivablesTimeline invoices={data.facturasProximasAVencer} />
-      </section>
-
-      <section>
-        <SectionHeader title="Facturas vencidas" count={data.facturasVencidas.length} />
+      {/* Cada tabla se despliega al pulsarla, para que el reporte no sea tan largo.
+          Vencidas abre sola si hay; las demás, si estás cambiando de página en ellas. */}
+      <CollapsibleSection
+        title="Facturas vencidas"
+        count={data.facturasVencidas.length}
+        summary={data.facturasVencidas.length > 0 && <Money value={data.totalVencido} strong tone="danger" />}
+        open={data.facturasVencidas.length > 0 || !!params.p_vencidas}
+      >
         <PagedDataTable basePath="/reports" params={params as Record<string, string | undefined>} pageParam="p_vencidas"
           columns={overdueColumns}
           rows={data.facturasVencidas}
@@ -547,10 +549,23 @@ async function ReceivablesDashboardReport({ params }: { params: Params }) {
           maxWidth="max-w-none"
           emptyMessage="Sin facturas vencidas. 🎉"
         />
-      </section>
+      </CollapsibleSection>
 
-      <section>
-        <SectionHeader title="Facturas próximas a vencer" count={data.facturasProximasAVencer.length} description="Próximos 30 días." />
+      <CollapsibleSection
+        title="Calendario de vencimientos"
+        description="Próximos 30 días, agrupado por fecha."
+        summary={<Money value={data.totalProximos30} strong />}
+      >
+        <ReceivablesTimeline invoices={data.facturasProximasAVencer} />
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="Facturas próximas a vencer"
+        count={data.facturasProximasAVencer.length}
+        description="Próximos 30 días."
+        summary={<Money value={data.totalProximos30} strong />}
+        open={!!params.p_proximas}
+      >
         <PagedDataTable basePath="/reports" params={params as Record<string, string | undefined>} pageParam="p_proximas"
           columns={upcomingColumns}
           rows={data.facturasProximasAVencer}
@@ -558,30 +573,35 @@ async function ReceivablesDashboardReport({ params }: { params: Params }) {
           maxWidth="max-w-none"
           emptyMessage="Sin facturas próximas a vencer."
         />
-      </section>
+      </CollapsibleSection>
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <section className="min-w-0">
-          <SectionHeader title="Cotizaciones pendientes de aceptación" count={data.cotizacionesPendientes.length} />
-          <PagedDataTable basePath="/reports" params={params as Record<string, string | undefined>} pageParam="p_cotizaciones"
-            columns={pendingQuoteColumns}
-            rows={data.cotizacionesPendientes}
-            keyFor={(q) => q.id}
-            maxWidth="max-w-none"
-            emptyMessage="Sin cotizaciones pendientes."
-          />
-        </section>
-        <section className="min-w-0">
-          <SectionHeader title="Aceptadas, pendientes de facturar" count={data.cotizacionesAceptadasSinFacturar.length} />
-          <PagedDataTable basePath="/reports" params={params as Record<string, string | undefined>} pageParam="p_aceptadas"
-            columns={acceptedColumns}
-            rows={data.cotizacionesAceptadasSinFacturar}
-            keyFor={(q) => q.id}
-            maxWidth="max-w-none"
-            emptyMessage="Sin pendientes."
-          />
-        </section>
-      </div>
+      <CollapsibleSection
+        title="Cotizaciones pendientes de aceptación"
+        count={data.cotizacionesPendientes.length}
+        open={!!params.p_cotizaciones}
+      >
+        <PagedDataTable basePath="/reports" params={params as Record<string, string | undefined>} pageParam="p_cotizaciones"
+          columns={pendingQuoteColumns}
+          rows={data.cotizacionesPendientes}
+          keyFor={(q) => q.id}
+          maxWidth="max-w-none"
+          emptyMessage="Sin cotizaciones pendientes."
+        />
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="Aceptadas, pendientes de facturar"
+        count={data.cotizacionesAceptadasSinFacturar.length}
+        open={!!params.p_aceptadas}
+      >
+        <PagedDataTable basePath="/reports" params={params as Record<string, string | undefined>} pageParam="p_aceptadas"
+          columns={acceptedColumns}
+          rows={data.cotizacionesAceptadasSinFacturar}
+          keyFor={(q) => q.id}
+          maxWidth="max-w-none"
+          emptyMessage="Sin pendientes."
+        />
+      </CollapsibleSection>
     </div>
   );
 }
@@ -1631,11 +1651,11 @@ async function CustomerWithholdingsReport({ params }: { params: Params }) {
       </div>
 
       {report.receivedVsApplied.length > 0 && (
-        <Card className="mb-5">
-          <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-brand-text">
-            Recibido en banco vs aplicado
-            <InfoHint text="De los cobros del período: dinero que entró al banco, retenciones y el total que rebajó las facturas, en la moneda de cada factura." />
-          </p>
+        <div className="mb-3">
+        <CollapsibleSection
+          title="Recibido en banco vs aplicado"
+          description="Dinero que entró al banco + retenciones = lo que rebajó las facturas, por moneda."
+        >
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-brand-muted">
@@ -1656,12 +1676,13 @@ async function CustomerWithholdingsReport({ params }: { params: Params }) {
               ))}
             </tbody>
           </table>
-        </Card>
+        </CollapsibleSection>
+        </div>
       )}
 
       {summary.byClient.length > 1 && (
-        <Card className="mb-5">
-          <p className="mb-2 text-sm font-semibold text-brand-text">Por cliente</p>
+        <div className="mb-5">
+        <CollapsibleSection title="Por cliente" count={summary.byClient.length} description="Total retenido por cada cliente.">
           <ul className="flex flex-col gap-1 text-sm">
             {summary.byClient.map((c) => (
               <li key={`${c.client}-${c.currency}`} className="flex justify-between gap-3">
@@ -1672,7 +1693,8 @@ async function CustomerWithholdingsReport({ params }: { params: Params }) {
               </li>
             ))}
           </ul>
-        </Card>
+        </CollapsibleSection>
+        </div>
       )}
 
       {rows.length === 0 ? (

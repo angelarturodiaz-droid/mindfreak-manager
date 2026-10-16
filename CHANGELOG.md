@@ -1,5 +1,21 @@
 # CHANGELOG — Mindfreak Manager
 
+## Roles con botón Guardar, reportes desplegables y ⓘ en columnas (2026-10-15 noche)
+
+- **Roles y permisos**: los cambios ya no se guardan al marcar. Quedan
+  pendientes (amarillo, punto naranja en el rol) y se guardan con **Guardar
+  cambios** en una barra fija abajo; *Descartar* vuelve atrás. *Marcar todo*
+  / *Quitar todo* por módulo. Nueva acción `saveRolePermissionsAction`
+  (aplica solo la diferencia, nunca toca Administrador, deja auditoría).
+  Se quitó `permission-checkbox.tsx`.
+- **Reportes**: `CollapsibleSection` (desplegable). Vencimientos: cada tabla
+  en un bloque con cantidad y total (Vencidas abre sola si hay). Retenciones
+  de clientes: *Recibido vs aplicado* y *Por cliente* desplegables.
+- **DataTable**: `info` opcional por columna (ⓘ en el encabezado). Cobros y
+  pagos lo usa en *Recibido* y *Retenciones*.
+- Retención con monto del certificado pero sin número ni archivo: el botón
+  dice **Completar certificado**; la etiqueta *Sin certificado* explica qué falta.
+
 ## Reportes paginados, Retenciones en Cobros y pagos y Roles compacto (2026-10-15)
 
 - **Reportes**: todas las tablas de Reportes van de 10 en 10 con páginas
