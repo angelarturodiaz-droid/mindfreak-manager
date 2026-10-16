@@ -110,6 +110,12 @@ parciales — la factura no cambia, pero cada abono genera su propio recibo.
 - No confundir con la comisión de la empresa en facturas/cotizaciones ni
   con Comisiones bancarias.
 
+## General: errores al registrar dinero (2026-10-15)
+
+- En cobros, pagos, gastos, transferencias y movimientos manuales, si el
+  sistema no puede registrar algo sale una ventana roja *Revisa los datos*
+  con el motivo; no se guarda nada hasta corregirlo.
+
 ## Módulo: Configuración → Usuarios
 
 ### MFA (autenticación de dos factores) — pendiente, opciones evaluadas

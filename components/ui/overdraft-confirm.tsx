@@ -39,6 +39,10 @@ export function useOverdraftConfirmAction(
   const open = dismissed !== state;
   const showConfirm = Boolean(state.confirmOverdraft) && open;
   const showBlocked = Boolean(state.blocked) && open;
+  // Cualquier otro error del servidor (ej. "El ITBIS retenido supera…") sale
+  // también en una ventana, para que se vea enseguida (pedido 15-oct). El
+  // texto en rojo del pie del formulario se mantiene.
+  const showError = Boolean(state.error) && !state.blocked && !state.confirmOverdraft && open;
   const showSuccess = successAs === "dialog" && Boolean(state.success) && open;
 
   useEffect(() => {
@@ -83,6 +87,11 @@ export function useOverdraftConfirmAction(
       <ResultDialog open={showBlocked} tone="danger" title={state.blockedTitle ?? "No se pudo registrar"} onClose={close}>
         <p className="text-brand-text">{state.blocked}</p>
         <p className="text-xs">No se registró nada. Puedes cambiar el monto o elegir otra cuenta.</p>
+      </ResultDialog>
+
+      <ResultDialog open={showError} tone="danger" title="Revisa los datos" onClose={close}>
+        <p className="text-brand-text">{state.error}</p>
+        <p className="text-xs">No se registró nada. Corrige el dato y vuelve a intentarlo.</p>
       </ResultDialog>
 
       <ResultDialog open={showSuccess} tone="success" title={state.successTitle ?? "Listo"} onClose={close}>

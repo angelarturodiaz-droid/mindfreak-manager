@@ -1,5 +1,15 @@
 # CHANGELOG — Mindfreak Manager
 
+## Errores en ventana en los formularios de dinero (2026-10-15)
+
+- Pedido del usuario (prueba BB paso 7): los errores que devuelve el
+  servidor al registrar un cobro, un pago, un gasto, una transferencia o un
+  movimiento manual (ej. "El ITBIS retenido supera el ITBIS de la factura")
+  ahora salen también en una **ventana** roja *Revisa los datos* ("No se
+  registró nada…"), además del texto rojo del pie. Un solo cambio en
+  `useOverdraftConfirmAction` (`components/ui/overdraft-confirm.tsx`).
+
+
 ## PDF de la factura igual al entregado (2026-10-14)
 
 - Decisión del usuario (formalidad común de un ERP): el PDF de la factura ya
