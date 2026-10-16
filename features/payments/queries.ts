@@ -20,7 +20,7 @@ export async function listAllPayments() {
   const { data, error } = await supabase
     .from("customer_payments")
     .select(
-      "id, invoice_id, payment_date, created_at, amount, withholding_total, method, invoices(number), clients(name), bank_accounts(name, bank_name)",
+      "id, invoice_id, payment_date, created_at, amount, withholding_total, method, invoices(number, currency), clients(name), bank_accounts(name, bank_name)",
     )
     .order("payment_date", { ascending: false })
     .order("created_at", { ascending: false })
@@ -39,7 +39,7 @@ export async function listCustomerPaymentsPage(filters: { search?: string; page?
   let query = supabase
     .from("customer_payments")
     .select(
-      "id, invoice_id, payment_date, created_at, amount, withholding_total, method, invoices(number), clients(name), bank_accounts(name, bank_name)",
+      "id, invoice_id, payment_date, created_at, amount, withholding_total, method, invoices(number, currency), clients(name), bank_accounts(name, bank_name)",
       { count: "exact" },
     )
     .order("payment_date", { ascending: false })

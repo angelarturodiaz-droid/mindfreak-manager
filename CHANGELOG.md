@@ -1,5 +1,21 @@
 # CHANGELOG — Mindfreak Manager
 
+## Reportes paginados, Retenciones en Cobros y pagos y Roles compacto (2026-10-15)
+
+- **Reportes**: todas las tablas de Reportes van de 10 en 10 con páginas
+  (`components/ui/paged-data-table.tsx`, `PagedDataTable`). Vencimientos y
+  cobranza tiene una paginación propia por tabla (`p_vencidas`,
+  `p_proximas`, `p_cotizaciones`, `p_aceptadas`). Los totales no cambian.
+- **Cobros y pagos → Cobros de clientes**: la etiqueta *Solo retención* y la
+  retención estaban en letra gris pequeña debajo del monto y no se veían.
+  Ahora hay columna **Recibido** (o chip *Solo retención*) y columna
+  **Retenciones** con chip. Además los montos salían siempre en RD$ aunque la
+  factura fuera en dólares: ahora usan la moneda de la factura.
+- **Configuración → Roles y permisos**: en vez de una tabla larga de 39
+  filas × 5 roles, se elige un rol (botones con *27/39*) y sus permisos salen
+  agrupados por módulo en tarjetas de 3 columnas, con nombre en español y
+  *Todo / Nada / 3 de 4*. Mismos permisos y misma acción de guardado.
+
 ## Errores en ventana en los formularios de dinero (2026-10-15)
 
 - Pedido del usuario (prueba BB paso 7): los errores que devuelve el

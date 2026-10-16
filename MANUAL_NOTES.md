@@ -788,3 +788,19 @@ pulsa el botón.
 - **Hora de registro (11-oct)**: "Registrado … h" debajo de la fecha en
   banco, cobros y pagos. Las comisiones ligadas muestran fecha, hora y
   monto de la operación; la de una transferencia enlaza a su fila.
+
+## Reportes paginados, Retenciones visibles y Roles compacto (2026-10-15, prueba BB paso 10)
+
+- **"Sin certificado" cuenta toda retención activa sin número ni archivo.**
+  Tener solo el *monto del certificado en RD$* no basta (caso INV-0027: ISR
+  US$100 con cert. RD$5,880 pero sin número ni PDF → cuenta como sin
+  certificado). Para quitarla de la lista: *Agregar certificado* con el
+  número o el archivo.
+- **Cobros y pagos**: columna *Recibido* (dinero, en la moneda de la
+  factura; chip *Solo retención* si fue recibido 0) y columna *Retenciones*
+  (chip *+ RD$…*). La retención rebaja la factura pero no entra al banco.
+- **Reportes**: tablas de 10 en 10; los totales y tarjetas de arriba siempre
+  cuentan todo el resultado del filtro, no solo la página.
+- **Roles y permisos**: se trabaja un rol a la vez; cada módulo en una
+  tarjeta con *Todo / Nada / n de m*. Se guarda al marcar. Administrador no
+  se edita (siempre tiene todo) para no perder acceso a Configuración.

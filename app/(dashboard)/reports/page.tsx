@@ -30,6 +30,7 @@ import { Chip, InitialsAvatar, SectionHeader, StatCard } from "@/components/ui/p
 import { relationName } from "@/lib/utils/relation";
 import { formatDate, pluralDays } from "@/lib/utils/dates";
 import { DataTable, type Column } from "@/components/ui/data-table";
+import { PagedDataTable } from "@/components/ui/paged-data-table";
 import { NoResults } from "@/components/ui/no-results";
 import { InfoHint } from "@/components/ui/info-hint";
 import { FIELD_HINTS } from "@/lib/ui/field-hints";
@@ -112,6 +113,12 @@ type Params = {
   wh_type?: string;
   wh_status?: string;
   missing_cert?: string;
+  // Páginas de las tablas (una por tabla en la misma pantalla).
+  page?: string;
+  p_vencidas?: string;
+  p_proximas?: string;
+  p_cotizaciones?: string;
+  p_aceptadas?: string;
 };
 
 /** Monedas del catálogo (Configuración → Monedas y tasas), incluidas las inactivas: puede haber documentos en ellas. */
@@ -175,7 +182,7 @@ export default async function ReportsPage({
 
       <section className="min-w-0 flex-1">
         {activeReport === "rentabilidad" && <ProfitabilityReport params={params} />}
-        {activeReport === "vencimientos" && <ReceivablesDashboardReport />}
+        {activeReport === "vencimientos" && <ReceivablesDashboardReport params={params} />}
         {activeReport === "cxc" && <ReceivableReport params={params} />}
         {activeReport === "cxp" && <PayableReport params={params} />}
         {activeReport === "ventas-cliente" && <SalesByClientReport params={params} />}
@@ -383,7 +390,7 @@ async function ProfitabilityReport({ params }: { params: Params }) {
           />
         </section>
       )}
-      <DataTable
+      <PagedDataTable basePath="/reports" params={params as Record<string, string | undefined>} pageParam="page"
         columns={columns}
         rows={profitability}
         keyFor={(p) => p.id}
@@ -398,7 +405,7 @@ async function ProfitabilityReport({ params }: { params: Params }) {
   );
 }
 
-async function ReceivablesDashboardReport() {
+async function ReceivablesDashboardReport({ params }: { params: Params }) {
   const data = await getReceivablesDashboard();
 
   const overdueColumns: Column<(typeof data.facturasVencidas)[number]>[] = [
@@ -533,7 +540,7 @@ async function ReceivablesDashboardReport() {
 
       <section>
         <SectionHeader title="Facturas vencidas" count={data.facturasVencidas.length} />
-        <DataTable
+        <PagedDataTable basePath="/reports" params={params as Record<string, string | undefined>} pageParam="p_vencidas"
           columns={overdueColumns}
           rows={data.facturasVencidas}
           keyFor={(inv) => inv.id}
@@ -544,7 +551,7 @@ async function ReceivablesDashboardReport() {
 
       <section>
         <SectionHeader title="Facturas próximas a vencer" count={data.facturasProximasAVencer.length} description="Próximos 30 días." />
-        <DataTable
+        <PagedDataTable basePath="/reports" params={params as Record<string, string | undefined>} pageParam="p_proximas"
           columns={upcomingColumns}
           rows={data.facturasProximasAVencer}
           keyFor={(inv) => inv.id}
@@ -556,7 +563,7 @@ async function ReceivablesDashboardReport() {
       <div className="grid gap-6 xl:grid-cols-2">
         <section className="min-w-0">
           <SectionHeader title="Cotizaciones pendientes de aceptación" count={data.cotizacionesPendientes.length} />
-          <DataTable
+          <PagedDataTable basePath="/reports" params={params as Record<string, string | undefined>} pageParam="p_cotizaciones"
             columns={pendingQuoteColumns}
             rows={data.cotizacionesPendientes}
             keyFor={(q) => q.id}
@@ -566,7 +573,7 @@ async function ReceivablesDashboardReport() {
         </section>
         <section className="min-w-0">
           <SectionHeader title="Aceptadas, pendientes de facturar" count={data.cotizacionesAceptadasSinFacturar.length} />
-          <DataTable
+          <PagedDataTable basePath="/reports" params={params as Record<string, string | undefined>} pageParam="p_aceptadas"
             columns={acceptedColumns}
             rows={data.cotizacionesAceptadasSinFacturar}
             keyFor={(q) => q.id}
@@ -707,7 +714,7 @@ async function ReceivableReport({ params }: { params: Params }) {
         </Select>
       </FilterBar>
 
-      <DataTable
+      <PagedDataTable basePath="/reports" params={params as Record<string, string | undefined>} pageParam="page"
         columns={columns}
         rows={receivable}
         keyFor={(inv) => inv.id}
@@ -783,7 +790,7 @@ async function PayableReport({ params }: { params: Params }) {
         </Select>
       </FilterBar>
 
-      <DataTable
+      <PagedDataTable basePath="/reports" params={params as Record<string, string | undefined>} pageParam="page"
         columns={columns}
         rows={payable}
         keyFor={(e) => e.id}
@@ -862,7 +869,7 @@ async function SalesByClientReport({ params }: { params: Params }) {
         </Select>
       </FilterBar>
 
-      <DataTable
+      <PagedDataTable basePath="/reports" params={params as Record<string, string | undefined>} pageParam="page"
         columns={columns}
         rows={salesByClient}
         keyFor={(c) => c.clientId}
@@ -943,7 +950,7 @@ async function ExpensesByCategoryReport({ params }: { params: Params }) {
         </Select>
       </FilterBar>
 
-      <DataTable
+      <PagedDataTable basePath="/reports" params={params as Record<string, string | undefined>} pageParam="page"
         columns={columns}
         rows={expensesByCategory}
         keyFor={(c) => c.categoryId}
@@ -1455,7 +1462,7 @@ async function PaymentsByCurrencyReport({ params }: { params: Params }) {
         </div>
       )}
 
-      <DataTable
+      <PagedDataTable basePath="/reports" params={params as Record<string, string | undefined>} pageParam="page"
         columns={columns}
         rows={rows}
         keyFor={(r) => `${r.direction}-${r.id}`}
@@ -1680,7 +1687,7 @@ async function CustomerWithholdingsReport({ params }: { params: Params }) {
           </Card>
         )
       ) : (
-        <DataTable columns={columns} rows={rows} keyFor={(r) => r.id} maxWidth="max-w-none" />
+        <PagedDataTable basePath="/reports" params={params as Record<string, string | undefined>} pageParam="page" columns={columns} rows={rows} keyFor={(r) => r.id} maxWidth="max-w-none" />
       )}
     </div>
   );

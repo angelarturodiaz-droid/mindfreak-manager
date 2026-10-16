@@ -17,10 +17,13 @@ import { InitialsAvatar, SectionHeader, StatCard, StatGrid } from "@/components/
 import { relationName, relationRow } from "@/lib/utils/relation";
 import { formatDate } from "@/lib/utils/dates";
 
-function formatMoney(amount: number) {
-  return new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(
-    amount,
-  );
+function formatMoney(amount: number, currency = "DOP") {
+  return new Intl.NumberFormat("es-DO", { style: "currency", currency }).format(amount);
+}
+
+/** Moneda de la factura del cobro (el monto y la retención van en esa moneda). */
+function invoiceCurrency(p: { invoices: unknown }) {
+  return relationRow<{ currency: string | null }>(p.invoices)?.currency ?? "DOP";
 }
 
 type PaymentRow = Awaited<ReturnType<typeof listCustomerPaymentsPage>>["rows"][number];
@@ -89,22 +92,36 @@ export default async function PaymentsPage({
       accessor: (p) => <span className="text-brand-muted">{bankLabel(p.bank_accounts)}</span>,
     },
     {
-      header: "Monto",
+      header: "Recibido",
       className: "text-right",
-      accessor: (p) => (
-        <span className="flex flex-col items-end">
-          {Number(p.amount) > 0 ? (
-            <span className="whitespace-nowrap font-medium tabular-nums text-brand-success">+{formatMoney(p.amount)}</span>
-          ) : (
-            <span className="text-xs text-brand-muted">Solo retención</span>
-          )}
-          {Number(p.withholding_total) > 0 && (
-            <span className="whitespace-nowrap text-xs text-brand-muted">
-              + retenciones {formatMoney(Number(p.withholding_total))}
-            </span>
-          )}
-        </span>
-      ),
+      accessor: (p) =>
+        Number(p.amount) > 0 ? (
+          <span className="whitespace-nowrap font-medium tabular-nums text-brand-success">
+            +{formatMoney(Number(p.amount), invoiceCurrency(p))}
+          </span>
+        ) : (
+          <span
+            className="whitespace-nowrap rounded-full bg-brand-warning-bg px-2 py-0.5 text-xs font-medium text-brand-warning"
+            title="El cliente no pagó dinero en este cobro: solo se aplicó una retención (no entra al banco)."
+          >
+            Solo retención
+          </span>
+        ),
+    },
+    {
+      header: "Retenciones",
+      className: "text-right",
+      accessor: (p) =>
+        Number(p.withholding_total) > 0 ? (
+          <span
+            className="whitespace-nowrap rounded-full bg-brand-accent-light px-2 py-0.5 text-xs font-medium tabular-nums text-brand-accent"
+            title="Lo que el cliente retuvo y pagó a la DGII. Rebaja la factura, pero no entra al banco."
+          >
+            + {formatMoney(Number(p.withholding_total), invoiceCurrency(p))}
+          </span>
+        ) : (
+          <span className="text-brand-muted">—</span>
+        ),
     },
   ];
 
