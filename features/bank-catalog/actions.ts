@@ -87,3 +87,52 @@ export async function deleteBankCatalogEntryAction(entryId: string): Promise<voi
 
   revalidatePath("/settings/banks");
 }
+
+const LOGO_DATA_URL = /^data:image\/(png|webp|jpeg);base64,[A-Za-z0-9+/=]+$/;
+
+/**
+ * Color y logo de un banco del catálogo (migración 084). Lo usan todas las
+ * cuentas y tarjetas de ese banco. `logoData`: data URL ya reducido en el
+ * navegador (128 px); null = quitar el logo subido (vuelve al del sistema o a
+ * las iniciales); undefined = no cambiarlo.
+ */
+export async function updateBankBrandAction(
+  entryId: string,
+  color: string | null,
+  logoData: string | null | undefined,
+): Promise<{ error: string | null }> {
+  await requirePermission("settings.manage");
+  if (color !== null && !/^#[0-9a-fA-F]{6}$/.test(color)) {
+    return { error: "El color no es válido. Elige uno de la lista o con «Otro color…»." };
+  }
+  if (logoData) {
+    if (!LOGO_DATA_URL.test(logoData)) return { error: "El logo debe ser una imagen PNG, JPG, WEBP o SVG." };
+    if (logoData.length > 200000) return { error: "El logo es muy grande. Usa una imagen más pequeña (máx. 150 KB)." };
+  }
+  const supabase = await createSupabaseClient();
+  const patch: { brand_color: string | null; logo_data?: string | null } = { brand_color: color };
+  if (logoData !== undefined) patch.logo_data = logoData;
+  const { data, error } = await supabase
+    .from("bank_catalog")
+    .update(patch)
+    .eq("id", entryId)
+    .select("id, company_id, name")
+    .maybeSingle();
+  if (error || !data) return { error: "No se pudo guardar. Verifica que tengas permiso de Configuración e intenta de nuevo." };
+
+  await logAudit({
+    companyId: data.company_id,
+    action: "UPDATE",
+    entityType: "bank_catalog",
+    entityId: entryId,
+    newValues: {
+      name: data.name,
+      brand_color: color,
+      logo: logoData === undefined ? "sin cambio" : logoData ? "subido" : "quitado",
+    },
+  });
+
+  revalidatePath("/settings/banks");
+  revalidatePath("/banks", "layout");
+  return { error: null };
+}

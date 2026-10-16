@@ -773,6 +773,19 @@ const SECTIONS: Section[] = [
           movimientos manuales para lo demás (intereses, comisiones,
           ajustes).
         </p>
+        <p className="mt-2 text-sm text-brand-text">
+          <strong>Color y logo de cada banco</strong>: las tarjetas de Bancos
+          llevan arriba el color del banco y su logo (Banreservas, Popular, BHD y
+          Promerica ya vienen con el suyo). Para cambiarlos o ponerlos a otro
+          banco: <em>Configuración → Catálogo de bancos → Color y logo</em>
+          (o el enlace <em>Color y logo del banco</em> dentro de la cuenta). Se
+          hace <strong>una vez por banco</strong> y aplica a todas sus cuentas y
+          tarjetas. El logo se sube como imagen (PNG, JPG, WEBP o SVG) y se
+          reduce solo; sin logo salen las iniciales en el color del banco. Las
+          cuentas con banco <em>Otro</em> se ven blancas, como antes. En
+          <em> Cobros y pagos</em> cada cuenta lleva el cuadrito de su banco. Es
+          solo visual: no cambia saldos ni movimientos.
+        </p>
         <p className="text-sm text-brand-text">
           Cada movimiento tiene dos datos <strong>independientes</strong>:
         </p>

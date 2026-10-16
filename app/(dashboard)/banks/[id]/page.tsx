@@ -26,7 +26,8 @@ import { ManualTransactionForm } from "./manual-transaction-form";
 import { TransferForm } from "./transfer-form";
 import { getFxContext } from "@/features/currencies/queries";
 import { BankAccountEditForm } from "./bank-account-edit-form";
-import { listBankCatalog } from "@/features/bank-catalog/queries";
+import { listBankCatalog, getBankBrands } from "@/features/bank-catalog/queries";
+import { BankMark } from "@/components/banks/bank-mark";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { ActionLink } from "@/components/ui/action-link";
 import { Card } from "@/components/ui/card";
@@ -372,7 +373,7 @@ export default async function BankAccountDetailPage({
 
       <Card className="flex flex-wrap items-start justify-between gap-6">
         <div className="flex min-w-0 items-start gap-4">
-          <IconBadge icon={isCard ? <CreditCard size={22} /> : <Landmark size={22} />} tone={isCard ? "violet" : "blue"} size="lg" />
+          <BankMark brand={(await getBankBrands())(account.bank_name)} isCard={isCard} size={52} />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-semibold tracking-tight text-brand-primary">{account.name}</h1>
@@ -393,6 +394,14 @@ export default async function BankAccountDetailPage({
             <p className="mt-1 text-sm text-brand-muted">
               {account.bank_name ?? "Sin banco"}
               {account.account_number_masked && ` · ${account.account_number_masked}`}
+              {canCreate && account.bank_name && account.bank_name !== "Otro" && (
+                <>
+                  {" · "}
+                  <Link href="/settings/banks" className="text-brand-accent hover:underline" title="El color y el logo se cambian una vez por banco, en Configuración → Catálogo de bancos">
+                    Color y logo del banco
+                  </Link>
+                </>
+              )}
             </p>
             {canCreate && (
               <div className="mt-3">

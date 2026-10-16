@@ -16,6 +16,9 @@ import { DataTable, type Column } from "@/components/ui/data-table";
 import { InitialsAvatar, SectionHeader, StatCard, StatGrid } from "@/components/ui/page-kit";
 import { relationName, relationRow } from "@/lib/utils/relation";
 import { formatDate } from "@/lib/utils/dates";
+import { getBankBrands } from "@/features/bank-catalog/queries";
+import { BankMark } from "@/components/banks/bank-mark";
+import type { BankBrand } from "@/features/bank-catalog/branding";
 
 function formatMoney(amount: number, currency = "DOP") {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency }).format(amount);
@@ -29,10 +32,16 @@ function invoiceCurrency(p: { invoices: unknown }) {
 type PaymentRow = Awaited<ReturnType<typeof listCustomerPaymentsPage>>["rows"][number];
 type SupplierPaymentRow = Awaited<ReturnType<typeof listSupplierPaymentsPage>>["rows"][number];
 
-function bankLabel(bankAccounts: unknown) {
+/** Cuenta con el cuadrito de su banco (logo o iniciales en su color). */
+function BankCell({ bankAccounts, brandOf }: { bankAccounts: unknown; brandOf: (n: string | null) => BankBrand | null }) {
   const a = relationRow<{ name: string; bank_name: string | null }>(bankAccounts);
-  if (!a) return "—";
-  return a.bank_name ? `${a.name} (${a.bank_name})` : a.name;
+  if (!a) return <span className="text-brand-muted">—</span>;
+  return (
+    <span className="flex items-center gap-2" title={a.bank_name ?? undefined}>
+      <BankMark brand={brandOf(a.bank_name)} size={22} />
+      <span className="text-brand-muted">{a.name}</span>
+    </span>
+  );
 }
 
 const TABS = [
@@ -50,10 +59,11 @@ export default async function PaymentsPage({
   const q = cleanSearch(params.q);
   const page = parsePage(params.page);
   // Solo se pide la pestaña abierta (15 por página); las pestañas muestran el total.
-  const [list, counts, stats] = await Promise.all([
+  const [list, counts, stats, brandOf] = await Promise.all([
     activeTab === "cobros" ? listCustomerPaymentsPage({ search: q, page }) : listSupplierPaymentsPage({ search: q, page }),
     countPaymentsByKind(),
     getPaymentStats(),
+    getBankBrands(),
   ]);
   const payments = activeTab === "cobros" ? (list.rows as PaymentRow[]) : [];
   const supplierPayments = activeTab === "pagos" ? (list.rows as SupplierPaymentRow[]) : [];
@@ -89,7 +99,7 @@ export default async function PaymentsPage({
     { header: "Método", accessor: (p) => <span className="text-brand-muted">{PAYMENT_METHOD_LABELS[p.method] ?? p.method}</span> },
     {
       header: "Depositado en",
-      accessor: (p) => <span className="text-brand-muted">{bankLabel(p.bank_accounts)}</span>,
+      accessor: (p) => <BankCell bankAccounts={p.bank_accounts} brandOf={brandOf} />,
     },
     {
       header: "Recibido",
@@ -154,7 +164,7 @@ export default async function PaymentsPage({
     { header: "Método", accessor: (p) => <span className="text-brand-muted">{PAYMENT_METHOD_LABELS[p.method] ?? p.method}</span> },
     {
       header: "Pagado desde",
-      accessor: (p) => <span className="text-brand-muted">{bankLabel(p.bank_accounts)}</span>,
+      accessor: (p) => <BankCell bankAccounts={p.bank_accounts} brandOf={brandOf} />,
     },
     {
       header: "Monto",

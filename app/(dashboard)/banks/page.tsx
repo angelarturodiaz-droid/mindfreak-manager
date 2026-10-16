@@ -18,6 +18,9 @@ import {
   listHref,
 } from "@/components/ui/page-kit";
 import { ACCOUNT_KIND_LABELS } from "@/features/banks/schema";
+import { getBankBrands } from "@/features/bank-catalog/queries";
+import { readableTextOn, type BankBrand } from "@/features/bank-catalog/branding";
+import { BankMark } from "@/components/banks/bank-mark";
 
 function formatMoney(amount: number, currency: string) {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency }).format(
@@ -54,29 +57,36 @@ function splitCurrencies(totals: Record<string, number>, base = "DOP") {
   return { main: formatMoney(main, base), others };
 }
 
-function AccountCard({ a }: { a: AccountRow }) {
+function AccountCard({ a, brand }: { a: AccountRow; brand: BankBrand | null }) {
   const isCard = a.type === "CREDIT_CARD";
   const { debt, favor, available, usage } = cardPosition(a.current_balance, a.credit_limit, a.favor_increases_limit);
+  // Franja de arriba con el color del banco (si tiene); si no, el estilo neutro de siempre.
+  const band = brand?.color ?? null;
+  const fg = band ? readableTextOn(band) : null;
+  const subtitle = `${!isCard && a.account_kind ? `${ACCOUNT_KIND_LABELS[a.account_kind] ?? ""} · ` : ""}${a.bank_name ?? "Sin banco"}${
+    a.account_number_masked ? ` · ${a.account_number_masked}` : ""
+  }`;
   return (
     <Link
       href={`/banks/${a.id}`}
-      className={`group flex min-w-0 flex-col gap-3 rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface p-4 shadow-[var(--shadow-sm)] transition-shadow hover:shadow-[var(--shadow-md)] ${
+      className={`group flex min-w-0 flex-col overflow-hidden rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface shadow-[var(--shadow-sm)] transition-shadow hover:shadow-[var(--shadow-md)] ${
         a.is_active ? "" : "opacity-60"
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div
+        className={`flex items-start justify-between gap-3 px-4 py-3 ${band ? "" : "border-b border-brand-border/60"}`}
+        style={band ? { background: `linear-gradient(120deg, ${band}, ${band}d9)`, color: fg ?? undefined } : undefined}
+      >
         <div className="flex min-w-0 items-center gap-3">
-          <IconBadge icon={isCard ? <CreditCard size={18} /> : <Landmark size={18} />} tone={isCard ? "violet" : "blue"} />
+          <BankMark brand={brand} isCard={isCard} size={40} className={band ? "ring-2 ring-white/70" : ""} />
           <div className="min-w-0">
-            <p className="truncate font-medium text-brand-text group-hover:text-brand-accent">{a.name}</p>
-            <p className="truncate text-xs text-brand-muted">
-              {!isCard && a.account_kind ? `${ACCOUNT_KIND_LABELS[a.account_kind] ?? ""} · ` : ""}
-              {a.bank_name ?? "Sin banco"}
-              {a.account_number_masked ? ` · ${a.account_number_masked}` : ""}
+            <p className={`truncate font-semibold ${band ? "" : "text-brand-text group-hover:text-brand-accent"}`}>{a.name}</p>
+            <p className={`truncate text-xs ${band ? "opacity-80" : "text-brand-muted"}`}>
+              {isCard ? `Tarjeta · ${subtitle}` : subtitle}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5">
           {!a.is_active && <Badge tone="neutral">Inactiva</Badge>}
           {a.show_on_invoices && (
             <Tooltip text="Sale en los datos bancarios para el pago de facturas y cotizaciones.">
@@ -85,11 +95,16 @@ function AccountCard({ a }: { a: AccountRow }) {
               </span>
             </Tooltip>
           )}
-          <Badge tone="neutral">{a.currency}</Badge>
-          <ChevronRight size={16} className="text-brand-muted group-hover:text-brand-accent" />
+          {band ? (
+            <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium">{a.currency}</span>
+          ) : (
+            <Badge tone="neutral">{a.currency}</Badge>
+          )}
+          <ChevronRight size={16} className={band ? "opacity-80" : "text-brand-muted group-hover:text-brand-accent"} />
         </div>
       </div>
 
+      <div className="flex flex-col gap-3 p-4">
       {a.uncategorized_count > 0 && (
         <p className="-mt-1 inline-flex w-fit items-center gap-1.5 rounded-full bg-brand-warning-bg px-2.5 py-0.5 text-xs font-medium text-brand-warning">
           <AlertTriangle size={12} />
@@ -149,12 +164,13 @@ function AccountCard({ a }: { a: AccountRow }) {
           </p>
         </div>
       )}
+      </div>
     </Link>
   );
 }
 
 /** Vista "Lista": una fila por cuenta, para cuando hay muchas cuentas. */
-function AccountsTable({ rows }: { rows: AccountRow[] }) {
+function AccountsTable({ rows, brandOf }: { rows: AccountRow[]; brandOf: (name: string | null) => BankBrand | null }) {
   const columns: Column<AccountRow>[] = [
     {
       header: "Cuenta",
@@ -162,7 +178,7 @@ function AccountsTable({ rows }: { rows: AccountRow[] }) {
         const isCard = a.type === "CREDIT_CARD";
         return (
           <Link href={`/banks/${a.id}`} className="group flex min-w-[14rem] items-center gap-3">
-            <IconBadge icon={isCard ? <CreditCard size={15} /> : <Landmark size={15} />} tone={isCard ? "violet" : "blue"} size="sm" />
+            <BankMark brand={brandOf(a.bank_name)} isCard={isCard} size={30} />
             <span className="min-w-0">
               <span className="block truncate font-medium text-brand-text group-hover:text-brand-accent">{a.name}</span>
               <span className="block truncate text-xs text-brand-muted">
@@ -230,7 +246,7 @@ export default async function BanksPage({
     params.kind === "SAVINGS" || params.kind === "CHECKING" || params.kind === "CARD" ? params.kind : undefined;
   // Vista: tarjetas (por defecto) o lista compacta para muchas cuentas.
   const listView = params.view === "lista";
-  const accounts = await listBankAccountsWithBalance();
+  const [accounts, brandOf] = await Promise.all([listBankAccountsWithBalance(), getBankBrands()]);
   // Monedas con cuentas (catálogo de Configuración → Monedas y tasas).
   const accountCurrencies = Array.from(new Set(accounts.map((a) => a.currency))).sort();
   const currencyFilter = params.currency && accountCurrencies.includes(params.currency) ? params.currency : undefined;
@@ -442,11 +458,11 @@ export default async function BanksPage({
                       {currencyFilter ? `Sin cuentas bancarias en ${currencyFilter}.` : "Sin cuentas bancarias todavía."}
                     </p>
                   ) : listView ? (
-                    <AccountsTable rows={banks} />
+                    <AccountsTable rows={banks} brandOf={brandOf} />
                   ) : (
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                       {banks.map((a) => (
-                        <AccountCard key={a.id} a={a} />
+                        <AccountCard key={a.id} a={a} brand={brandOf(a.bank_name)} />
                       ))}
                     </div>
                   )}
@@ -461,11 +477,11 @@ export default async function BanksPage({
                       {currencyFilter ? `Sin tarjetas en ${currencyFilter}.` : "Sin tarjetas registradas todavía."}
                     </p>
                   ) : listView ? (
-                    <AccountsTable rows={cardsShown} />
+                    <AccountsTable rows={cardsShown} brandOf={brandOf} />
                   ) : (
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                       {cardsShown.map((a) => (
-                        <AccountCard key={a.id} a={a} />
+                        <AccountCard key={a.id} a={a} brand={brandOf(a.bank_name)} />
                       ))}
                     </div>
                   )}

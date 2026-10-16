@@ -1,5 +1,24 @@
 # CHANGELOG — Mindfreak Manager
 
+## Bancos con color y logo de cada banco (2026-10-15 noche)
+
+- Migración **084** (aplicada): `bank_catalog.brand_color` (#rrggbb) y
+  `logo_data` (data URL 128 px, máx. ~150 KB). Colores sugeridos para
+  Banreservas, Popular, BHD y Promerica. Solo visual, sin lógica de dinero.
+- Logos del sistema (entregados por la empresa) en `public/bank-logos/`:
+  Banreservas, Popular, BHD y Promerica. Lo que suba el usuario los reemplaza.
+- `features/bank-catalog/branding.ts` (iniciales, contraste, resolución de la
+  marca), `getBankBrands()`, `components/banks/bank-mark.tsx` (`BankMark`).
+- Bancos: tarjetas con franja del color del banco y su logo; vista Lista y
+  detalle de la cuenta con el logo (enlace *Color y logo del banco*).
+- Configuración → Catálogo de bancos: columna con logo y color + botón
+  **Color y logo** (vista previa, 8 colores + *Otro color…*, *Sin color*,
+  subir logo que se reduce en el navegador). Acción `updateBankBrandAction`
+  con auditoría; errores en ventana.
+- Cobros y pagos: la cuenta lleva el cuadrito de su banco.
+- Nota: el respaldo (A0) y la limpieza Go-Live (A1) pasan a las migraciones
+  085 y 086.
+
 ## Roles con botón Guardar, reportes desplegables y ⓘ en columnas (2026-10-15 noche)
 
 - **Roles y permisos**: los cambios ya no se guardan al marcar. Quedan

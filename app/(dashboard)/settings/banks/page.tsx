@@ -1,4 +1,6 @@
-import { listBankCatalog } from "@/features/bank-catalog/queries";
+import { listBankCatalogWithBrand } from "@/features/bank-catalog/queries";
+import { BankMark } from "@/components/banks/bank-mark";
+import { BankBrandEditor } from "./bank-brand-editor";
 import {
   toggleBankCatalogActiveAction,
   deleteBankCatalogEntryAction,
@@ -12,7 +14,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { PAGE_SIZE, paginate, parsePage } from "@/lib/utils/pagination";
 
 
-type BankEntry = Awaited<ReturnType<typeof listBankCatalog>>[number];
+type BankEntry = Awaited<ReturnType<typeof listBankCatalogWithBrand>>[number];
 
 export default async function BankCatalogSettingsPage({
   searchParams,
@@ -20,10 +22,22 @@ export default async function BankCatalogSettingsPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const page = parsePage((await searchParams).page);
-  const banks = await listBankCatalog(false);
+  const banks = await listBankCatalogWithBrand();
 
   const columns: Column<BankEntry>[] = [
-    { header: "Nombre", accessor: (b) => b.name },
+    {
+      header: "Banco",
+      info: "El color y el logo se usan en las tarjetas de Bancos y en las listas, para reconocer cada cuenta rápido.",
+      accessor: (b) => (
+        <span className="flex items-center gap-2.5">
+          <BankMark brand={b.brand} size={30} />
+          <span className="text-brand-text">{b.name}</span>
+          {b.brand?.color && (
+            <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: b.brand.color }} title={`Color ${b.brand.color}`} />
+          )}
+        </span>
+      ),
+    },
     {
       header: "Estado",
       accessor: (b) => <Badge tone={b.is_active ? "success" : "danger"}>{b.is_active ? "Activo" : "Inactivo"}</Badge>,
@@ -33,6 +47,9 @@ export default async function BankCatalogSettingsPage({
       className: "text-right",
       accessor: (b) => (
         <div className="flex justify-end gap-3">
+          {b.name !== "Otro" && (
+            <BankBrandEditor entryId={b.id} name={b.name} color={b.brand_color} uploadedLogo={b.logo_data} />
+          )}
           <ActionButton
             label={b.is_active ? "Desactivar" : "Activar"}
             variant="ghost"
@@ -58,12 +75,14 @@ export default async function BankCatalogSettingsPage({
         <p className="text-sm text-brand-muted">
           Se usa como lista desplegable al crear un Proveedor o una Cuenta
           bancaria/Tarjeta, para que el nombre del banco quede siempre
-          igual. Viene precargado con los bancos más comunes de RD.
+          igual. Viene precargado con los bancos más comunes de RD. Con
+          <strong> Color y logo</strong> eliges cómo se ven las cuentas y
+          tarjetas de cada banco en Bancos.
         </p>
       </div>
 
-      <DataTable columns={columns} rows={paginate(banks, page)} keyFor={(b) => b.id} maxWidth="max-w-md" emptyMessage="Sin bancos en el catálogo todavía." />
-      <div className="max-w-md">
+      <DataTable columns={columns} rows={paginate(banks, page)} keyFor={(b) => b.id} maxWidth="max-w-3xl" emptyMessage="Sin bancos en el catálogo todavía." />
+      <div className="max-w-3xl">
         <Pagination basePath="/settings/banks" page={page} pageSize={PAGE_SIZE} total={banks.length} />
       </div>
 

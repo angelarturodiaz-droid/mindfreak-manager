@@ -813,3 +813,13 @@ pulsa el botón.
 - **Completar certificado**: así se llama el botón cuando la retención tiene el
   monto en RD$ pero falta el número o el archivo. Abre la misma ventana que
   *Agregar/Editar certificado*.
+
+## Color y logo de cada banco (2026-10-15 noche)
+
+- Se configura **una vez por banco** en Configuración → Catálogo de bancos →
+  *Color y logo*, y aplica a todas sus cuentas y tarjetas (se enlazan por el
+  nombre del banco de la cuenta). Banreservas, Popular, BHD y Promerica traen
+  su logo; Banco Santa Cruz y los demás salen con iniciales hasta que se suba
+  el logo. Cuentas con banco *Otro* se ven como antes (blancas).
+- Es solo visual. El logo se guarda reducido (128 px) dentro de la base, no en
+  un archivo público.
