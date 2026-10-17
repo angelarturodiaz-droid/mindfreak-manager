@@ -32,6 +32,7 @@ import { formatDate, pluralDays } from "@/lib/utils/dates";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { PagedDataTable } from "@/components/ui/paged-data-table";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import { ExportReportButton } from "@/components/reports/export-report-button";
 import { NoResults } from "@/components/ui/no-results";
 import { InfoHint } from "@/components/ui/info-hint";
 import { FIELD_HINTS } from "@/lib/ui/field-hints";
@@ -229,11 +230,18 @@ function ShareBar({ value, total }: { value: number; total: number }) {
   );
 }
 
-function ReportTitle({ title, description }: { title: string; description?: string }) {
+function ReportTitle({ title, description, params }: { title: string; description?: string; params: Params }) {
+  // Filtros sin las páginas de las tablas (la exportación lleva todas las filas).
+  const exportParams = Object.fromEntries(
+    Object.entries(params).filter(([k, v]) => v && k !== "report" && k !== "page" && !k.startsWith("p_")),
+  ) as Record<string, string>;
   return (
-    <div className="mb-4">
-      <h2 className="text-xl font-semibold text-brand-primary">{title}</h2>
-      {description && <p className="text-sm text-brand-muted">{description}</p>}
+    <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+      <div className="min-w-0">
+        <h2 className="text-xl font-semibold text-brand-primary">{title}</h2>
+        {description && <p className="text-sm text-brand-muted">{description}</p>}
+      </div>
+      <ExportReportButton report={params.report ?? DEFAULT_REPORT} params={exportParams} />
     </div>
   );
 }
@@ -337,7 +345,7 @@ async function ProfitabilityReport({ params }: { params: Params }) {
 
   return (
     <div>
-      <ReportTitle
+      <ReportTitle params={params}
         title="Rentabilidad por proyecto"
         description="Cotizado, facturado, cobrado y costo real de cada proyecto, con su utilidad y margen."
       />
@@ -478,7 +486,7 @@ async function ReceivablesDashboardReport({ params }: { params: Params }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <ReportTitle
+      <ReportTitle params={params}
         title="Cuentas por Cobrar y Vencimientos"
         description="Consolidado en la moneda base, en vivo — no es un corte histórico."
       />
@@ -702,7 +710,7 @@ async function ReceivableReport({ params }: { params: Params }) {
 
   return (
     <div>
-      <ReportTitle title="Cuentas por cobrar" description="Detalle de facturas con balance, filtrable por cliente, proyecto, estado y moneda." />
+      <ReportTitle params={params} title="Cuentas por cobrar" description="Detalle de facturas con balance, filtrable por cliente, proyecto, estado y moneda." />
       <FilterBar report="cxc">
         <DateRangeFields from={params.from} to={params.to} />
         <Select label="Cliente" name="client_id" defaultValue={params.client_id ?? ""}>
@@ -779,7 +787,7 @@ async function PayableReport({ params }: { params: Params }) {
 
   return (
     <div>
-      <ReportTitle title="Cuentas por pagar" description="Gastos con saldo pendiente con proveedores." />
+      <ReportTitle params={params} title="Cuentas por pagar" description="Gastos con saldo pendiente con proveedores." />
       <FilterBar report="cxp">
         <DateRangeFields from={params.from} to={params.to} />
         <Select label="Proveedor" name="supplier_id" defaultValue={params.supplier_id ?? ""}>
@@ -856,7 +864,7 @@ async function SalesByClientReport({ params }: { params: Params }) {
 
   return (
     <div>
-      <ReportTitle title="Ventas por cliente" description="Total facturado por cliente en la moneda base, de mayor a menor." />
+      <ReportTitle params={params} title="Ventas por cliente" description="Total facturado por cliente en la moneda base, de mayor a menor." />
       <FilterBar report="ventas-cliente">
         <DateRangeFields from={params.from} to={params.to} />
         <Select label="Cliente" name="client_id" defaultValue={params.client_id ?? ""}>
@@ -933,7 +941,7 @@ async function ExpensesByCategoryReport({ params }: { params: Params }) {
 
   return (
     <div>
-      <ReportTitle title="Gastos por categoría" description="Total gastado por categoría en la moneda base, de mayor a menor." />
+      <ReportTitle params={params} title="Gastos por categoría" description="Total gastado por categoría en la moneda base, de mayor a menor." />
       <FilterBar report="gastos-categoria">
         <DateRangeFields from={params.from} to={params.to} />
         <Select label="Categoría" name="category_id" defaultValue={params.category_id ?? ""}>
@@ -1080,7 +1088,7 @@ async function CashflowByCategoryReport({ params }: { params: Params }) {
 
   return (
     <div>
-      <ReportTitle
+      <ReportTitle params={params}
         title="Ingresos y egresos por categoría"
         description="Flujo real de los movimientos de banco, agrupado por categoría y en la moneda base."
       />
@@ -1396,7 +1404,7 @@ async function PaymentsByCurrencyReport({ params }: { params: Params }) {
 
   return (
     <div>
-      <ReportTitle
+      <ReportTitle params={params}
         title="Pagos y cobros por moneda"
         description="Lo aplicado a cada factura o gasto en su moneda y lo que realmente se movió en el banco en la moneda de la cuenta, con comisiones, tasas y diferencias."
       />
@@ -1585,7 +1593,7 @@ async function CustomerWithholdingsReport({ params }: { params: Params }) {
 
   return (
     <div>
-      <ReportTitle
+      <ReportTitle params={params}
         title="Retenciones de clientes"
         description="Lo que los clientes retuvieron al pagar las facturas (ISR, ITBIS u otras). Rebaja el saldo de la factura pero no entra al banco: el cliente lo paga a la DGII y entrega un certificado."
       />

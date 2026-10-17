@@ -1,5 +1,23 @@
 # CHANGELOG — Mindfreak Manager
 
+## Exportar reportes a Excel y PDF (2026-10-16)
+
+- Botón **Exportar** (Excel .xlsx o PDF) en los 9 reportes, al lado del
+  título. Usa los filtros de la pantalla y exporta **todas** las filas.
+- Servidor: `features/reports/export-data.ts` arma título, filtros con
+  nombres reales, resumen, secciones con columnas tipadas y notas;
+  `getReportExportAction` (permiso `reports.view`, deja `EXPORT` en
+  Auditoría). Tipos y formato compartidos en `features/reports/export-types.ts`.
+- Navegador: `lib/export/report-xlsx.ts` (SpreadsheetML + zip con `fflate`,
+  ahora dependencia directa): números y fechas reales, formato de moneda por
+  celda, encabezado de la empresa, totales en negrita. `lib/pdf/report-document.tsx`:
+  A4 horizontal, empresa, filtros, resumen, tablas con anchos según el
+  contenido, totales y "Página X de Y".
+- Cuentas por cobrar y vencimientos exporta sus 4 tablas; Ingresos y egresos
+  por categoría, el resumen y el neto por mes; Retenciones de clientes, el
+  detalle, Recibido vs aplicado y Por cliente.
+- Pruebas: `tests/unit/report-export.test.ts`.
+
 ## Bancos recuerda la vista Lista/Tarjetas (2026-10-15 noche)
 
 - Al elegir *Lista* o *Tarjetas* en Bancos, la elección se guarda en una

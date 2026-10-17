@@ -978,6 +978,16 @@ const SECTIONS: Section[] = [
           vencimientos</em>, <em>Retenciones de clientes</em>) cada tabla es un bloque
           desplegable: el título muestra la cantidad y el total, y se abre con <em>Ver detalle</em>. Los disponibles hoy:
         </p>
+        <p className="mt-2 text-sm text-brand-text">
+          <strong>Exportar a Excel o PDF</strong>: arriba a la derecha de cada reporte, botón{" "}
+          <em>Exportar</em>. Sale con los <strong>mismos filtros</strong> que tienes puestos y con{" "}
+          <strong>todas las filas</strong> (no solo la página que ves). <strong>Excel (.xlsx)</strong> es
+          para analizar: los montos y las fechas quedan como números de verdad (se pueden sumar, ordenar y
+          filtrar) y cada monto lleva su moneda (RD$, US$). <strong>PDF</strong> es para enviar o imprimir:
+          horizontal, con el nombre de la empresa, los filtros, la fecha y quién lo generó, y{" "}
+          <em>Página X de Y</em>. Ideal para mandarle al contador. Cada exportación queda anotada en
+          Auditoría (quién, qué reporte y con qué filtros).
+        </p>
         <Bullets
           items={[
             <><strong>Rentabilidad por proyecto</strong> — cotizado, facturado, cobrado, costo real y margen de cada proyecto.</>,

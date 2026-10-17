@@ -823,3 +823,15 @@ pulsa el botón.
   el logo. Cuentas con banco *Otro* se ven como antes (blancas).
 - Es solo visual. El logo se guarda reducido (128 px) dentro de la base, no en
   un archivo público.
+
+## Exportar reportes (2026-10-16)
+
+- **Excel** para analizar (números y fechas reales, cada monto con su moneda);
+  **PDF** para enviar o imprimir (empresa, filtros, fecha, quién lo generó,
+  Página X de Y). Los dos llevan los filtros aplicados y todas las filas.
+- Los totales en moneda base (RD$) están convertidos con la tasa guardada en
+  cada documento; las filas van en la moneda de cada factura/gasto.
+- Queda constancia en Auditoría de cada exportación (información sensible de
+  la empresa: solo usuarios con permiso *Ver reportes*).
+- Limitación: en el PDF, si una tabla ocupa varias páginas, el encabezado de
+  columnas no se repite en las páginas siguientes.
