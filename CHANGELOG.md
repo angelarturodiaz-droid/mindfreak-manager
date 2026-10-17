@@ -17,6 +17,7 @@
   por categoría, el resumen y el neto por mes; Retenciones de clientes, el
   detalle, Recibido vs aplicado y Por cliente.
 - Pruebas: `tests/unit/report-export.test.ts`.
+- Auditoría: acción *Exportó* y entidad *Reporte* traducidas; el detalle muestra reporte, formato y filtros en palabras (también se tradujeron *Catálogo de bancos* y *Permisos de rol*).
 
 ## Bancos recuerda la vista Lista/Tarjetas (2026-10-15 noche)
 

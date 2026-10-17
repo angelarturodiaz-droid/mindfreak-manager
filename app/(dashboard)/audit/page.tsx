@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { hasPermission } from "@/lib/auth/permissions";
+import { EXPORTABLE_REPORTS } from "@/features/reports/export-data";
 import { listAuditLogs, listAuditEntityTypes } from "@/features/audit/queries";
 import { Select } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,9 @@ const ENTITY_LABELS: Record<string, string> = {
   bank_transfer: "Transferencia bancaria",
   tax_rate: "Tasa de impuesto",
   document: "Documento",
+  report: "Reporte",
+  bank_catalog: "Catálogo de bancos",
+  role_permission: "Permisos de rol",
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -34,6 +38,7 @@ const ACTION_LABELS: Record<string, string> = {
   RECONCILE: "Concilió",
   UNRECONCILE: "Desconcilió",
   STATUS_CANCELLED: "Canceló",
+  EXPORT: "Exportó",
 };
 
 const ACTION_TONES: Record<string, BadgeTone> = {
@@ -45,6 +50,7 @@ const ACTION_TONES: Record<string, BadgeTone> = {
   RECONCILE: "success",
   UNRECONCILE: "neutral",
   STATUS_CANCELLED: "danger",
+  EXPORT: "info",
 };
 
 type LogRow = Awaited<ReturnType<typeof listAuditLogs>>["rows"][number];
@@ -102,6 +108,19 @@ export default async function AuditPage({
       className: "align-top",
       accessor: (log) => {
         const detail = log.new_values ?? log.old_values;
+        // Exportación de reportes: en palabras, no en JSON.
+        if (log.entity_type === "report" && detail && typeof detail === "object") {
+          const d = detail as { report?: string; format?: string; filters?: string[] };
+          return (
+            <span className="text-sm text-brand-text">
+              {EXPORTABLE_REPORTS[d.report ?? ""]?.title ?? d.report} ·{" "}
+              <strong>{d.format === "xlsx" ? "Excel" : "PDF"}</strong>
+              <span className="block text-xs text-brand-muted">
+                Filtros: {d.filters && d.filters.length > 0 ? d.filters.join(" · ") : "ninguno (todo)"}
+              </span>
+            </span>
+          );
+        }
         return detail ? (
           <pre className="max-h-32 max-w-lg overflow-auto whitespace-pre-wrap break-words rounded-[var(--radius-sm)] bg-brand-background p-2 text-xs text-brand-muted">
             {JSON.stringify(detail, null, 2)}
