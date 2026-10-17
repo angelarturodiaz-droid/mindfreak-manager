@@ -65,7 +65,9 @@ const LOCK_MINUTES = 15;
 function lockMessage(lastAttemptAt: string | null): string {
   const until = new Date((lastAttemptAt ? new Date(lastAttemptAt).getTime() : Date.now()) + LOCK_MINUTES * 60_000);
   const hora = new Intl.DateTimeFormat("es-DO", { timeStyle: "short", timeZone: "America/Santo_Domingo" }).format(until);
-  return `Por seguridad, esta cuenta quedó bloqueada ${LOCK_MINUTES} minutos por varios intentos fallidos. Podrás intentar de nuevo a las ${hora.replace(/\.$/, "")}. Si olvidaste tu contraseña, usa «¿Olvidaste tu contraseña?».`;
+  const mins = Math.max(1, Math.ceil((until.getTime() - Date.now()) / 60_000));
+  const falta = mins === 1 ? "falta menos de 1 minuto" : `faltan ${mins} minutos`;
+  return `Por seguridad, esta cuenta quedó bloqueada ${LOCK_MINUTES} minutos por varios intentos fallidos. Podrás intentar de nuevo a las ${hora.replace(/\.$/, "")} (${falta}). Si olvidaste tu contraseña, usa «¿Olvidaste tu contraseña?».`;
 }
 
 /** Verifica el token de Cloudflare Turnstile contra la API de Cloudflare. */

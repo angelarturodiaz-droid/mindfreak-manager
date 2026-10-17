@@ -27,7 +27,7 @@
   *Hostname management* del widget).
 - **Bloqueo temporal**: 5 intentos fallidos seguidos con el mismo correo →
   15 minutos sin poder entrar (aunque escriba bien la contraseña), con la hora
-  en que se libera. Desde el 3er intento avisa cuántos quedan (además del
+  en que se libera y cuántos minutos faltan. Desde el 3er intento avisa cuántos quedan (además del
   captcha que ya existía).
 - Nota: el permiso *Ver reportes* da acceso de lectura a facturas, cobros,
   gastos y proyectos en los reportes (RLS). Recomendado quitarlo a Ventas y
