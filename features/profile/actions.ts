@@ -284,3 +284,31 @@ export async function revokeAllTrustedDevicesAction(): Promise<void> {
   if (error) throw new Error(error.message);
   revalidatePath("/profile");
 }
+
+/**
+ * Pantalla "Activa la verificación en dos pasos" (usuario nuevo o sin 2FA):
+ * borra intentos anteriores sin terminar y genera un QR nuevo. Devuelve el
+ * error en texto (no lanza) para mostrarlo en la pantalla.
+ */
+export async function startMfaSetupAction(): Promise<{ data: MfaEnrollResult | null; error: string | null }> {
+  const supabase = await createClient();
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  for (const f of factors?.all ?? []) {
+    if (f.factor_type === "totp" && f.status !== "verified") {
+      await supabase.auth.mfa.unenroll({ factorId: f.id });
+    }
+  }
+  const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp" });
+  if (error) return { data: null, error: "No se pudo generar el código QR. Recarga la página e intenta de nuevo." };
+  return { data: { factorId: data.id, qrCode: data.totp.qr_code, secret: data.totp.secret }, error: null };
+}
+
+/** Confirma el código en la pantalla de activación. Devuelve el error en texto. */
+export async function finishMfaSetupAction(factorId: string, code: string): Promise<{ error: string | null }> {
+  try {
+    await verifyMfaEnrollmentAction(factorId, code);
+    return { error: null };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Código incorrecto." };
+  }
+}

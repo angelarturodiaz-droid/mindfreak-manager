@@ -2,6 +2,12 @@
 
 ## Usuario invitado: primero contraseña, luego 2FA (2026-10-16)
 
+- Pantalla propia **/activar-verificacion** con el mismo estilo que la de la
+  contraseña (panel de marca, "Último paso", 3 pasos, botón *Mostrar código
+  QR*, código de 6 dígitos y *Activar y entrar*). El proxy manda ahí a todo
+  usuario sin 2FA. Borra intentos anteriores sin terminar. Errores en el
+  recuadro rojo de la pantalla. *Salir* para cerrar sesión.
+
 - Corrección (prueba BD paso 7): el proxy mandaba al usuario invitado a
   activar la 2FA antes de crear su contraseña. `/update-password` queda fuera
   de esa revisión.

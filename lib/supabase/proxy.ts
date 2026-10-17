@@ -74,6 +74,7 @@ export async function updateSession(request: NextRequest) {
     user &&
     user.user_metadata?.mfa_reset_pending === true &&
     path !== "/profile" &&
+    path !== "/activar-verificacion" &&
     request.method === "GET"
   ) {
     const url = request.nextUrl.clone();
@@ -94,7 +95,8 @@ export async function updateSession(request: NextRequest) {
     !isPublicRoute &&
     request.method === "GET" &&
     path !== "/mfa-challenge" &&
-    path !== "/update-password"
+    path !== "/update-password" &&
+    path !== "/activar-verificacion"
   ) {
     const { data: status, error: statusError } = await supabase.rpc("session_status");
     if (!statusError && status) {
@@ -109,10 +111,11 @@ export async function updateSession(request: NextRequest) {
         supabaseResponse.cookies.getAll().forEach((c) => res.cookies.set(c));
         return res;
       }
-      if (st.needs_mfa === true && path !== "/profile") {
+      if (st.needs_mfa === true) {
+        // Pantalla propia del último paso (mismo estilo que la contraseña).
         const url = request.nextUrl.clone();
-        url.pathname = "/profile";
-        url.search = "?mfa_required=1";
+        url.pathname = "/activar-verificacion";
+        url.search = "";
         return NextResponse.redirect(url);
       }
     }
