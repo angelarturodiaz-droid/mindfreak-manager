@@ -1,5 +1,21 @@
 # CHANGELOG — Mindfreak Manager
 
+## Cada rol ve solo lo que puede usar (2026-10-16)
+
+- Revisión del rol Ventas: la base y el servidor ya bloqueaban crear bancos,
+  gastos, etc. (no quedó nada creado), pero el menú y los botones se veían
+  para todos. Ahora:
+  - Migración **085c**: `my_permissions()` (lista de permisos del usuario,
+    con la misma regla que `has_permission`: activo + 2FA).
+  - `getMyPermissions()` / `requirePageAccess()` en `lib/auth/permissions.ts`.
+  - Menú lateral filtrado por permiso (`NAV_PERMISSION` en `sidebar.tsx`).
+  - Layout por sección (clientes, entregas, cotizaciones, proyectos,
+    proveedores, facturas, cobros y pagos, gastos, bancos, reportes,
+    comparaciones, auditoría) y por pantalla de *nuevo*: sin permiso vuelve
+    al inicio con la ventana *No tienes permiso*.
+  - Botones *Nuevo …* y atajos del Dashboard solo si puede crear
+    (`components/auth/if-can.tsx`).
+
 ## Contraseñas seguras obligatorias (2026-10-16)
 
 - Corrección: se aceptaba "12345678" (solo pedía 8 caracteres). Nueva regla

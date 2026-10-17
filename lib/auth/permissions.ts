@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -54,4 +56,31 @@ export async function getCurrentUserCompanyIds(): Promise<string[]> {
     return [];
   }
   return [...new Set((data ?? []).map((r) => r.company_id))];
+}
+
+/**
+ * Permisos del usuario actual (una sola consulta por pantalla). Para mostrar
+ * solo el menú y los botones que puede usar; la seguridad real sigue en el
+ * servidor (requirePermission) y en la base (RLS).
+ */
+export const getMyPermissions = cache(async (): Promise<Set<string>> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("my_permissions");
+  if (error) {
+    console.error("Error leyendo permisos:", error.message);
+    return new Set();
+  }
+  return new Set((data as string[] | null) ?? []);
+});
+
+/**
+ * Para pantallas: si no tiene el permiso, lo manda al inicio con un aviso
+ * ("No tienes permiso para entrar a Bancos") en vez de mostrar una pantalla
+ * vacía o botones que fallan.
+ */
+export async function requirePageAccess(permissionCode: string, label: string): Promise<void> {
+  const perms = await getMyPermissions();
+  if (!perms.has(permissionCode)) {
+    redirect(`/dashboard?sin_permiso=${encodeURIComponent(label)}`);
+  }
 }

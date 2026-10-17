@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { IfCan } from "@/components/auth/if-can";
 import {
   ArrowRight,
   CalendarClock,
@@ -178,11 +179,13 @@ export default async function ProjectsPage({
             Planifica y da seguimiento a cada evento: fechas, presupuesto, gastos y cobros.
           </p>
         </div>
-        <Link href="/projects/new">
-          <Button size="sm" icon={<Plus size={14} />}>
-            Nuevo proyecto
-          </Button>
-        </Link>
+        <IfCan permission="projects.create">
+          <Link href="/projects/new">
+            <Button size="sm" icon={<Plus size={14} />}>
+              Nuevo proyecto
+            </Button>
+          </Link>
+        </IfCan>
       </div>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -361,11 +364,13 @@ export default async function ProjectsPage({
                 : "Aún no tienes proyectos."
             }
             action={
-              <Link href="/projects/new">
-                <Button size="sm" icon={<Plus size={14} />}>
-                  Nuevo proyecto
-                </Button>
-              </Link>
+              <IfCan permission="projects.create">
+                <Link href="/projects/new">
+                  <Button size="sm" icon={<Plus size={14} />}>
+                    Nuevo proyecto
+                  </Button>
+                </Link>
+              </IfCan>
             }
           />
         ) : (

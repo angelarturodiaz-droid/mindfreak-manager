@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { IfCan } from "@/components/auth/if-can";
 import { CalendarRange, Clock, CreditCard, Plus, Receipt, Wallet } from "lucide-react";
 import { listExpenses, getExpenseStats } from "@/features/expenses/queries";
 import { EXPENSE_STATUSES } from "@/features/expenses/schema";
@@ -131,11 +132,13 @@ export default async function ExpensesPage({
             De un proyecto/evento específico o de la empresa en general.
           </p>
         </div>
-        <Link href="/expenses/new">
-          <Button size="sm" icon={<Plus size={14} />}>
-            Nuevo gasto
-          </Button>
-        </Link>
+        <IfCan permission="expenses.create">
+          <Link href="/expenses/new">
+            <Button size="sm" icon={<Plus size={14} />}>
+              Nuevo gasto
+            </Button>
+          </Link>
+        </IfCan>
       </div>
 
       <StatGrid>
@@ -226,11 +229,13 @@ export default async function ExpensesPage({
                   : "Aún no tienes gastos."
             }
             action={
-              <Link href="/expenses/new">
-                <Button size="sm" icon={<Plus size={14} />}>
-                  Nuevo gasto
-                </Button>
-              </Link>
+              <IfCan permission="expenses.create">
+                <Link href="/expenses/new">
+                  <Button size="sm" icon={<Plus size={14} />}>
+                    Nuevo gasto
+                  </Button>
+                </Link>
+              </IfCan>
             }
           />
         ) : (

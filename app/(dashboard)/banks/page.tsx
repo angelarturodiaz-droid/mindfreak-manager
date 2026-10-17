@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { IfCan } from "@/components/auth/if-can";
 import { cookies } from "next/headers";
 import { RememberChoice } from "@/components/ui/remember-choice";
 import { AlertTriangle, ChevronRight, CreditCard, DollarSign, LayoutGrid, Landmark, List, Plus, ShieldCheck, Wallet } from "lucide-react";
@@ -299,11 +300,13 @@ export default async function BanksPage({
             gastos y pagos; los manuales quedan para lo que no venga de ahí.
           </p>
         </div>
-        <Link href="/banks/new">
-          <Button size="sm" icon={<Plus size={14} />}>
-            Nueva cuenta o tarjeta
-          </Button>
-        </Link>
+        <IfCan permission="banks.create">
+          <Link href="/banks/new">
+            <Button size="sm" icon={<Plus size={14} />}>
+              Nueva cuenta o tarjeta
+            </Button>
+          </Link>
+        </IfCan>
       </div>
 
       {accounts.length === 0 ? (
@@ -311,11 +314,13 @@ export default async function BanksPage({
           icon={<Landmark size={28} />}
           title="Aún no tienes cuentas bancarias ni tarjetas registradas."
           action={
-            <Link href="/banks/new">
-              <Button size="sm" icon={<Plus size={14} />}>
-                Crear la primera
-              </Button>
-            </Link>
+            <IfCan permission="banks.create">
+              <Link href="/banks/new">
+                <Button size="sm" icon={<Plus size={14} />}>
+                  Crear la primera
+                </Button>
+              </Link>
+            </IfCan>
           }
         />
       ) : (

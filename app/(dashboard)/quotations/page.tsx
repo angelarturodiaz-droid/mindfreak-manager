@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { IfCan } from "@/components/auth/if-can";
 import { CheckCircle2, Copy, FilePen, FileText, Percent, Plus, Send } from "lucide-react";
 import { listQuotations, getQuotationStats } from "@/features/quotations/queries";
 import { QUOTATION_FILTER_STATUSES } from "@/features/quotations/expired";
@@ -136,11 +137,13 @@ export default async function QuotationsPage({
             Cotiza a clientes activos o potenciales (leads) y dales seguimiento hasta aprobarlas.
           </p>
         </div>
-        <Link href="/quotations/new">
-          <Button size="sm" icon={<Plus size={14} />}>
-            Nueva cotización
-          </Button>
-        </Link>
+        <IfCan permission="quotations.create">
+          <Link href="/quotations/new">
+            <Button size="sm" icon={<Plus size={14} />}>
+              Nueva cotización
+            </Button>
+          </Link>
+        </IfCan>
       </div>
 
       <StatGrid>
@@ -241,11 +244,13 @@ export default async function QuotationsPage({
             icon={<FileText size={28} />}
             title={hasFilters ? "No hay cotizaciones que coincidan con este filtro." : "Aún no tienes cotizaciones."}
             action={
-              <Link href="/quotations/new">
-                <Button size="sm" icon={<Plus size={14} />}>
-                  Nueva cotización
-                </Button>
-              </Link>
+              <IfCan permission="quotations.create">
+                <Link href="/quotations/new">
+                  <Button size="sm" icon={<Plus size={14} />}>
+                    Nueva cotización
+                  </Button>
+                </Link>
+              </IfCan>
             }
           />
         ) : (

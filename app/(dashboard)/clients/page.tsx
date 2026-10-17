@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { IfCan } from "@/components/auth/if-can";
 import {
   ChevronRight,
   Mail,
@@ -241,11 +242,13 @@ export default async function ClientsPage({
               Importar CSV
             </Button>
           </Link>
-          <Link href="/clients/new">
-            <Button size="sm" icon={<UserPlus size={14} />}>
-              Nuevo cliente
-            </Button>
-          </Link>
+          <IfCan permission="clients.create">
+            <Link href="/clients/new">
+              <Button size="sm" icon={<UserPlus size={14} />}>
+                Nuevo cliente
+              </Button>
+            </Link>
+          </IfCan>
         </div>
       </div>
 
@@ -351,11 +354,13 @@ export default async function ClientsPage({
             icon={<Users size={28} />}
             title={hasFilters ? "No hay clientes que coincidan con este filtro." : "Aún no tienes clientes."}
             action={
-              <Link href="/clients/new">
-                <Button size="sm" icon={<UserPlus size={14} />}>
-                  Nuevo cliente
-                </Button>
-              </Link>
+              <IfCan permission="clients.create">
+                <Link href="/clients/new">
+                  <Button size="sm" icon={<UserPlus size={14} />}>
+                    Nuevo cliente
+                  </Button>
+                </Link>
+              </IfCan>
             }
           />
         ) : (

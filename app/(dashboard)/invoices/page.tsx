@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { IfCan } from "@/components/auth/if-can";
 import { AlertTriangle, CalendarClock, Copy, FilePen, MailCheck, Plus, Receipt, Wallet } from "lucide-react";
 import { listInvoices, getInvoiceStats } from "@/features/invoices/queries";
 import { INVOICE_STATUSES } from "@/features/invoices/schema";
@@ -151,11 +152,13 @@ export default async function InvoicesPage({
             Ligadas a un cliente y, opcionalmente, a un proyecto/evento.
           </p>
         </div>
-        <Link href="/invoices/new">
-          <Button size="sm" icon={<Plus size={14} />}>
-            Nueva factura
-          </Button>
-        </Link>
+        <IfCan permission="invoices.create">
+          <Link href="/invoices/new">
+            <Button size="sm" icon={<Plus size={14} />}>
+              Nueva factura
+            </Button>
+          </Link>
+        </IfCan>
       </div>
 
       <StatGrid>
@@ -257,11 +260,13 @@ export default async function InvoicesPage({
             icon={<Receipt size={28} />}
             title={hasFilters ? "No hay facturas que coincidan con este filtro." : "Aún no tienes facturas."}
             action={
-              <Link href="/invoices/new">
-                <Button size="sm" icon={<Plus size={14} />}>
-                  Nueva factura
-                </Button>
-              </Link>
+              <IfCan permission="invoices.create">
+                <Link href="/invoices/new">
+                  <Button size="sm" icon={<Plus size={14} />}>
+                    Nueva factura
+                  </Button>
+                </Link>
+              </IfCan>
             }
           />
         ) : (

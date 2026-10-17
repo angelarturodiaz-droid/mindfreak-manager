@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Settings, HelpCircle } from "lucide-react";
 import { getCompany } from "@/features/settings/queries";
-import { getCurrentUser, hasPermission } from "@/lib/auth/permissions";
+import { getCurrentUser, getMyPermissions, hasPermission } from "@/lib/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { listMyNotifications, countUnreadNotifications } from "@/features/notifications/queries";
 import { isCurrentDeviceTrusted } from "@/lib/mfa/trusted-devices";
@@ -29,11 +29,12 @@ export default async function DashboardLayout({
     // si falla (ej. sin compañía asignada todavía), se usa el nombre por defecto
   }
 
-  const [user, canManageSettings, notifications, unreadCount] = await Promise.all([
+  const [user, canManageSettings, notifications, unreadCount, myPermissions] = await Promise.all([
     getCurrentUser(),
     hasPermission("settings.manage"),
     listMyNotifications(),
     countUnreadNotifications(),
+    getMyPermissions(),
   ]);
 
   let fullName: string | null = null;
@@ -93,7 +94,7 @@ export default async function DashboardLayout({
   return (
     <SidebarProvider>
       <div className="flex min-h-full flex-1">
-        <Sidebar platformName={platformName} logoUrl={logoUrl} />
+        <Sidebar platformName={platformName} logoUrl={logoUrl} permissions={[...myPermissions]} />
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-brand-border bg-brand-surface/95 px-4 py-3 shadow-[var(--shadow-sm)] backdrop-blur-sm md:px-6">
             <MobileMenuButton />

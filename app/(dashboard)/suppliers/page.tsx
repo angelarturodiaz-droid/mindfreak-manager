@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { IfCan } from "@/components/auth/if-can";
 import { ActionLink } from "@/components/ui/action-link";
 import { CalendarCheck, ChevronRight, Landmark, Mail, Phone, Plus, Truck, Upload, Wallet } from "lucide-react";
 import {
@@ -150,11 +151,13 @@ export default async function SuppliersPage({
               Importar CSV
             </Button>
           </Link>
-          <Link href="/suppliers/new">
-            <Button size="sm" icon={<Plus size={14} />}>
-              Nuevo proveedor
-            </Button>
-          </Link>
+          <IfCan permission="suppliers.create">
+            <Link href="/suppliers/new">
+              <Button size="sm" icon={<Plus size={14} />}>
+                Nuevo proveedor
+              </Button>
+            </Link>
+          </IfCan>
         </div>
       </div>
 
@@ -224,11 +227,13 @@ export default async function SuppliersPage({
             icon={<Truck size={28} />}
             title={hasFilters ? "No hay proveedores que coincidan con este filtro." : "Aún no tienes proveedores."}
             action={
-              <Link href="/suppliers/new">
-                <Button size="sm" icon={<Plus size={14} />}>
-                  Nuevo proveedor
-                </Button>
-              </Link>
+              <IfCan permission="suppliers.create">
+                <Link href="/suppliers/new">
+                  <Button size="sm" icon={<Plus size={14} />}>
+                    Nuevo proveedor
+                  </Button>
+                </Link>
+              </IfCan>
             }
           />
         ) : (

@@ -26,6 +26,22 @@ import {
 import { useSidebar } from "./sidebar-context";
 import { IconBadge, type IconBadgeTone } from "../ui/icon-badge";
 
+/** Permiso para ver cada sección (las que no están aquí las ve todo el mundo). */
+const NAV_PERMISSION: Record<string, string> = {
+  "/clients": "clients.view",
+  "/deliveries": "deliveries.view",
+  "/quotations": "quotations.view",
+  "/projects": "projects.view",
+  "/suppliers": "suppliers.view",
+  "/invoices": "invoices.view",
+  "/payments": "payments.view",
+  "/expenses": "expenses.view",
+  "/banks": "banks.view",
+  "/reports": "reports.view",
+  "/comparisons": "reports.view",
+  "/audit": "settings.manage",
+};
+
 type NavItem = { href: string; label: string; icon: React.ComponentType<{ size?: number }> };
 type NavGroup = { label: string; tone: IconBadgeTone; items: NavItem[] };
 
@@ -74,9 +90,12 @@ const NAV_GROUPS: NavGroup[] = [
 export function Sidebar({
   platformName,
   logoUrl,
+  permissions,
 }: {
   platformName: string;
   logoUrl: string | null;
+  /** Permisos del usuario: solo se muestran las secciones que puede abrir. */
+  permissions: string[];
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -123,7 +142,15 @@ export function Sidebar({
       </div>
 
       <nav className="flex flex-1 flex-col gap-4 overflow-y-auto px-2 py-4">
-        {NAV_GROUPS.map((group, gi) => (
+        {NAV_GROUPS.map((group) => ({
+          ...group,
+          items: group.items.filter((item) => {
+            const need = NAV_PERMISSION[item.href];
+            return !need || permissions.includes(need);
+          }),
+        }))
+          .filter((group) => group.items.length > 0)
+          .map((group, gi) => (
           <div key={gi}>
             {group.label && !collapsed && (
               <p className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wide text-white/40">
