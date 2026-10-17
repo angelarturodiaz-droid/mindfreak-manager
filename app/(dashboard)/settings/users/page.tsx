@@ -1,6 +1,7 @@
 import { getCompanyUsersWithRoleIds, listRoles, getUsersEmailConfirmationStatus } from "@/features/users/queries";
 import { NewUserForm } from "./new-user-form";
-import { UserRoleEditor } from "./user-role-editor";
+import { UserRolesCell, UserActiveToggle } from "./user-role-editor";
+import { InitialsAvatar } from "@/components/ui/page-kit";
 import { EditableUserName } from "./editable-user-name";
 import { EditableUserEmail } from "./editable-user-email";
 import { ResetPasswordButton } from "./reset-password-button";
@@ -26,11 +27,20 @@ export default async function UsersSettingsPage({
   ]);
 
   const columns: Column<UserRow>[] = [
-    { header: "Nombre", accessor: (u) => <EditableUserName userId={u.id} fullName={u.full_name} /> },
     {
-      header: "Correo",
+      header: "Usuario",
       accessor: (u) => (
-        <EditableUserEmail userId={u.id} email={u.email} isConfirmed={emailConfirmations[u.id] ?? false} />
+        <div className="flex min-w-[15rem] items-center gap-3">
+          <InitialsAvatar name={u.full_name ?? u.email} />
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="font-medium text-brand-text">
+              <EditableUserName userId={u.id} fullName={u.full_name} />
+            </span>
+            <span className="text-xs">
+              <EditableUserEmail userId={u.id} email={u.email} isConfirmed={emailConfirmations[u.id] ?? false} />
+            </span>
+          </div>
+        </div>
       ),
     },
     {
@@ -50,14 +60,16 @@ export default async function UsersSettingsPage({
     {
       header: "Roles",
       accessor: (u) => (
-        <UserRoleEditor userId={u.id} isActive={u.is_active} currentRoleIds={u.roleIds} allRoles={roles} />
+        <UserRolesCell userId={u.id} userName={u.full_name ?? u.email} currentRoleIds={u.roleIds} allRoles={roles} />
       ),
     },
     {
-      header: "",
+      header: "Acciones",
+      className: "text-right",
       accessor: (u) => (
-        <div className="flex flex-col items-start gap-1.5">
+        <div className="flex items-center justify-end gap-0.5">
           <ResetPasswordButton userId={u.id} userName={u.full_name ?? u.email} />
+          <UserActiveToggle userId={u.id} userName={u.full_name ?? u.email} isActive={u.is_active} />
           <DeleteUserButton userId={u.id} userName={u.full_name ?? u.email} />
         </div>
       ),
@@ -77,8 +89,8 @@ export default async function UsersSettingsPage({
           registró actividad en el sistema — si ya creó algo, usa
           &ldquo;Desactivar&rdquo; en su lugar.
         </p>
-        <DataTable columns={columns} rows={paginate(users, page)} keyFor={(u) => u.id} maxWidth="max-w-4xl" emptyMessage="Sin usuarios registrados." />
-      <div className="max-w-4xl">
+        <DataTable columns={columns} rows={paginate(users, page)} keyFor={(u) => u.id} maxWidth="max-w-5xl" emptyMessage="Sin usuarios registrados." />
+      <div className="max-w-5xl">
         <Pagination basePath="/settings/users" page={page} pageSize={PAGE_SIZE} total={users.length} />
       </div>
       </div>

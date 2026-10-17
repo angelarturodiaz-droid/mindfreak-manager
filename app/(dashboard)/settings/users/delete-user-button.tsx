@@ -4,71 +4,89 @@ import { useState, useTransition } from "react";
 import { Trash2, KeyRound } from "lucide-react";
 import { deleteUserAction } from "@/features/users/actions";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/toaster";
+import { Modal } from "@/components/ui/modal";
+import { ResultDialog } from "@/components/ui/result-dialog";
 import { isNavigationSignal } from "@/lib/utils/navigation-signal";
 
+/** Ícono de papelera → ventana que pide el código del autenticador para eliminar. */
 export function DeleteUserButton({ userId, userName }: { userId: string; userName: string }) {
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
   const [isPending, startTransition] = useTransition();
+  const [result, setResult] = useState<{ tone: "success" | "danger"; text: string } | null>(null);
 
-  function reset() {
+  function close() {
     setOpen(false);
     setCode("");
   }
 
   function handleDelete() {
-    if (!window.confirm(`¿Eliminar a ${userName} por completo? No se puede deshacer.`)) return;
     startTransition(async () => {
       try {
         await deleteUserAction(userId, code);
-        toast.success(`${userName} fue eliminado`);
-        reset();
+        close();
+        setResult({ tone: "success", text: `${userName} fue eliminado.` });
       } catch (e) {
-        // redirect() del servidor: la acción salió bien, no es un error.
         if (isNavigationSignal(e)) return;
-        toast.error(e instanceof Error ? e.message : "No se pudo eliminar.");
         setCode("");
+        setResult({ tone: "danger", text: e instanceof Error ? e.message : "No se pudo eliminar." });
       }
     });
   }
 
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-1 text-sm text-brand-danger hover:underline"
-      >
-        <Trash2 size={13} /> Eliminar
-      </button>
-    );
-  }
-
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-1 text-[11px] text-brand-muted">
-        <KeyRound size={11} />
-        <span>Confirma con tu código de autenticador</span>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          autoFocus
-          inputMode="numeric"
-          placeholder="123456"
-          value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-          onKeyDown={(e) => e.key === "Enter" && code.length === 6 && handleDelete()}
-          disabled={isPending}
-          className="w-24 rounded-[var(--radius-sm)] border border-brand-danger bg-brand-surface px-1.5 py-1 text-sm tracking-widest outline-none"
-        />
-        <Button size="sm" variant="danger" loading={isPending} disabled={code.length !== 6} onClick={handleDelete}>
-          Eliminar
-        </Button>
-        <button type="button" onClick={reset} className="text-sm text-brand-muted hover:text-brand-text">
-          Cancelar
-        </button>
-      </div>
-    </div>
+    <>
+      <Button
+        variant="ghost"
+        size="icon"
+        icon={<Trash2 size={15} />}
+        aria-label={`Eliminar a ${userName}`}
+        hint="Eliminar (solo si nunca registró actividad)"
+        onClick={() => setOpen(true)}
+        className="text-brand-danger"
+      />
+      {open && (
+        <Modal open onClose={() => !isPending && close()} title={`¿Eliminar a ${userName}?`}>
+          <div className="flex flex-col gap-4 text-sm">
+            <p className="text-brand-muted">
+              Se borra la cuenta por completo y <strong>no se puede deshacer</strong>. Solo funciona si nunca registró
+              actividad en el sistema; si ya creó algo, usa <em>Desactivar</em>.
+            </p>
+            <div className="flex flex-col gap-1">
+              <label className="flex items-center gap-1 text-xs font-medium text-brand-text" htmlFor={`del-code-${userId}`}>
+                <KeyRound size={12} /> Tu código del autenticador
+              </label>
+              <input
+                id={`del-code-${userId}`}
+                autoFocus
+                inputMode="numeric"
+                placeholder="123456"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                onKeyDown={(e) => e.key === "Enter" && code.length === 6 && handleDelete()}
+                disabled={isPending}
+                className="w-32 rounded-[var(--radius-md)] border border-brand-border bg-brand-surface px-3 py-2 text-sm tracking-widest outline-none focus:border-brand-danger"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={close} disabled={isPending}>
+                Cancelar
+              </Button>
+              <Button type="button" variant="danger" loading={isPending} disabled={code.length !== 6} onClick={handleDelete}>
+                Eliminar definitivamente
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      <ResultDialog
+        open={!!result}
+        tone={result?.tone ?? "success"}
+        title={result?.tone === "danger" ? "No se eliminó" : "Usuario eliminado"}
+        onClose={() => setResult(null)}
+      >
+        <p className="text-sm text-brand-muted">{result?.text}</p>
+      </ResultDialog>
+    </>
   );
 }

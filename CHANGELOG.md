@@ -2,6 +2,10 @@
 
 ## Cambiar el cliente en Borrador — prueba BI (2026-10-16)
 
+- Configuración → Usuarios más compacto: columna *Usuario* (avatar, nombre y
+  correo juntos), solo los roles asignados con lápiz que abre una ventana para
+  cambiarlos, y *Acciones* con tres íconos (llave, apagar, papelera) que abren
+  ventanas. Eliminar ya no usa la alerta del navegador. Resultados en ventana.
 - Configuración → Usuarios: el Estado muestra **Invitación pendiente**
   (amarillo) hasta que la persona acepta la invitación; luego *Activo*.
 
