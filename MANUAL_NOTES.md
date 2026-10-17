@@ -835,3 +835,18 @@ pulsa el botón.
   la empresa: solo usuarios con permiso *Ver reportes*).
 - Limitación: en el PDF, si una tabla ocupa varias páginas, el encabezado de
   columnas no se repite en las páginas siguientes.
+
+## Refuerzo de seguridad (2026-10-16, prueba BD)
+
+- **Desactivar usuario** = sin acceso real (base + bloqueo de inicio de sesión
+  + cierre de sesión en la siguiente pantalla), aunque el equipo esté
+  "recordado". Reactivar lo devuelve con su mismo rol. Protecciones: no
+  desactivarse a sí mismo, no dejar la empresa sin Administrador activo.
+- **2FA obligatoria para administradores** (aprobado: se mantiene "recordar
+  este equipo"). Si un administrador pierde el autenticador y usa un código de
+  recuperación, vuelve a activarla en su perfil (flujo ya existente).
+- **Documentos emitidos fijos en la base**: ver lista de lo que sí se puede
+  cambiar en la Ayuda. Correcciones: anulación / nota de crédito (desarrollo
+  pendiente con el contador).
+- Mantenimiento técnico: la limpieza Go-Live debe activar
+  `mf.allow_locked_docs` para poder borrar documentos emitidos de prueba.

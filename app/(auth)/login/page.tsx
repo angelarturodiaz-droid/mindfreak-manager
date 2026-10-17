@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { Suspense, useActionState } from "react";
 import Link from "next/link";
 import { Mail, Lock, ShieldCheck, CircleAlert, CheckCircle2 } from "lucide-react";
 import { signIn, type AuthActionState } from "@/features/auth/actions";
@@ -9,6 +9,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { TurnstileWidget } from "@/components/ui/turnstile-widget";
 import { Button } from "@/components/ui/button";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { InactiveNotice } from "./inactive-notice";
 
 const initialState: AuthActionState = { error: null };
 
@@ -67,6 +68,10 @@ export default function LoginPage() {
         <h2 className="text-[26px] font-bold tracking-tight text-brand-primary">Bienvenido de nuevo</h2>
         <p className="text-[14.5px] text-brand-muted">Ingresa con tu cuenta para continuar.</p>
       </div>
+
+      <Suspense fallback={null}>
+        <InactiveNotice />
+      </Suspense>
 
       <form action={formAction} className="flex flex-col gap-[18px]">
         <Input

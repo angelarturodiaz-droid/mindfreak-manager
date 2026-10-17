@@ -1,5 +1,6 @@
 "use server";
 
+import { dbErrorMessage } from "@/lib/utils/db-error";
 import { validationErrorState, type MoneyActionState } from "@/lib/utils/bank-errors";
 
 import { currencyError } from "@/features/currencies/queries";
@@ -60,7 +61,7 @@ async function recalculateInvoiceTotals(invoiceId: string) {
       .eq("id", invoiceId)
       .single(),
   ]);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(dbErrorMessage(error.message));
 
   const totals = calculateInvoiceTotals(
     items ?? [],
@@ -74,7 +75,7 @@ async function recalculateInvoiceTotals(invoiceId: string) {
     .from("invoices")
     .update({ ...totals, balance: Math.max(0, totals.total - paidAmount) })
     .eq("id", invoiceId);
-  if (updateError) throw new Error(updateError.message);
+  if (updateError) throw new Error(dbErrorMessage(updateError.message));
 }
 
 export async function createInvoiceAction(
@@ -217,7 +218,7 @@ export async function createInvoiceAction(
     .select("id")
     .single();
 
-  if (error) return { error: error.message };
+  if (error) return { error: dbErrorMessage(error.message) };
 
   await logAudit({
     companyId,
@@ -281,7 +282,7 @@ export async function updateInvoiceHeaderAction(
     })
     .eq("id", invoiceId);
 
-  if (error) return { error: error.message };
+  if (error) return { error: dbErrorMessage(error.message) };
 
   revalidatePath(`/invoices/${invoiceId}`);
   return { error: null };
@@ -318,7 +319,7 @@ export async function updateInvoiceBankDetailsAction(
     .from("invoices")
     .update({ bank_details: details })
     .eq("id", invoiceId);
-  if (updateError) return { error: updateError.message };
+  if (updateError) return { error: dbErrorMessage(updateError.message) };
 
   await logAudit({
     companyId,
@@ -400,7 +401,7 @@ export async function addInvoiceItemAction(
     tax_rate_percent: taxRate.rate,
   });
 
-  if (error) return { error: error.message };
+  if (error) return { error: dbErrorMessage(error.message) };
 
   await recalculateInvoiceTotals(invoiceId);
   revalidatePath(`/invoices/${invoiceId}`);
@@ -414,7 +415,7 @@ export async function deleteInvoiceItemAction(
   await requirePermission("invoices.create");
   const supabase = await createSupabaseClient();
   const { error } = await supabase.from("invoice_items").delete().eq("id", itemId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(dbErrorMessage(error.message));
 
   await recalculateInvoiceTotals(invoiceId);
   revalidatePath(`/invoices/${invoiceId}`);
@@ -437,7 +438,7 @@ export async function issueInvoiceAction(invoiceId: string): Promise<void> {
     .from("invoices")
     .update({ status: "ISSUED" })
     .eq("id", invoiceId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(dbErrorMessage(error.message));
 
   const companyId = await getPrimaryCompanyId();
   await logAudit({
@@ -481,7 +482,7 @@ export async function markInvoiceSentAction(invoiceId: string): Promise<void> {
     .from("invoices")
     .update({ sent_to_client_at: sentAt, sent_to_client_by: user?.id ?? null })
     .eq("id", invoiceId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(dbErrorMessage(error.message));
 
   await logAudit({
     companyId: await getPrimaryCompanyId(),
@@ -511,7 +512,7 @@ export async function unmarkInvoiceSentAction(invoiceId: string): Promise<void> 
     .from("invoices")
     .update({ sent_to_client_at: null, sent_to_client_by: null })
     .eq("id", invoiceId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(dbErrorMessage(error.message));
 
   await logAudit({
     companyId: await getPrimaryCompanyId(),
@@ -532,7 +533,7 @@ export async function cancelInvoiceAction(invoiceId: string): Promise<void> {
     .from("invoices")
     .update({ status: "CANCELLED" })
     .eq("id", invoiceId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(dbErrorMessage(error.message));
 
   const companyId = await getPrimaryCompanyId();
   await logAudit({
@@ -747,7 +748,7 @@ export async function duplicateInvoiceAction(invoiceId: string): Promise<void> {
     .select("service_id, description, quantity, unit_price, discount, tax, tax_rate_id, tax_treatment, tax_rate_percent, subtotal")
     .eq("invoice_id", invoiceId)
     .order("sort_order");
-  if (itemsError) throw new Error(itemsError.message);
+  if (itemsError) throw new Error(dbErrorMessage(itemsError.message));
 
   // Mismas cuentas para el pago que el original, con sus datos al día.
   const { details: dupBankDetails } = await buildBankDetails(
@@ -815,7 +816,7 @@ export async function duplicateInvoiceAction(invoiceId: string): Promise<void> {
         subtotal: item.subtotal,
       })),
     );
-    if (insertItemsError) throw new Error(insertItemsError.message);
+    if (insertItemsError) throw new Error(dbErrorMessage(insertItemsError.message));
     await recalculateInvoiceTotals(newInvoice.id);
   }
 
@@ -857,7 +858,7 @@ export async function discardInvoiceAction(invoiceId: string): Promise<void> {
     .eq("id", invoiceId)
     .eq("status", "DRAFT")
     .select("id");
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(dbErrorMessage(error.message));
   if (!deleted || deleted.length === 0) {
     throw new Error(
       "No se pudo descartar la factura (no se encontró o ya no está en borrador).",
@@ -884,7 +885,7 @@ export async function setInvoiceResponsibleAction(invoiceId: string, userId: str
     .from("invoices")
     .update({ responsible_user_id: userId })
     .eq("id", invoiceId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(dbErrorMessage(error.message));
   revalidatePath(`/invoices/${invoiceId}`);
 }
 
@@ -921,7 +922,7 @@ export async function addCollectionHistoryAction(
     result: result || null,
     next_action_date: nextActionDate || null,
   });
-  if (error) return { error: error.message };
+  if (error) return { error: dbErrorMessage(error.message) };
 
   revalidatePath(`/invoices/${invoiceId}`);
   return { error: null };

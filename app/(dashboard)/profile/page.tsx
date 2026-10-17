@@ -15,9 +15,9 @@ import { Card } from "@/components/ui/card";
 export default async function ProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ mfa_reset?: string }>;
+  searchParams: Promise<{ mfa_reset?: string; mfa_required?: string }>;
 }) {
-  const { mfa_reset } = await searchParams;
+  const { mfa_reset, mfa_required } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -49,7 +49,16 @@ export default async function ProfilePage({
         </div>
       )}
 
+      {mfa_required === "1" && !verifiedFactor && (
+        <div className="max-w-2xl rounded-[var(--radius-md)] border border-brand-warning bg-brand-warning-bg px-4 py-3 text-sm text-brand-warning">
+          <strong>Activa la verificación en dos pasos para continuar.</strong> Tu usuario es Administrador y, por
+          seguridad, necesita la verificación en dos pasos antes de usar el sistema. Actívala abajo, en{" "}
+          <em>Inicio de sesión y seguridad</em> (te toma un minuto con una app como Google Authenticator).
+        </div>
+      )}
+
       <ProfileTabs
+        initialTab={mfa_required === "1" || mfa_reset === "1" ? "security" : "profile"}
         profileContent={
           <section className="max-w-md">
             <h2 className="mb-3 text-sm font-medium text-brand-text">

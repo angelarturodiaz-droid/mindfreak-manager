@@ -82,5 +82,33 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Prueba BD (migración 085): en cada navegación se revisa el estado de la
+  // cuenta. Desactivada → se cierra la sesión y va a /login, aunque el equipo
+  // esté "recordado". Administrador sin verificación en dos pasos → debe
+  // activarla en Mi perfil antes de usar el sistema. Si la función todavía no
+  // existe (migración sin aplicar) no se bloquea nada.
+  if (user && !isPublicRoute && request.method === "GET" && path !== "/mfa-challenge") {
+    const { data: status, error: statusError } = await supabase.rpc("session_status");
+    if (!statusError && status) {
+      const st = status as { active?: boolean; needs_mfa?: boolean };
+      if (st.active === false) {
+        await supabase.auth.signOut();
+        const url = request.nextUrl.clone();
+        url.pathname = "/login";
+        url.search = "?cuenta=desactivada";
+        const res = NextResponse.redirect(url);
+        // Llevar las cookies de sesión borradas por signOut.
+        supabaseResponse.cookies.getAll().forEach((c) => res.cookies.set(c));
+        return res;
+      }
+      if (st.needs_mfa === true && path !== "/profile") {
+        const url = request.nextUrl.clone();
+        url.pathname = "/profile";
+        url.search = "?mfa_required=1";
+        return NextResponse.redirect(url);
+      }
+    }
+  }
+
   return supabaseResponse;
 }

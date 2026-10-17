@@ -146,14 +146,64 @@ export async function updateUserNameAction(userId: string, fullName: string): Pr
   revalidatePath("/settings/users");
 }
 
-export async function toggleUserActiveAction(userId: string, currentlyActive: boolean): Promise<void> {
+/**
+ * Desactivar / reactivar un usuario (prueba BD, migración 085). Desactivar
+ * quita el acceso de verdad: la base deja de darle permisos (RLS) aunque
+ * tenga la sesión abierta o el equipo "recordado", y la cuenta se bloquea en
+ * Supabase Auth para que no pueda iniciar sesión ni renovar la sesión.
+ * Reactivar lo desbloquea. Nadie se desactiva a sí mismo ni al último
+ * Administrador activo.
+ */
+export async function toggleUserActiveAction(
+  userId: string,
+  currentlyActive: boolean,
+): Promise<{ error: string | null; success: string | null }> {
   await requirePermission("users.manage");
   const supabase = await createSupabaseClient();
+  const {
+    data: { user: me },
+  } = await supabase.auth.getUser();
+
+  if (currentlyActive) {
+    if (me?.id === userId) {
+      return { error: "No puedes desactivar tu propia cuenta. Pídeselo a otro administrador.", success: null };
+    }
+    // ¿Es Administrador y el único activo?
+    const { data: adminRows } = await supabase
+      .from("user_roles")
+      .select("user_id, roles!inner(name), profiles!inner(is_active)")
+      .eq("roles.name", "ADMIN")
+      .eq("profiles.is_active", true);
+    const activeAdmins = new Set((adminRows ?? []).map((r) => r.user_id as string));
+    if (activeAdmins.has(userId) && activeAdmins.size <= 1) {
+      return {
+        error: "Es el único Administrador activo. Asigna otro Administrador antes de desactivarlo, para no quedarse sin acceso a Configuración.",
+        success: null,
+      };
+    }
+  }
+
   const { error } = await supabase
     .from("profiles")
     .update({ is_active: !currentlyActive })
     .eq("id", userId);
-  if (error) throw new Error(error.message);
+  if (error) return { error: "No se pudo cambiar el estado del usuario. Verifica tu permiso e intenta de nuevo.", success: null };
+
+  // Bloqueo en Auth: no puede iniciar sesión ni renovar la sesión. Si esto
+  // falla, la base igual le niega todo (has_permission mira is_active).
+  let authNote = "";
+  try {
+    const admin = createAdminClient();
+    const { error: banError } = await admin.auth.admin.updateUserById(userId, {
+      ban_duration: currentlyActive ? "876000h" : "none",
+    });
+    if (banError) throw banError;
+  } catch (e) {
+    console.error("No se pudo (des)bloquear en Auth:", e);
+    authNote = currentlyActive
+      ? " Aviso: no se pudo bloquear el inicio de sesión, pero el sistema ya no le deja ver ni hacer nada."
+      : " Aviso: no se pudo quitar el bloqueo de inicio de sesión; si no puede entrar, inténtalo de nuevo.";
+  }
 
   const companyId = await getPrimaryCompanyId();
   await logAudit({
@@ -165,6 +215,12 @@ export async function toggleUserActiveAction(userId: string, currentlyActive: bo
   });
 
   revalidatePath("/settings/users");
+  return {
+    error: null,
+    success: currentlyActive
+      ? `Usuario desactivado: ya no puede entrar ni usar una sesión abierta.${authNote}`
+      : `Usuario reactivado: ya puede volver a entrar con su mismo rol.${authNote}`,
+  };
 }
 
 /**

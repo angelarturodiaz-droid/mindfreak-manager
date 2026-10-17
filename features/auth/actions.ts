@@ -14,6 +14,9 @@ import {
   isCurrentDeviceTrusted,
 } from "@/lib/mfa/trusted-devices";
 
+const INACTIVE_ACCOUNT_MESSAGE =
+  "Tu cuenta está desactivada. Habla con el administrador del sistema para volver a activarla.";
+
 export type AuthActionState = {
   error: string | null;
   submitted?: boolean;
@@ -135,6 +138,11 @@ export async function signIn(
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
+  // Cuenta desactivada por un administrador (bloqueada en Auth al desactivarla).
+  if (error && (error.code === "user_banned" || /banned/i.test(error.message))) {
+    return { error: INACTIVE_ACCOUNT_MESSAGE };
+  }
+
   if (error) {
     console.error("Error de login:", error.message);
     const { data: attempts } = adminClient
@@ -148,6 +156,21 @@ export async function signIn(
 
   if (adminClient) {
     await adminClient.rpc("reset_login_attempts", { p_identifier: email });
+  }
+
+  // Segunda barrera: si el perfil está desactivado (aunque el bloqueo en Auth
+  // no se haya aplicado), no se deja entrar, ni siquiera con "recordar equipo".
+  {
+    const {
+      data: { user: signedIn },
+    } = await supabase.auth.getUser();
+    if (signedIn) {
+      const { data: prof } = await supabase.from("profiles").select("is_active").eq("id", signedIn.id).maybeSingle();
+      if (prof && prof.is_active === false) {
+        await supabase.auth.signOut();
+        return { error: INACTIVE_ACCOUNT_MESSAGE };
+      }
+    }
   }
 
   // Si el usuario tiene el autenticador activado, la contraseña sola no

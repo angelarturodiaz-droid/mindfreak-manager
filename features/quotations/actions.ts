@@ -1,5 +1,6 @@
 "use server";
 
+import { dbErrorMessage } from "@/lib/utils/db-error";
 import { validationErrorState, type MoneyActionState } from "@/lib/utils/bank-errors";
 
 import { currencyError } from "@/features/currencies/queries";
@@ -61,7 +62,7 @@ async function recalculateQuotationTotals(quotationId: string) {
       .eq("id", quotationId)
       .single(),
   ]);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(dbErrorMessage(error.message));
 
   const totals = calculateQuotationTotals(
     items ?? [],
@@ -73,7 +74,7 @@ async function recalculateQuotationTotals(quotationId: string) {
     .from("quotations")
     .update(totals)
     .eq("id", quotationId);
-  if (updateError) throw new Error(updateError.message);
+  if (updateError) throw new Error(dbErrorMessage(updateError.message));
 }
 
 export async function createQuotationAction(
@@ -184,7 +185,7 @@ export async function createQuotationAction(
     .select("id")
     .single();
 
-  if (error) return { error: error.message };
+  if (error) return { error: dbErrorMessage(error.message) };
 
   await logAudit({
     companyId,
@@ -235,7 +236,7 @@ export async function updateQuotationHeaderAction(
     })
     .eq("id", quotationId);
 
-  if (error) return { error: error.message };
+  if (error) return { error: dbErrorMessage(error.message) };
 
   const companyId = await getPrimaryCompanyId();
   await logAudit({
@@ -281,7 +282,7 @@ export async function updateQuotationBankDetailsAction(
     .from("quotations")
     .update({ bank_details: details })
     .eq("id", quotationId);
-  if (updateError) return { error: updateError.message };
+  if (updateError) return { error: dbErrorMessage(updateError.message) };
 
   await logAudit({
     companyId,
@@ -362,7 +363,7 @@ export async function addQuotationItemAction(
     tax_rate_percent: taxRate.rate,
   });
 
-  if (error) return { error: error.message };
+  if (error) return { error: dbErrorMessage(error.message) };
 
   await recalculateQuotationTotals(quotationId);
   revalidatePath(`/quotations/${quotationId}`);
@@ -379,7 +380,7 @@ export async function deleteQuotationItemAction(
     .from("quotation_items")
     .delete()
     .eq("id", itemId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(dbErrorMessage(error.message));
 
   await recalculateQuotationTotals(quotationId);
   revalidatePath(`/quotations/${quotationId}`);
@@ -397,7 +398,7 @@ async function changeQuotationStatus(
     .from("quotations")
     .update({ status: newStatus, ...extra })
     .eq("id", quotationId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(dbErrorMessage(error.message));
 
   const companyId = await getPrimaryCompanyId();
   await logAudit({
@@ -630,7 +631,7 @@ export async function duplicateQuotationAction(quotationId: string): Promise<voi
     )
     .eq("quotation_id", quotationId)
     .order("sort_order");
-  if (itemsError) throw new Error(itemsError.message);
+  if (itemsError) throw new Error(dbErrorMessage(itemsError.message));
 
   // Mismas cuentas para el pago que el original, con sus datos al día.
   const { details: dupBankDetails } = await buildBankDetails(
@@ -702,7 +703,7 @@ export async function duplicateQuotationAction(quotationId: string): Promise<voi
         subtotal: item.subtotal,
       })),
     );
-    if (insertItemsError) throw new Error(insertItemsError.message);
+    if (insertItemsError) throw new Error(dbErrorMessage(insertItemsError.message));
     await recalculateQuotationTotals(newQuotation.id);
   }
 
@@ -746,7 +747,7 @@ export async function discardQuotationAction(quotationId: string): Promise<void>
     .eq("id", quotationId)
     .eq("status", "DRAFT")
     .select("id");
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(dbErrorMessage(error.message));
   if (!deleted || deleted.length === 0) {
     throw new Error(
       "No se pudo descartar la cotización (no se encontró o ya no está en borrador).",

@@ -6,11 +6,13 @@ import type { ReactNode } from "react";
 export function ProfileTabs({
   profileContent,
   securityContent,
+  initialTab = "profile",
 }: {
   profileContent: ReactNode;
   securityContent: ReactNode;
+  initialTab?: "profile" | "security";
 }) {
-  const [tab, setTab] = useState<"profile" | "security">("profile");
+  const [tab, setTab] = useState<"profile" | "security">(initialTab);
 
   return (
     <div>

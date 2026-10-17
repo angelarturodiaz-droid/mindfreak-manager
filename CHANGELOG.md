@@ -1,5 +1,26 @@
 # CHANGELOG — Mindfreak Manager
 
+## Refuerzo de seguridad — prueba BD (2026-10-16)
+
+- Migración **085** (`supabase/migrations/085_security_hardening.sql`):
+  `has_permission()` y `user_company_ids()` exigen perfil activo; los
+  permisos `users.manage` y `settings.manage` exigen 2FA verificada;
+  `session_status()` para la app; triggers que fijan facturas emitidas
+  (`trg_invoice_locked`, `trg_invoice_items_locked`) y las líneas de
+  cotizaciones fuera de Borrador/Negociación (`trg_quotation_items_locked`).
+  Excepción de mantenimiento: `set_config('mf.allow_locked_docs','on', true)`
+  (la usará la limpieza Go-Live).
+- Desactivar usuario: confirmación en ventana, bloqueo en Supabase Auth
+  (`ban_duration`), no autodesactivarse ni dejar sin Administrador activo,
+  resultado en ventana. Reactivar quita el bloqueo.
+- `lib/supabase/proxy.ts`: en cada navegación, cuenta desactivada → cierra
+  sesión y va a `/login?cuenta=desactivada` (aunque el equipo esté recordado);
+  administrador sin 2FA → `/profile?mfa_required=1`.
+- Login: mensaje *Tu cuenta está desactivada* (cuenta bloqueada o perfil
+  inactivo). Perfil: aviso y pestaña de seguridad abierta.
+- Errores de documentos bloqueados en palabras (`lib/utils/db-error.ts`).
+- El respaldo A0 pasa a la migración 086 y la limpieza A1 a la 087.
+
 ## Paginación con primera/última página y números (2026-10-16)
 
 - `components/ui/pagination.tsx`: botones **«** (primera) y **»** (última),
