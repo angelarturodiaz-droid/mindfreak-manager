@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { ResultDialog } from "@/components/ui/result-dialog";
 import { isNavigationSignal } from "@/lib/utils/navigation-signal";
+import { Tooltip } from "@/components/ui/tooltip";
 
 export const ROLE_LABELS: Record<string, string> = {
   ADMIN: "Administrador",
@@ -71,18 +72,19 @@ export function UserRolesCell({
           </span>
         ))
       )}
-      <button
-        type="button"
-        onClick={() => {
-          setSelected(currentRoleIds);
-          setOpen(true);
-        }}
-        className="rounded p-1 text-brand-muted hover:bg-brand-surface-hover hover:text-brand-accent"
-        title="Cambiar roles"
-        aria-label={`Cambiar roles de ${userName}`}
-      >
-        <Pencil size={13} />
-      </button>
+      <Tooltip text="Cambiar roles: abre una ventana para marcar qué roles tiene esta persona">
+        <button
+          type="button"
+          onClick={() => {
+            setSelected(currentRoleIds);
+            setOpen(true);
+          }}
+          className="rounded p-1 text-brand-muted hover:bg-brand-surface-hover hover:text-brand-accent"
+          aria-label={`Cambiar roles de ${userName}`}
+        >
+          <Pencil size={13} />
+        </button>
+      </Tooltip>
 
       {open && (
         <Modal open onClose={() => !isPending && setOpen(false)} title={`Roles de ${userName}`}>
@@ -155,7 +157,7 @@ export function UserActiveToggle({ userId, userName, isActive }: { userId: strin
         loading={isPending}
         icon={isActive ? <PowerOff size={15} /> : <Power size={15} />}
         aria-label={isActive ? `Desactivar a ${userName}` : `Activar a ${userName}`}
-        hint={isActive ? "Desactivar: le quita el acceso (se puede reactivar)" : "Activar: le devuelve el acceso con su mismo rol"}
+        hint={isActive ? "Desactivar: le quita el acceso de inmediato (se puede reactivar)" : "Activar: le devuelve el acceso con su mismo rol"}
         onClick={() => (isActive ? setConfirmOff(true) : handleToggleActive())}
         className={isActive ? "text-brand-warning" : "text-brand-success"}
       />

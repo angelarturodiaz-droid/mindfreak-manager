@@ -54,7 +54,7 @@ export function ResetPasswordButton({ userId, userName }: { userId: string; user
         size="icon"
         icon={<KeyRound size={15} />}
         aria-label={`Restablecer contraseña de ${userName}`}
-        hint="Restablecer contraseña"
+        hint="Restablecer contraseña: pon o genera una contraseña nueva para esta persona"
         onClick={() => setOpen(true)}
         className="text-brand-accent"
       />

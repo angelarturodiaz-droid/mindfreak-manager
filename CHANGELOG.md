@@ -6,6 +6,8 @@
   correo juntos), solo los roles asignados con lápiz que abre una ventana para
   cambiarlos, y *Acciones* con tres íconos (llave, apagar, papelera) que abren
   ventanas. Eliminar ya no usa la alerta del navegador. Resultados en ventana.
+  Todas las opciones de la fila (nombre, correo, verificado/Reenviar, estado,
+  lápiz de roles y los tres íconos) explican qué hacen al pasar el mouse.
 - Configuración → Usuarios: el Estado muestra **Invitación pendiente**
   (amarillo) hasta que la persona acepta la invitación; luego *Activo*.
 

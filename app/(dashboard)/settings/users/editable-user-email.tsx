@@ -5,6 +5,7 @@ import { Pencil, Check, X, ShieldCheck, ShieldAlert, KeyRound } from "lucide-rea
 import { updateUserEmailAction, resendEmailVerificationAction } from "@/features/users/actions";
 import { toast } from "@/components/ui/toaster";
 import { isNavigationSignal } from "@/lib/utils/navigation-signal";
+import { Tooltip } from "@/components/ui/tooltip";
 
 export function EditableUserEmail({
   userId,
@@ -131,25 +132,30 @@ export function EditableUserEmail({
 
   return (
     <div className="flex items-center gap-1.5">
-      <button type="button" onClick={() => setEditing(true)} className="group flex items-center gap-1.5 text-left">
-        <span className="text-brand-muted">{email}</span>
-        <Pencil size={11} className="text-brand-muted opacity-0 group-hover:opacity-100" />
-      </button>
-      {isConfirmed ? (
-        <span title="Correo verificado">
-          <ShieldCheck size={13} className="text-brand-success" />
-        </span>
-      ) : (
-        <button
-          type="button"
-          onClick={handleResend}
-          disabled={isPending}
-          title="Correo sin verificar — clic para reenviar"
-          className="flex items-center gap-1 text-brand-danger hover:underline disabled:opacity-50"
-        >
-          <ShieldAlert size={13} />
-          <span className="text-xs">Reenviar</span>
+      <Tooltip text="Cambiar el correo: haz clic para editarlo (pide tu código del autenticador)">
+        <button type="button" onClick={() => setEditing(true)} className="group flex items-center gap-1.5 text-left">
+          <span className="text-brand-muted">{email}</span>
+          <Pencil size={11} className="text-brand-muted opacity-0 group-hover:opacity-100" />
         </button>
+      </Tooltip>
+      {isConfirmed ? (
+        <Tooltip text="Correo verificado: ya aceptó la invitación">
+          <span tabIndex={0}>
+            <ShieldCheck size={13} className="text-brand-success" />
+          </span>
+        </Tooltip>
+      ) : (
+        <Tooltip text="Reenviar la invitación: todavía no la abre ni creó su contraseña">
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={isPending}
+            className="flex items-center gap-1 text-brand-danger hover:underline disabled:opacity-50"
+          >
+            <ShieldAlert size={13} />
+            <span className="text-xs">Reenviar</span>
+          </button>
+        </Tooltip>
       )}
     </div>
   );

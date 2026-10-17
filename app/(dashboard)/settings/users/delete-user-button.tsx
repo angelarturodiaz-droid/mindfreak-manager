@@ -41,7 +41,7 @@ export function DeleteUserButton({ userId, userName }: { userId: string; userNam
         size="icon"
         icon={<Trash2 size={15} />}
         aria-label={`Eliminar a ${userName}`}
-        hint="Eliminar (solo si nunca registró actividad)"
+        hint="Eliminar la cuenta para siempre (solo si nunca registró actividad; pide tu código)"
         onClick={() => setOpen(true)}
         className="text-brand-danger"
       />

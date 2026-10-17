@@ -2,6 +2,7 @@ import { getCompanyUsersWithRoleIds, listRoles, getUsersEmailConfirmationStatus 
 import { NewUserForm } from "./new-user-form";
 import { UserRolesCell, UserActiveToggle } from "./user-role-editor";
 import { InitialsAvatar } from "@/components/ui/page-kit";
+import { Tooltip } from "@/components/ui/tooltip";
 import { EditableUserName } from "./editable-user-name";
 import { EditableUserEmail } from "./editable-user-email";
 import { ResetPasswordButton } from "./reset-password-button";
@@ -48,13 +49,23 @@ export default async function UsersSettingsPage({
       info: "Activo: puede entrar. Invitación pendiente: todavía no abrió el correo de invitación ni creó su contraseña (usa «Reenviar» junto al correo si no le llegó). Inactivo: desactivado, no puede entrar.",
       accessor: (u) =>
         !u.is_active ? (
-          <Badge tone="danger">Inactivo</Badge>
+          <Tooltip text="Inactivo: desactivado, no puede entrar. Actívalo con el ícono de encender.">
+            <span tabIndex={0} className="whitespace-nowrap">
+              <Badge tone="danger">Inactivo</Badge>
+            </span>
+          </Tooltip>
         ) : (emailConfirmations[u.id] ?? false) ? (
-          <Badge tone="success">Activo</Badge>
+          <Tooltip text="Activo: puede entrar al sistema">
+            <span tabIndex={0} className="whitespace-nowrap">
+              <Badge tone="success">Activo</Badge>
+            </span>
+          </Tooltip>
         ) : (
-          <span className="whitespace-nowrap" title="Todavía no abrió el correo de invitación ni creó su contraseña. Puedes reenviarla con «Reenviar» junto al correo.">
-            <Badge tone="warning">Invitación pendiente</Badge>
-          </span>
+          <Tooltip text="Invitación pendiente: todavía no abrió el correo ni creó su contraseña. Reenvíala con «Reenviar» junto al correo.">
+            <span tabIndex={0} className="whitespace-nowrap">
+              <Badge tone="warning">Invitación pendiente</Badge>
+            </span>
+          </Tooltip>
         ),
     },
     {

@@ -5,6 +5,7 @@ import { Pencil, Check, X } from "lucide-react";
 import { updateUserNameAction } from "@/features/users/actions";
 import { toast } from "@/components/ui/toaster";
 import { isNavigationSignal } from "@/lib/utils/navigation-signal";
+import { Tooltip } from "@/components/ui/tooltip";
 
 export function EditableUserName({ userId, fullName }: { userId: string; fullName: string | null }) {
   const [editing, setEditing] = useState(false);
@@ -52,13 +53,15 @@ export function EditableUserName({ userId, fullName }: { userId: string; fullNam
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => setEditing(true)}
-      className="group flex items-center gap-1.5 text-left"
-    >
-      {fullName ?? "—"}
-      <Pencil size={11} className="text-brand-muted opacity-0 group-hover:opacity-100" />
-    </button>
+    <Tooltip text="Cambiar el nombre: haz clic para editarlo">
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className="group flex items-center gap-1.5 text-left"
+      >
+        {fullName ?? "—"}
+        <Pencil size={11} className="text-brand-muted opacity-0 group-hover:opacity-100" />
+      </button>
+    </Tooltip>
   );
 }
