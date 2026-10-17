@@ -2,7 +2,8 @@ import Link from "next/link";
 import { listCurrencies } from "@/features/currencies/queries";
 import { redirect } from "next/navigation";
 import { ArrowDownCircle, AlertTriangle, Clock, CalendarClock, CalendarDays, CalendarRange, Receipt, FileCheck2, FileWarning } from "lucide-react";
-import { hasPermission } from "@/lib/auth/permissions";
+import { getMyPermissions } from "@/lib/auth/permissions";
+import { allowedReports } from "@/features/reports/access";
 import {
   getProjectsProfitabilityReport,
   getAccountsReceivableReport,
@@ -142,12 +143,16 @@ export default async function ReportsPage({
 }: {
   searchParams: Promise<Params>;
 }) {
-  if (!(await hasPermission("reports.view"))) {
-    redirect("/dashboard");
-  }
+  // Solo los reportes de su rol (features/reports/access.ts).
+  const allowed = allowedReports(await getMyPermissions());
+  if (allowed.length === 0) redirect("/dashboard");
+  const catalog = REPORT_CATALOG.map((g) => ({ ...g, reports: g.reports.filter((r) => allowed.includes(r.key)) })).filter(
+    (g) => g.reports.length > 0,
+  );
 
   const params = await searchParams;
-  const activeReport = params.report ?? DEFAULT_REPORT;
+  const wanted = params.report ?? DEFAULT_REPORT;
+  const activeReport = allowed.includes(wanted) ? wanted : allowed[0];
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 md:flex-row md:gap-8 md:p-8">
@@ -157,7 +162,7 @@ export default async function ReportsPage({
           Vistas de solo lectura, consolidadas en la moneda base.
         </p>
         <nav className="flex flex-col gap-4">
-          {REPORT_CATALOG.map((group) => (
+          {catalog.map((group) => (
             <div key={group.category}>
               <p className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wide text-brand-muted">
                 {group.category}

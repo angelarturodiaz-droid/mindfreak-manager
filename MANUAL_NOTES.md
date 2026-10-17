@@ -872,3 +872,41 @@ pulsa el botón.
 - Captcha (Turnstile): en `localhost` se usan las claves de prueba de
   Cloudflare. Para producción, agregar el dominio real en Cloudflare →
   Turnstile → el widget → *Hostname management* (fase de dominio del checklist).
+
+## Resumen para el manual: acceso y seguridad (16-oct, pruebas BD/BI/BJ/BK)
+
+**Alta de un usuario nuevo (flujo completo)**
+1. Administrador: *Configuración → Usuarios → Crear usuario* (correo + rol).
+   Estado: *Invitación pendiente* (amarillo); *Reenviar* junto al correo.
+2. La persona abre el correo → *Elige tu nueva contraseña* (regla segura con
+   lista en vivo).
+3. *Activa la verificación en dos pasos* (pantalla propia): Google o Microsoft
+   Authenticator → *Mostrar código QR* → código de 6 dígitos → *Activar y
+   entrar*. Sin esto no puede usar el sistema (obligatorio para todos).
+4. Entra y ve solo lo de su rol. El estado pasa a *Activo*.
+
+**Iniciar sesión**
+- Contraseña + código del autenticador. *Recordar este equipo* evita el código
+  por 90 días en ese navegador (en incógnito se borra al cerrar las ventanas).
+- 3 fallos seguidos → captcha y aviso de intentos restantes; 5 → bloqueo de
+  15 minutos (aunque luego escriba bien la contraseña). Alternativa:
+  *¿Olvidaste tu contraseña?*.
+
+**Lo que ve cada rol**
+- Menú, botones *Nuevo…*, atajos e indicadores del Dashboard, Reportes y
+  Comparaciones: solo lo que el rol permite. Entrar por dirección directa sin
+  permiso → vuelve al inicio con el aviso *No tienes permiso*.
+- Reportes: cada uno pide *Ver reportes* + el permiso de sus datos.
+- Recomendación de configuración: *Ver reportes* solo para roles que manejan
+  dinero (Administrador, Gerente, Finanzas).
+
+**Desactivar / eliminar**
+- Desactivar (ícono apagar) cierra el acceso al instante, incluso con sesión
+  abierta o equipo recordado; reactivar lo devuelve. Nadie se desactiva a sí
+  mismo ni al último Administrador.
+- Eliminar (papelera, con código del autenticador) solo si nunca registró
+  actividad.
+
+**Documentos**
+- Factura emitida y cotización fuera de Borrador/Negociación: fijas en la base.
+- Cambiar el cliente: solo en Borrador (factura sin proyecto ni cotización).

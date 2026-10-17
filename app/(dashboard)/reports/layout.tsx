@@ -1,7 +1,11 @@
-import { requirePageAccess } from "@/lib/auth/permissions";
+import { redirect } from "next/navigation";
+import { getMyPermissions } from "@/lib/auth/permissions";
+import { allowedReports } from "@/features/reports/access";
 
-/** Solo entra quien tiene el permiso reports.view (si no, vuelve al inicio con un aviso). */
+/** Solo entra quien tiene al menos un reporte de su rol (si no, vuelve al inicio con un aviso). */
 export default async function ReportsAccessLayout({ children }: { children: React.ReactNode }) {
-  await requirePageAccess("reports.view", "entrar a Reportes");
+  if (allowedReports(await getMyPermissions()).length === 0) {
+    redirect(`/dashboard?sin_permiso=${encodeURIComponent("entrar a Reportes")}`);
+  }
   return children;
 }

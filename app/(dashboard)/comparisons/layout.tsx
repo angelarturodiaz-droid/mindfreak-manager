@@ -1,7 +1,11 @@
-import { requirePageAccess } from "@/lib/auth/permissions";
+import { redirect } from "next/navigation";
+import { getMyPermissions } from "@/lib/auth/permissions";
+import { canSeeComparisons } from "@/features/reports/access";
 
-/** Solo entra quien tiene el permiso reports.view (si no, vuelve al inicio con un aviso). */
+/** Comparaciones muestra rentabilidad: requiere ver reportes, facturas y gastos. */
 export default async function ComparisonsAccessLayout({ children }: { children: React.ReactNode }) {
-  await requirePageAccess("reports.view", "entrar a Comparaciones");
+  if (!canSeeComparisons(await getMyPermissions())) {
+    redirect(`/dashboard?sin_permiso=${encodeURIComponent("entrar a Comparaciones")}`);
+  }
   return children;
 }

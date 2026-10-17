@@ -980,7 +980,10 @@ const SECTIONS: Section[] = [
     content: (
       <>
         <p className="text-sm text-brand-text">
-          Todos los reportes son de solo lectura (no se edita nada desde
+          <strong>Cada rol ve solo sus reportes</strong>: además de <em>Ver reportes</em>, cada reporte pide el
+          permiso de los datos que muestra (por ejemplo, Cuentas por cobrar pide ver facturas; Ingresos y egresos
+          por categoría pide ver bancos; Comparaciones pide ver facturas y gastos). Si un rol no tiene ninguno,
+          Reportes no aparece en su menú. Todos los reportes son de solo lectura (no se edita nada desde
           aquí) y se pueden filtrar por fecha, cliente/proveedor, proyecto,
           estado y moneda. Las tablas largas se muestran <strong>de 10 en 10</strong> con
           páginas abajo (« primera · Anterior · 1 … 5 6 7 … 12 · Siguiente · » última), igual que las listas; los

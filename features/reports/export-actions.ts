@@ -1,6 +1,7 @@
 "use server";
 
-import { hasPermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
+import { getCurrentUserCompanyIds, getMyPermissions } from "@/lib/auth/permissions";
+import { canSeeReport } from "./access";
 import { logAudit } from "@/lib/audit/log";
 import { buildReportExport, EXPORTABLE_REPORTS, type ReportExportParams } from "./export-data";
 import type { ReportExportData } from "./export-types";
@@ -36,8 +37,8 @@ export async function getReportExportAction(
   rawParams: Record<string, string | undefined>,
   format: "xlsx" | "pdf",
 ): Promise<{ data: ReportExportData | null; error: string | null }> {
-  if (!(await hasPermission("reports.view"))) {
-    return { data: null, error: "No tienes permiso para ver reportes." };
+  if (!canSeeReport(report, await getMyPermissions())) {
+    return { data: null, error: "Tu rol no tiene acceso a este reporte." };
   }
   if (!EXPORTABLE_REPORTS[report]) return { data: null, error: "Este reporte no se puede exportar." };
 

@@ -26,6 +26,8 @@ import {
 import { useSidebar } from "./sidebar-context";
 import { IconBadge, type IconBadgeTone } from "../ui/icon-badge";
 
+import { allowedReports, canSeeComparisons } from "@/features/reports/access";
+
 /** Permiso para ver cada sección (las que no están aquí las ve todo el mundo). */
 const NAV_PERMISSION: Record<string, string> = {
   "/clients": "clients.view",
@@ -37,8 +39,6 @@ const NAV_PERMISSION: Record<string, string> = {
   "/payments": "payments.view",
   "/expenses": "expenses.view",
   "/banks": "banks.view",
-  "/reports": "reports.view",
-  "/comparisons": "reports.view",
   "/audit": "settings.manage",
 };
 
@@ -145,6 +145,9 @@ export function Sidebar({
         {NAV_GROUPS.map((group) => ({
           ...group,
           items: group.items.filter((item) => {
+            // Reportes y Comparaciones: solo si hay alguno de su rol.
+            if (item.href === "/reports") return allowedReports(permissions).length > 0;
+            if (item.href === "/comparisons") return canSeeComparisons(permissions);
             const need = NAV_PERMISSION[item.href];
             return !need || permissions.includes(need);
           }),

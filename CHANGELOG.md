@@ -1,5 +1,17 @@
 # CHANGELOG — Mindfreak Manager
 
+## Reportes según el rol (2026-10-16 noche)
+
+- `features/reports/access.ts`: cada reporte pide *Ver reportes* + el
+  permiso de sus datos (facturas, gastos, cobros o bancos); Comparaciones pide
+  facturas y gastos. Menú, catálogo de Reportes, entrada directa por URL y la
+  exportación a Excel/PDF respetan la regla. Ventas y Operaciones ya no ven
+  Reportes ni Comparaciones.
+- Recomendado (lo hace el usuario en Roles y permisos): quitar *Ver reportes*
+  a Ventas y Operaciones, porque en la base ese permiso todavía deja leer
+  facturas, cobros y gastos (RLS).
+- Pruebas: `tests/unit/report-access.test.ts`.
+
 ## Dashboard según el rol y bloqueo temporal del inicio de sesión (2026-10-16)
 
 - **Dashboard**: cada widget declara qué permisos necesita
