@@ -869,3 +869,6 @@ pulsa el botón.
   Password security → mínimo 10 y exigir mayúscula, minúscula, número y
   símbolo, para que la regla también la aplique Supabase. "Leaked password
   protection" (HaveIBeenPwned) requiere plan Pro: queda en la fase 8.
+- Captcha (Turnstile): en `localhost` se usan las claves de prueba de
+  Cloudflare. Para producción, agregar el dominio real en Cloudflare →
+  Turnstile → el widget → *Hostname management* (fase de dominio del checklist).

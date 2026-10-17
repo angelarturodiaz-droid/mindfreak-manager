@@ -70,7 +70,12 @@ function lockMessage(lastAttemptAt: string | null): string {
 
 /** Verifica el token de Cloudflare Turnstile contra la API de Cloudflare. */
 async function verifyTurnstile(token: string, remoteIp: string | null): Promise<boolean> {
-  const secret = process.env.TURNSTILE_SECRET_KEY;
+  // En desarrollo (localhost) se usa la clave secreta de prueba de Cloudflare
+  // (siempre pasa), igual que el widget: la real solo sirve en el dominio.
+  const secret =
+    process.env.NODE_ENV === "development"
+      ? "1x0000000000000000000000000000000AA"
+      : process.env.TURNSTILE_SECRET_KEY;
   // Si no está configurado, no bloqueamos el login (evita dejar el sistema
   // inaccesible por una variable de entorno faltante) — solo no hay captcha.
   if (!secret) return true;

@@ -8,6 +8,11 @@
   proyectos activos, cotizaciones pendientes y tareas. Personalizar solo
   ofrece los que su rol permite. Si con su rol no le queda nada visible, se
   le muestran los que sí puede ver.
+- Captcha en localhost: el widget usaba la clave real, que solo funciona en
+  el dominio registrado en Cloudflare (se quedaba en "Troubleshoot" y una
+  ventana en blanco). En desarrollo se usan las claves de prueba oficiales de
+  Cloudflare (siempre pasan). En producción, la real (el dominio debe estar en
+  *Hostname management* del widget).
 - **Bloqueo temporal**: 5 intentos fallidos seguidos con el mismo correo →
   15 minutos sin poder entrar (aunque escriba bien la contraseña), con la hora
   en que se libera. Desde el 3er intento avisa cuántos quedan (además del

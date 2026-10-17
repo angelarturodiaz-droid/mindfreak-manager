@@ -15,8 +15,13 @@ import Script from "next/script";
  * (ver .env.example). Si no está configurada, no se renderiza nada — así
  * el login sigue funcionando mientras se configura el captcha.
  */
+/** Clave de prueba oficial de Cloudflare: siempre pasa. Solo en desarrollo (localhost),
+ * porque la clave real solo funciona en el dominio registrado en Cloudflare. */
+const DEV_TEST_SITE_KEY = "1x00000000000000000000AA";
+
 export function TurnstileWidget() {
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const siteKey =
+    process.env.NODE_ENV === "development" ? DEV_TEST_SITE_KEY : process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   if (!siteKey) return null;
 
   return (
