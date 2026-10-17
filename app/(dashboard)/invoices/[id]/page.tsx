@@ -36,6 +36,8 @@ import { BankDetailsPicker } from "@/components/documents/bank-details-picker";
 import { NextStepBar, SideSection, TotalsStrip } from "@/components/documents/doc-layout";
 import { listCategoryOptions } from "@/features/expense-categories/queries";
 import { ResponsibleSelector } from "./responsible-selector";
+import { ChangeClientButton } from "@/components/documents/change-client-button";
+import { listActiveClients } from "@/features/quotations/queries";
 import { AddCollectionHistoryForm } from "./add-collection-history-form";
 import { listPaymentsForInvoice, listBankAccounts } from "@/features/payments/queries";
 import { getFxContext } from "@/features/currencies/queries";
@@ -133,6 +135,8 @@ export default async function InvoiceDetailPage({
     ]);
   // Anular retenciones del cliente (migración 083).
   const canVoid = await hasPermission("payments.void");
+  // Para "Cambiar cliente" (solo en Borrador).
+  const activeClients = invoice.status === "DRAFT" && canEdit ? await listActiveClients() : [];
 
   const clientData = invoice.clients as { name: string } | { name: string }[] | null;
   const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
@@ -417,6 +421,21 @@ export default async function InvoiceDetailPage({
                     {clientName ?? "—"}
                   </Link>
                 </dd>
+                {invoice.status === "DRAFT" && canEdit && (
+                  <dd className="ml-1">
+                    <ChangeClientButton
+                      kind="invoice"
+                      documentId={invoice.id}
+                      currentClientId={invoice.client_id}
+                      clients={activeClients}
+                      blockedReason={
+                        invoice.project_id || invoice.quotation_id
+                          ? "Esta factura viene de un proyecto o de una cotización del cliente actual, así que no se le puede cambiar el cliente. Descarta este borrador y crea la factura desde cero para el otro cliente."
+                          : null
+                      }
+                    />
+                  </dd>
+                )}
               </div>
               {project && invoice.project_id && (
                 <div className="flex items-center gap-1.5">

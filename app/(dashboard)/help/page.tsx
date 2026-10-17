@@ -486,6 +486,11 @@ const SECTIONS: Section[] = [
           llevar impuesto, comisión y descuento. Sigue un flujo de estados
           desde que se crea hasta que el cliente decide:
         </p>
+        <p className="mt-2 text-sm text-brand-text">
+          <strong>Cambiar cliente</strong>: solo en <em>Borrador</em> (en Negociación ya se le envió a ese cliente),
+          con el enlace <em>Cambiar cliente</em> junto al nombre. Se quita el contacto del cliente anterior; las
+          líneas y los montos no cambian. No se puede si ya generó un proyecto. Queda en Auditoría.
+        </p>
         <StatusRow
           items={[
             { label: "Borrador", status: "DRAFT" },
@@ -595,6 +600,13 @@ const SECTIONS: Section[] = [
           proyecto. Puede ser factura regular o electrónica (e-CF, DGII), y
           lleva su propio impuesto, comisión y descuento igual que una
           cotización.
+        </p>
+        <p className="mt-2 text-sm text-brand-text">
+          <strong>Cambiar cliente</strong>: en una factura en <em>Borrador</em>, al lado del nombre del cliente, el
+          enlace <em>Cambiar cliente</em> te deja elegir otro (las líneas y los montos no cambian; revisa luego el
+          tipo de NCF). No se puede si la factura viene de un proyecto o de una cotización (son del cliente
+          original): en ese caso descarta el borrador y créala desde cero. Una vez emitida, el cliente ya no se
+          cambia. Queda en Auditoría.
         </p>
         <StatusRow
           items={[

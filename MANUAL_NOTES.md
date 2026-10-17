@@ -852,3 +852,11 @@ pulsa el botón.
   pendiente con el contador).
 - Mantenimiento técnico: la limpieza Go-Live debe activar
   `mf.allow_locked_docs` para poder borrar documentos emitidos de prueba.
+
+## Cambiar el cliente de un documento (2026-10-16, prueba BI)
+
+- Como en cualquier ERP: solo en Borrador. Factura que viene de proyecto o
+  cotización → no (descartar y crear de cero). Cotización en Negociación o más
+  → no (ya se le envió a ese cliente). Emitida → nunca (se anula y se hace otra).
+- Tras cambiar el cliente de una factura, revisar el tipo de NCF (crédito
+  fiscal si tiene RNC, consumidor final si no).

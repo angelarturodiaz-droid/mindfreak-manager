@@ -34,6 +34,8 @@ import { parseBankDetails } from "@/features/banks/bank-details";
 import { BankDetailsPicker } from "@/components/documents/bank-details-picker";
 import { NextStepBar, SideSection, TotalsStrip } from "@/components/documents/doc-layout";
 import { hasPermission } from "@/lib/auth/permissions";
+import { ChangeClientButton } from "@/components/documents/change-client-button";
+import { listActiveClients } from "@/features/quotations/queries";
 import { getDefaultTaxRate, listTaxRates } from "@/features/tax-rates/queries";
 import { TAX_TREATMENT_LABELS } from "@/features/tax-rates/schema";
 import { NewItemForm } from "./new-item-form";
@@ -99,6 +101,8 @@ export default async function QuotationDetailPage({
     // Cuentas que se pueden poner en "Datos bancarios para el pago" (opcional).
     listBankDetailOptions().catch(() => []),
   ]);
+  // Para "Cambiar cliente" (solo en Borrador).
+  const activeClients = quotation.status === "DRAFT" && canUpdate ? await listActiveClients() : [];
 
   const clientData = quotation.clients as { name: string } | { name: string }[] | null;
   const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
@@ -252,6 +256,17 @@ export default async function QuotationDetailPage({
                     {clientName ?? "—"}
                   </Link>
                 </dd>
+                {quotation.status === "DRAFT" && canUpdate && (
+                  <dd className="ml-1">
+                    <ChangeClientButton
+                      kind="quotation"
+                      documentId={quotation.id}
+                      currentClientId={quotation.client_id}
+                      clients={activeClients}
+                      blockedReason={quotation.project_id ? "Esta cotización ya generó un proyecto; no se le puede cambiar el cliente." : null}
+                    />
+                  </dd>
+                )}
               </div>
               <div className="flex items-center gap-1.5">
                 <CalendarDays size={15} className="text-brand-muted" aria-hidden />

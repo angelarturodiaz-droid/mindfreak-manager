@@ -1,5 +1,17 @@
 # CHANGELOG — Mindfreak Manager
 
+## Cambiar el cliente en Borrador — prueba BI (2026-10-16)
+
+- Factura y cotización en **Borrador**: enlace *Cambiar cliente* junto al
+  nombre (`components/documents/change-client-button.tsx`), con buscador de
+  clientes activos y resultado en ventana.
+- `changeInvoiceClientAction`: solo Borrador; no si viene de un proyecto o
+  cotización. Avisa revisar el tipo de NCF. `changeQuotationClientAction`:
+  solo Borrador; no si ya generó proyecto; quita el contacto anterior.
+  Ambas con Auditoría (cliente anterior y nuevo). Líneas y montos no cambian.
+- Nota: los clientes no tienen condición de pago propia, así que no hay nada
+  que actualizar al cambiarlo.
+
 ## Refuerzo de seguridad — prueba BD (2026-10-16)
 
 - Migración **085** (`supabase/migrations/085_security_hardening.sql`):

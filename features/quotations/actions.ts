@@ -766,3 +766,63 @@ export async function discardQuotationAction(quotationId: string): Promise<void>
   revalidatePath("/quotations");
   redirect("/quotations");
 }
+
+/**
+ * Cambiar el cliente de una cotización en Borrador (prueba BI). En
+ * Negociación ya se le envió a ese cliente, así que no se cambia. No se
+ * permite si ya generó un proyecto. Se quita el contacto del cliente
+ * anterior. Las líneas y los montos no cambian. Queda en Auditoría.
+ */
+export async function changeQuotationClientAction(
+  quotationId: string,
+  newClientId: string,
+): Promise<{ error: string | null; success: string | null }> {
+  await requirePermission("quotations.update");
+  if (!newClientId) return { error: "Elige el cliente nuevo.", success: null };
+  const supabase = await createSupabaseClient();
+
+  const { data: quotation } = await supabase
+    .from("quotations")
+    .select("status, client_id, project_id, number, clients(name)")
+    .eq("id", quotationId)
+    .maybeSingle();
+  if (!quotation) return { error: "Cotización no encontrada.", success: null };
+  if (quotation.status !== "DRAFT") {
+    return {
+      error: "Solo se puede cambiar el cliente mientras la cotización está en Borrador (después ya se le envió a ese cliente).",
+      success: null,
+    };
+  }
+  if (quotation.project_id) {
+    return { error: "Esta cotización ya generó un proyecto; no se le puede cambiar el cliente.", success: null };
+  }
+  if (quotation.client_id === newClientId) return { error: "Ese ya es el cliente de la cotización.", success: null };
+
+  const { data: client } = await supabase
+    .from("clients")
+    .select("id, name, is_active")
+    .eq("id", newClientId)
+    .maybeSingle();
+  if (!client || !client.is_active) return { error: "El cliente elegido no existe o está inactivo.", success: null };
+
+  const { error } = await supabase
+    .from("quotations")
+    .update({ client_id: newClientId, contact_id: null })
+    .eq("id", quotationId);
+  if (error) return { error: dbErrorMessage(error.message), success: null };
+
+  const companyId = await getPrimaryCompanyId();
+  const prev = Array.isArray(quotation.clients) ? quotation.clients[0] : quotation.clients;
+  await logAudit({
+    companyId,
+    action: "UPDATE",
+    entityType: "quotation",
+    entityId: quotationId,
+    oldValues: { client_id: quotation.client_id, cliente: (prev as { name?: string } | null)?.name ?? null },
+    newValues: { client_id: newClientId, cliente: client.name, cambio: "cliente" },
+  });
+
+  revalidatePath(`/quotations/${quotationId}`);
+  revalidatePath("/quotations");
+  return { error: null, success: `Ahora la cotización ${quotation.number} es de ${client.name}. Si tenía un contacto, se quitó: elige el del cliente nuevo si hace falta.` };
+}

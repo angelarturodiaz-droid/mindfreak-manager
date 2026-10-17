@@ -927,3 +927,69 @@ export async function addCollectionHistoryAction(
   revalidatePath(`/invoices/${invoiceId}`);
   return { error: null };
 }
+
+/**
+ * Cambiar el cliente de una factura en Borrador (prueba BI). Como en
+ * cualquier ERP: solo mientras no se haya emitido. No se permite si la
+ * factura viene de un proyecto o de una cotización (pertenecen al cliente
+ * original). Las líneas y los montos no cambian. Queda en Auditoría.
+ */
+export async function changeInvoiceClientAction(
+  invoiceId: string,
+  newClientId: string,
+): Promise<{ error: string | null; success: string | null }> {
+  await requirePermission("invoices.create");
+  if (!newClientId) return { error: "Elige el cliente nuevo.", success: null };
+  const supabase = await createSupabaseClient();
+
+  const { data: invoice } = await supabase
+    .from("invoices")
+    .select("status, client_id, project_id, quotation_id, number, clients(name)")
+    .eq("id", invoiceId)
+    .maybeSingle();
+  if (!invoice) return { error: "Factura no encontrada.", success: null };
+  if (invoice.status !== "DRAFT") {
+    return { error: "Solo se puede cambiar el cliente mientras la factura está en Borrador.", success: null };
+  }
+  if (invoice.project_id || invoice.quotation_id) {
+    return {
+      error:
+        "Esta factura viene de un proyecto o de una cotización del cliente actual, así que no se le puede cambiar el cliente. Descarta este borrador y crea la factura desde cero para el otro cliente.",
+      success: null,
+    };
+  }
+  if (invoice.client_id === newClientId) return { error: "Ese ya es el cliente de la factura.", success: null };
+
+  const { data: client } = await supabase
+    .from("clients")
+    .select("id, name, is_active")
+    .eq("id", newClientId)
+    .maybeSingle();
+  if (!client || !client.is_active) return { error: "El cliente elegido no existe o está inactivo.", success: null };
+
+  const { error } = await supabase.from("invoices").update({ client_id: newClientId }).eq("id", invoiceId);
+  if (error) return { error: dbErrorMessage(error.message), success: null };
+
+  const companyId = await getPrimaryCompanyId();
+  const oldName = relationNameOf(invoice.clients);
+  await logAudit({
+    companyId,
+    action: "UPDATE",
+    entityType: "invoice",
+    entityId: invoiceId,
+    oldValues: { client_id: invoice.client_id, cliente: oldName },
+    newValues: { client_id: newClientId, cliente: client.name, cambio: "cliente" },
+  });
+
+  revalidatePath(`/invoices/${invoiceId}`);
+  revalidatePath("/invoices");
+  return {
+    error: null,
+    success: `Ahora la factura ${invoice.number} es de ${client.name}. Revisa el tipo de NCF: depende de si el cliente tiene RNC (crédito fiscal) o no (consumidor final).`,
+  };
+}
+
+function relationNameOf(rel: unknown): string | null {
+  const r = Array.isArray(rel) ? rel[0] : rel;
+  return r && typeof r === "object" && "name" in r ? String((r as { name: unknown }).name) : null;
+}
