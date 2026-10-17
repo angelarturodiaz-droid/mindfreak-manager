@@ -842,9 +842,11 @@ pulsa el botón.
   + cierre de sesión en la siguiente pantalla), aunque el equipo esté
   "recordado". Reactivar lo devuelve con su mismo rol. Protecciones: no
   desactivarse a sí mismo, no dejar la empresa sin Administrador activo.
-- **2FA obligatoria para administradores** (aprobado: se mantiene "recordar
-  este equipo"). Si un administrador pierde el autenticador y usa un código de
-  recuperación, vuelve a activarla en su perfil (flujo ya existente).
+- **2FA obligatoria para todos los usuarios** (decisión del 16-oct; se
+  mantiene "recordar este equipo"). Un usuario nuevo, al entrar por primera
+  vez, la activa en su perfil antes de usar el sistema. Si pierde el
+  autenticador y usa un código de recuperación, la vuelve a activar (flujo ya
+  existente).
 - **Documentos emitidos fijos en la base**: ver lista de lo que sí se puede
   cambiar en la Ayuda. Correcciones: anulación / nota de crédito (desarrollo
   pendiente con el contador).

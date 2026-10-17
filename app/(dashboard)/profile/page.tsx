@@ -51,9 +51,10 @@ export default async function ProfilePage({
 
       {mfa_required === "1" && !verifiedFactor && (
         <div className="max-w-2xl rounded-[var(--radius-md)] border border-brand-warning bg-brand-warning-bg px-4 py-3 text-sm text-brand-warning">
-          <strong>Activa la verificación en dos pasos para continuar.</strong> Tu usuario es Administrador y, por
-          seguridad, necesita la verificación en dos pasos antes de usar el sistema. Actívala abajo, en{" "}
-          <em>Inicio de sesión y seguridad</em> (te toma un minuto con una app como Google Authenticator).
+          <strong>Activa la verificación en dos pasos para continuar.</strong> Por seguridad, todos los usuarios del
+          sistema deben tenerla antes de usarlo. Actívala abajo, en <em>Inicio de sesión y seguridad</em> (te toma un
+          minuto con una app como Google Authenticator o Microsoft Authenticator). Puedes marcar «recordar este
+          equipo» para que no te pida el código cada vez.
         </div>
       )}
 

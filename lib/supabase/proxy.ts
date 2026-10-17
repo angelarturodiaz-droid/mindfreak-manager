@@ -84,8 +84,8 @@ export async function updateSession(request: NextRequest) {
 
   // Prueba BD (migración 085): en cada navegación se revisa el estado de la
   // cuenta. Desactivada → se cierra la sesión y va a /login, aunque el equipo
-  // esté "recordado". Administrador sin verificación en dos pasos → debe
-  // activarla en Mi perfil antes de usar el sistema. Si la función todavía no
+  // esté "recordado". Usuario sin verificación en dos pasos (obligatoria para
+  // todos) → debe activarla en Mi perfil antes de usar el sistema. Si la función todavía no
   // existe (migración sin aplicar) no se bloquea nada.
   if (user && !isPublicRoute && request.method === "GET" && path !== "/mfa-challenge") {
     const { data: status, error: statusError } = await supabase.rpc("session_status");

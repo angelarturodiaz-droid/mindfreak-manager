@@ -5,10 +5,10 @@
 --    user_company_ids() no devuelven nada si profiles.is_active = false, así
 --    RLS lo bloquea al instante aunque tenga una sesión abierta o un equipo
 --    "recordado". (La app además bloquea la cuenta en Auth y cierra la sesión.)
--- 2. Administradores con verificación en dos pasos obligatoria: los permisos
---    de administrador (users.manage y settings.manage) solo valen si el
---    usuario tiene un factor 2FA verificado. "Recordar este equipo" se
---    mantiene (se exige tenerla ACTIVADA, no el código en cada sesión).
+-- 2. Verificación en dos pasos obligatoria para TODOS los usuarios: ningún
+--    permiso vale si el usuario no tiene un factor 2FA verificado. "Recordar
+--    este equipo" se mantiene (se exige tenerla ACTIVADA, no el código en
+--    cada sesión).
 -- 3. Documentos emitidos fijos en la base: líneas y datos de una factura que
 --    ya no está en Borrador, y líneas de una cotización fuera de Borrador o
 --    Negociación, no se pueden cambiar. Excepción explícita para tareas de
@@ -33,13 +33,11 @@ as $function$
     where ur.user_id = auth.uid()
       and p.code = permission_code
   )
-  -- Permisos de administrador: además, 2FA activada.
-  and (
-    permission_code not in ('users.manage', 'settings.manage')
-    or exists (
-      select 1 from auth.mfa_factors f
-      where f.user_id = auth.uid() and f.status = 'verified'
-    )
+  -- Verificación en dos pasos obligatoria para TODOS los usuarios (decisión
+  -- del usuario, 16-oct): sin un factor 2FA verificado no hay permisos.
+  and exists (
+    select 1 from auth.mfa_factors f
+    where f.user_id = auth.uid() and f.status = 'verified'
   );
 $function$;
 
@@ -55,8 +53,8 @@ as $function$
   where ur.user_id = auth.uid();
 $function$;
 
--- Estado de la sesión para la app (en cada navegación): ¿cuenta activa? ¿es
--- administrador sin 2FA (debe activarla antes de seguir)?
+-- Estado de la sesión para la app (en cada navegación): ¿cuenta activa?
+-- ¿le falta activar la 2FA (debe hacerlo antes de seguir)?
 create or replace function public.session_status()
 returns jsonb
 language sql
@@ -66,14 +64,7 @@ as $function$
   select jsonb_build_object(
     'active', coalesce((select pr.is_active from public.profiles pr where pr.id = auth.uid()), false),
     'needs_mfa',
-      exists (
-        select 1
-        from public.user_roles ur
-        join public.role_permissions rp on rp.role_id = ur.role_id
-        join public.permissions p on p.id = rp.permission_id
-        where ur.user_id = auth.uid() and p.code in ('users.manage', 'settings.manage')
-      )
-      and not exists (
+      not exists (
         select 1 from auth.mfa_factors f
         where f.user_id = auth.uid() and f.status = 'verified'
       )

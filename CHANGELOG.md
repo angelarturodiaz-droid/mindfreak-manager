@@ -3,8 +3,9 @@
 ## Refuerzo de seguridad — prueba BD (2026-10-16)
 
 - Migración **085** (`supabase/migrations/085_security_hardening.sql`):
-  `has_permission()` y `user_company_ids()` exigen perfil activo; los
-  permisos `users.manage` y `settings.manage` exigen 2FA verificada;
+  `has_permission()` y `user_company_ids()` exigen perfil activo; **todo**
+  permiso exige 2FA verificada (obligatoria para todos los usuarios, decisión
+  del 16-oct);
   `session_status()` para la app; triggers que fijan facturas emitidas
   (`trg_invoice_locked`, `trg_invoice_items_locked`) y las líneas de
   cotizaciones fuera de Borrador/Negociación (`trg_quotation_items_locked`).
@@ -15,7 +16,7 @@
   resultado en ventana. Reactivar quita el bloqueo.
 - `lib/supabase/proxy.ts`: en cada navegación, cuenta desactivada → cierra
   sesión y va a `/login?cuenta=desactivada` (aunque el equipo esté recordado);
-  administrador sin 2FA → `/profile?mfa_required=1`.
+  usuario sin 2FA → `/profile?mfa_required=1`.
 - Login: mensaje *Tu cuenta está desactivada* (cuenta bloqueada o perfil
   inactivo). Perfil: aviso y pestaña de seguridad abierta.
 - Errores de documentos bloqueados en palabras (`lib/utils/db-error.ts`).
