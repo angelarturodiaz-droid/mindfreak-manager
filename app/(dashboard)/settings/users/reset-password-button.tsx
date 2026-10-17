@@ -8,15 +8,8 @@ import { Modal } from "@/components/ui/modal";
 import { PasswordInput } from "@/components/ui/password-input";
 import { ResultDialog } from "@/components/ui/result-dialog";
 import { isNavigationSignal } from "@/lib/utils/navigation-signal";
-
-function generatePassword(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
-  let pass = "";
-  for (let i = 0; i < 12; i++) {
-    pass += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return pass;
-}
+import { PasswordChecklist } from "@/components/ui/password-checklist";
+import { generateStrongPassword, passwordProblem } from "@/lib/auth/password-policy";
 
 /** Ícono de llave → ventana para poner una contraseña nueva al usuario. */
 export function ResetPasswordButton({ userId, userName }: { userId: string; userName: string }) {
@@ -31,8 +24,9 @@ export function ResetPasswordButton({ userId, userName }: { userId: string; user
   }
 
   function handleSave() {
-    if (password.length < 8) {
-      setResult({ tone: "danger", text: "La contraseña debe tener al menos 8 caracteres." });
+    const problem = passwordProblem(password, { name: userName });
+    if (problem) {
+      setResult({ tone: "danger", text: problem });
       return;
     }
     startTransition(async () => {
@@ -61,7 +55,7 @@ export function ResetPasswordButton({ userId, userName }: { userId: string; user
       {open && (
         <Modal open onClose={() => !isPending && close()} title={`Nueva contraseña para ${userName}`}>
           <div className="flex flex-col gap-4 text-sm">
-            <p className="text-brand-muted">Mínimo 8 caracteres. Puedes generar una segura con el botón.</p>
+            <p className="text-brand-muted">Debe ser segura. Lo más fácil: pulsa <strong>Generar</strong> y pásasela por un medio seguro.</p>
             <div className="flex items-end gap-2">
               <div className="flex-1">
                 <PasswordInput
@@ -71,10 +65,11 @@ export function ResetPasswordButton({ userId, userName }: { userId: string; user
                   autoFocus
                 />
               </div>
-              <Button size="sm" variant="outline" type="button" onClick={() => setPassword(generatePassword())}>
+              <Button size="sm" variant="outline" type="button" onClick={() => setPassword(generateStrongPassword())}>
                 Generar
               </Button>
             </div>
+            <PasswordChecklist password={password} />
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={close} disabled={isPending}>
                 Cancelar

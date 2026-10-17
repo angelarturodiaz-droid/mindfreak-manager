@@ -1,6 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import { PasswordChecklist } from "@/components/ui/password-checklist";
+import { PASSWORD_MIN_LENGTH } from "@/lib/auth/password-policy";
 import { KeyRound, ShieldCheck } from "lucide-react";
 import { updatePasswordAction, type AuthActionState } from "@/features/auth/actions";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -11,6 +13,7 @@ const initialState: AuthActionState = { error: null };
 
 export default function UpdatePasswordPage() {
   const [state, formAction, pending] = useActionState(updatePasswordAction, initialState);
+  const [pw, setPw] = useState("");
 
   return (
     <AuthShell
@@ -25,14 +28,15 @@ export default function UpdatePasswordPage() {
             Ya casi. Elige tu nueva contraseña.
           </h1>
           <p className="text-[14.5px] leading-relaxed text-white/60">
-            Usa al menos 8 caracteres y evita reutilizar contraseñas de otras cuentas.
+            Usa una contraseña segura: al menos {PASSWORD_MIN_LENGTH} caracteres con mayúscula, minúscula, número y
+            símbolo. Evita reutilizar contraseñas de otras cuentas.
           </p>
         </>
       }
     >
       <div className="flex flex-col gap-2">
         <h2 className="text-[26px] font-bold tracking-tight text-brand-primary">Elige tu nueva contraseña</h2>
-        <p className="text-[14.5px] text-brand-muted">Mínimo 8 caracteres.</p>
+        <p className="text-[14.5px] text-brand-muted">Debe cumplir todo lo de la lista.</p>
       </div>
 
       <form action={formAction} className="flex flex-col gap-[18px]">
@@ -41,16 +45,19 @@ export default function UpdatePasswordPage() {
           label="Contraseña nueva"
           name="password"
           required
-          minLength={8}
+          minLength={PASSWORD_MIN_LENGTH}
           autoComplete="new-password"
           icon={<KeyRound size={16} />}
+          value={pw}
+          onChange={(e) => setPw(e.target.value)}
         />
+        <PasswordChecklist password={pw} />
         <PasswordInput
           id="confirmPassword"
           label="Confirmar contraseña"
           name="confirmPassword"
           required
-          minLength={8}
+          minLength={PASSWORD_MIN_LENGTH}
           autoComplete="new-password"
           icon={<KeyRound size={16} />}
         />

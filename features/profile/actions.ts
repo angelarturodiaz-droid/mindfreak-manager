@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { passwordProblem } from "@/lib/auth/password-policy";
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { updateProfileSchema, changePasswordSchema } from "./schema";
@@ -76,6 +77,12 @@ export async function changeOwnPasswordAction(
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+  }
+
+  {
+    const { data: prof } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+    const problem = passwordProblem(parsed.data.new_password, { email: user.email, name: prof?.full_name });
+    if (problem) return { error: problem };
   }
 
   // Se re-verifica la contraseña actual antes de permitir el cambio, para

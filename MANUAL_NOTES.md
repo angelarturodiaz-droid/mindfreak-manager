@@ -860,3 +860,12 @@ pulsa el botón.
   → no (ya se le envió a ese cliente). Emitida → nunca (se anula y se hace otra).
 - Tras cambiar el cliente de una factura, revisar el tipo de NCF (crédito
   fiscal si tiene RNC, consumidor final si no).
+
+## Contraseñas (2026-10-16)
+
+- Regla: 10+ caracteres, mayúscula, minúscula, número y símbolo; nada común,
+  sin series, sin nombre ni correo. Ejemplo válido: `Verde#Lago27x`.
+- Pendiente en Supabase (recomendado, gratis): Authentication → Policies /
+  Password security → mínimo 10 y exigir mayúscula, minúscula, número y
+  símbolo, para que la regla también la aplique Supabase. "Leaked password
+  protection" (HaveIBeenPwned) requiere plan Pro: queda en la fase 8.

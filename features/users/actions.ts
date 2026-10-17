@@ -6,6 +6,7 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
+import { passwordProblem } from "@/lib/auth/password-policy";
 import { sendMail } from "@/lib/mail/send";
 import { reverifyAdminMfa } from "@/lib/mfa/admin-reverify";
 import { createUserSchema } from "./schema";
@@ -105,8 +106,11 @@ export async function createUserAction(
 
 export async function resetUserPasswordAction(userId: string, newPassword: string): Promise<void> {
   await requirePermission("users.manage");
-  if (newPassword.length < 8) {
-    throw new Error("La contraseña debe tener al menos 8 caracteres.");
+  {
+    const supa = await createSupabaseClient();
+    const { data: prof } = await supa.from("profiles").select("full_name, email").eq("id", userId).maybeSingle();
+    const problem = passwordProblem(newPassword, { email: prof?.email, name: prof?.full_name });
+    if (problem) throw new Error(problem);
   }
 
   const adminClient = createAdminClient();

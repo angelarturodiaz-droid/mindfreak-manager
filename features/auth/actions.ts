@@ -4,6 +4,7 @@ import { getAppUrl } from "@/lib/utils/app-url";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
+import { passwordProblem } from "@/lib/auth/password-policy";
 import { headers, cookies } from "next/headers";
 import { hashRecoveryCode } from "@/lib/mfa/recovery-codes";
 import {
@@ -366,9 +367,6 @@ export async function updatePasswordAction(
   const password = String(formData.get("password") ?? "");
   const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
-  if (password.length < 8) {
-    return { error: "La contraseña debe tener al menos 8 caracteres." };
-  }
   if (password !== confirmPassword) {
     return { error: "Las contraseñas no coinciden." };
   }
@@ -378,6 +376,11 @@ export async function updatePasswordAction(
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  if (user) {
+    const { data: prof } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+    const problem = passwordProblem(password, { email: user.email, name: prof?.full_name });
+    if (problem) return { error: problem };
+  }
   if (!user) {
     // Genérico a propósito — esta pantalla la usan dos flujos distintos:
     // recuperar contraseña ("¿Olvidaste tu contraseña?") e invitación de

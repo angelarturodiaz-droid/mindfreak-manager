@@ -1,5 +1,20 @@
 # CHANGELOG — Mindfreak Manager
 
+## Contraseñas seguras obligatorias (2026-10-16)
+
+- Corrección: se aceptaba "12345678" (solo pedía 8 caracteres). Nueva regla
+  (`lib/auth/password-policy.ts`): mínimo 10 caracteres con mayúscula,
+  minúscula, número y símbolo; no comunes (password, 123456, mindfreak…), sin
+  series (12345, abcde, aaaa) y sin el correo ni el nombre de la persona.
+- Se aplica en el servidor al crear la contraseña (invitación/recuperación),
+  al cambiarla en Mi perfil y cuando un administrador la restablece. Lista en
+  vivo de lo que falta (`components/ui/password-checklist.tsx`). *Generar*
+  crea contraseñas que siempre cumplen.
+- Migración **085b**: las funciones de los triggers de la 085 ya no se pueden
+  llamar como RPC y `mf_locked_docs_bypass` fija su `search_path` (avisos del
+  revisor de seguridad de Supabase).
+- Pruebas: `tests/unit/password-policy.test.ts`.
+
 ## Usuario invitado: primero contraseña, luego 2FA (2026-10-16)
 
 - Pantalla propia **/activar-verificacion** con el mismo estilo que la de la
