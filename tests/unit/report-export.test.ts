@@ -60,3 +60,14 @@ describe("buildReportXlsx", () => {
     expect(styles).toContain("US$");
   });
 });
+
+import { pageWindow } from "@/components/ui/pagination";
+describe("pageWindow", () => {
+  it("muestra todas si son pocas y recorta con … si son muchas", () => {
+    expect(pageWindow(1, 5)).toEqual([1, 2, 3, 4, 5]);
+    expect(pageWindow(6, 12)).toEqual([1, null, 5, 6, 7, null, 12]);
+    expect(pageWindow(1, 12)).toEqual([1, 2, null, 12]);
+    expect(pageWindow(3, 12)).toEqual([1, 2, 3, 4, null, 12]);
+    expect(pageWindow(12, 12)).toEqual([1, null, 11, 12]);
+  });
+});

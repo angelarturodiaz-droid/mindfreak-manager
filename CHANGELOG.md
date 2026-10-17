@@ -1,5 +1,12 @@
 # CHANGELOG — Mindfreak Manager
 
+## Paginación con primera/última página y números (2026-10-16)
+
+- `components/ui/pagination.tsx`: botones **«** (primera) y **»** (última),
+  números de página con ventana (1 … 5 6 7 … 12) y la actual resaltada. La
+  versión compacta muestra « ‹ 3 / 5 › ». Aplica a todas las listas y
+  reportes. Prueba de `pageWindow` en `tests/unit/report-export.test.ts`.
+
 ## Exportar reportes a Excel y PDF (2026-10-16)
 
 - Botón **Exportar** (Excel .xlsx o PDF) en los 9 reportes, al lado del

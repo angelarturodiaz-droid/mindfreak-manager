@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 
 /**
  * Paginación por query params (`?page=N`) para Server Components: los
@@ -55,29 +55,89 @@ export function Pagination({
           Mostrando {from}–{to} de {total}
         </span>
       )}
-      <div className="flex items-center gap-2">
-        {page > 1 ? (
-          <Link href={hrefFor(page - 1)} className={linkClasses}>
-            <ChevronLeft size={14} /> Anterior
-          </Link>
-        ) : (
-          <span className={disabledClasses} aria-disabled="true">
-            <ChevronLeft size={14} /> Anterior
+      <div className="flex flex-wrap items-center gap-1.5">
+        {/* Primera / última página: sin tener que pasar página por página. */}
+        <NavButton href={page > 1 ? hrefFor(1) : null} label="Primera página" className={linkClasses} disabledClassName={disabledClasses}>
+          <ChevronsLeft size={14} />
+        </NavButton>
+        <NavButton href={page > 1 ? hrefFor(page - 1) : null} label="Página anterior" className={linkClasses} disabledClassName={disabledClasses}>
+          <ChevronLeft size={14} /> {!compact && "Anterior"}
+        </NavButton>
+        {compact ? (
+          <span className="px-1">
+            {Math.min(page, totalPages)} / {totalPages}
           </span>
-        )}
-        <span className="px-1">
-          Página {Math.min(page, totalPages)} de {totalPages}
-        </span>
-        {page < totalPages ? (
-          <Link href={hrefFor(page + 1)} className={linkClasses}>
-            Siguiente <ChevronRight size={14} />
-          </Link>
         ) : (
-          <span className={disabledClasses} aria-disabled="true">
-            Siguiente <ChevronRight size={14} />
-          </span>
+          pageWindow(page, totalPages).map((p, i) =>
+            p === null ? (
+              <span key={`gap-${i}`} className="px-1" aria-hidden>
+                …
+              </span>
+            ) : p === page ? (
+              <span
+                key={p}
+                aria-current="page"
+                className="inline-flex min-w-[2.25rem] justify-center rounded-[var(--radius-md)] bg-brand-primary px-2.5 py-1.5 text-sm font-semibold text-white"
+              >
+                {p}
+              </span>
+            ) : (
+              <Link key={p} href={hrefFor(p)} className={`${linkClasses} min-w-[2.25rem] justify-center px-2.5`} title={`Ir a la página ${p}`}>
+                {p}
+              </Link>
+            ),
+          )
         )}
+        <NavButton href={page < totalPages ? hrefFor(page + 1) : null} label="Página siguiente" className={linkClasses} disabledClassName={disabledClasses}>
+          {!compact && "Siguiente"} <ChevronRight size={14} />
+        </NavButton>
+        <NavButton
+          href={page < totalPages ? hrefFor(totalPages) : null}
+          label={`Última página (${totalPages})`}
+          className={linkClasses}
+          disabledClassName={disabledClasses}
+        >
+          <ChevronsRight size={14} />
+        </NavButton>
       </div>
     </nav>
+  );
+}
+
+/** Páginas a mostrar: 1 … 4 5 6 … 12 (la actual, sus vecinas, la primera y la última). */
+export function pageWindow(page: number, totalPages: number): (number | null)[] {
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+  const set = new Set([1, totalPages, page - 1, page, page + 1].filter((p) => p >= 1 && p <= totalPages));
+  const sorted = [...set].sort((a, b) => a - b);
+  const out: (number | null)[] = [];
+  for (const p of sorted) {
+    const last = out[out.length - 1];
+    if (typeof last === "number" && p - last > 1) out.push(p - last === 2 ? last + 1 : null);
+    out.push(p);
+  }
+  return out;
+}
+
+function NavButton({
+  href,
+  label,
+  className,
+  disabledClassName,
+  children,
+}: {
+  href: string | null;
+  label: string;
+  className: string;
+  disabledClassName: string;
+  children: React.ReactNode;
+}) {
+  return href ? (
+    <Link href={href} className={className} title={label} aria-label={label}>
+      {children}
+    </Link>
+  ) : (
+    <span className={disabledClassName} aria-disabled="true" title={label}>
+      {children}
+    </span>
   );
 }

@@ -971,7 +971,7 @@ const SECTIONS: Section[] = [
           Todos los reportes son de solo lectura (no se edita nada desde
           aquí) y se pueden filtrar por fecha, cliente/proveedor, proyecto,
           estado y moneda. Las tablas largas se muestran <strong>de 10 en 10</strong> con
-          páginas abajo (Anterior · 1 2 3 · Siguiente), igual que las listas; los
+          páginas abajo (« primera · Anterior · 1 … 5 6 7 … 12 · Siguiente · » última), igual que las listas; los
           filtros se mantienen al cambiar de página. Las tarjetas de arriba
           muestran el resultado <strong>del filtro</strong> completo (cambian al filtrar), no solo la
           página que ves. En los reportes con varias tablas (ej. <em>Cuentas por cobrar y
