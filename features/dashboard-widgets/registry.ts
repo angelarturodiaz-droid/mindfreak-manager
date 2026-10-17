@@ -120,3 +120,37 @@ export function withMissingWidgets(saved: WidgetInstance[]): WidgetInstance[] {
   );
   return [...saved, ...missing];
 }
+
+/**
+ * Permisos que necesita cada widget (todos los de la lista). Un usuario solo
+ * ve en el Dashboard —y en Personalizar— lo que su rol le permite: por
+ * ejemplo, Ventas no ve bancos, cobros, gastos ni utilidad.
+ */
+export const WIDGET_PERMISSIONS: Record<string, string[]> = {
+  disponible_bancos_dop: ["banks.view"],
+  disponible_bancos_usd: ["banks.view"],
+  total_por_cobrar: ["invoices.view"],
+  total_vencido: ["invoices.view"],
+  vence_hoy: ["invoices.view"],
+  cobros_por_vencer: ["invoices.view"],
+  facturas_vencidas: ["invoices.view"],
+  facturas_proximas: ["invoices.view"],
+  ingresos_mes: ["invoices.view"],
+  total_por_pagar: ["expenses.view"],
+  gastos_mes: ["expenses.view"],
+  utilidad_mes: ["invoices.view", "expenses.view"],
+  margen_mes: ["invoices.view", "expenses.view"],
+  rentabilidad_proyectos: ["invoices.view", "expenses.view"],
+  flujo_financiero: ["payments.view"],
+  ultimos_cobros: ["payments.view"],
+  ultimos_pagos: ["payments.view"],
+  proyectos_activos: ["projects.view"],
+  tareas_pendientes: ["projects.view"],
+  cotizaciones_pendientes: ["quotations.view"],
+};
+
+export function widgetAllowed(type: string, perms: Set<string>): boolean {
+  const need = WIDGET_PERMISSIONS[type];
+  if (!need) return false; // widget desconocido: no se muestra
+  return need.every((p) => perms.has(p));
+}

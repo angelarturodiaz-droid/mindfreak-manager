@@ -5,7 +5,7 @@ import { getCurrentUser, getCurrentUserCompanyIds, getMyPermissions } from "@/li
 import { NoPermissionNotice } from "./no-permission-notice";
 import { getUserDashboardWidgets } from "@/features/dashboard-widgets/queries";
 import { getDashboardWidgetBundle } from "@/features/dashboard-widgets/bundle";
-import { PANEL_COLS, widgetKind } from "@/features/dashboard-widgets/registry";
+import { PANEL_COLS, widgetAllowed, widgetKind } from "@/features/dashboard-widgets/registry";
 import { renderWidget } from "@/components/dashboard-widgets/render-widget";
 import { Button } from "@/components/ui/button";
 
@@ -25,7 +25,12 @@ export default async function DashboardPage() {
     getDashboardWidgetBundle(),
   ]);
 
-  const visibleWidgets = widgets.filter((w) => w.visible);
+  // Solo lo que su rol le permite ver (Ventas no ve bancos, cobros ni gastos).
+  const allowedWidgets = widgets.filter((w) => widgetAllowed(w.type, perms));
+  let visibleWidgets = allowedWidgets.filter((w) => w.visible);
+  // Si con su rol no le queda nada visible (ej. Ventas con la configuración
+  // por defecto), se le muestra lo que sí puede ver.
+  if (visibleWidgets.length === 0) visibleWidgets = allowedWidgets.map((w) => ({ ...w, visible: true }));
   // Dos zonas, cada una en el orden elegido en Personalizar:
   // indicadores compactos arriba y paneles (gráficos y listas) debajo.
   const kpis = visibleWidgets.filter((w) => widgetKind(w.type) === "kpi");

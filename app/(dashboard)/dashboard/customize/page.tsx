@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
+import { getCurrentUser, getCurrentUserCompanyIds, getMyPermissions } from "@/lib/auth/permissions";
 import { getUserDashboardWidgets } from "@/features/dashboard-widgets/queries";
-import { withMissingWidgets } from "@/features/dashboard-widgets/registry";
+import { widgetAllowed, withMissingWidgets } from "@/features/dashboard-widgets/registry";
 import { DashboardCustomizer } from "./dashboard-customizer";
 
 export default async function CustomizeDashboardPage() {
@@ -16,7 +16,9 @@ export default async function CustomizeDashboardPage() {
   // lista (ej. uno agregado después) aparece al final, oculto por
   // defecto — así el catálogo puede crecer sin romper configuraciones ya
   // guardadas.
-  const initialWidgets = withMissingWidgets(saved);
+  // Solo los widgets que su rol le permite ver.
+  const perms = await getMyPermissions();
+  const initialWidgets = withMissingWidgets(saved).filter((w) => widgetAllowed(w.type, perms));
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">

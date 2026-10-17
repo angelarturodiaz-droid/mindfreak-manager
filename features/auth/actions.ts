@@ -20,6 +20,8 @@ const INACTIVE_ACCOUNT_MESSAGE =
 
 export type AuthActionState = {
   error: string | null;
+  /** Cuenta bloqueada temporalmente por intentos fallidos. */
+  locked?: boolean;
   submitted?: boolean;
   requiresCaptcha?: boolean;
 };
@@ -55,6 +57,16 @@ async function trustCurrentDevice(supabase: SupabaseServerClient, userId: string
 /** A partir de cuántos intentos fallidos seguidos (ventana de 15 min, ver
  * migración 051) se le exige un captcha a ese correo antes de reintentar. */
 const CAPTCHA_THRESHOLD = 3;
+/** Intentos fallidos seguidos tras los cuales el correo queda bloqueado 15 minutos. */
+const LOCK_THRESHOLD = 5;
+const LOCK_MINUTES = 15;
+
+/** Hora (RD) a la que termina el bloqueo, para el mensaje. */
+function lockMessage(lastAttemptAt: string | null): string {
+  const until = new Date((lastAttemptAt ? new Date(lastAttemptAt).getTime() : Date.now()) + LOCK_MINUTES * 60_000);
+  const hora = new Intl.DateTimeFormat("es-DO", { timeStyle: "short", timeZone: "America/Santo_Domingo" }).format(until);
+  return `Por seguridad, esta cuenta quedó bloqueada ${LOCK_MINUTES} minutos por varios intentos fallidos. Podrás intentar de nuevo a las ${hora}. Si olvidaste tu contraseña, usa «¿Olvidaste tu contraseña?».`;
+}
 
 /** Verifica el token de Cloudflare Turnstile contra la API de Cloudflare. */
 async function verifyTurnstile(token: string, remoteIp: string | null): Promise<boolean> {
@@ -124,6 +136,17 @@ export async function signIn(
   const { data: currentAttempts } = adminClient
     ? await adminClient.rpc("get_login_attempts", { p_identifier: email })
     : { data: 0 };
+  // Bloqueo temporal: 5 intentos fallidos seguidos → 15 minutos sin poder
+  // intentar (ni siquiera con la contraseña correcta).
+  if (adminClient && (currentAttempts ?? 0) >= LOCK_THRESHOLD) {
+    const { data: row } = await adminClient
+      .from("auth_login_attempts")
+      .select("last_attempt_at")
+      .eq("identifier", email.trim().toLowerCase())
+      .maybeSingle();
+    return { error: lockMessage(row?.last_attempt_at ?? null), locked: true };
+  }
+
   if ((currentAttempts ?? 0) >= CAPTCHA_THRESHOLD) {
     const token = String(formData.get("cf-turnstile-response") ?? "");
     const headersList = await headers();
@@ -149,8 +172,15 @@ export async function signIn(
     const { data: attempts } = adminClient
       ? await adminClient.rpc("record_failed_login", { p_identifier: email })
       : { data: 0 };
+    if ((attempts ?? 0) >= LOCK_THRESHOLD) {
+      return { error: lockMessage(new Date().toISOString()), locked: true };
+    }
+    const left = LOCK_THRESHOLD - (attempts ?? 0);
     return {
-      error: "Correo o contraseña incorrectos.",
+      error:
+        (attempts ?? 0) >= CAPTCHA_THRESHOLD
+          ? `Correo o contraseña incorrectos. Te ${left === 1 ? "queda 1 intento" : `quedan ${left} intentos`} antes de que la cuenta se bloquee ${LOCK_MINUTES} minutos.`
+          : "Correo o contraseña incorrectos.",
       requiresCaptcha: (attempts ?? 0) >= CAPTCHA_THRESHOLD,
     };
   }

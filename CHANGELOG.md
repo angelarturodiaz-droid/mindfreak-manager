@@ -1,5 +1,21 @@
 # CHANGELOG — Mindfreak Manager
 
+## Dashboard según el rol y bloqueo temporal del inicio de sesión (2026-10-16)
+
+- **Dashboard**: cada widget declara qué permisos necesita
+  (`WIDGET_PERMISSIONS` en `features/dashboard-widgets/registry.ts`). Ventas ya
+  no ve bancos, ventas, gastos, utilidad, margen, cobros ni pagos; ve
+  proyectos activos, cotizaciones pendientes y tareas. Personalizar solo
+  ofrece los que su rol permite. Si con su rol no le queda nada visible, se
+  le muestran los que sí puede ver.
+- **Bloqueo temporal**: 5 intentos fallidos seguidos con el mismo correo →
+  15 minutos sin poder entrar (aunque escriba bien la contraseña), con la hora
+  en que se libera. Desde el 3er intento avisa cuántos quedan (además del
+  captcha que ya existía).
+- Nota: el permiso *Ver reportes* da acceso de lectura a facturas, cobros,
+  gastos y proyectos en los reportes (RLS). Recomendado quitarlo a Ventas y
+  Operaciones si no deben ver números de la empresa.
+
 ## Cada rol ve solo lo que puede usar (2026-10-16)
 
 - Revisión del rol Ventas: la base y el servidor ya bloqueaban crear bancos,
