@@ -2,6 +2,9 @@
 
 ## Cambiar el cliente en Borrador — prueba BI (2026-10-16)
 
+- Configuración → Usuarios: el Estado muestra **Invitación pendiente**
+  (amarillo) hasta que la persona acepta la invitación; luego *Activo*.
+
 - Factura y cotización en **Borrador**: enlace *Cambiar cliente* junto al
   nombre (`components/documents/change-client-button.tsx`), con buscador de
   clientes activos y resultado en ventana.

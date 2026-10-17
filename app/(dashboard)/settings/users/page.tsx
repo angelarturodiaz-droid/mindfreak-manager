@@ -35,7 +35,17 @@ export default async function UsersSettingsPage({
     },
     {
       header: "Estado",
-      accessor: (u) => <Badge tone={u.is_active ? "success" : "danger"}>{u.is_active ? "Activo" : "Inactivo"}</Badge>,
+      info: "Activo: puede entrar. Invitación pendiente: todavía no abrió el correo de invitación ni creó su contraseña (usa «Reenviar» junto al correo si no le llegó). Inactivo: desactivado, no puede entrar.",
+      accessor: (u) =>
+        !u.is_active ? (
+          <Badge tone="danger">Inactivo</Badge>
+        ) : (emailConfirmations[u.id] ?? false) ? (
+          <Badge tone="success">Activo</Badge>
+        ) : (
+          <span className="whitespace-nowrap" title="Todavía no abrió el correo de invitación ni creó su contraseña. Puedes reenviarla con «Reenviar» junto al correo.">
+            <Badge tone="warning">Invitación pendiente</Badge>
+          </span>
+        ),
     },
     {
       header: "Roles",
