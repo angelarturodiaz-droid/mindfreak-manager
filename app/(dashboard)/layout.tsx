@@ -37,6 +37,7 @@ export default async function DashboardLayout({
   ]);
 
   let fullName: string | null = null;
+  let mfaPending = false;
   if (user) {
     const supabase = await createClient();
 
@@ -65,6 +66,28 @@ export default async function DashboardLayout({
       .eq("id", user.id)
       .single();
     fullName = profile?.full_name ?? null;
+
+    // Le falta activar la verificación en dos pasos (obligatoria, migración
+    // 085): no se muestra el menú, porque no puede usar otra pantalla hasta
+    // activarla (el proxy lo devuelve a Mi perfil).
+    const { data: status } = await supabase.rpc("session_status");
+    mfaPending = (status as { needs_mfa?: boolean } | null)?.needs_mfa === true;
+  }
+
+  if (user && mfaPending) {
+    return (
+      <div className="flex min-h-full flex-1 flex-col">
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-brand-border bg-brand-surface/95 px-4 py-3 shadow-[var(--shadow-sm)] md:px-6">
+          <span className="font-semibold text-brand-primary">{platformName}</span>
+          <span className="hidden text-sm text-brand-muted sm:inline">
+            · Activa la verificación en dos pasos para empezar a usar el sistema
+          </span>
+          <div className="flex-1" />
+          <UserMenu fullName={fullName} email={user.email ?? ""} brandAccent={brandAccent} />
+        </header>
+        <div className="flex flex-1 flex-col overflow-x-hidden bg-brand-background">{children}</div>
+      </div>
+    );
   }
 
   return (

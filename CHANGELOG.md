@@ -1,5 +1,15 @@
 # CHANGELOG — Mindfreak Manager
 
+## Usuario invitado: primero contraseña, luego 2FA (2026-10-16)
+
+- Corrección (prueba BD paso 7): el proxy mandaba al usuario invitado a
+  activar la 2FA antes de crear su contraseña. `/update-password` queda fuera
+  de esa revisión.
+- Mientras falta la 2FA, el sistema se muestra sin menú (solo nombre,
+  aviso y menú de usuario para cerrar sesión), para no dar la impresión de que
+  los botones no funcionan. Al activar el autenticador se recarga y aparece el
+  menú. El aviso del perfil explica los pasos (Activar → QR → código).
+
 ## Cambiar el cliente en Borrador — prueba BI (2026-10-16)
 
 - Configuración → Usuarios más compacto: columna *Usuario* (avatar, nombre y

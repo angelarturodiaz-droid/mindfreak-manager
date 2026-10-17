@@ -87,7 +87,15 @@ export async function updateSession(request: NextRequest) {
   // esté "recordado". Usuario sin verificación en dos pasos (obligatoria para
   // todos) → debe activarla en Mi perfil antes de usar el sistema. Si la función todavía no
   // existe (migración sin aplicar) no se bloquea nada.
-  if (user && !isPublicRoute && request.method === "GET" && path !== "/mfa-challenge") {
+  // Se excluyen las pantallas de crear/recuperar contraseña: un usuario
+  // invitado primero crea su contraseña y después activa la 2FA.
+  if (
+    user &&
+    !isPublicRoute &&
+    request.method === "GET" &&
+    path !== "/mfa-challenge" &&
+    path !== "/update-password"
+  ) {
     const { data: status, error: statusError } = await supabase.rpc("session_status");
     if (!statusError && status) {
       const st = status as { active?: boolean; needs_mfa?: boolean };

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
   enrollMfaAction,
@@ -18,6 +19,7 @@ export function AuthenticatorSetup({ initialFactor }: { initialFactor: Factor | 
   const [enrolling, setEnrolling] = useState<{ factorId: string; qrCode: string; secret: string } | null>(null);
   const [code, setCode] = useState("");
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   function handleActivate() {
     startTransition(async () => {
@@ -41,6 +43,8 @@ export function AuthenticatorSetup({ initialFactor }: { initialFactor: Factor | 
         setEnrolling(null);
         setCode("");
         toast.success("Autenticador activado");
+        // Si era obligatoria (usuario nuevo), se habilita el menú.
+        router.refresh();
       } catch (e) {
         // redirect() del servidor: la acción salió bien, no es un error.
         if (isNavigationSignal(e)) return;

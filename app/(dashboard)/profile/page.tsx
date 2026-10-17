@@ -53,8 +53,9 @@ export default async function ProfilePage({
         <div className="max-w-2xl rounded-[var(--radius-md)] border border-brand-warning bg-brand-warning-bg px-4 py-3 text-sm text-brand-warning">
           <strong>Activa la verificación en dos pasos para continuar.</strong> Por seguridad, todos los usuarios del
           sistema deben tenerla antes de usarlo. Actívala abajo, en <em>Inicio de sesión y seguridad</em> (te toma un
-          minuto con una app como Google Authenticator o Microsoft Authenticator). Puedes marcar «recordar este
-          equipo» para que no te pida el código cada vez.
+          minuto con una app como Google Authenticator o Microsoft Authenticator): pulsa <strong>Activar</strong> en la
+          fila <em>Autenticador</em>, escanea el código QR con la app y escribe el código de 6 dígitos. Al terminar se
+          habilita el menú. Puedes marcar «recordar este equipo» para que no te pida el código cada vez.
         </div>
       )}
 
