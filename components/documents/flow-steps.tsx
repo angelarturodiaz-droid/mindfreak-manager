@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, Info } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { InfoHint } from "@/components/ui/info-hint";
 
@@ -21,7 +21,7 @@ export function FlowSteps({ title, hint, steps }: { title: string; hint: string;
     <div className="border-t border-brand-border pt-5">
       <p className="mb-3 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs font-medium uppercase tracking-wide text-brand-muted">
         {title}
-        <span className="hidden font-normal normal-case tracking-normal sm:inline">· pasa el mouse por un paso para ver qué significa</span>
+        <span className="hidden font-normal normal-case tracking-normal sm:inline">· pasa el mouse por la ⓘ de cada paso para ver qué significa</span>
         <InfoHint text={hint} label={`Qué es el ${title.toLowerCase()}`} />
       </p>
       <ol className="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label={title}>
@@ -65,6 +65,12 @@ export function FlowSteps({ title, hint, steps }: { title: string; hint: string;
                   </span>
                   <span className={`text-xs leading-snug ${overdue ? "text-brand-danger" : "text-brand-muted"}`}>{s.sub}</span>
                 </span>
+                {/* ⓘ visible: indica que el paso tiene explicación (sale al pasar el mouse o con Tab). */}
+                <Info
+                  size={14}
+                  aria-hidden
+                  className={`ml-auto shrink-0 self-start ${overdue ? "text-brand-danger/70" : "text-brand-muted"}`}
+                />
               </li>
             </Tooltip>
           );

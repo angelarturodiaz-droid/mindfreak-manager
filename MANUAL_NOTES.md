@@ -936,7 +936,8 @@ pulsa el botón.
   parcial → Pagada) y *Avance de la cotización* (Borrador → Enviada →
   Aprobada → Proyecto). Azul = donde está ahora; verde = ya cumplido; rojo =
   factura vencida.
-- Cada paso tiene una línea corta y, al pasar el mouse, la explicación:
+- Cada paso tiene su ⓘ (arriba a la derecha), una línea corta y, al pasar el
+  mouse, la explicación:
   Borrador = en preparación, se puede editar; Emitida = oficial y fija, por
   cobrar; Pago parcial / Pagada = cambian solos al registrar cobros. En la
   cotización el paso 2 dice si está enviada, vista o en negociación; Aprobada =

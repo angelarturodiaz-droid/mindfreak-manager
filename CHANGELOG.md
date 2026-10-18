@@ -5,7 +5,8 @@
 - Nuevo `components/documents/flow-steps.tsx`: título *Avance de la factura /
   de la cotización* con ⓘ general, una línea corta bajo cada paso (ej.
   «Oficial · por cobrar») y la explicación completa al pasar el mouse (o con
-  Tab). Mismo estilo que el avance del proyecto.
+  Tab). Mismo estilo que el avance del proyecto. Cada paso lleva su ⓘ visible
+  para que se note que tiene explicación.
 - Cotización: el paso 2 dice el estado real (Enviada, Enviada · vista, En
   negociación). Factura vencida: «Emitida · vencida» en rojo con su ayuda.
 - Prueba BL (Cotizado vs. facturado) ✅.
