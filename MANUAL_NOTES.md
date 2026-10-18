@@ -930,3 +930,15 @@ pulsa el botón.
   borradores se pasarían al emitirse. Sin cotización aprobada: no compara.
 - Factura en Borrador de un proyecto: "con esta factura quedaría por
   facturar X" o aviso amarillo si se pasaría. Solo informa, no bloquea.
+
+**Pasos de la factura y de la cotización** (18-oct)
+- Arriba del detalle, *Avance de la factura* (Borrador → Emitida → Pago
+  parcial → Pagada) y *Avance de la cotización* (Borrador → Enviada →
+  Aprobada → Proyecto). Azul = donde está ahora; verde = ya cumplido; rojo =
+  factura vencida.
+- Cada paso tiene una línea corta y, al pasar el mouse, la explicación:
+  Borrador = en preparación, se puede editar; Emitida = oficial y fija, por
+  cobrar; Pago parcial / Pagada = cambian solos al registrar cobros. En la
+  cotización el paso 2 dice si está enviada, vista o en negociación; Aprobada =
+  líneas fijas, sigue «Convertir en proyecto»; Proyecto = el trabajo sigue en
+  el proyecto.

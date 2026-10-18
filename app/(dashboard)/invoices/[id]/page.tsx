@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FlowSteps } from "@/components/documents/flow-steps";
 import { getProjectBilling } from "@/features/projects/queries";
 import { billingProgress } from "@/features/projects/billing-progress";
 import { BillingNotice } from "@/components/projects/billing-notice";
@@ -8,7 +9,6 @@ import {
   ArrowLeft,
   Copy,
   Send,
-  Check,
   Building2,
   CalendarDays,
   Clock,
@@ -94,6 +94,30 @@ function formatMoney(amount: number, currency: string) {
 
 type ItemRow = Awaited<ReturnType<typeof listInvoiceItems>>[number];
 type PaymentRow = Awaited<ReturnType<typeof listPaymentsForInvoice>>[number];
+
+/** Pasos de la factura con su explicación (se ven en "Avance de la factura"). */
+const INVOICE_FLOW = [
+  {
+    label: "Borrador",
+    sub: "En preparación · editable",
+    help: "La factura se está preparando: agrega o quita líneas, cambia el cliente, la comisión o el vencimiento. Todavía no cuenta como venta ni se puede cobrar. Pasa a Emitida al pulsar «Emitir factura».",
+  },
+  {
+    label: "Emitida",
+    sub: "Oficial · por cobrar",
+    help: "La factura ya es oficial y queda fija: no se pueden cambiar líneas, montos ni cliente (para corregir se cancela o se hace nota de crédito). Cuenta como facturado y corre el vencimiento. Envíasela al cliente y registra los cobros. Si vence sin pagar se marca en rojo.",
+  },
+  {
+    label: "Pago parcial",
+    sub: "El cliente pagó una parte",
+    help: "Se registró un cobro (o retenciones del cliente) por menos del total. El «Balance pendiente» es lo que falta. Este paso cambia solo al registrar un cobro.",
+  },
+  {
+    label: "Pagada",
+    sub: "Balance en cero",
+    help: "Se cobró todo (dinero recibido + retenciones del cliente). No queda nada pendiente. Cambia sola cuando el balance llega a cero.",
+  },
+] as const;
 
 export default async function InvoiceDetailPage({
   params,
@@ -336,7 +360,6 @@ export default async function InvoiceDetailPage({
   const shownStatus = overdueNow ? "OVERDUE" : invoice.status;
   const due = invoice.due_date && isOpen ? dueLabel(invoice.due_date) : null;
   const paidPct = invoice.total > 0 ? (invoice.paid_amount / invoice.total) * 100 : 0;
-  const FLOW = ["Borrador", "Emitida", "Pago parcial", "Pagada"];
   const flowIndex =
     invoice.status === "DRAFT"
       ? 0
@@ -506,48 +529,25 @@ export default async function InvoiceDetailPage({
         </div>
 
         {flowIndex >= 0 ? (
-          <ol className="grid grid-cols-2 gap-2 border-t border-brand-border pt-5 sm:grid-cols-4" aria-label="Avance de la factura">
-            {FLOW.map((label, i) => {
-              // Cada paso completado se pinta en verde. "Pagada" es el último:
-              // cuando se llega a él ya está completo (verde), no en curso.
+          <FlowSteps
+            title="Avance de la factura"
+            hint="Una factura pasa por estos pasos: se prepara en Borrador, se emite (queda oficial y fija), y luego se va cobrando hasta quedar Pagada. Los pasos 3 y 4 cambian solos al registrar los cobros. El paso en azul es donde está ahora; los verdes ya se cumplieron."
+            steps={INVOICE_FLOW.map((step, i) => {
+              // "Pagada" es el último: al llegar ya está completo (verde).
               const isPaid = invoice.status === "PAID";
               const done = i < flowIndex || (isPaid && i === flowIndex);
               const current = i === flowIndex && !isPaid;
               const overdue = current && overdueNow;
-              return (
-                <li
-                  key={label}
-                  aria-current={current ? "step" : undefined}
-                  className={`flex items-center gap-2.5 rounded-[var(--radius-md)] border px-3 py-2.5 ${
-                    overdue
-                      ? "border-brand-danger/40 bg-brand-danger-bg"
-                      : done
-                        ? "border-brand-success/40 bg-brand-success-bg"
-                        : current
-                        ? "border-brand-accent/40 bg-brand-accent-light"
-                        : "border-brand-border bg-brand-surface"
-                  }`}
-                >
-                  <span
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-                      done
-                        ? "bg-brand-success text-white"
-                        : overdue
-                          ? "bg-brand-danger text-white"
-                          : current
-                            ? "bg-brand-accent text-white"
-                            : "border border-brand-border text-brand-muted"
-                    }`}
-                  >
-                    {done ? <Check size={14} /> : i + 1}
-                  </span>
-                  <span className={`text-sm ${current || (isPaid && i === flowIndex) ? "font-semibold text-brand-text" : done ? "text-brand-text" : "text-brand-muted"}`}>
-                    {overdue ? "Emitida · vencida" : label}
-                  </span>
-                </li>
-              );
+              return {
+                label: overdue ? "Emitida · vencida" : step.label,
+                sub: overdue ? "Pasó la fecha de vencimiento" : step.sub,
+                help: overdue
+                  ? "Pasó la fecha de vencimiento y todavía hay balance pendiente. Anota la gestión de cobro (a la derecha) y registra el cobro cuando el cliente pague."
+                  : step.help,
+                state: overdue ? "overdue" : done ? "done" : current ? "current" : "todo",
+              };
             })}
-          </ol>
+          />
         ) : (
           <div className="rounded-[var(--radius-md)] bg-brand-danger-bg px-4 py-3 text-sm font-medium text-brand-danger">
             Esta factura fue cancelada. Se conserva para auditoría.

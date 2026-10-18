@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FlowSteps } from "@/components/documents/flow-steps";
 import { safeReturnTo, returnToLabel } from "@/lib/utils/return-to";
 import { notFound } from "next/navigation";
 import {
@@ -71,6 +72,37 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 type Item = Awaited<ReturnType<typeof listQuotationItems>>[number];
+
+/** Pasos de la cotización con su explicación (se ven en "Avance de la cotización"). */
+const QUOTATION_FLOW = [
+  {
+    label: "Borrador",
+    sub: "En preparación · editable",
+    help: "La cotización se está preparando: agrega las líneas de servicio, precios, comisión y condiciones. Puedes cambiar el cliente. Cuando la compartas con el cliente (PDF o enlace), pulsa «Marcar como enviada».",
+  },
+  {
+    label: "Enviada",
+    sub: "Esperando al cliente",
+    help: "El cliente ya la tiene. Si la abre con el enlace se marca «Vista». Si pide cambios, pásala a Negociación (se pueden editar las líneas) y vuelve a enviarla. Termina cuando el cliente la aprueba, la rechaza o vence su validez.",
+  },
+  {
+    label: "Aprobada",
+    sub: "El cliente aceptó",
+    help: "El cliente aceptó la propuesta: las líneas quedan fijas. El siguiente paso es «Convertir en proyecto» para planificar el evento y facturar desde ahí (anticipo, balance…).",
+  },
+  {
+    label: "Proyecto",
+    sub: "Ya es un proyecto",
+    help: "Con esta cotización ya se creó el proyecto (evento). El trabajo sigue en el proyecto: tareas, gastos y facturas. La cotización queda como referencia de lo aprobado.",
+  },
+] as const;
+
+/** Detalle del paso 2 según el estado real. */
+const SENT_DETAIL: Record<string, { label: string; sub: string }> = {
+  SENT: { label: "Enviada", sub: "Esperando al cliente" },
+  VIEWED: { label: "Enviada · vista", sub: "El cliente la abrió" },
+  NEGOTIATING: { label: "En negociación", sub: "Ajustando con el cliente" },
+};
 
 export default async function QuotationDetailPage({
   params,
@@ -175,7 +207,6 @@ export default async function QuotationDetailPage({
             ? 3
             : 2
           : -1;
-  const FLOW = ["Borrador", "Enviada", "Aprobada", "Proyecto"];
   const closedLabel: Record<string, string> = {
     REJECTED: "Esta cotización fue rechazada por el cliente.",
     CANCELLED: "Esta cotización fue cancelada. Se conserva para auditoría.",
@@ -309,41 +340,23 @@ export default async function QuotationDetailPage({
         </div>
 
         {flowIndex >= 0 ? (
-          <ol className="grid grid-cols-2 gap-2 border-t border-brand-border pt-5 sm:grid-cols-4" aria-label="Avance de la cotización">
-            {FLOW.map((label, i) => {
-              // Pasos completados en verde; el último ("Proyecto") cuenta como completado al llegar.
-              const done = i < flowIndex || (i === flowIndex && i === FLOW.length - 1);
+          <FlowSteps
+            title="Avance de la cotización"
+            hint="Una cotización pasa por estos pasos: se prepara en Borrador, se envía al cliente (y se negocia si pide cambios), el cliente la aprueba y se convierte en proyecto. El paso en azul es donde está ahora; los verdes ya se cumplieron. Si el cliente la rechaza, se cancela o vence, sale un aviso en lugar de los pasos."
+            steps={QUOTATION_FLOW.map((step, i) => {
+              // El último ("Proyecto") cuenta como completado al llegar.
+              const done = i < flowIndex || (i === flowIndex && i === QUOTATION_FLOW.length - 1);
               const current = i === flowIndex && !done;
-              return (
-                <li
-                  key={label}
-                  aria-current={current ? "step" : undefined}
-                  className={`flex items-center gap-2.5 rounded-[var(--radius-md)] border px-3 py-2.5 ${
-                    done
-                      ? "border-brand-success/40 bg-brand-success-bg"
-                      : current
-                        ? "border-brand-accent/40 bg-brand-accent-light"
-                        : "border-brand-border bg-brand-surface"
-                  }`}
-                >
-                  <span
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-                      done
-                        ? "bg-brand-success text-white"
-                        : current
-                          ? "bg-brand-accent text-white"
-                          : "border border-brand-border text-brand-muted"
-                    }`}
-                  >
-                    {done ? <Check size={14} /> : i + 1}
-                  </span>
-                  <span className={`text-sm ${current ? "font-semibold text-brand-text" : done ? "text-brand-text" : "text-brand-muted"}`}>
-                    {label}
-                  </span>
-                </li>
-              );
+              // El paso 2 dice en qué punto está: enviada, vista por el cliente o en negociación.
+              const sent = i === 1 && current ? SENT_DETAIL[quotation.status] : undefined;
+              return {
+                label: sent?.label ?? step.label,
+                sub: sent?.sub ?? step.sub,
+                help: step.help,
+                state: done ? "done" : current ? "current" : "todo",
+              };
             })}
-          </ol>
+          />
         ) : (
           <div className="rounded-[var(--radius-md)] bg-brand-danger-bg px-4 py-3 text-sm font-medium text-brand-danger">
             {closedLabel[quotation.status] ?? STATUS_LABELS[quotation.status]}
