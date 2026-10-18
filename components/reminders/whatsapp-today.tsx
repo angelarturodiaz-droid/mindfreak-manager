@@ -47,7 +47,7 @@ export function WhatsappToday({ items }: { items: WhatsappTodayItem[] }) {
           <MessageCircle size={16} className="text-brand-success" aria-hidden />
           Para recordar hoy por WhatsApp
           <span className="rounded-full bg-brand-success px-2 py-0.5 text-xs font-medium tabular-nums text-white">{items.length}</span>
-          <InfoHint text="Facturas a las que hoy les toca un recordatorio (3 días antes, el día que vencen, 10 días después… según Configuración → Recordatorios). El botón abre WhatsApp con el mensaje ya escrito: solo tocas Enviar. Queda anotado en la Gestión de cobro y la factura sale de la lista." />
+          <InfoHint text="Facturas emitidas (y, si son de un proyecto, con el proyecto Completado) a las que hoy les toca un recordatorio (3 días antes, el día que vencen, 10 días después… según Configuración → Recordatorios). El botón abre WhatsApp con el mensaje ya escrito: solo tocas Enviar. Queda anotado en la Gestión de cobro y la factura sale de la lista." />
         </span>
         <span className="text-xs text-brand-muted">Pulsa para ver</span>
       </summary>

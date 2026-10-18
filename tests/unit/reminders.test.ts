@@ -6,6 +6,7 @@ import {
   normalizeDays,
   pickEmailRecipient,
   pickPhone,
+  projectAllowsReminder,
   stepLabel,
   surveyStepForToday,
   whenText,
@@ -103,18 +104,20 @@ describe("destinatario (decisión 18-oct)", () => {
     contact_email: "ana@cliente.com",
     contact_phone: "8295551111",
   };
-  it("contacto principal si tiene correo", () => {
-    expect(pickEmailRecipient(base)).toEqual({ email: "ana@cliente.com", name: "Ana Pérez" });
+  it("siempre el correo registrado del cliente (saludo con el contacto)", () => {
+    expect(pickEmailRecipient(base)).toEqual({ email: "pagos@cliente.com", name: "Ana Pérez" });
   });
-  it("si no, el correo del cliente", () => {
-    expect(pickEmailRecipient({ ...base, contact_email: null })?.email).toBe("pagos@cliente.com");
+  it("cliente sin correo → nada (aunque el contacto tenga)", () => {
+    expect(pickEmailRecipient({ ...base, client_email: "" })).toBeNull();
   });
-  it("sin correo válido → nada", () => {
-    expect(pickEmailRecipient({ ...base, contact_email: "x", client_email: "" })).toBeNull();
+  it("teléfono: el del cliente y, si no tiene, el del contacto", () => {
+    expect(pickPhone(base)).toBe("8095550000");
+    expect(pickPhone({ ...base, client_phone: null })).toBe("8295551111");
   });
-  it("teléfono: contacto y si no, cliente", () => {
-    expect(pickPhone(base)).toBe("8295551111");
-    expect(pickPhone({ ...base, contact_phone: null })).toBe("8095550000");
+  it("factura de proyecto: solo con el proyecto Completado", () => {
+    expect(projectAllowsReminder(null, null)).toBe(true);
+    expect(projectAllowsReminder("p1", "IN_PROGRESS")).toBe(false);
+    expect(projectAllowsReminder("p1", "COMPLETED")).toBe(true);
   });
 });
 
@@ -169,7 +172,7 @@ describe("planReminders (qué sale hoy)", () => {
       "2026-10-18",
       "https://app",
     );
-    expect(p.blocked).toMatch(/no tiene correo/);
+    expect(p.blocked).toMatch(/no tiene correo registrado/);
   });
   it("encuesta sin responder hace 3 días → recordatorio 1 con el enlace", () => {
     const [p] = planReminders(

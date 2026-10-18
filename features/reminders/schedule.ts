@@ -104,16 +104,22 @@ export type ContactInfo = {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** Decisión 18-oct: contacto principal si tiene correo; si no, el del cliente. */
+/**
+ * Decisión 18-oct: el correo que tiene registrado el CLIENTE (ficha del
+ * cliente). El saludo usa el nombre del contacto principal si existe.
+ */
 export function pickEmailRecipient(c: ContactInfo): { email: string; name: string | null } | null {
-  const contactEmail = c.contact_email?.trim();
-  if (contactEmail && EMAIL_RE.test(contactEmail)) return { email: contactEmail, name: c.contact_name };
   const clientEmail = c.client_email?.trim();
   if (clientEmail && EMAIL_RE.test(clientEmail)) return { email: clientEmail, name: c.contact_name ?? null };
   return null;
 }
 
-/** Teléfono para WhatsApp: el del contacto principal o, si no, el del cliente. */
+/** Teléfono para WhatsApp: el registrado en el cliente; si no tiene, el del contacto principal. */
 export function pickPhone(c: ContactInfo): string | null {
-  return c.contact_phone?.trim() || c.client_phone?.trim() || null;
+  return c.client_phone?.trim() || c.contact_phone?.trim() || null;
+}
+
+/** Solo facturas sueltas o de un proyecto ya Completado (decisión 18-oct). */
+export function projectAllowsReminder(projectId: string | null, projectStatus: string | null | undefined): boolean {
+  return !projectId || projectStatus === "COMPLETED";
 }

@@ -110,8 +110,8 @@ export function ReminderSettingsForm({ settings }: { settings: Settings }) {
           <span className="flex flex-col">
             <span className="text-sm font-medium text-brand-text">Enviar los recordatorios a los clientes</span>
             <span className="text-xs text-brand-muted">
-              Al contacto principal del cliente si tiene correo; si no, al correo del cliente. Enciéndelo cuando
-              trabajes con clientes reales.
+              Al correo registrado del cliente. Solo facturas emitidas y, si son de un proyecto, cuando el proyecto
+              está Completado. Enciéndelo cuando trabajes con clientes reales.
             </span>
           </span>
         </label>
@@ -121,7 +121,7 @@ export function ReminderSettingsForm({ settings }: { settings: Settings }) {
         <div>
           <h3 className="flex items-center gap-1.5 font-semibold text-brand-text">
             Cuándo se recuerda una factura
-            <InfoHint text="Días respecto a la fecha de vencimiento de cada factura emitida que todavía tiene balance. Cada recordatorio sale una sola vez. Si el sistema no pudo revisar algún día, lo recupera hasta 2 días tarde. Las facturas pagadas, canceladas o en borrador no reciben recordatorios." />
+            <InfoHint text="Días respecto a la fecha de vencimiento de cada factura emitida que todavía tiene balance. Si la factura es de un proyecto, empieza cuando el proyecto pasa a Completado. Cada recordatorio sale una sola vez. Si el sistema no pudo revisar algún día, lo recupera hasta 2 días tarde. Las facturas pagadas, canceladas o en borrador no reciben recordatorios." />
           </h3>
           <p className="text-xs text-brand-muted">Por defecto: 3 días antes, el día que vence y 10 días después.</p>
         </div>

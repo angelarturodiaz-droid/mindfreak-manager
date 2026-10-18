@@ -139,7 +139,7 @@ export function planReminders(data: Candidates, today: string, origin: string): 
       title: `${inv.number} · ${inv.client_name ?? "—"}`,
       stepText: stepLabel(step),
       recipient: to?.email ?? null,
-      blocked: to ? null : "El cliente no tiene correo (ni su contacto principal).",
+      blocked: to ? null : "El cliente no tiene correo registrado.",
       subject,
       html: invoiceReminderEmailHtml({
         companyName: co.name,

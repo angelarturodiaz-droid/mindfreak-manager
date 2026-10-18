@@ -8,9 +8,11 @@
 -- Más la lista diaria "para recordar por WhatsApp" (la persona lo envía
 -- desde su WhatsApp con el chat ya escrito).
 --
--- Decisiones del usuario (18-oct): arranca APAGADO; al contacto principal
--- con correo o, si no, al correo del cliente; sin copia por correo (queda
--- registro en Gestión de cobro y en la campana del responsable).
+-- Decisiones del usuario (18-oct): al correo que tiene registrado el
+-- cliente; solo facturas ya emitidas y, si la factura es de un proyecto,
+-- solo cuando el proyecto está Completado; sin copia por correo (queda
+-- registro en Gestión de cobro y en la campana del responsable). El
+-- interruptor general arranca apagado mientras se trabaja con datos de prueba.
 --
 -- Seguridad: el correo lo envía la app (SMTP del servidor). La tarea diaria
 -- (pg_cron + pg_net) llama a la app con una clave guardada SOLO en Supabase
@@ -211,6 +213,11 @@ begin
         and i.balance > 0
         and i.due_date is not null
         and i.due_date between current_date - 130 and current_date + 70
+        -- Factura de un proyecto: solo cuando el proyecto está Completado.
+        and (
+          i.project_id is null
+          or exists (select 1 from public.projects pj where pj.id = i.project_id and pj.status = 'COMPLETED')
+        )
     ), '[]'::jsonb),
     'surveys', coalesce((
       select jsonb_agg(jsonb_build_object(

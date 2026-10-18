@@ -948,7 +948,10 @@ pulsa el botón.
 - Facturas abiertas: correo al cliente 3 días antes, el día que vence y 10
   días después (se agregan/quitan días, hasta 10). Encuestas sin responder:
   cada X días hasta N veces (Configuración → Encuesta).
-- Destinatario: contacto principal con correo; si no, el correo del cliente.
+- Destinatario: el correo registrado del cliente (WhatsApp: su teléfono; si
+  no tiene, el del contacto principal). Sin copia por correo.
+- Solo facturas emitidas; si la factura es de un proyecto, a partir de que el
+  proyecto está **Completado**.
 - Arranca **apagado**. Encendido: sale solo cada día a las 8:15 a. m. Un
   recordatorio nunca se repite; si un día no corrió, se recupera hasta 2 días
   tarde.

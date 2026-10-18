@@ -9,6 +9,7 @@ import {
   fillReminder,
   invoiceStepForToday,
   pickPhone,
+  projectAllowsReminder,
   stepLabel,
   whenText,
 } from "./schedule";
@@ -144,7 +145,9 @@ export async function listWhatsappToday(): Promise<WhatsappTodayItem[]> {
   const [{ data: invs }, { data: company }] = await Promise.all([
     supabase
       .from("invoices")
-      .select("id, number, due_date, balance, currency, clients(name, phone, client_contacts(full_name, phone, email, is_primary))")
+      .select(
+        "id, number, due_date, balance, currency, project_id, projects(status), clients(name, phone, client_contacts(full_name, phone, email, is_primary))",
+      )
       .in("status", ["ISSUED", "PARTIALLY_PAID", "OVERDUE"])
       .gt("balance", 0)
       .not("due_date", "is", null)
@@ -169,6 +172,9 @@ export async function listWhatsappToday(): Promise<WhatsappTodayItem[]> {
   const items: WhatsappTodayItem[] = [];
   for (const inv of invs) {
     if (!inv.due_date) continue;
+    // Factura de un proyecto: solo cuando el proyecto está Completado.
+    const project = (Array.isArray(inv.projects) ? inv.projects[0] : inv.projects) as { status: string } | null;
+    if (!projectAllowsReminder(inv.project_id, project?.status)) continue;
     const step = invoiceStepForToday({
       dueDate: inv.due_date,
       today,

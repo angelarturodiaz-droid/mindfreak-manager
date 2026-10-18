@@ -11,8 +11,9 @@
   `reminders_url` y `reminders_cron_secret`.
 - Motor `features/reminders/` (schedule.ts puro con 25 pruebas, engine.ts):
   facturas abiertas según días al vencimiento (recupera hasta 2 días tarde),
-  encuestas sin responder (cada X días, máximo N). Destinatario: contacto
-  principal con correo o correo del cliente. Correo con marca, resumen de la
+  encuestas sin responder (cada X días, máximo N). Destinatario: el correo
+  registrado del cliente; factura de un proyecto solo con el proyecto
+  Completado; sin copia. Correo con marca, resumen de la
   factura y datos bancarios. Registro en Gestión de cobro y campana.
 - Configuración → **Recordatorios** (reemplaza la vieja página Notificaciones):
   interruptor, días editables, mensajes, *Ver qué sale hoy* (con vista del
