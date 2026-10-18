@@ -18,7 +18,7 @@ export async function listQuotations(filters: QuotationListFilters = {}) {
   const [from, to] = pageRange(filters.page ?? 1);
   let query = supabase
     .from("quotations")
-    .select("id, number, status, total, currency, issue_date, valid_until, duplicated_from_id, clients(name)", {
+    .select("id, number, status, total, currency, issue_date, valid_until, duplicated_from_id, project_id, project:projects!project_id(number, name), clients(name)", {
       count: "exact",
     })
     .order("issue_date", { ascending: false })
@@ -89,7 +89,7 @@ export async function getQuotation(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("quotations")
-    .select("*, clients(name, stage), payment_terms(name), duplicated_from:quotations!duplicated_from_id(number)")
+    .select("*, clients(name, stage), payment_terms(name), duplicated_from:quotations!duplicated_from_id(number), project:projects!project_id(number, name)")
     .eq("id", id)
     .single();
   if (error) throw new Error(error.message);

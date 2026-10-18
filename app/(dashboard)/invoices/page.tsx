@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { IfCan } from "@/components/auth/if-can";
-import { AlertTriangle, CalendarClock, Copy, FilePen, MailCheck, Plus, Receipt, Wallet } from "lucide-react";
+import { AlertTriangle, CalendarClock, Copy, FilePen, FileText, FolderKanban, MailCheck, Plus, Receipt, Wallet } from "lucide-react";
 import { listInvoices, getInvoiceStats } from "@/features/invoices/queries";
 import { INVOICE_STATUSES } from "@/features/invoices/schema";
 import { listClientOptions } from "@/features/clients/queries";
@@ -20,7 +20,7 @@ import {
   StatGrid,
   listHref,
 } from "@/components/ui/page-kit";
-import { relationName } from "@/lib/utils/relation";
+import { relationName, relationRow } from "@/lib/utils/relation";
 import { parsePage } from "@/lib/utils/pagination";
 import { dueLabel, formatDate } from "@/lib/utils/dates";
 
@@ -76,6 +76,15 @@ export default async function InvoicesPage({
               <MailCheck size={12} className="text-brand-success" aria-label="Enviada al cliente" />
             </span>
           )}
+          {inv.project_id ? (
+            <span title={`Del proyecto ${relationRow<{ number: string }>(inv.project)?.number ?? ""}`.trim()}>
+              <FolderKanban size={12} className="text-brand-accent" aria-label="Del proyecto" />
+            </span>
+          ) : inv.quotation_id ? (
+            <span title={`De la cotización ${relationRow<{ number: string }>(inv.origin_quotation)?.number ?? ""}`.trim()}>
+              <FileText size={12} className="text-brand-accent" aria-label="De la cotización" />
+            </span>
+          ) : null}
         </Link>
       ),
     },

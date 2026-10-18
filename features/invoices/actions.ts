@@ -120,7 +120,7 @@ export async function createInvoiceAction(
   if (parsed.data.project_id) {
     const { data: project, error: projError } = await supabase
       .from("projects")
-      .select("client_id, quotation_id, quotations(payment_terms_id)")
+      .select("client_id, quotation_id, quotations!projects_quotation_id_fkey(payment_terms_id)")
       .eq("id", parsed.data.project_id)
       .single();
     if (projError || !project) return { error: "Proyecto no encontrado." };

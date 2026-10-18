@@ -910,3 +910,13 @@ pulsa el botón.
 **Documentos**
 - Factura emitida y cotización fuera de Borrador/Negociación: fijas en la base.
 - Cambiar el cliente: solo en Borrador (factura sin proyecto ni cotización).
+
+**¿Esta factura o cotización ya es parte de un proyecto?** (18-oct)
+- En las listas de Facturas y Cotizaciones, un icono de carpeta junto al número
+  indica que es de un proyecto (pasa el mouse: dice cuál). En facturas, un
+  icono de documento indica que viene de una cotización sin proyecto.
+- Dentro de la factura: etiquetas *Del proyecto PROJ-…* y *De la cotización
+  COT-…*. Dentro de la cotización: *Ya es parte del proyecto PROJ-… · nombre*.
+- Para facturar un proyecto: Facturas → Nueva factura → marcar **Desde un
+  proyecto** → elegir el proyecto (el cliente sale solo del proyecto) → Crear.
+  También desde el proyecto, con el botón de nueva factura.

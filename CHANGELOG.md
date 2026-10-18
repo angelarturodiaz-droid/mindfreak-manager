@@ -12,6 +12,14 @@
   redirige la navegación normal (GET).
 - Factura: etiquetas visibles **"Del proyecto PROJ-…"** y **"De la cotización
   COT-…"** junto al cliente, con enlace.
+- **Corregido "Proyecto no encontrado" al crear una factura desde un
+  proyecto**: entre proyectos y cotizaciones hay dos relaciones (el proyecto
+  apunta a su cotización y la cotización a su proyecto) y la consulta no
+  decía cuál usar; ahora usa `projects_quotation_id_fkey`.
+- Marca de proyecto en todas partes: cotización con etiqueta **"Ya es parte
+  del proyecto PROJ-… · nombre"**; en las listas de Facturas y Cotizaciones un
+  icono de carpeta junto al número (y en facturas un icono de documento si
+  viene de una cotización sin proyecto), con explicación al pasar el mouse.
 
 ## Reportes según el rol (2026-10-16 noche)
 

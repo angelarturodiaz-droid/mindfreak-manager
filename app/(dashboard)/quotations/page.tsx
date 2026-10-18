@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { IfCan } from "@/components/auth/if-can";
-import { CheckCircle2, Copy, FilePen, FileText, Percent, Plus, Send } from "lucide-react";
+import { CheckCircle2, Copy, FilePen, FileText, FolderKanban, Percent, Plus, Send } from "lucide-react";
 import { listQuotations, getQuotationStats } from "@/features/quotations/queries";
 import { QUOTATION_FILTER_STATUSES } from "@/features/quotations/expired";
 import { listClientOptions } from "@/features/clients/queries";
@@ -20,7 +20,7 @@ import {
   StatGrid,
   listHref,
 } from "@/components/ui/page-kit";
-import { relationName } from "@/lib/utils/relation";
+import { relationName, relationRow } from "@/lib/utils/relation";
 import { parsePage } from "@/lib/utils/pagination";
 import { daysFromToday, formatDate, pluralDays } from "@/lib/utils/dates";
 
@@ -71,6 +71,11 @@ export default async function QuotationsPage({
           {q.duplicated_from_id && (
             <span title="Duplicada">
               <Copy size={12} className="text-brand-muted" aria-label="Duplicada" />
+            </span>
+          )}
+          {q.project_id && (
+            <span title={`Ya es parte del proyecto ${relationRow<{ number: string }>(q.project)?.number ?? ""}`.trim()}>
+              <FolderKanban size={12} className="text-brand-accent" aria-label="Parte de un proyecto" />
             </span>
           )}
         </Link>

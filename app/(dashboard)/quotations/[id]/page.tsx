@@ -50,7 +50,7 @@ import { ConfirmButton } from "@/components/ui/confirm-button";
 import { ActionButton } from "@/components/ui/action-button";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Chip, SectionHeader } from "@/components/ui/page-kit";
-import { relationName } from "@/lib/utils/relation";
+import { relationName, relationRow } from "@/lib/utils/relation";
 import { daysFromToday, formatDate, pluralDays } from "@/lib/utils/dates";
 
 function formatMoney(amount: number, currency: string) {
@@ -106,6 +106,7 @@ export default async function QuotationDetailPage({
 
   const clientData = quotation.clients as { name: string } | { name: string }[] | null;
   const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
+  const linkedProject = relationRow<{ number: string; name: string }>((quotation as { project?: unknown }).project);
 
   const duplicatedFromData = quotation.duplicated_from as { number: string } | { number: string }[] | null;
   const duplicatedFromNumber = Array.isArray(duplicatedFromData)
@@ -291,13 +292,14 @@ export default async function QuotationDetailPage({
                   </dd>
                 </div>
               )}
+              {/* Si ya generó un proyecto, se ve bien claro (como en la factura). */}
               {quotation.project_id && (
-                <div className="flex items-center gap-1.5">
-                  <FolderKanban size={15} className="text-brand-muted" aria-hidden />
-                  <dt className="sr-only">Proyecto</dt>
+                <div className="flex items-center gap-1.5 rounded-full bg-brand-accent-light px-2.5 py-0.5">
+                  <FolderKanban size={14} className="text-brand-accent" aria-hidden />
+                  <dt className="text-xs font-medium text-brand-accent">Ya es parte del proyecto</dt>
                   <dd>
-                    <Link href={`/projects/${quotation.project_id}`} className="text-brand-accent hover:underline">
-                      Ver proyecto
+                    <Link href={`/projects/${quotation.project_id}`} className="text-xs font-semibold text-brand-accent hover:underline">
+                      {linkedProject ? `${linkedProject.number} · ${linkedProject.name}` : "Ver proyecto"}
                     </Link>
                   </dd>
                 </div>
