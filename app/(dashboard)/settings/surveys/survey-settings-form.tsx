@@ -67,11 +67,13 @@ export function SurveySettingsForm({ settings, canManage }: { settings: Settings
 
         <details className="rounded-[var(--radius-md)] border border-brand-border px-4 py-3">
           <summary className="cursor-pointer text-sm font-medium text-brand-text">
-            Automatización (próximamente)
+            Recordatorios automáticos
           </summary>
           <p className="mt-2 text-xs text-brand-muted">
-            Estos ajustes quedan guardados para cuando se active el envío programado. Por ahora la encuesta se envía al
-            momento de finalizar el proyecto y los recordatorios se mandan con “Reenviar”.
+            Si el cliente no responde, se le manda un recordatorio por correo cada «Recordar después de» días, hasta el
+            máximo. Salen solos cada día a las 8:15 a. m. siempre que en Configuración → Recordatorios estén encendidos
+            los envíos automáticos. «Enviar después de (horas)» todavía no se usa: la encuesta sale al finalizar el
+            proyecto.
           </p>
           <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Input

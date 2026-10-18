@@ -13,7 +13,7 @@ const TABS = [
   { href: "/settings/payment-terms", label: "Condiciones de pago" },
   { href: "/settings/banks", label: "Bancos" },
   { href: "/settings/system", label: "Sistema" },
-  { href: "/settings/notifications", label: "Notificaciones" },
+  { href: "/settings/reminders", label: "Recordatorios" },
   { href: "/settings/documents", label: "Documentos" },
   { href: "/settings/surveys", label: "Encuesta de satisfacción" },
   { href: "/settings/security", label: "Seguridad" },

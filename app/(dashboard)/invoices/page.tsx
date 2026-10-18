@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { listWhatsappToday } from "@/features/reminders/queries";
+import { WhatsappToday } from "@/components/reminders/whatsapp-today";
 import { IfCan } from "@/components/auth/if-can";
 import { AlertTriangle, CalendarClock, Copy, FilePen, FileText, FolderKanban, MailCheck, Plus, Receipt, Wallet } from "lucide-react";
 import { listInvoices, getInvoiceStats } from "@/features/invoices/queries";
@@ -47,10 +49,12 @@ export default async function InvoicesPage({
   const params = await searchParams;
   const page = parsePage(params.page);
   const q = cleanSearch(params.q);
-  const [{ rows: invoices, total, pageSize }, clientOptions, stats] = await Promise.all([
+  const [{ rows: invoices, total, pageSize }, clientOptions, stats, whatsappToday] = await Promise.all([
     listInvoices({ status: params.status, clientId: params.client, search: q, page }),
     listClientOptions(),
     getInvoiceStats(params.client),
+    // Recordatorios de hoy por WhatsApp (migración 086); si falta la migración, no se muestra.
+    listWhatsappToday().catch(() => []),
   ]);
   const hasFilters = Boolean(params.status || params.client || q);
   const selectedClientName = params.client
@@ -201,6 +205,8 @@ export default async function InvoicesPage({
           tone="neutral"
         />
       </StatGrid>
+
+      <WhatsappToday items={whatsappToday} />
 
       <section className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">

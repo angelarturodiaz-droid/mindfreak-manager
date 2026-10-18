@@ -46,8 +46,14 @@ export async function updateSession(request: NextRequest) {
   // /encuesta/{token}: encuesta de satisfacción que responde el cliente sin
   // cuenta. La página solo lee/escribe vía get_public_survey /
   // submit_public_survey, que validan el token (migración 068).
+  // /api/cron/reminders: la tarea diaria de recordatorios (sin sesión); la
+  // ruta exige la clave y la base la valida contra Vault (migración 086).
   const isPublicRoute =
-    path === "/" || isAuthRoute || path === "/auth/confirm" || path.startsWith("/encuesta/");
+    path === "/" ||
+    isAuthRoute ||
+    path === "/auth/confirm" ||
+    path.startsWith("/encuesta/") ||
+    path === "/api/cron/reminders";
 
   // Sin sesión intentando entrar a una ruta protegida -> /login
   if (!user && !isPublicRoute) {

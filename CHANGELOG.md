@@ -1,5 +1,28 @@
 # CHANGELOG — Mindfreak Manager
 
+## BE – Motor de recordatorios (2026-10-18)
+
+- Migración **086_reminders**: `reminder_settings` (apagado por defecto; días
+  −3, 0, 10; asunto, mensaje y WhatsApp), `reminder_log` (sin duplicados por
+  documento + paso), funciones `reminders_candidates / _claim / _finish`
+  (validan la clave de Vault o el permiso settings.manage) y
+  `reminder_mark_whatsapp`; pg_net + tarea diaria `send-reminders-daily`
+  8:15 a. m. RD que llama a `/api/cron/reminders` solo si en Vault están
+  `reminders_url` y `reminders_cron_secret`.
+- Motor `features/reminders/` (schedule.ts puro con 25 pruebas, engine.ts):
+  facturas abiertas según días al vencimiento (recupera hasta 2 días tarde),
+  encuestas sin responder (cada X días, máximo N). Destinatario: contacto
+  principal con correo o correo del cliente. Correo con marca, resumen de la
+  factura y datos bancarios. Registro en Gestión de cobro y campana.
+- Configuración → **Recordatorios** (reemplaza la vieja página Notificaciones):
+  interruptor, días editables, mensajes, *Ver qué sale hoy* (con vista del
+  correo), *Enviar ahora* e *Historial de envíos* paginado.
+- Facturas: recuadro **Para recordar hoy por WhatsApp** con botón que abre el
+  chat ya escrito y lo anota.
+- Encuesta: el bloque "Automatización (próximamente)" ahora explica los
+  recordatorios reales.
+- Sin secret key ni claves en la app; nada de montos, impuestos ni retenciones.
+
 ## Pasos explicados en factura y cotización (2026-10-18)
 
 - Nuevo `components/documents/flow-steps.tsx`: título *Avance de la factura /

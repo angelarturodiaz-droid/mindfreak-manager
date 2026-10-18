@@ -943,3 +943,24 @@ pulsa el botón.
   cotización el paso 2 dice si está enviada, vista o en negociación; Aprobada =
   líneas fijas, sigue «Convertir en proyecto»; Proyecto = el trabajo sigue en
   el proyecto.
+
+**Recordatorios a clientes (BE, 18-oct)** — Configuración → Recordatorios
+- Facturas abiertas: correo al cliente 3 días antes, el día que vence y 10
+  días después (se agregan/quitan días, hasta 10). Encuestas sin responder:
+  cada X días hasta N veces (Configuración → Encuesta).
+- Destinatario: contacto principal con correo; si no, el correo del cliente.
+- Arranca **apagado**. Encendido: sale solo cada día a las 8:15 a. m. Un
+  recordatorio nunca se repite; si un día no corrió, se recupera hasta 2 días
+  tarde.
+- *Ver qué sale hoy* (no envía; muestra el correo) · *Enviar ahora* (igual que
+  la tarea diaria) · *Historial de envíos*.
+- Cada envío: Gestión de cobro de la factura + campana del responsable.
+- Facturas → recuadro verde **Para recordar hoy por WhatsApp**: botón abre el
+  chat con el mensaje escrito y lo anota (funciona aunque el correo esté
+  apagado).
+- **Para producción** (una vez, en el SQL Editor de Supabase; la clave NO va en
+  git ni en la app):
+  `select vault.create_secret('https://<dominio>/api/cron/reminders', 'reminders_url');`
+  `select vault.create_secret('<clave larga al azar, 40+ caracteres>', 'reminders_cron_secret');`
+  Sin esas dos entradas la tarea diaria no hace nada (en localhost se usa
+  *Enviar ahora*). Requiere SMTP configurado en el servidor (SMTP_*).
