@@ -1,5 +1,18 @@
 # CHANGELOG — Mindfreak Manager
 
+## Cotizado vs. facturado en el proyecto (2026-10-18)
+
+- Un proyecto puede tener varias facturas (anticipo, balance, adicionales).
+  Nuevo aviso **Cotizado vs. facturado** en la pestaña *Ventas* del proyecto:
+  cotizaciones **Aprobadas** vs. facturas emitidas → "falta por facturar X",
+  "todo facturado" (verde) o "se facturó X más" (rojo); amarillo si los
+  borradores, al emitirse, se pasarían. La tarjeta *Facturado* muestra la barra.
+- En una factura en **Borrador** de un proyecto: "con esta factura quedaría
+  por facturar X" o "se pasaría por X; revisa antes de emitir".
+- Solo informa, no bloquea. Moneda base con la tasa congelada de cada
+  documento. `features/projects/billing-progress.ts` (+6 pruebas),
+  `getProjectBilling`, `components/projects/billing-notice.tsx`.
+
 ## Ajustes de la prueba de roles (2026-10-18)
 
 - Proyectos: el recuadro *Convertir en proyecto* (cotizaciones aprobadas)

@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { getProjectBilling } from "@/features/projects/queries";
+import { billingProgress } from "@/features/projects/billing-progress";
+import { BillingNotice } from "@/components/projects/billing-notice";
 import { safeReturnTo, returnToLabel } from "@/lib/utils/return-to";
 import { notFound } from "next/navigation";
 import {
@@ -137,6 +140,19 @@ export default async function InvoiceDetailPage({
   const canVoid = await hasPermission("payments.void");
   // Para "Cambiar cliente" (solo en Borrador).
   const activeClients = invoice.status === "DRAFT" && canEdit ? await listActiveClients() : [];
+  // Borrador de un proyecto: "con esta factura quedaría por facturar…" (solo aviso).
+  const projectBilling =
+    invoice.status === "DRAFT" && invoice.project_id
+      ? await getProjectBilling(invoice.project_id)
+          .then((b) =>
+            billingProgress({
+              cotizado: b.cotizado,
+              facturado: b.facturado,
+              borradores: Number(invoice.total ?? 0) * Number(invoice.exchange_rate ?? 1),
+            }),
+          )
+          .catch(() => null)
+      : null;
 
   const clientData = invoice.clients as { name: string } | { name: string }[] | null;
   const clientName = Array.isArray(clientData) ? clientData[0]?.name : clientData?.name;
@@ -636,6 +652,10 @@ export default async function InvoiceDetailPage({
             : { pct: paidPct, label: `${Math.round(paidPct)} % aplicado`, danger: overdueNow }
         }
       />
+
+      {projectBilling && (
+        <BillingNotice progress={projectBilling} context="invoice" projectLabel={project?.number} />
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="flex min-w-0 flex-col gap-8 lg:col-span-2">

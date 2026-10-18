@@ -920,3 +920,13 @@ pulsa el botón.
 - Para facturar un proyecto: Facturas → Nueva factura → marcar **Desde un
   proyecto** → elegir el proyecto (el cliente sale solo del proyecto) → Crear.
   También desde el proyecto, con el botón de nueva factura.
+
+**Varias facturas por proyecto · Cotizado vs. facturado** (18-oct)
+- Un proyecto admite todas las facturas necesarias (anticipo, balance,
+  adicionales). Cada una empieza vacía: se ponen las líneas de esa parte.
+- Pestaña *Ventas* del proyecto: aviso **Cotizado vs. facturado** (lo aprobado
+  en cotizaciones *Aprobadas* contra facturas emitidas): azul = falta por
+  facturar X; verde = todo facturado; rojo = se facturó de más; amarillo = los
+  borradores se pasarían al emitirse. Sin cotización aprobada: no compara.
+- Factura en Borrador de un proyecto: "con esta factura quedaría por
+  facturar X" o aviso amarillo si se pasaría. Solo informa, no bloquea.

@@ -543,6 +543,15 @@ const SECTIONS: Section[] = [
           el costo real (gastos asociados), de donde sale la utilidad real y
           el margen — visibles también en el reporte de Rentabilidad.
         </p>
+        <p className="text-sm text-brand-text">
+          <strong>Varias facturas por proyecto</strong>: un proyecto puede tener todas las facturas que haga falta
+          (anticipo, balance, adicionales). En la pestaña <em>Ventas</em> del proyecto, el aviso{" "}
+          <strong>Cotizado vs. facturado</strong> compara lo aprobado por el cliente (cotizaciones <em>Aprobadas</em>)
+          con lo ya facturado (facturas emitidas) y dice cuánto falta por facturar; se pone verde cuando está todo,
+          rojo si se facturó de más y amarillo si los borradores, al emitirse, se pasarían. En una factura en
+          Borrador de un proyecto sale «con esta factura quedaría por facturar…». Es solo un aviso: no bloquea nada.
+          La tarjeta <em>Facturado</em> de arriba muestra la misma barra.
+        </p>
         <StatusRow
           items={[
             { label: "Planificación", status: "PLANNING" },

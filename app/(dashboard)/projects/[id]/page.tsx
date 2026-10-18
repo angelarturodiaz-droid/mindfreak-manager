@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { billingProgress } from "@/features/projects/billing-progress";
+import { BillingNotice } from "@/components/projects/billing-notice";
 import { withReturnTo } from "@/lib/utils/return-to";
 import { notFound } from "next/navigation";
 import {
@@ -29,6 +31,7 @@ import {
   listCompanyMembers,
   listActiveServices,
   getProjectProfitability,
+  getProjectBilling,
   listProjectQuotations,
   listProjectInvoices,
   listProjectCustomerPayments,
@@ -245,13 +248,16 @@ export default async function ProjectDetailPage({
   }
   if (!project) notFound();
 
-  const [items, members, services, canUpdate, profitability] = await Promise.all([
+  const [items, members, services, canUpdate, profitability, billingData] = await Promise.all([
     listProjectItems(id),
     listCompanyMembers(),
     listActiveServices(),
     hasPermission("projects.update"),
     getProjectProfitability(id),
+    getProjectBilling(id),
   ]);
+  // Cotizado (aprobado) vs. facturado: un proyecto puede tener varias facturas.
+  const billing = billingProgress(billingData);
 
   const isVentas = activeTab === "ventas";
   const isCompras = activeTab === "compras";
@@ -688,7 +694,17 @@ export default async function ProjectDetailPage({
         <MetricCard
           label="Facturado"
           value={formatMoney(profitability.facturado)}
-          hint={`Cotizado ${formatMoney(profitability.cotizado)}`}
+          pct={billing.pct}
+          danger={billing.state === "over"}
+          hint={
+            billing.state === "none"
+              ? "Sin cotización aprobada para comparar"
+              : billing.state === "over"
+                ? `${formatMoney(-billing.restante)} más de lo cotizado (${formatMoney(billing.cotizado)})`
+                : billing.state === "complete"
+                  ? `Todo lo cotizado (${formatMoney(billing.cotizado)}) facturado`
+                  : `Falta por facturar ${formatMoney(billing.restante)} de ${formatMoney(billing.cotizado)}`
+          }
         />
         <MetricCard
           label="Cobrado"
@@ -837,6 +853,7 @@ export default async function ProjectDetailPage({
         </div>
       ) : activeTab === "ventas" && quotations && invoices && customerPayments ? (
         <div className="flex flex-col gap-8">
+          <BillingNotice progress={billing} context="project" />
           <section>
             <SectionHeader title="Cotizaciones" count={quotations.length} />
             <DataTable columns={quotationColumns} rows={quotations} keyFor={(q) => q.id} emptyMessage="Sin cotizaciones ligadas." maxWidth="max-w-none" />

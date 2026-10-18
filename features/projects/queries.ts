@@ -359,3 +359,26 @@ export async function listProjectBankTransactions(projectId: string) {
   if (error) throw new Error(error.message);
   return data;
 }
+
+/**
+ * Datos para el aviso "Cotizado vs. facturado" (ver billing-progress.ts):
+ * cotizaciones APROBADAS del proyecto, facturas emitidas (sin borradores ni
+ * canceladas) y borradores aparte. En moneda base con la tasa congelada.
+ */
+export async function getProjectBilling(projectId: string) {
+  const supabase = await createClient();
+  const [quotations, invoices] = await Promise.all([
+    supabase.from("quotations").select("total, exchange_rate").eq("project_id", projectId).eq("status", "APPROVED"),
+    supabase.from("invoices").select("total, exchange_rate, status").eq("project_id", projectId).neq("status", "CANCELLED"),
+  ]);
+  if (quotations.error) throw new Error(quotations.error.message);
+  if (invoices.error) throw new Error(invoices.error.message);
+  const base = (r: { total: number | null; exchange_rate: number | null }) =>
+    Number(r.total ?? 0) * Number(r.exchange_rate ?? 1);
+  const rows = invoices.data ?? [];
+  return {
+    cotizado: (quotations.data ?? []).reduce((a, r) => a + base(r), 0),
+    facturado: rows.filter((r) => r.status !== "DRAFT").reduce((a, r) => a + base(r), 0),
+    borradores: rows.filter((r) => r.status === "DRAFT").reduce((a, r) => a + base(r), 0),
+  };
+}
