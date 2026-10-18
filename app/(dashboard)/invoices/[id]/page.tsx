@@ -149,6 +149,12 @@ export default async function InvoiceDetailPage({
     | { number: string; name: string }[]
     | null;
   const project = Array.isArray(projectData) ? projectData[0] : projectData;
+  const quotationData = (invoice as { origin_quotation?: unknown }).origin_quotation as
+    | { number: string }
+    | { number: string }[]
+    | null
+    | undefined;
+  const originQuotation = (Array.isArray(quotationData) ? quotationData[0] : quotationData)?.number ?? null;
 
   const isEditable = invoice.status === "DRAFT";
   // "Enviada al cliente": marca informativa, no cambia el estado.
@@ -437,13 +443,25 @@ export default async function InvoiceDetailPage({
                   </dd>
                 )}
               </div>
+              {/* De dónde viene la factura (proyecto / cotización), bien visible. */}
               {project && invoice.project_id && (
-                <div className="flex items-center gap-1.5">
-                  <FolderKanban size={15} className="text-brand-muted" aria-hidden />
-                  <dt className="sr-only">Proyecto</dt>
+                <div className="flex items-center gap-1.5 rounded-full bg-brand-accent-light px-2.5 py-0.5">
+                  <FolderKanban size={14} className="text-brand-accent" aria-hidden />
+                  <dt className="text-xs font-medium text-brand-accent">Del proyecto</dt>
                   <dd>
-                    <Link href={`/projects/${invoice.project_id}`} className="text-brand-text hover:text-brand-accent">
+                    <Link href={`/projects/${invoice.project_id}`} className="text-xs font-semibold text-brand-accent hover:underline">
                       {project.number} · {project.name}
+                    </Link>
+                  </dd>
+                </div>
+              )}
+              {originQuotation && invoice.quotation_id && (
+                <div className="flex items-center gap-1.5 rounded-full bg-brand-accent-light px-2.5 py-0.5">
+                  <FileText size={14} className="text-brand-accent" aria-hidden />
+                  <dt className="text-xs font-medium text-brand-accent">De la cotización</dt>
+                  <dd>
+                    <Link href={`/quotations/${invoice.quotation_id}`} className="text-xs font-semibold text-brand-accent hover:underline">
+                      {originQuotation}
                     </Link>
                   </dd>
                 </div>

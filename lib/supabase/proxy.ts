@@ -57,7 +57,10 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Con sesión intentando entrar a login/recover-password -> /dashboard
-  if (user && isAuthRoute) {
+  // Solo en navegación normal (GET): si el formulario de inicio de sesión se
+  // envía (POST, Server Action) con una sesión ya abierta, redirigirlo aquí
+  // rompe la acción ("An unexpected response was received from the server").
+  if (user && isAuthRoute && request.method === "GET") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

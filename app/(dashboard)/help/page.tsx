@@ -602,7 +602,7 @@ const SECTIONS: Section[] = [
           cotización.
         </p>
         <p className="mt-2 text-sm text-brand-text">
-          <strong>Cambiar cliente</strong>: en una factura en <em>Borrador</em>, al lado del nombre del cliente, el
+          <strong>De dónde viene</strong>: si la factura se creó desde un proyecto o una cotización, junto al cliente salen las etiquetas <em>Del proyecto PROJ-…</em> y <em>De la cotización COT-…</em> (con enlace). <strong>Cambiar cliente</strong>: en una factura en <em>Borrador</em>, al lado del nombre del cliente, el
           enlace <em>Cambiar cliente</em> te deja elegir otro (las líneas y los montos no cambian; revisa luego el
           tipo de NCF). No se puede si la factura viene de un proyecto o de una cotización (son del cliente
           original): en ese caso descarta el borrador y créala desde cero. Una vez emitida, el cliente ya no se

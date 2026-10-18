@@ -1,5 +1,18 @@
 # CHANGELOG — Mindfreak Manager
 
+## Ajustes de la prueba de roles (2026-10-18)
+
+- Proyectos: el recuadro *Convertir en proyecto* (cotizaciones aprobadas)
+  solo para quien puede crear proyectos; `/projects/from-quotation/*` protegido.
+- Página **"No encontramos esta página"** en español (dirección mal escrita
+  o registro borrado) dentro del sistema y fuera de él.
+- Login: tras reactivar un usuario salía *"An unexpected response was
+  received from the server"* al enviar el formulario con una sesión ya
+  abierta (el proxy redirigía también los POST de /login). Ahora solo
+  redirige la navegación normal (GET).
+- Factura: etiquetas visibles **"Del proyecto PROJ-…"** y **"De la cotización
+  COT-…"** junto al cliente, con enlace.
+
 ## Reportes según el rol (2026-10-16 noche)
 
 - `features/reports/access.ts`: cada reporte pide *Ver reportes* + el

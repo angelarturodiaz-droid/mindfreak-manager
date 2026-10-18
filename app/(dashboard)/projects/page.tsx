@@ -219,54 +219,57 @@ export default async function ProjectsPage({
         />
       </section>
 
-      {convertibleQuotations.length > 0 && (
-        <section className="rounded-[var(--radius-lg)] border border-brand-accent/25 bg-brand-accent-light p-5">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <IconBadge icon={<FileCheck2 size={18} />} tone="blue" />
-              <div>
-                <p className="text-sm font-semibold text-brand-text">
-                  {convertibleQuotations.length === 1
-                    ? "1 cotización aprobada sin proyecto"
-                    : `${convertibleQuotations.length} cotizaciones aprobadas sin proyecto`}
-                </p>
-                <p className="text-xs text-brand-muted">
-                  Conviértelas en proyecto para empezar a planificar el evento.
-                </p>
+      {/* Convertir cotizaciones en proyecto: solo quien puede crear proyectos. */}
+      <IfCan permission="projects.create">
+        {convertibleQuotations.length > 0 && (
+          <section className="rounded-[var(--radius-lg)] border border-brand-accent/25 bg-brand-accent-light p-5">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <IconBadge icon={<FileCheck2 size={18} />} tone="blue" />
+                <div>
+                  <p className="text-sm font-semibold text-brand-text">
+                    {convertibleQuotations.length === 1
+                      ? "1 cotización aprobada sin proyecto"
+                      : `${convertibleQuotations.length} cotizaciones aprobadas sin proyecto`}
+                  </p>
+                  <p className="text-xs text-brand-muted">
+                    Conviértelas en proyecto para empezar a planificar el evento.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-          <ul className="flex flex-col gap-2">
-            {convertibleQuotations.map((q) => (
-              <li
-                key={q.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] border border-brand-border bg-brand-surface px-4 py-3"
-              >
-                <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                  <Link
-                    href={`/quotations/${q.id}`}
-                    className="font-medium text-brand-text hover:text-brand-accent"
-                  >
-                    {q.number}
+            <ul className="flex flex-col gap-2">
+              {convertibleQuotations.map((q) => (
+                <li
+                  key={q.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] border border-brand-border bg-brand-surface px-4 py-3"
+                >
+                  <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                    <Link
+                      href={`/quotations/${q.id}`}
+                      className="font-medium text-brand-text hover:text-brand-accent"
+                    >
+                      {q.number}
+                    </Link>
+                    <span className="text-brand-muted">{relationName(q.clients) ?? "Sin cliente"}</span>
+                    <span className="font-medium tabular-nums">{formatMoney(q.total, q.currency)}</span>
+                    {q.total === 0 && (
+                      <span className="rounded-full bg-brand-warning-bg px-2 py-0.5 text-[11px] font-medium text-brand-warning">
+                        Sin líneas
+                      </span>
+                    )}
+                  </div>
+                  <Link href={`/projects/from-quotation/${q.id}`}>
+                    <Button size="sm" variant="outline" icon={<ArrowRight size={14} />}>
+                      Convertir en proyecto
+                    </Button>
                   </Link>
-                  <span className="text-brand-muted">{relationName(q.clients) ?? "Sin cliente"}</span>
-                  <span className="font-medium tabular-nums">{formatMoney(q.total, q.currency)}</span>
-                  {q.total === 0 && (
-                    <span className="rounded-full bg-brand-warning-bg px-2 py-0.5 text-[11px] font-medium text-brand-warning">
-                      Sin líneas
-                    </span>
-                  )}
-                </div>
-                <Link href={`/projects/from-quotation/${q.id}`}>
-                  <Button size="sm" variant="outline" icon={<ArrowRight size={14} />}>
-                    Convertir en proyecto
-                  </Button>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </IfCan>
 
       <section className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
