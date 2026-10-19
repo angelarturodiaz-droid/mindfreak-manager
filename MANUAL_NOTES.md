@@ -952,6 +952,9 @@ pulsa el botón.
   cobro»** (ej. el contable; varios posibles) o, si no hay, el correo del
   cliente. WhatsApp: teléfono del contacto de cobros → del cliente → del
   contacto principal. Sin copia por correo. La factura muestra a quién van.
+- Aplica a cualquier factura emitida con saldo (suelta, de cotización o de
+  proyecto). **Sin fecha de vencimiento no hay recordatorios**: la factura en
+  Borrador lo avisa en amarillo (y en Gestión de cobro).
 - Solo facturas emitidas, contando desde su **vencimiento**. Factura de un
   proyecto: aviso con la fecha del evento junto a Vencimiento; **Usar otra
   fecha** permite escribir el vencimiento aunque haya condición de pago.

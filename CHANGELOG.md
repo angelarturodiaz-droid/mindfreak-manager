@@ -2,6 +2,9 @@
 
 ## Facturar desde una cotización sin proyecto (2026-10-18 noche)
 
+- Aviso en la factura: **sin fecha de vencimiento no hay recordatorios**
+  (tarjeta NCF / Vencimiento en Borrador y Gestión de cobro).
+
 - Cotización **Aprobada** sin proyecto: botón **Facturar sin proyecto**
   (`createInvoiceFromQuotationAction`) → factura en Borrador con cliente,
   moneda y tasa, condición de pago, comisión (snapshot fiscal), datos

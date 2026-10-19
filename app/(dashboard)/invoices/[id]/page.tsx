@@ -791,6 +791,11 @@ export default async function InvoiceDetailPage({
               <span className="block break-words">
                 {reminderTo.text ?? "nadie: el cliente no tiene correo ni contactos de cobros con correo."}
               </span>
+              {!invoice.due_date && (
+                <span className="mt-1 block font-medium text-brand-warning">
+                  Esta factura no tiene vencimiento: no recibe recordatorios. Ponle una fecha mientras esté en Borrador.
+                </span>
+              )}
               <Link href={`/clients/${invoice.client_id}`} className="text-brand-accent hover:underline">
                 Cambiar en la ficha del cliente
               </Link>
