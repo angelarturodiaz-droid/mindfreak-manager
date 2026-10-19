@@ -139,3 +139,17 @@ export async function listActiveServices() {
   if (error) throw new Error(error.message);
   return data;
 }
+
+/** Facturas hechas desde esta cotización sin proyecto (venta sin evento), sin las canceladas. */
+export async function listDirectInvoicesFromQuotation(quotationId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("invoices")
+    .select("id, number, status, total, currency")
+    .eq("quotation_id", quotationId)
+    .is("project_id", null)
+    .neq("status", "CANCELLED")
+    .order("created_at");
+  if (error) return [];
+  return data;
+}

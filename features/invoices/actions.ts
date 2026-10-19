@@ -998,3 +998,99 @@ function relationNameOf(rel: unknown): string | null {
   const r = Array.isArray(rel) ? rel[0] : rel;
   return r && typeof r === "object" && "name" in r ? String((r as { name: unknown }).name) : null;
 }
+
+/**
+ * Venta sin evento: factura en Borrador a partir de una cotización APROBADA
+ * que no tiene proyecto. Copia cliente, moneda y tasa, condición de pago,
+ * comisión (con su tratamiento fiscal ya resuelto), datos bancarios y las
+ * líneas con su impuesto tal cual se aprobaron. Se puede revisar todo antes
+ * de emitir. Varias facturas por cotización (anticipo, balance) se permiten.
+ */
+export async function createInvoiceFromQuotationAction(quotationId: string): Promise<{ error: string | null }> {
+  await requirePermission("invoices.create");
+  const supabase = await createSupabaseClient();
+  const companyId = await getPrimaryCompanyId();
+
+  const { data: q } = await supabase
+    .from("quotations")
+    .select(
+      "id, number, status, project_id, client_id, currency, exchange_rate, payment_terms_id, credit_days, commission_percent, commission_tax_rate_id, commission_tax_treatment, commission_tax_rate_percent, bank_details",
+    )
+    .eq("id", quotationId)
+    .single();
+  if (!q) return { error: "No se encontró la cotización." };
+  if (q.status !== "APPROVED") return { error: "Solo se puede facturar una cotización aprobada." };
+  if (q.project_id) {
+    return { error: "Esta cotización ya es parte de un proyecto: factura desde el proyecto (pestaña Ventas y cobros)." };
+  }
+
+  const { data: items, error: itemsError } = await supabase
+    .from("quotation_items")
+    .select("service_id, description, quantity, unit_price, discount, tax, tax_rate_id, tax_treatment, tax_rate_percent, subtotal")
+    .eq("quotation_id", quotationId)
+    .order("sort_order");
+  if (itemsError) return { error: dbErrorMessage(itemsError.message) };
+  if (!items?.length) return { error: "La cotización no tiene líneas." };
+
+  const accountIds = parseBankDetails(q.bank_details).map((d) => d.bank_account_id);
+  const { details } = await buildBankDetails(supabase, companyId, accountIds.length ? accountIds : null, q.currency, accountIds.length > 0);
+
+  const number = await generateInvoiceNumber(companyId);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: inv, error } = await supabase
+    .from("invoices")
+    .insert({
+      company_id: companyId,
+      client_id: q.client_id,
+      quotation_id: q.id,
+      number,
+      issue_date: todayISO(),
+      currency: q.currency,
+      exchange_rate: q.exchange_rate,
+      payment_terms_id: q.payment_terms_id,
+      credit_days: q.credit_days,
+      commission_percent: q.commission_percent,
+      commission_tax_rate_id: q.commission_tax_rate_id,
+      commission_tax_treatment: q.commission_tax_treatment,
+      commission_tax_rate_percent: q.commission_tax_rate_percent,
+      bank_details: details,
+      status: "DRAFT",
+      created_by: user?.id,
+    })
+    .select("id")
+    .single();
+  if (error || !inv) return { error: dbErrorMessage(error?.message ?? "No se pudo crear la factura.") };
+
+  const { error: insertError } = await supabase.from("invoice_items").insert(
+    items.map((item, index) => ({
+      invoice_id: inv.id,
+      service_id: item.service_id,
+      description: item.description,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      discount: item.discount,
+      tax: item.tax,
+      tax_rate_id: item.tax_rate_id,
+      // Mismo tratamiento fiscal que se le aprobó al cliente (snapshot).
+      tax_treatment: item.tax_treatment,
+      tax_rate_percent: item.tax_rate_percent,
+      subtotal: item.subtotal,
+      sort_order: index,
+    })),
+  );
+  if (insertError) return { error: dbErrorMessage(insertError.message) };
+  await recalculateInvoiceTotals(inv.id);
+
+  await logAudit({
+    companyId,
+    action: "CREATE",
+    entityType: "invoice",
+    entityId: inv.id,
+    newValues: { desde_cotizacion: q.number, lineas: items.length },
+  });
+  revalidatePath("/invoices");
+  revalidatePath(`/quotations/${quotationId}`);
+  redirect(`/invoices/${inv.id}`);
+}

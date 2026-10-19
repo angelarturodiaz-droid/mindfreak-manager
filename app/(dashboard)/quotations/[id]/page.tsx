@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FlowSteps } from "@/components/documents/flow-steps";
+import { InvoiceFromQuotationButton } from "./invoice-from-quotation-button";
 import { safeReturnTo, returnToLabel } from "@/lib/utils/return-to";
 import { notFound } from "next/navigation";
 import {
@@ -15,6 +16,7 @@ import {
   Clock,
   FolderKanban,
   Handshake,
+  Receipt,
 } from "lucide-react";
 import {
   getQuotation,
@@ -36,7 +38,7 @@ import { BankDetailsPicker } from "@/components/documents/bank-details-picker";
 import { NextStepBar, SideSection, TotalsStrip } from "@/components/documents/doc-layout";
 import { hasPermission } from "@/lib/auth/permissions";
 import { ChangeClientButton } from "@/components/documents/change-client-button";
-import { listActiveClients } from "@/features/quotations/queries";
+import { listActiveClients, listDirectInvoicesFromQuotation } from "@/features/quotations/queries";
 import { getDefaultTaxRate, listTaxRates } from "@/features/tax-rates/queries";
 import { TAX_TREATMENT_LABELS } from "@/features/tax-rates/schema";
 import { NewItemForm } from "./new-item-form";
@@ -123,7 +125,7 @@ export default async function QuotationDetailPage({
   }
   if (!quotation) notFound();
 
-  const [items, services, canUpdate, canApprove, defaultTaxRate, taxRates, bankDetailOptions] = await Promise.all([
+  const [items, services, canUpdate, canApprove, defaultTaxRate, taxRates, bankDetailOptions, canCreateInvoice, canCreateProject, directInvoices] = await Promise.all([
     listQuotationItems(id),
     listActiveServices(),
     hasPermission("quotations.update"),
@@ -132,6 +134,10 @@ export default async function QuotationDetailPage({
     listTaxRates(),
     // Cuentas que se pueden poner en "Datos bancarios para el pago" (opcional).
     listBankDetailOptions().catch(() => []),
+    hasPermission("invoices.create"),
+    hasPermission("projects.create"),
+    // Venta sin evento: facturas hechas desde esta cotización sin proyecto.
+    listDirectInvoicesFromQuotation(id),
   ]);
   // Para "Cambiar cliente" (solo en Borrador).
   const activeClients = quotation.status === "DRAFT" && canUpdate ? await listActiveClients() : [];
@@ -203,7 +209,7 @@ export default async function QuotationDetailPage({
       : ["SENT", "VIEWED", "NEGOTIATING"].includes(quotation.status)
         ? 1
         : quotation.status === "APPROVED"
-          ? quotation.project_id
+          ? quotation.project_id || directInvoices.length
             ? 3
             : 2
           : -1;
@@ -349,10 +355,21 @@ export default async function QuotationDetailPage({
               const current = i === flowIndex && !done;
               // El paso 2 dice en qué punto está: enviada, vista por el cliente o en negociación.
               const sent = i === 1 && current ? SENT_DETAIL[quotation.status] : undefined;
+              // Venta sin evento: el último paso es "Facturada" en vez de "Proyecto".
+              const invoicedDirect = i === 3 && !quotation.project_id && directInvoices.length > 0;
+              const lastNoProject = i === 3 && !quotation.project_id && directInvoices.length === 0;
               return {
-                label: sent?.label ?? step.label,
-                sub: sent?.sub ?? step.sub,
-                help: step.help,
+                label: invoicedDirect ? "Facturada" : lastNoProject ? "Proyecto o factura" : sent?.label ?? step.label,
+                sub: invoicedDirect
+                  ? "Se facturó sin proyecto"
+                  : lastNoProject
+                    ? "Evento → proyecto · venta → factura"
+                    : sent?.sub ?? step.sub,
+                help: invoicedDirect
+                  ? "Venta sin evento: se facturó directo desde esta cotización (sin proyecto). Las facturas están arriba, junto a los botones."
+                  : lastNoProject
+                    ? "Cuando el cliente aprueba: si es un evento, «Convertir a Proyecto» (para planificar y facturar desde el proyecto); si es una venta sin evento, «Facturar sin proyecto» crea la factura con estas líneas."
+                    : step.help,
                 state: done ? "done" : current ? "current" : "todo",
               };
             })}
@@ -409,13 +426,28 @@ export default async function QuotationDetailPage({
                   />
                 </>
               )}
-            {quotation.status === "APPROVED" && !quotation.project_id && (
+            {/* Evento → proyecto. Si ya se facturó sin proyecto, no se convierte (quedaría fuera del proyecto). */}
+            {quotation.status === "APPROVED" && !quotation.project_id && canCreateProject && directInvoices.length === 0 && (
               <Link href={`/projects/from-quotation/${quotation.id}`}>
                 <Button variant="secondary" size="sm" className="!bg-brand-success" icon={<ArrowRightCircle size={14} />}>
                   Convertir a Proyecto
                 </Button>
               </Link>
             )}
+            {/* Venta sin evento: factura directa con las líneas de la cotización. */}
+            {quotation.status === "APPROVED" && !quotation.project_id && canCreateInvoice && (
+              <InvoiceFromQuotationButton quotationId={quotation.id} existing={directInvoices} />
+            )}
+            {directInvoices.map((inv) => (
+              <Link
+                key={inv.id}
+                href={`/invoices/${inv.id}`}
+                className="inline-flex items-center gap-1.5 rounded-full bg-brand-accent-light px-2.5 py-1 text-xs font-medium text-brand-accent hover:underline"
+                title="Factura hecha desde esta cotización (sin proyecto)"
+              >
+                <Receipt size={12} aria-hidden /> {inv.number} · {formatMoney(inv.total, inv.currency)}
+              </Link>
+            ))}
             {quotation.project_id && (
               <Link href={`/projects/${quotation.project_id}`}>
                 <Button variant="outline" size="sm" icon={<Eye size={14} />}>

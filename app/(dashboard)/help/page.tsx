@@ -630,6 +630,15 @@ const SECTIONS: Section[] = [
           cotización.
         </p>
         <p className="text-sm text-brand-text">
+          <strong>Tres formas de facturar</strong>: (1) <em>Desde un proyecto</em> (eventos; también con <em>Nueva factura</em>{" "}
+          en la pestaña Ventas y cobros del proyecto); (2) <em>Cliente directo</em> en Nueva factura, escribiendo las líneas;
+          (3) <strong>Facturar sin proyecto</strong> desde una cotización <em>Aprobada</em> que no es un evento: crea la factura
+          en Borrador con las mismas líneas, impuestos, comisión, condición de pago y datos bancarios que aprobó el cliente.
+          Se pueden hacer varias (ej. anticipo y balance: cada una copia todas las líneas, ajústalas antes de emitir). La
+          cotización muestra sus facturas y su último paso pasa a <em>Facturada</em>. Si ya se facturó sin proyecto, ya no
+          se convierte en proyecto (esas facturas quedarían fuera de él).
+        </p>
+        <p className="text-sm text-brand-text">
           <strong>Para recordar hoy por WhatsApp</strong>: arriba de la lista de Facturas sale (cuando hay) un recuadro verde con las
           facturas a las que hoy les toca un recordatorio. El botón <em>WhatsApp</em> abre el chat del contacto con el mensaje ya
           escrito (solo tocas Enviar), lo anota en la <em>Gestión de cobro</em> y la factura sale de la lista. Funciona aunque los

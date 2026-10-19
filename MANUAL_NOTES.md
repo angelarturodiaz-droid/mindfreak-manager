@@ -983,3 +983,13 @@ pulsa el botón.
   cotización con estas líneas**; al aprobarse pasa a ser la del proyecto y
   reemplaza las escritas a mano.
 - Cotizado del proyecto = solo cotizaciones aprobadas.
+
+**Facturar sin proyecto desde una cotización (18-oct noche)**
+- Cotización Aprobada que no es un evento → **Facturar sin proyecto**: factura
+  en Borrador con las mismas líneas, impuestos, comisión, condición de pago y
+  datos bancarios. Se revisa y se emite.
+- Varias (anticipo/balance): «Otra factura de esta cotización»; cada una copia
+  todas las líneas → ajustar antes de emitir.
+- Si ya se facturó sin proyecto, la cotización no se convierte en proyecto.
+- Formas de facturar: desde proyecto · cliente directo (líneas a mano) ·
+  desde cotización aprobada sin proyecto.

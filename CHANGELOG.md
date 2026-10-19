@@ -1,5 +1,17 @@
 # CHANGELOG — Mindfreak Manager
 
+## Facturar desde una cotización sin proyecto (2026-10-18 noche)
+
+- Cotización **Aprobada** sin proyecto: botón **Facturar sin proyecto**
+  (`createInvoiceFromQuotationAction`) → factura en Borrador con cliente,
+  moneda y tasa, condición de pago, comisión (snapshot fiscal), datos
+  bancarios y las líneas con su impuesto tal cual se aprobaron (mismo criterio
+  que Duplicar). Varias facturas por cotización (botón «Otra factura de esta
+  cotización», con aviso). La cotización lista sus facturas y el último paso
+  dice «Facturada»; ya no ofrece «Convertir a Proyecto» si se facturó sin
+  proyecto. «Convertir a Proyecto» ahora solo para quien puede crear
+  proyectos.
+
 ## Servicios del proyecto, contacto de cobros y ⓘ en el proyecto (2026-10-18 noche)
 
 - **Recordatorios**: ya no dependen de que el proyecto esté Completado; cuentan
