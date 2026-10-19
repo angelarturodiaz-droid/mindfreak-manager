@@ -124,7 +124,7 @@ export function RemindersToday({ autoSendEnabled }: { autoSendEnabled: boolean }
                   <Chip tone={it.kind === "SURVEY" ? "accent" : it.step > 0 ? "danger" : it.step === 0 ? "warning" : "accent"}>
                     {it.stepText}
                   </Chip>
-                  <span className="text-brand-muted">{it.recipient ?? "sin correo"}</span>
+                  <span className="text-brand-muted">{it.recipient ? `${it.recipient}${it.recipientLabel && it.kind === "INVOICE" ? ` · ${it.recipientLabel}` : ""}` : "sin correo"}</span>
                   {it.blocked && <Chip tone="warning">{it.blocked}</Chip>}
                   <button
                     type="button"

@@ -238,6 +238,7 @@ export async function createContactAction(
     email: String(formData.get("email") ?? ""),
     phone: String(formData.get("phone") ?? ""),
     is_primary: formData.get("is_primary") === "on",
+    receives_billing: formData.get("receives_billing") === "on",
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -253,10 +254,37 @@ export async function createContactAction(
     email: parsed.data.email || null,
     phone: parsed.data.phone || null,
     is_primary: parsed.data.is_primary,
+    receives_billing: parsed.data.receives_billing,
   });
 
   if (error) return { error: error.message };
 
+  revalidatePath(`/clients/${clientId}`);
+  return { error: null };
+}
+
+/** Marca o desmarca un contacto como «Recibe recordatorios de cobro». */
+export async function toggleContactBillingAction(
+  contactId: string,
+  clientId: string,
+  value: boolean,
+): Promise<ActionState> {
+  await requirePermission("clients.update");
+  const supabase = await createSupabaseClient();
+  const { data: contact, error } = await supabase
+    .from("client_contacts")
+    .update({ receives_billing: value })
+    .eq("id", contactId)
+    .select("company_id, full_name")
+    .single();
+  if (error || !contact) return { error: "No se pudo guardar. ¿Ya se aplicó la migración 086?" };
+  await logAudit({
+    companyId: contact.company_id,
+    action: "UPDATE",
+    entityType: "client",
+    entityId: clientId,
+    newValues: { contact: contact.full_name, receives_billing: value },
+  });
   revalidatePath(`/clients/${clientId}`);
   return { error: null };
 }

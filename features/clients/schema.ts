@@ -30,6 +30,8 @@ export const clientContactSchema = z.object({
     .or(z.literal("")),
   phone: z.string().trim().optional().or(z.literal("")),
   is_primary: z.boolean().default(false),
+  /** Recibe los recordatorios de cobro (migración 086). */
+  receives_billing: z.boolean().default(false),
 });
 
 export type ClientContactInput = z.infer<typeof clientContactSchema>;

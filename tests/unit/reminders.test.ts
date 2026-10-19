@@ -5,8 +5,8 @@ import {
   invoiceStepForToday,
   normalizeDays,
   pickEmailRecipient,
+  pickGreetingName,
   pickPhone,
-  projectAllowsReminder,
   stepLabel,
   surveyStepForToday,
   whenText,
@@ -103,23 +103,45 @@ describe("destinatario (decisión 18-oct)", () => {
     contact_name: "Ana Pérez",
     contact_email: "ana@cliente.com",
     contact_phone: "8295551111",
+    billing: [] as { name: string | null; email: string | null; phone: string | null }[],
   };
-  it("siempre el correo registrado del cliente (saludo con el contacto)", () => {
-    expect(pickEmailRecipient(base)).toEqual({ email: "pagos@cliente.com", name: "Ana Pérez" });
+  it("sin contacto de cobros → correo registrado del cliente", () => {
+    expect(pickEmailRecipient(base)).toEqual({
+      emails: ["pagos@cliente.com"],
+      name: "Ana Pérez",
+      via: "client",
+      label: "correo del cliente",
+    });
   });
-  it("cliente sin correo → nada (aunque el contacto tenga)", () => {
+  it("con contactos de cobros → a ellos (pueden ser varios)", () => {
+    const r = pickEmailRecipient({
+      ...base,
+      billing: [
+        { name: "María Gómez", email: "conta@cliente.com", phone: "8496660000" },
+        { name: "Luis", email: "gerente@cliente.com", phone: null },
+      ],
+    });
+    expect(r?.emails).toEqual(["conta@cliente.com", "gerente@cliente.com"]);
+    expect(r?.name).toBe("María Gómez");
+    expect(r?.label).toBe("María Gómez, Luis (cobros)");
+  });
+  it("contacto de cobros sin correo → cae al correo del cliente", () => {
+    expect(pickEmailRecipient({ ...base, billing: [{ name: "María", email: null, phone: "1" }] })?.via).toBe("client");
+  });
+  it("nadie con correo → nada", () => {
     expect(pickEmailRecipient({ ...base, client_email: "" })).toBeNull();
   });
-  it("teléfono: el del cliente y, si no tiene, el del contacto", () => {
+  it("teléfono: cobros → cliente → contacto principal", () => {
+    expect(pickPhone({ ...base, billing: [{ name: "María", email: null, phone: "8496660000" }] })).toBe("8496660000");
     expect(pickPhone(base)).toBe("8095550000");
     expect(pickPhone({ ...base, client_phone: null })).toBe("8295551111");
   });
-  it("factura de proyecto: solo con el proyecto Completado", () => {
-    expect(projectAllowsReminder(null, null)).toBe(true);
-    expect(projectAllowsReminder("p1", "IN_PROGRESS")).toBe(false);
-    expect(projectAllowsReminder("p1", "COMPLETED")).toBe(true);
+  it("saludo: contacto de cobros y si no, el principal", () => {
+    expect(pickGreetingName({ ...base, billing: [{ name: "María", email: "m@x.com", phone: null }] })).toBe("María");
+    expect(pickGreetingName(base)).toBe("Ana Pérez");
   });
 });
+
 
 
 describe("planReminders (qué sale hoy)", () => {
@@ -155,6 +177,7 @@ describe("planReminders (qué sale hoy)", () => {
     contact_name: null,
     contact_email: null,
     contact_phone: null,
+    billing: [],
     sent_steps: [],
   };
   it("factura que vence hoy → correo con asunto y mensaje llenos", () => {
@@ -172,7 +195,7 @@ describe("planReminders (qué sale hoy)", () => {
       "2026-10-18",
       "https://app",
     );
-    expect(p.blocked).toMatch(/no tiene correo registrado/);
+    expect(p.blocked).toMatch(/Sin correo/);
   });
   it("encuesta sin responder hace 3 días → recordatorio 1 con el enlace", () => {
     const [p] = planReminders(

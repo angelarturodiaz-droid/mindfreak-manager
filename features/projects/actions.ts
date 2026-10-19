@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { dbErrorMessage } from "@/lib/utils/db-error";
 import { redirect } from "next/navigation";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
@@ -205,6 +206,8 @@ export async function convertQuotationToProjectAction(
       estimated_cost: item.quantity * item.estimated_unit_cost,
       subtotal: item.subtotal,
       sort_order: index,
+      // Origen de la línea (pestaña Servicios): queda fija porque el cliente la aprobó.
+      source_quotation_id: quotation.id,
     }));
     const { error: insertItemsError } = await supabase
       .from("project_items")
@@ -339,8 +342,45 @@ export async function addProjectItemAction(
     subtotal,
   });
 
-  if (error) return { error: error.message };
+  if (error) return { error: dbErrorMessage(error.message) };
 
+  revalidatePath(`/projects/${projectId}`);
+  return { error: null };
+}
+
+/**
+ * Corrige el costo estimado (por unidad) de una línea del proyecto. Es un
+ * dato interno de planificación: se permite aunque la línea venga de una
+ * cotización aprobada (precio y cantidad no se tocan). Queda en Auditoría.
+ */
+export async function updateProjectItemCostAction(
+  itemId: string,
+  projectId: string,
+  unitCost: number,
+): Promise<{ error: string | null }> {
+  await requirePermission("projects.update");
+  if (!Number.isFinite(unitCost) || unitCost < 0) return { error: "Escribe un costo válido (0 o más)." };
+  const supabase = await createSupabaseClient();
+  const { data: item } = await supabase
+    .from("project_items")
+    .select("quantity, estimated_cost, description, projects(company_id)")
+    .eq("id", itemId)
+    .single();
+  if (!item) return { error: "No se encontró la línea." };
+  const estimated = Math.round(Number(item.quantity) * unitCost * 100) / 100;
+  const { error } = await supabase.from("project_items").update({ estimated_cost: estimated }).eq("id", itemId);
+  if (error) return { error: dbErrorMessage(error.message) };
+  const proj = (Array.isArray(item.projects) ? item.projects[0] : item.projects) as { company_id: string } | null;
+  if (proj) {
+    await logAudit({
+      companyId: proj.company_id,
+      action: "UPDATE",
+      entityType: "project",
+      entityId: projectId,
+      oldValues: { linea: item.description, costo_estimado: item.estimated_cost },
+      newValues: { linea: item.description, costo_estimado: estimated },
+    });
+  }
   revalidatePath(`/projects/${projectId}`);
   return { error: null };
 }
@@ -352,6 +392,6 @@ export async function deleteProjectItemAction(
   await requirePermission("projects.update");
   const supabase = await createSupabaseClient();
   const { error } = await supabase.from("project_items").delete().eq("id", itemId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(dbErrorMessage(error.message));
   revalidatePath(`/projects/${projectId}`);
 }

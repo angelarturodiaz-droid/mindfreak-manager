@@ -101,7 +101,7 @@ export async function getInvoice(id: string) {
   const { data, error } = await supabase
     .from("invoices")
     .select(
-      "*, clients(name), projects(number, name), origin_quotation:quotations!quotation_id(number), payment_terms(name), profiles!responsible_user_id(full_name), sent_by:profiles!sent_to_client_by(full_name), duplicated_from:invoices!duplicated_from_id(number)",
+      "*, clients(name), projects(number, name, event_date), origin_quotation:quotations!quotation_id(number), payment_terms(name), profiles!responsible_user_id(full_name), sent_by:profiles!sent_to_client_by(full_name), duplicated_from:invoices!duplicated_from_id(number)",
     )
     .eq("id", id)
     .single();

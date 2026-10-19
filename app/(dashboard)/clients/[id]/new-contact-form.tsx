@@ -22,6 +22,13 @@ export function NewContactForm({ clientId }: { clientId: string }) {
         <input type="checkbox" name="is_primary" />
         Principal
       </label>
+      <label
+        className="flex items-center gap-1 pb-2 text-sm text-brand-muted"
+        title="Los recordatorios de las facturas le llegan a este contacto (ej. el contable)."
+      >
+        <input type="checkbox" name="receives_billing" />
+        Recibe recordatorios de cobro
+      </label>
       <Button type="submit" variant="outline" loading={pending} icon={<UserPlus size={14} />}>
         Agregar contacto
       </Button>

@@ -1,5 +1,34 @@
 # CHANGELOG — Mindfreak Manager
 
+## Servicios del proyecto, contacto de cobros y ⓘ en el proyecto (2026-10-18 noche)
+
+- **Recordatorios**: ya no dependen de que el proyecto esté Completado; cuentan
+  desde el vencimiento de la factura. Destinatario: contactos marcados
+  **«Recibe recordatorios de cobro»** (casilla nueva en cada contacto del
+  cliente; varios posibles) o, si no hay, el correo del cliente. La factura
+  muestra «Los recordatorios van a: …» en Gestión de cobro.
+- **Vencimiento**: en una factura en Borrador de un proyecto, aviso con la
+  fecha del evento (amarillo si el vencimiento queda antes del evento) y
+  casilla **Usar otra fecha** (mantiene la condición de pago, credit_days
+  vacío para que el trigger no recalcule).
+- **Proyecto → pestaña Servicios** (antes "Líneas del proyecto" en Resumen):
+  origen de cada línea («De COT-…» / «Escrita a mano»); si el proyecto viene
+  de una cotización aprobada, líneas fijas (trigger
+  `trg_project_items_locked`) y solo se corrige el costo estimado (con
+  auditoría); **Nueva cotización adicional** (`/quotations/new?project=`),
+  que al aprobarse suma sus líneas (`project_apply_quotation`); en proyectos
+  sin cotización, **Crear cotización con estas líneas**
+  (`quotations.created_from_project`; al aprobarse reemplaza las escritas a
+  mano). Resumen: servicios en una línea + Detalles del evento.
+- **Cotizado** del proyecto (Finanzas, reporte de Rentabilidad) = solo
+  cotizaciones **Aprobadas** (antes sumaba cualquier estado; con las
+  adicionales en borrador se habría inflado).
+- **ⓘ** en cada pestaña del proyecto y en cada paso del avance (línea corta +
+  explicación; los pasos siguen siendo clicables).
+- Todo en la migración 086 (aún sin aplicar). Probado en la base con
+  transacciones que se deshacen: líneas fijas, costo editable, adicional sin
+  duplicar, proyecto manual, Ventas sin acceso al motor.
+
 ## BE – Motor de recordatorios (2026-10-18)
 
 - Migración **086_reminders**: `reminder_settings` (apagado por defecto; días

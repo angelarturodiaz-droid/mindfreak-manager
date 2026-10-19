@@ -253,8 +253,13 @@ export async function updateInvoiceHeaderAction(
 
   const supabase = await createSupabaseClient();
 
+  // «Usar otra fecha»: se mantiene la condición de pago pero el vencimiento
+  // se escribe a mano (credit_days queda vacío y el trigger no lo recalcula).
+  const manualDue = formData.get("manual_due") === "on";
+  if (manualDue && !dueDate) return { error: "Escribe la fecha de vencimiento." };
+
   let creditDays: number | null = null;
-  if (paymentTermsId) {
+  if (paymentTermsId && !manualDue) {
     const { data: term, error: termError } = await supabase
       .from("payment_terms")
       .select("credit_days")

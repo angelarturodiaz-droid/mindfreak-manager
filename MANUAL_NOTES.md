@@ -948,10 +948,13 @@ pulsa el botón.
 - Facturas abiertas: correo al cliente 3 días antes, el día que vence y 10
   días después (se agregan/quitan días, hasta 10). Encuestas sin responder:
   cada X días hasta N veces (Configuración → Encuesta).
-- Destinatario: el correo registrado del cliente (WhatsApp: su teléfono; si
-  no tiene, el del contacto principal). Sin copia por correo.
-- Solo facturas emitidas; si la factura es de un proyecto, a partir de que el
-  proyecto está **Completado**.
+- Destinatario: los contactos del cliente marcados **«Recibe recordatorios de
+  cobro»** (ej. el contable; varios posibles) o, si no hay, el correo del
+  cliente. WhatsApp: teléfono del contacto de cobros → del cliente → del
+  contacto principal. Sin copia por correo. La factura muestra a quién van.
+- Solo facturas emitidas, contando desde su **vencimiento**. Factura de un
+  proyecto: aviso con la fecha del evento junto a Vencimiento; **Usar otra
+  fecha** permite escribir el vencimiento aunque haya condición de pago.
 - Arranca **apagado**. Encendido: sale solo cada día a las 8:15 a. m. Un
   recordatorio nunca se repite; si un día no corrió, se recupera hasta 2 días
   tarde.
@@ -967,3 +970,16 @@ pulsa el botón.
   `select vault.create_secret('<clave larga al azar, 40+ caracteres>', 'reminders_cron_secret');`
   Sin esas dos entradas la tarea diaria no hace nada (en localhost se usa
   *Enviar ahora*). Requiere SMTP configurado en el servidor (SMTP_*).
+
+**Proyecto: pestaña Servicios y ⓘ (18-oct noche)**
+- Pestañas y pasos del proyecto con ⓘ: pasar el mouse explica qué hay/qué
+  significa. Resumen = servicios en una línea + detalles del evento.
+- **Servicios**: líneas con su origen. Proyecto de cotización aprobada →
+  líneas fijas (solo se corrige el costo estimado, queda en Auditoría).
+  Extras que el cliente paga → **Nueva cotización adicional**; al aprobarse,
+  sus líneas se suman solas («De COT-…») y sube lo cotizado. Costos que no se
+  cobran → gasto del proyecto.
+- Proyecto sin cotización → líneas a mano (hasta Completado) y **Crear
+  cotización con estas líneas**; al aprobarse pasa a ser la del proyecto y
+  reemplaza las escritas a mano.
+- Cotizado del proyecto = solo cotizaciones aprobadas.

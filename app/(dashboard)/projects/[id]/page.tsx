@@ -13,7 +13,10 @@ import {
   FileText,
   FolderOpen,
   Landmark,
+  Info,
   LayoutDashboard,
+  ListChecks,
+  Lock,
   MapPin,
   MessageSquare,
   Plus,
@@ -33,6 +36,7 @@ import {
   getProjectProfitability,
   getProjectBilling,
   listProjectQuotations,
+  getOpenProjectQuotation,
   listProjectInvoices,
   listProjectCustomerPayments,
   listProjectExpenses,
@@ -67,6 +71,11 @@ import { getSurveySettings, listProjectSurveys, resolveSurveyRecipient } from "@
 import { relationName, relationRow } from "@/lib/utils/relation";
 import { ProjectEditForm } from "./project-edit-form";
 import { NewProjectItemForm } from "./new-item-form";
+import { EditCostButton } from "./edit-cost-button";
+import { CreateQuotationButton } from "./create-quotation-button";
+import { Tooltip } from "@/components/ui/tooltip";
+import { InfoHint } from "@/components/ui/info-hint";
+import { Callout, Chip } from "@/components/ui/page-kit";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, KpiCard } from "@/components/ui/card";
@@ -124,16 +133,87 @@ const BANK_TX_TYPE_LABELS: Record<string, string> = {
  * que se le paga a proveedores (Compras) y los números (Finanzas).
  */
 const TABS = [
-  { key: "resumen", label: "Resumen", icon: LayoutDashboard },
-  { key: "finanzas", label: "Finanzas", icon: TrendingUp },
-  { key: "ventas", label: "Ventas y cobros", icon: Receipt },
-  { key: "compras", label: "Gastos y proveedores", icon: ShoppingCart },
-  { key: "bancos", label: "Bancos", icon: Landmark },
-  { key: "tareas", label: "Tareas", icon: CheckSquare },
-  { key: "documentos", label: "Documentos", icon: FolderOpen },
-  { key: "actividades", label: "Actividades", icon: MessageSquare },
-  { key: "satisfaccion", label: "Satisfacción del cliente", icon: Smile },
+  {
+    key: "resumen",
+    label: "Resumen",
+    icon: LayoutDashboard,
+    hint: "Lo esencial del evento: los servicios en una línea y los detalles (nombre, responsable, fecha, lugar y presupuesto), que se editan aquí.",
+  },
+  {
+    key: "servicios",
+    label: "Servicios",
+    icon: ListChecks,
+    hint: "Lo que se le vende al cliente en este evento: cada línea con la cotización de donde viene, su precio y su costo estimado. Si vienen de una cotización aprobada quedan fijas; lo que el cliente pida de más va por una cotización adicional.",
+  },
+  {
+    key: "finanzas",
+    label: "Finanzas",
+    icon: TrendingUp,
+    hint: "Los números del proyecto: lo cotizado, facturado y cobrado, los gastos, y la utilidad estimada y real con su margen.",
+  },
+  {
+    key: "ventas",
+    label: "Ventas y cobros",
+    icon: Receipt,
+    hint: "Cotizaciones, facturas y cobros del cliente para este proyecto, con el aviso Cotizado vs. facturado (cuánto falta por facturar).",
+  },
+  {
+    key: "compras",
+    label: "Gastos y proveedores",
+    icon: ShoppingCart,
+    hint: "Gastos del evento, proveedores que trabajan en él y lo que ya se les pagó. Lo que gastas aquí baja la utilidad real.",
+  },
+  {
+    key: "bancos",
+    label: "Bancos",
+    icon: Landmark,
+    hint: "Movimientos de banco ligados a este proyecto: lo que entró y lo que salió de las cuentas.",
+  },
+  {
+    key: "tareas",
+    label: "Tareas",
+    icon: CheckSquare,
+    hint: "Pendientes del equipo para este evento, con responsable, fecha y prioridad.",
+  },
+  {
+    key: "documentos",
+    label: "Documentos",
+    icon: FolderOpen,
+    hint: "Archivos del proyecto: contratos, planos, fotos, acuses de recibo y otros.",
+  },
+  {
+    key: "actividades",
+    label: "Actividades",
+    icon: MessageSquare,
+    hint: "Bitácora del proyecto: notas de llamadas, reuniones y cambios, con fecha y quién las escribió.",
+  },
+  {
+    key: "satisfaccion",
+    label: "Satisfacción del cliente",
+    icon: Smile,
+    hint: "Encuesta de satisfacción del cliente: envío, recordatorios y respuestas (calificación, NPS y comentarios).",
+  },
 ] as const;
+
+/** Qué significa cada paso del proyecto (línea corta y explicación al pasar el mouse). */
+const STEP_HELP: Record<string, { sub: string; help: string }> = {
+  PLANNING: {
+    sub: "Se está armando",
+    help: "El evento se está preparando: fecha, lugar, servicios y equipo. El cliente todavía no lo confirma. Haz clic en otro paso para cambiar el estado.",
+  },
+  CONFIRMED: {
+    sub: "El cliente confirmó",
+    help: "El cliente confirmó el evento (normalmente con el anticipo). Se reservan proveedores y se reparten las tareas.",
+  },
+  IN_PROGRESS: {
+    sub: "Se está ejecutando",
+    help: "El evento está en marcha: montaje y día del evento. Se registran gastos, entregas y acuses.",
+  },
+  COMPLETED: {
+    sub: "Terminado",
+    help: "El evento terminó. Al pasarlo aquí se ofrece enviar la encuesta de satisfacción. Las facturas pendientes se siguen cobrando.",
+  },
+};
 
 /** Enlaces viejos (?tab=facturas, ?tab=gastos…) siguen funcionando. */
 const TAB_ALIASES: Record<string, string> = {
@@ -304,6 +384,17 @@ export default async function ProjectDetailPage({
     : [null, null, []];
   const activeSurvey = projectSurveys.find((s) => s.status === "SENT" || s.status === "ANSWERED");
 
+  // Servicios: fijos si el proyecto viene de una cotización aprobada (migración 086).
+  const itemsLocked = Boolean(project.quotation_id);
+  const [canCreateQuotation, openQuotation, allProjectQuotations] = await Promise.all([
+    hasPermission("quotations.create"),
+    activeTab === "servicios" && !itemsLocked ? getOpenProjectQuotation(id) : Promise.resolve(null),
+    activeTab === "servicios" && itemsLocked ? listProjectQuotations(id) : Promise.resolve(null),
+  ]);
+  const pendingAdditional = (allProjectQuotations ?? []).filter(
+    (q) => q.id !== project.quotation_id && ["DRAFT", "SENT", "VIEWED", "NEGOTIATING"].includes(q.status),
+  );
+
   const linesTotal = items.reduce((sum, i) => sum + i.subtotal, 0);
   const estimatedCostTotal = items.reduce((sum, i) => sum + i.estimated_cost, 0);
   const estimatedMargin = linesTotal > 0 ? ((linesTotal - estimatedCostTotal) / linesTotal) * 100 : null;
@@ -311,12 +402,31 @@ export default async function ProjectDetailPage({
 
   const itemColumns: Column<ProjectItemRow>[] = [
     { header: "Descripción", accessor: (i) => <span className="text-brand-text">{i.description}</span> },
+    {
+      header: "Origen",
+      info: "De qué cotización viene la línea. «Escrita a mano» = agregada en el proyecto (solo en proyectos sin cotización aprobada).",
+      accessor: (i) => (i.source ? <Chip tone="accent">De {i.source.number}</Chip> : <Chip tone="muted">Escrita a mano</Chip>),
+    },
     { header: "Cant.", className: "text-right", accessor: (i) => <span className="tabular-nums">{i.quantity}</span> },
     { header: "Precio", className: "text-right", accessor: (i) => <span className="tabular-nums">{formatMoney(i.unit_price)}</span> },
     {
       header: "Costo est.",
+      info: "Costo estimado total de la línea (interno). Con el lápiz se corrige; queda en la Auditoría.",
       className: "text-right",
-      accessor: (i) => <span className="tabular-nums text-brand-muted">{formatMoney(i.estimated_cost)}</span>,
+      accessor: (i) => (
+        <span className="inline-flex items-center justify-end gap-1">
+          <span className="tabular-nums text-brand-muted">{formatMoney(i.estimated_cost)}</span>
+          {canUpdate && !isCancelled && (
+            <EditCostButton
+              itemId={i.id}
+              projectId={project.id}
+              description={i.description}
+              quantity={Number(i.quantity)}
+              unitCost={Number(i.quantity) > 0 ? Math.round((Number(i.estimated_cost) / Number(i.quantity)) * 100) / 100 : 0}
+            />
+          )}
+        </span>
+      ),
     },
     {
       header: "Subtotal",
@@ -327,7 +437,7 @@ export default async function ProjectDetailPage({
       header: "",
       className: "text-right",
       accessor: (i) =>
-        canUpdate ? (
+        canUpdate && !itemsLocked && !isCancelled ? (
           <ConfirmButton
             label="Eliminar"
             confirmTitle="¿Eliminar esta línea?"
@@ -596,13 +706,12 @@ export default async function ProjectDetailPage({
           </div>
         ) : (
           <div className="border-t border-brand-border pt-5">
-            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-brand-muted">
+            <p className="mb-3 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs font-medium uppercase tracking-wide text-brand-muted">
               Avance del proyecto
-              {canUpdate && (
-                <span className="ml-2 font-normal normal-case tracking-normal">
-                  · haz clic en un paso para cambiar el estado
-                </span>
-              )}
+              <span className="hidden font-normal normal-case tracking-normal sm:inline">
+                {canUpdate ? "· haz clic en un paso para cambiar el estado · " : "· "}pasa el mouse por la ⓘ para ver qué significa
+              </span>
+              <InfoHint text="Un proyecto pasa por estos pasos: Planificación → Confirmado → En curso → Completado. El paso en azul es donde está ahora; los verdes ya se cumplieron. Si tienes permiso, haz clic en un paso para mover el proyecto ahí." />
             </p>
             <ol className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {PROJECT_FLOW.map((step, i) => {
@@ -625,17 +734,22 @@ export default async function ProjectDetailPage({
                 const content = (
                   <>
                     {circle}
-                    <span
-                      className={`text-sm ${current ? "font-semibold text-brand-text" : done ? "text-brand-text" : "text-brand-muted"}`}
-                    >
-                      {PROJECT_STATUS_LABELS[step]}
+                    <span className="flex min-w-0 flex-col">
+                      <span
+                        className={`text-sm ${current ? "font-semibold text-brand-text" : done ? "text-brand-text" : "text-brand-muted"}`}
+                      >
+                        {PROJECT_STATUS_LABELS[step]}
+                      </span>
+                      <span className="text-xs leading-snug text-brand-muted">{STEP_HELP[step]?.sub}</span>
                     </span>
+                    <Info size={14} aria-hidden className="ml-auto shrink-0 self-start text-brand-muted" />
                   </>
                 );
                 const base =
                   "flex w-full items-center gap-2.5 rounded-[var(--radius-md)] border px-3 py-2.5 text-left";
                 return (
-                  <li key={step}>
+                  <Tooltip key={step} text={STEP_HELP[step]?.help ?? ""}>
+                  <li>
                     {canUpdate && !current && i !== currentStep && step === "COMPLETED" ? (
                       <CompleteProjectStep
                         projectId={project.id}
@@ -671,6 +785,7 @@ export default async function ProjectDetailPage({
                       </div>
                     )}
                   </li>
+                  </Tooltip>
                 );
               })}
             </ol>
@@ -729,81 +844,159 @@ export default async function ProjectDetailPage({
           const Icon = t.icon;
           const active = activeTab === t.key;
           return (
-            <Link
-              key={t.key}
-              href={`/projects/${id}?tab=${t.key}`}
-              className={`inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm transition-colors ${
-                active
-                  ? "border-brand-accent font-medium text-brand-accent"
-                  : "border-transparent text-brand-muted hover:text-brand-text"
-              }`}
-            >
-              <Icon size={15} aria-hidden />
-              {t.label}
-            </Link>
+            <Tooltip key={t.key} text={t.hint}>
+              <Link
+                href={`/projects/${id}?tab=${t.key}`}
+                className={`inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm transition-colors ${
+                  active
+                    ? "border-brand-accent font-medium text-brand-accent"
+                    : "border-transparent text-brand-muted hover:text-brand-text"
+                }`}
+              >
+                <Icon size={15} aria-hidden />
+                {t.label}
+                <Info size={12} aria-hidden className="opacity-60" />
+              </Link>
+            </Tooltip>
           );
         })}
       </nav>
 
       {activeTab === "resumen" ? (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <section className="flex flex-col gap-4 lg:col-span-2">
-            <SectionHeader
-              title="Líneas del proyecto"
-              description="Servicios y productos del evento, con su costo estimado."
-              count={items.length}
-            />
-            <DataTable
-              columns={itemColumns}
-              rows={items}
-              keyFor={(i) => i.id}
-              maxWidth="max-w-none"
-              emptyMessage="Sin líneas todavía. Agrega la primera abajo."
-            />
-            {canUpdate && <NewProjectItemForm projectId={project.id} services={services} />}
+        <div className="flex flex-col gap-6">
+          {/* Servicios en una línea; el detalle está en la pestaña Servicios. */}
+          <Card className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <span className="flex items-center gap-1.5 text-sm font-semibold text-brand-text">
+              <ListChecks size={16} className="text-brand-accent" aria-hidden />
+              Servicios
+              <InfoHint text="Lo que se le vende al cliente en este evento. El detalle (cada línea, su origen y su costo estimado) está en la pestaña Servicios." />
+            </span>
+            <span className="text-sm text-brand-text">
+              {items.length} {items.length === 1 ? "línea" : "líneas"} · <strong className="tabular-nums">{formatMoney(linesTotal)}</strong>
+            </span>
+            <span className="text-sm text-brand-muted">
+              Costo estimado <span className="tabular-nums">{formatMoney(estimatedCostTotal)}</span> · margen{" "}
+              <span className={estimatedMargin !== null && estimatedMargin < 0 ? "text-brand-danger" : ""}>{formatPercent(estimatedMargin)}</span>
+            </span>
+            <Link href={`/projects/${id}?tab=servicios`} className="ml-auto text-sm font-medium text-brand-accent hover:underline">
+              Ver servicios →
+            </Link>
+          </Card>
 
-            <Card className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div>
-                <p className="text-xs text-brand-muted">Total de líneas</p>
-                <p className="text-lg font-semibold tabular-nums">{formatMoney(linesTotal)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-brand-muted">Costo estimado</p>
-                <p className="text-lg font-semibold tabular-nums">{formatMoney(estimatedCostTotal)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-brand-muted">Margen estimado</p>
-                <p
-                  className={`text-lg font-semibold tabular-nums ${estimatedMargin !== null && estimatedMargin < 0 ? "text-brand-danger" : ""}`}
-                >
-                  {formatPercent(estimatedMargin)}
-                </p>
-              </div>
-              {project.budget > 0 && (
-                <div className="sm:col-span-3">
-                  <div className="mb-1.5 flex justify-between text-xs text-brand-muted">
-                    <span>Costo estimado vs. presupuesto</span>
-                    <span className="tabular-nums">
-                      {((estimatedCostTotal / project.budget) * 100).toFixed(0)}% de{" "}
-                      {formatMoney(project.budget)}
-                    </span>
-                  </div>
-                  <ProgressBar
-                    pct={(estimatedCostTotal / project.budget) * 100}
-                    danger={estimatedCostTotal > project.budget}
-                  />
-                </div>
-              )}
-            </Card>
-          </section>
-
-          <section>
-            <SectionHeader title="Detalles del evento" description="Fecha, lugar, responsable y presupuesto." />
+          <section className="max-w-3xl">
+            <SectionHeader title="Detalles del evento" description="Nombre, responsable, fecha, lugar y presupuesto." />
             <Card>
               <ProjectEditForm project={project} members={members} />
             </Card>
           </section>
         </div>
+      ) : activeTab === "servicios" ? (
+        <section className="flex flex-col gap-4">
+          <SectionHeader
+            title="Servicios del proyecto"
+            description="Lo que se le vende al cliente en este evento, con su costo estimado."
+            count={items.length}
+          />
+
+          {itemsLocked ? (
+            <Callout
+              icon={<Lock size={18} />}
+              title={`Estas líneas vienen de ${quotationNumber ?? "la cotización"} (aprobada) y quedan fijas`}
+              description="Es lo que el cliente aprobó. Si pide algo de más, haz una cotización adicional: cuando la apruebe, sus líneas se suman aquí solas. El costo estimado (interno) sí se puede corregir con el lápiz."
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                {canCreateQuotation && !isCancelled && (
+                  <Link
+                    href={`/quotations/new?project=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}?tab=servicios`)}`}
+                  >
+                    <Button size="sm" icon={<Plus size={14} />}>
+                      Nueva cotización adicional
+                    </Button>
+                  </Link>
+                )}
+                {pendingAdditional.map((q) => (
+                  <Link
+                    key={q.id}
+                    href={withReturnTo(`/quotations/${q.id}`, `/projects/${project.id}?tab=servicios`)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-brand-border bg-brand-surface px-2.5 py-1 text-xs text-brand-text hover:border-brand-accent"
+                  >
+                    {q.number} · {QUOTATION_STATUS_LABELS[q.status] ?? q.status} · {formatMoney(q.total, q.currency)}
+                  </Link>
+                ))}
+              </div>
+            </Callout>
+          ) : (
+            <Callout
+              icon={<ListChecks size={18} />}
+              title="Proyecto sin cotización aprobada: las líneas se escriben aquí"
+              description={
+                openQuotation
+                  ? `La cotización ${openQuotation.number} (${QUOTATION_STATUS_LABELS[openQuotation.status] ?? openQuotation.status}) se armó con estas líneas: cuando el cliente la apruebe, sus líneas reemplazan estas y quedan fijas.`
+                  : "Puedes agregar o quitar líneas mientras el proyecto no esté Completado. Para que el cliente apruebe los precios por escrito, crea una cotización con estas líneas."
+              }
+              tone="amber"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                {openQuotation ? (
+                  <Link href={withReturnTo(`/quotations/${openQuotation.id}`, `/projects/${project.id}?tab=servicios`)}>
+                    <Button size="sm" variant="outline" icon={<FileText size={14} />}>
+                      Abrir {openQuotation.number}
+                    </Button>
+                  </Link>
+                ) : (
+                  canCreateQuotation && items.length > 0 && !isCancelled && <CreateQuotationButton projectId={project.id} />
+                )}
+              </div>
+            </Callout>
+          )}
+
+          <DataTable
+            columns={itemColumns}
+            rows={items}
+            keyFor={(i) => i.id}
+            maxWidth="max-w-none"
+            emptyMessage={itemsLocked ? "Sin líneas." : "Sin líneas todavía. Agrega la primera abajo."}
+          />
+          {canUpdate && !itemsLocked && !isCancelled && project.status !== "COMPLETED" && (
+            <NewProjectItemForm projectId={project.id} services={services} />
+          )}
+
+          <Card className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <p className="text-xs text-brand-muted">Total de líneas</p>
+              <p className="text-lg font-semibold tabular-nums">{formatMoney(linesTotal)}</p>
+            </div>
+            <div>
+              <p className="flex items-center gap-1 text-xs text-brand-muted">
+                Costo estimado
+                <InfoHint text="Lo que crees que te costará hacer el evento (suma del costo estimado de cada línea). Es interno: el cliente no lo ve." />
+              </p>
+              <p className="text-lg font-semibold tabular-nums">{formatMoney(estimatedCostTotal)}</p>
+            </div>
+            <div>
+              <p className="flex items-center gap-1 text-xs text-brand-muted">
+                Margen estimado
+                <InfoHint text="(Total de líneas − costo estimado) ÷ total de líneas. La utilidad real (con los gastos de verdad) está en Finanzas." />
+              </p>
+              <p
+                className={`text-lg font-semibold tabular-nums ${estimatedMargin !== null && estimatedMargin < 0 ? "text-brand-danger" : ""}`}
+              >
+                {formatPercent(estimatedMargin)}
+              </p>
+            </div>
+            {project.budget > 0 && (
+              <div className="sm:col-span-3">
+                <div className="mb-1.5 flex justify-between text-xs text-brand-muted">
+                  <span>Costo estimado vs. presupuesto</span>
+                  <span className="tabular-nums">
+                    {((estimatedCostTotal / project.budget) * 100).toFixed(0)}% de {formatMoney(project.budget)}
+                  </span>
+                </div>
+                <ProgressBar pct={(estimatedCostTotal / project.budget) * 100} danger={estimatedCostTotal > project.budget} />
+              </div>
+            )}
+          </Card>
+        </section>
       ) : activeTab === "finanzas" ? (
         <div className="flex flex-col gap-8">
           <section>

@@ -102,8 +102,21 @@ export async function createQuotationAction(
 
 
   const companyId = await getPrimaryCompanyId();
-  const number = await generateQuotationNumber(companyId);
   const supabase = await createSupabaseClient();
+
+  // Cotización ADICIONAL de un proyecto (pestaña Servicios): mismo cliente
+  // que el proyecto; al aprobarse, sus líneas se suman al proyecto.
+  const projectId = String(formData.get("project_id") ?? "") || null;
+  if (projectId) {
+    const { data: proj } = await supabase.from("projects").select("client_id, status").eq("id", projectId).maybeSingle();
+    if (!proj) return { error: "No se encontró el proyecto." };
+    if (proj.status === "CANCELLED") return { error: "El proyecto está cancelado." };
+    if (proj.client_id !== parsed.data.client_id) {
+      return { error: "La cotización adicional debe ser para el mismo cliente del proyecto." };
+    }
+  }
+
+  const number = await generateQuotationNumber(companyId);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -180,6 +193,7 @@ export async function createQuotationAction(
       commission_tax_rate_percent: commissionTaxRatePercent,
       status: "DRAFT",
       created_by: user?.id,
+      project_id: projectId,
       ...paymentTermsFields,
     })
     .select("id")
@@ -438,6 +452,126 @@ export async function approveQuotationAction(quotationId: string): Promise<void>
     approved_by: user?.id,
     approved_at: new Date().toISOString(),
   });
+
+  // Cotización ligada a un proyecto (adicional, o creada desde sus líneas):
+  // sus líneas se suman a la pestaña Servicios del proyecto (migración 086).
+  const { data: q } = await supabase.from("quotations").select("project_id").eq("id", quotationId).single();
+  if (q?.project_id) {
+    const { error } = await supabase.rpc("project_apply_quotation", { p_quotation_id: quotationId });
+    // PGRST202 = la función aún no existe (migración 086 sin aplicar): la aprobación sigue valiendo.
+    if (error && error.code !== "PGRST202") throw new Error(dbErrorMessage(error.message));
+    revalidatePath(`/projects/${q.project_id}`);
+  }
+}
+
+/**
+ * Proyecto creado SIN cotización: arma una cotización en Borrador con sus
+ * líneas (pestaña Servicios → "Crear cotización con estas líneas") para que
+ * el cliente la apruebe. Al aprobarse pasa a ser la cotización del proyecto
+ * y sus líneas reemplazan las escritas a mano. Impuesto: el del servicio o
+ * el predeterminado (se puede cambiar en la cotización mientras esté en
+ * Borrador).
+ */
+export async function createQuotationFromProjectAction(projectId: string): Promise<{ error: string | null }> {
+  await requirePermission("quotations.create");
+  const supabase = await createSupabaseClient();
+  const companyId = await getPrimaryCompanyId();
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, client_id, contact_id, quotation_id, status, number")
+    .eq("id", projectId)
+    .single();
+  if (!project) return { error: "No se encontró el proyecto." };
+  if (project.quotation_id) return { error: "Este proyecto ya tiene una cotización aprobada." };
+  if (project.status === "CANCELLED") return { error: "El proyecto está cancelado." };
+
+  // Si ya hay una en curso, se abre esa (no se duplican).
+  const { data: open } = await supabase
+    .from("quotations")
+    .select("id")
+    .eq("project_id", projectId)
+    .eq("created_from_project", true)
+    .in("status", ["DRAFT", "SENT", "VIEWED", "NEGOTIATING"])
+    .maybeSingle();
+  if (open) redirect(`/quotations/${open.id}`);
+
+  const { data: items } = await supabase
+    .from("project_items")
+    .select("service_id, description, quantity, unit_price, estimated_cost, sort_order, services(default_tax_rate_id)")
+    .eq("project_id", projectId)
+    .order("sort_order");
+  if (!items?.length) return { error: "Agrega al menos una línea antes de crear la cotización." };
+
+  const { data: taxRates } = await supabase
+    .from("tax_rates")
+    .select("id, rate, treatment, is_default")
+    .eq("company_id", companyId)
+    .eq("is_active", true);
+  const fallback = (taxRates ?? []).find((t) => t.is_default) ?? (taxRates ?? [])[0];
+  if (!fallback) return { error: "Configura al menos un impuesto en Configuración → Impuestos." };
+
+  const { data: company } = await supabase.from("companies").select("base_currency").eq("id", companyId).single();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const number = await generateQuotationNumber(companyId);
+  const { data: created, error } = await supabase
+    .from("quotations")
+    .insert({
+      company_id: companyId,
+      client_id: project.client_id,
+      contact_id: project.contact_id,
+      project_id: project.id,
+      created_from_project: true,
+      number,
+      issue_date: todayISO(),
+      currency: company?.base_currency ?? "DOP",
+      exchange_rate: 1,
+      status: "DRAFT",
+      created_by: user?.id,
+    })
+    .select("id")
+    .single();
+  if (error || !created) return { error: dbErrorMessage(error?.message ?? "No se pudo crear la cotización.") };
+
+  const rows = items.map((it, index) => {
+    const service = (Array.isArray(it.services) ? it.services[0] : it.services) as { default_tax_rate_id: string | null } | null;
+    const rate = (taxRates ?? []).find((t) => t.id === service?.default_tax_rate_id) ?? fallback;
+    const quantity = Number(it.quantity);
+    const unitPrice = Number(it.unit_price);
+    const base = quantity * unitPrice;
+    const tax = rate.treatment === "GRAVADO" ? Math.round(Math.max(0, base) * (Number(rate.rate) / 100) * 100) / 100 : 0;
+    return {
+      quotation_id: created.id,
+      service_id: it.service_id,
+      description: it.description,
+      quantity,
+      unit_price: unitPrice,
+      discount: 0,
+      tax,
+      estimated_unit_cost: quantity > 0 ? Math.round((Number(it.estimated_cost) / quantity) * 100) / 100 : 0,
+      subtotal: calculateItemSubtotal({ quantity, unit_price: unitPrice, discount: 0, tax }),
+      tax_rate_id: rate.id,
+      tax_treatment: rate.treatment,
+      tax_rate_percent: rate.rate,
+      sort_order: index,
+    };
+  });
+  const { error: itemsError } = await supabase.from("quotation_items").insert(rows);
+  if (itemsError) return { error: dbErrorMessage(itemsError.message) };
+  await recalculateQuotationTotals(created.id);
+
+  await logAudit({
+    companyId,
+    action: "CREATE",
+    entityType: "quotation",
+    entityId: created.id,
+    newValues: { desde_proyecto: project.number, lineas: rows.length },
+  });
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath("/quotations");
+  redirect(`/quotations/${created.id}`);
 }
 
 /**

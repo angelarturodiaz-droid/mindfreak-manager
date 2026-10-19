@@ -92,8 +92,8 @@ const QUOTATION_FLOW = [
   },
   {
     label: "Proyecto",
-    sub: "Ya es un proyecto",
-    help: "Con esta cotización ya se creó el proyecto (evento). El trabajo sigue en el proyecto: tareas, gastos y facturas. La cotización queda como referencia de lo aprobado.",
+    sub: "Ya es parte de un proyecto",
+    help: "Esta cotización ya está en un proyecto: o lo creó, o se sumó como cotización adicional (algo que el cliente pidió de más). Sus líneas están en la pestaña Servicios del proyecto y el trabajo sigue ahí: tareas, gastos y facturas.",
   },
 ] as const;
 

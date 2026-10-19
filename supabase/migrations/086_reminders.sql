@@ -1,4 +1,6 @@
--- 086 — Motor de recordatorios (prueba BE), acordado el 30-sep y el 18-oct.
+-- 086 — Motor de recordatorios (prueba BE) y Servicios del proyecto (prueba BN),
+-- acordados el 30-sep y el 18-oct. Las dos partes van en la misma migración
+-- para pegar una sola en el SQL Editor.
 --
 -- Recordatorios automáticos por correo a CLIENTES:
 --   * Facturas abiertas: según días respecto al vencimiento (por defecto
@@ -8,11 +10,13 @@
 -- Más la lista diaria "para recordar por WhatsApp" (la persona lo envía
 -- desde su WhatsApp con el chat ya escrito).
 --
--- Decisiones del usuario (18-oct): al correo que tiene registrado el
--- cliente; solo facturas ya emitidas y, si la factura es de un proyecto,
--- solo cuando el proyecto está Completado; sin copia por correo (queda
--- registro en Gestión de cobro y en la campana del responsable). El
--- interruptor general arranca apagado mientras se trabaja con datos de prueba.
+-- Decisiones del usuario (18-oct): solo facturas ya emitidas, contando
+-- desde su fecha de vencimiento (si es de un proyecto, se pone un
+-- vencimiento posterior al cierre del evento); a los contactos del cliente
+-- marcados «Recibe recordatorios de cobro» (ej. el contable) o, si no hay,
+-- al correo registrado del cliente; sin copia por correo (queda registro en
+-- Gestión de cobro y en la campana del responsable). El interruptor general
+-- arranca apagado mientras se trabaja con datos de prueba.
 --
 -- Seguridad: el correo lo envía la app (SMTP del servidor). La tarea diaria
 -- (pg_cron + pg_net) llama a la app con una clave guardada SOLO en Supabase
@@ -22,6 +26,11 @@
 -- retenciones ni fiscal_snapshot.
 
 -- ---------------------------------------------------------------- tablas
+
+-- Contacto(s) del cliente que reciben los recordatorios de cobro (ej. el
+-- contable). Si ninguno está marcado, se usa el correo del cliente.
+alter table public.client_contacts
+  add column if not exists receives_billing boolean not null default false;
 
 create table if not exists public.reminder_settings (
   company_id uuid primary key references public.companies (id) on delete cascade,
@@ -193,6 +202,13 @@ begin
         'contact_name', ct.full_name,
         'contact_email', ct.email,
         'contact_phone', ct.phone,
+        -- Contactos marcados «Recibe recordatorios de cobro».
+        'billing', coalesce((
+          select jsonb_agg(jsonb_build_object('name', bc.full_name, 'email', bc.email, 'phone', bc.phone)
+                           order by bc.is_primary desc, bc.created_at)
+          from public.client_contacts bc
+          where bc.client_id = i.client_id and bc.receives_billing
+        ), '[]'::jsonb),
         'sent_steps', coalesce((
           select jsonb_agg(jsonb_build_object('kind', l.kind, 'step', l.step))
           from public.reminder_log l
@@ -213,11 +229,6 @@ begin
         and i.balance > 0
         and i.due_date is not null
         and i.due_date between current_date - 130 and current_date + 70
-        -- Factura de un proyecto: solo cuando el proyecto está Completado.
-        and (
-          i.project_id is null
-          or exists (select 1 from public.projects pj where pj.id = i.project_id and pj.status = 'COMPLETED')
-        )
     ), '[]'::jsonb),
     'surveys', coalesce((
       select jsonb_agg(jsonb_build_object(
@@ -422,3 +433,151 @@ select cron.schedule(
     and exists (select 1 from vault.decrypted_secrets where name = 'reminders_cron_secret');
   $cron$
 );
+
+
+-- ================================================================
+-- SERVICIOS DEL PROYECTO (prueba BN, 18-oct)
+-- ================================================================
+-- Lo aprobado por el cliente no se toca: si el proyecto viene de una
+-- cotización aprobada, sus líneas (servicios) quedan fijas; solo se corrige
+-- el costo estimado (dato interno). Lo que el cliente pide de más va por una
+-- COTIZACIÓN ADICIONAL ligada al proyecto: al aprobarse, sus líneas se suman
+-- solas (project_apply_quotation). En un proyecto creado sin cotización las
+-- líneas se escriben a mano y se puede "Crear cotización con estas líneas";
+-- al aprobarse, esa cotización pasa a ser la del proyecto y sus líneas
+-- reemplazan las escritas a mano. No toca montos de facturas ni impuestos.
+
+alter table public.project_items
+  add column if not exists source_quotation_id uuid references public.quotations (id) on delete set null;
+create index if not exists idx_project_items_source_quotation on public.project_items (source_quotation_id);
+
+-- Cotización armada con "Crear cotización con estas líneas" (proyecto sin cotización).
+alter table public.quotations
+  add column if not exists created_from_project boolean not null default false;
+
+-- Origen de las líneas que ya existen: las copiadas al convertir la cotización.
+update public.project_items pi
+   set source_quotation_id = p.quotation_id
+  from public.projects p
+ where pi.project_id = p.id
+   and p.quotation_id is not null
+   and pi.source_quotation_id is null
+   and exists (
+     select 1 from public.quotation_items qi
+      where qi.quotation_id = p.quotation_id and qi.description = pi.description
+   );
+
+-- Protección en la base: proyecto con cotización aprobada → líneas fijas.
+create or replace function public.guard_project_items_locked()
+returns trigger
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  v_qid uuid;
+  v_ok boolean;
+begin
+  if public.mf_locked_docs_bypass() then
+    return coalesce(new, old);
+  end if;
+  select quotation_id into v_qid from public.projects where id = coalesce(new.project_id, old.project_id);
+  -- Proyecto sin cotización (o borrándose en cascada): líneas libres.
+  if v_qid is null then
+    return coalesce(new, old);
+  end if;
+
+  if tg_op = 'INSERT' then
+    select exists (
+      select 1 from public.quotations q
+       where q.id = new.source_quotation_id
+         and q.status = 'APPROVED'
+         and (q.project_id = new.project_id or q.id = v_qid)
+    ) into v_ok;
+    if not coalesce(v_ok, false) then
+      raise exception 'locked_project_items: este proyecto viene de una cotización aprobada; para agregar algo haz una cotización adicional.'
+        using errcode = 'P0001';
+    end if;
+    return new;
+  elsif tg_op = 'UPDATE' then
+    if (new.project_id, new.description, new.quantity, new.unit_price, new.subtotal, new.service_id, new.source_quotation_id)
+       is distinct from
+       (old.project_id, old.description, old.quantity, old.unit_price, old.subtotal, old.service_id, old.source_quotation_id) then
+      raise exception 'locked_project_items: las líneas vienen de una cotización aprobada; solo se puede corregir el costo estimado.'
+        using errcode = 'P0001';
+    end if;
+    return new;
+  else
+    raise exception 'locked_project_items: las líneas vienen de una cotización aprobada y no se pueden eliminar.'
+      using errcode = 'P0001';
+  end if;
+end;
+$function$;
+
+drop trigger if exists trg_project_items_locked on public.project_items;
+create trigger trg_project_items_locked
+  before insert or update or delete on public.project_items
+  for each row execute function public.guard_project_items_locked();
+
+revoke all on function public.guard_project_items_locked() from public, anon, authenticated;
+
+-- Al aprobar una cotización ligada a un proyecto (adicional, o la creada
+-- desde las líneas de un proyecto sin cotización): suma sus líneas al
+-- proyecto. Si el proyecto no tenía cotización, esta pasa a ser la suya.
+-- Se puede llamar varias veces: no duplica.
+create or replace function public.project_apply_quotation(p_quotation_id uuid)
+returns integer
+language plpgsql
+volatile
+security definer
+set search_path to 'public'
+as $function$
+declare
+  v_q record;
+  v_proj record;
+  v_sort int;
+  v_n int := 0;
+begin
+  select id, company_id, project_id, status, created_from_project into v_q
+    from public.quotations where id = p_quotation_id;
+  if v_q.id is null
+     or not (v_q.company_id in (select public.user_company_ids()))
+     or not (public.has_permission('quotations.approve') or public.has_permission('projects.update')) then
+    raise exception 'project_forbidden: sin permiso' using errcode = '42501';
+  end if;
+  if v_q.status <> 'APPROVED' or v_q.project_id is null then
+    return 0;
+  end if;
+  if exists (select 1 from public.project_items where source_quotation_id = v_q.id) then
+    return 0;
+  end if;
+  select id, quotation_id, status into v_proj from public.projects where id = v_q.project_id;
+  if v_proj.id is null or v_proj.status = 'CANCELLED' then
+    return 0;
+  end if;
+
+  perform set_config('mf.allow_locked_docs', 'on', true);
+  if v_proj.quotation_id is null then
+    if v_q.created_from_project then
+      delete from public.project_items where project_id = v_proj.id and source_quotation_id is null;
+    end if;
+    update public.projects set quotation_id = v_q.id where id = v_proj.id;
+  end if;
+
+  select coalesce(max(sort_order), -1) + 1 into v_sort from public.project_items where project_id = v_proj.id;
+  insert into public.project_items
+    (project_id, service_id, description, quantity, unit_price, estimated_cost, subtotal, sort_order, source_quotation_id)
+  select v_proj.id, qi.service_id, qi.description, qi.quantity, qi.unit_price,
+         qi.quantity * qi.estimated_unit_cost, qi.subtotal,
+         v_sort + (row_number() over (order by qi.sort_order, qi.created_at))::int - 1,
+         v_q.id
+    from public.quotation_items qi
+   where qi.quotation_id = v_q.id;
+  get diagnostics v_n = row_count;
+  perform set_config('mf.allow_locked_docs', 'off', true);
+  return v_n;
+end;
+$function$;
+
+revoke all on function public.project_apply_quotation(uuid) from public, anon;
+grant execute on function public.project_apply_quotation(uuid) to authenticated;

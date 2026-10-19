@@ -22,7 +22,13 @@ export function NewQuotationForm({
   paymentTerms,
   taxRates,
   defaultClientId,
+  projectId,
+  lockClient,
 }: {
+  /** Cotización adicional de un proyecto (queda ligada a él). */
+  projectId?: string;
+  /** El cliente es el del proyecto: no se cambia. */
+  lockClient?: boolean;
   clients: { id: string; name: string; stage: string }[];
   /** Cliente preseleccionado (ej. al venir desde el detalle del cliente). */
   defaultClientId?: string;
@@ -40,7 +46,16 @@ export function NewQuotationForm({
 
   return (
     <form action={formAction} className="max-w-md space-y-4">
-      <Select label="Cliente" name="client_id" required defaultValue={defaultClientId ?? ""}>
+      {projectId && <input type="hidden" name="project_id" value={projectId} />}
+      {lockClient && <input type="hidden" name="client_id" value={defaultClientId ?? ""} />}
+      <Select
+        label="Cliente"
+        name={lockClient ? undefined : "client_id"}
+        required={!lockClient}
+        disabled={lockClient}
+        defaultValue={defaultClientId ?? ""}
+        hint={lockClient ? "Es el cliente del proyecto." : undefined}
+      >
         <option value="" disabled>
           Selecciona un cliente…
         </option>

@@ -59,6 +59,7 @@ type InvoiceRow = {
   contact_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
+  billing: { name: string | null; email: string | null; phone: string | null }[];
   sent_steps: SentStep[];
 };
 
@@ -87,6 +88,8 @@ export type PlannedReminder = {
   /** "3 días antes", "Recordatorio 1 de 2"… */
   stepText: string;
   recipient: string | null;
+  /** "María Gómez (cobros)" / "correo del cliente". */
+  recipientLabel?: string | null;
   /** Por qué no se envía (sin correo, envíos apagados…). */
   blocked: string | null;
   subject: string;
@@ -138,8 +141,11 @@ export function planReminders(data: Candidates, today: string, origin: string): 
       step,
       title: `${inv.number} · ${inv.client_name ?? "—"}`,
       stepText: stepLabel(step),
-      recipient: to?.email ?? null,
-      blocked: to ? null : "El cliente no tiene correo registrado.",
+      recipient: to ? to.emails.join(", ") : null,
+      recipientLabel: to?.label ?? null,
+      blocked: to
+        ? null
+        : "Sin correo: marca un contacto «Recibe recordatorios de cobro» en el cliente o ponle correo al cliente.",
       subject,
       html: invoiceReminderEmailHtml({
         companyName: co.name,
@@ -186,6 +192,7 @@ export function planReminders(data: Candidates, today: string, origin: string): 
       title: `Encuesta · ${s.project_name}`,
       stepText: `Recordatorio ${step} de ${co.survey_max}`,
       recipient: s.recipient_email,
+      recipientLabel: s.recipient_name,
       blocked: s.recipient_email ? null : "La encuesta no tiene correo.",
       subject: `Recordatorio: ${subject}`,
       html: surveyEmailHtml({

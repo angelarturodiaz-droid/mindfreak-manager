@@ -101,7 +101,8 @@ export async function getProjectsProfitabilityReport(filters: ProfitabilityFilte
   const projectIds = projects.map((p) => p.id);
 
   const [quotations, invoices, payments, items, expenses] = await Promise.all([
-    supabase.from("quotations").select("project_id, total, exchange_rate").in("project_id", projectIds),
+    // Cotizado = cotizaciones aprobadas (la del proyecto y las adicionales).
+    supabase.from("quotations").select("project_id, total, exchange_rate").in("project_id", projectIds).eq("status", "APPROVED"),
     supabase
       .from("invoices")
       .select("project_id, total, exchange_rate")

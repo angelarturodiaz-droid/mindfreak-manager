@@ -84,14 +84,67 @@ export async function getProject(id: string) {
   return data;
 }
 
-export async function listProjectItems(projectId: string) {
+export type ProjectItem = {
+  id: string;
+  project_id: string;
+  service_id: string | null;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  estimated_cost: number;
+  subtotal: number;
+  sort_order: number;
+  source_quotation_id?: string | null;
+  /** Cotización de donde viene la línea (pestaña Servicios). */
+  source?: { number: string; status: string } | null;
+};
+
+export async function listProjectItems(projectId: string): Promise<ProjectItem[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
+    .from("project_items")
+    .select("*, source:quotations!source_quotation_id(number, status)")
+    .eq("project_id", projectId)
+    .order("sort_order");
+  if (!error) {
+    return (data ?? []).map((r) => ({
+      ...r,
+      source: (Array.isArray(r.source) ? r.source[0] : r.source) ?? null,
+    })) as ProjectItem[];
+  }
+  // Antes de la migración 086 no existe el origen de la línea.
+  const { data: plain, error: plainError } = await supabase
     .from("project_items")
     .select("*")
     .eq("project_id", projectId)
     .order("sort_order");
+  if (plainError) throw new Error(plainError.message);
+  return (plain ?? []) as ProjectItem[];
+}
+
+/** Datos mínimos del proyecto (para la cotización adicional). */
+export async function getProjectBasic(id: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("projects")
+    .select("id, number, name, client_id, status")
+    .eq("id", id)
+    .single();
   if (error) throw new Error(error.message);
+  return data;
+}
+
+/** Cotización creada desde las líneas de un proyecto sin cotización, si está en curso. */
+export async function getOpenProjectQuotation(projectId: string): Promise<{ id: string; number: string; status: string } | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("quotations")
+    .select("id, number, status")
+    .eq("project_id", projectId)
+    .eq("created_from_project", true)
+    .in("status", ["DRAFT", "SENT", "VIEWED", "NEGOTIATING"])
+    .maybeSingle();
+  if (error) return null;
   return data;
 }
 
@@ -202,7 +255,9 @@ export async function getProjectProfitability(projectId: string) {
       supabase
         .from("quotations")
         .select("total, exchange_rate")
-        .eq("project_id", projectId),
+        .eq("project_id", projectId)
+        // Cotizado = lo que el cliente aprobó (la cotización del proyecto y las adicionales aprobadas).
+        .eq("status", "APPROVED"),
       supabase
         .from("invoices")
         .select("total, exchange_rate")

@@ -3,7 +3,7 @@
  * ("issued_invoice_locked: la factura ya fue emitida…"): se quita el código
  * para mostrarlo al usuario. Los demás errores pasan igual.
  */
-const CODED = ["issued_invoice_locked", "locked_quotation"];
+const CODED = ["issued_invoice_locked", "locked_quotation", "locked_project_items"];
 
 export function dbErrorMessage(message: string): string {
   for (const code of CODED) {

@@ -93,33 +93,64 @@ export function fillReminder(template: string, values: Record<string, string | n
     .trim();
 }
 
+export type BillingContact = { name: string | null; email: string | null; phone: string | null };
+
 export type ContactInfo = {
   client_name: string | null;
   client_email: string | null;
   client_phone: string | null;
+  /** Contacto principal (para el saludo si no hay contacto de cobros). */
   contact_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
+  /** Contactos marcados «Recibe recordatorios de cobro». */
+  billing?: BillingContact[] | null;
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+export type EmailRecipient = {
+  emails: string[];
+  /** Nombre para el saludo ("Hola María,"). */
+  name: string | null;
+  /** De dónde salió: contactos de cobros o el correo del cliente. */
+  via: "billing" | "client";
+  /** "María Gómez (cobros)" / "correo del cliente". */
+  label: string;
+};
+
 /**
- * Decisión 18-oct: el correo que tiene registrado el CLIENTE (ficha del
- * cliente). El saludo usa el nombre del contacto principal si existe.
+ * Decisión 18-oct: a los contactos marcados «Recibe recordatorios de cobro»
+ * (ej. el contable; pueden ser varios) y, si no hay ninguno con correo, al
+ * correo registrado del cliente.
  */
-export function pickEmailRecipient(c: ContactInfo): { email: string; name: string | null } | null {
+export function pickEmailRecipient(c: ContactInfo): EmailRecipient | null {
+  const billing = (c.billing ?? []).filter((b) => b.email && EMAIL_RE.test(b.email.trim()));
+  if (billing.length) {
+    const emails = Array.from(new Set(billing.map((b) => b.email!.trim())));
+    const names = billing.map((b) => b.name).filter(Boolean) as string[];
+    return {
+      emails,
+      name: names[0] ?? null,
+      via: "billing",
+      label: `${names.length ? names.join(", ") : emails.join(", ")} (cobros)`,
+    };
+  }
   const clientEmail = c.client_email?.trim();
-  if (clientEmail && EMAIL_RE.test(clientEmail)) return { email: clientEmail, name: c.contact_name ?? null };
+  if (clientEmail && EMAIL_RE.test(clientEmail)) {
+    return { emails: [clientEmail], name: c.contact_name ?? null, via: "client", label: "correo del cliente" };
+  }
   return null;
 }
 
-/** Teléfono para WhatsApp: el registrado en el cliente; si no tiene, el del contacto principal. */
+/** Teléfono para WhatsApp: contacto de cobros → teléfono del cliente → contacto principal. */
 export function pickPhone(c: ContactInfo): string | null {
-  return c.client_phone?.trim() || c.contact_phone?.trim() || null;
+  const billingPhone = (c.billing ?? []).map((b) => b.phone?.trim()).find(Boolean);
+  return billingPhone || c.client_phone?.trim() || c.contact_phone?.trim() || null;
 }
 
-/** Solo facturas sueltas o de un proyecto ya Completado (decisión 18-oct). */
-export function projectAllowsReminder(projectId: string | null, projectStatus: string | null | undefined): boolean {
-  return !projectId || projectStatus === "COMPLETED";
+/** Nombre para el saludo de WhatsApp: contacto de cobros → contacto principal. */
+export function pickGreetingName(c: ContactInfo): string | null {
+  const b = (c.billing ?? []).find((x) => x.name);
+  return b?.name ?? c.contact_name ?? null;
 }

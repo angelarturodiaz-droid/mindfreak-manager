@@ -44,6 +44,7 @@ import {
 } from "@/features/projects/display";
 import { ClientEditForm } from "./client-edit-form";
 import { NewContactForm } from "./new-contact-form";
+import { BillingContactToggle } from "./billing-contact-toggle";
 import { DocumentList } from "@/components/documents/document-list";
 import { UploadDocumentForm } from "@/components/documents/upload-document-form";
 import { listDocuments } from "@/features/documents/queries";
@@ -180,6 +181,8 @@ export default async function ClientDetailPage({
     hasPermission("deliveries.view"),
     hasPermission("deliveries.create"),
   ]);
+  // «Recibe recordatorios de cobro» en cada contacto.
+  const canEditContacts = await hasPermission("clients.update");
   // Historial de entregas (acuses de recibo) del cliente.
   const deliveries = canViewDeliveries ? await listDeliveriesForClient(id).catch(() => []) : [];
   const { totals } = activity;
@@ -556,7 +559,7 @@ export default async function ClientDetailPage({
             <SectionHeader
               title="Contactos"
               count={contacts.length}
-              description="Personas con las que tratas en esta empresa."
+              description="Personas con las que tratas en esta empresa. Marca «Recibe recordatorios de cobro» en quien debe recibir los recordatorios de las facturas (ej. el contable); si no marcas ninguno, van al correo del cliente."
             />
             {contacts.length === 0 ? (
               <p className="rounded-[var(--radius-lg)] border border-dashed border-brand-border p-6 text-center text-sm text-brand-muted">
@@ -603,6 +606,15 @@ export default async function ClientDetailPage({
                       {!contact.email && !contact.phone && (
                         <span className="text-xs text-brand-muted">Sin correo ni teléfono</span>
                       )}
+                      <div className="mt-1">
+                        <BillingContactToggle
+                          contactId={contact.id}
+                          clientId={client.id}
+                          checked={Boolean((contact as { receives_billing?: boolean }).receives_billing)}
+                          hasEmail={Boolean(contact.email)}
+                          disabled={!canEditContacts}
+                        />
+                      </div>
                     </div>
                   </Card>
                 ))}

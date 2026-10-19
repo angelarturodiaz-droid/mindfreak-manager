@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { InfoHint } from "@/components/ui/info-hint";
+import { getReminderRecipient } from "@/features/reminders/queries";
 import { FlowSteps } from "@/components/documents/flow-steps";
 import { getProjectBilling } from "@/features/projects/queries";
 import { billingProgress } from "@/features/projects/billing-progress";
@@ -408,6 +410,7 @@ export default async function InvoiceDetailPage({
         : "Sin cuentas en el PDF";
   const responsibleName =
     companyUsers.find((u) => u.id === invoice.responsible_user_id)?.full_name ?? null;
+  const reminderTo = await getReminderRecipient(invoice.client_id).catch(() => ({ text: null, via: null }));
   const collectionSummary = `${responsibleName ? `Responsable: ${responsibleName}` : "Sin responsable"} · ${
     collectionHistory.length === 1 ? "1 gestión" : `${collectionHistory.length} gestiones`
   }`;
@@ -751,7 +754,15 @@ export default async function InvoiceDetailPage({
               title="NCF / Vencimiento"
               info="Comprobante fiscal y fecha de vencimiento. Se editan mientras la factura está en Borrador."
             >
-              <InvoiceHeaderForm invoice={invoice} paymentTerms={paymentTerms} />
+              <InvoiceHeaderForm
+                invoice={invoice}
+                paymentTerms={paymentTerms}
+                projectEvent={
+                  invoice.project_id && project
+                    ? { number: project.number, eventDate: (project as { event_date?: string | null }).event_date ?? null }
+                    : null
+                }
+              />
             </SideSection>
           )}
 
@@ -766,6 +777,24 @@ export default async function InvoiceDetailPage({
               currentUserId={invoice.responsible_user_id}
               users={companyUsers}
             />
+
+            {/* A quién le llegan los recordatorios automáticos (Configuración → Recordatorios). */}
+            <div
+              className={`mt-3 rounded-[var(--radius-md)] px-3 py-2 text-xs ${
+                reminderTo.text ? "bg-brand-surface-hover text-brand-text" : "bg-brand-warning-bg text-brand-text"
+              }`}
+            >
+              <span className="flex items-center gap-1 font-medium">
+                Los recordatorios van a:
+                <InfoHint text="Los recordatorios de cobro (correo automático y WhatsApp) van a los contactos del cliente marcados «Recibe recordatorios de cobro» (ej. el contable). Si no hay ninguno, al correo registrado del cliente. Se cambia en la ficha del cliente, en Contactos." />
+              </span>
+              <span className="block break-words">
+                {reminderTo.text ?? "nadie: el cliente no tiene correo ni contactos de cobros con correo."}
+              </span>
+              <Link href={`/clients/${invoice.client_id}`} className="text-brand-accent hover:underline">
+                Cambiar en la ficha del cliente
+              </Link>
+            </div>
 
             <div className="mt-4">
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-brand-muted">

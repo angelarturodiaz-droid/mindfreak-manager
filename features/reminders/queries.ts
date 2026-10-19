@@ -8,8 +8,9 @@ import {
   DEFAULT_INVOICE_DAYS,
   fillReminder,
   invoiceStepForToday,
+  pickEmailRecipient,
+  pickGreetingName,
   pickPhone,
-  projectAllowsReminder,
   stepLabel,
   whenText,
 } from "./schedule";
@@ -146,7 +147,7 @@ export async function listWhatsappToday(): Promise<WhatsappTodayItem[]> {
     supabase
       .from("invoices")
       .select(
-        "id, number, due_date, balance, currency, project_id, projects(status), clients(name, phone, client_contacts(full_name, phone, email, is_primary))",
+        "id, number, due_date, balance, currency, clients(name, phone, client_contacts(full_name, phone, email, is_primary, receives_billing))",
       )
       .in("status", ["ISSUED", "PARTIALLY_PAID", "OVERDUE"])
       .gt("balance", 0)
@@ -172,9 +173,6 @@ export async function listWhatsappToday(): Promise<WhatsappTodayItem[]> {
   const items: WhatsappTodayItem[] = [];
   for (const inv of invs) {
     if (!inv.due_date) continue;
-    // Factura de un proyecto: solo cuando el proyecto está Completado.
-    const project = (Array.isArray(inv.projects) ? inv.projects[0] : inv.projects) as { status: string } | null;
-    if (!projectAllowsReminder(inv.project_id, project?.status)) continue;
     const step = invoiceStepForToday({
       dueDate: inv.due_date,
       today,
@@ -185,22 +183,29 @@ export async function listWhatsappToday(): Promise<WhatsappTodayItem[]> {
     const client = (Array.isArray(inv.clients) ? inv.clients[0] : inv.clients) as {
       name: string;
       phone: string | null;
-      client_contacts: { full_name: string; phone: string | null; email: string | null; is_primary: boolean }[] | null;
+      client_contacts:
+        | { full_name: string; phone: string | null; email: string | null; is_primary: boolean; receives_billing: boolean }[]
+        | null;
     } | null;
     const contacts = client?.client_contacts ?? [];
     const contact = contacts.find((c) => c.is_primary) ?? contacts[0] ?? null;
-    const phone = pickPhone({
+    const info = {
       client_name: client?.name ?? null,
       client_email: null,
       client_phone: client?.phone ?? null,
       contact_name: contact?.full_name ?? null,
       contact_email: contact?.email ?? null,
       contact_phone: contact?.phone ?? null,
-    });
+      billing: contacts
+        .filter((c) => c.receives_billing)
+        .map((c) => ({ name: c.full_name, email: c.email, phone: c.phone })),
+    };
+    const phone = pickPhone(info);
+    const greeting = pickGreetingName(info);
     const balanceText = formatMoney(Number(inv.balance), inv.currency);
     const cuando = whenText(inv.due_date, today, formatDate);
     const text = fillReminder(settings.whatsapp_message, {
-      contacto: (contact?.full_name ?? "").split(" ")[0],
+      contacto: (greeting ?? "").split(" ")[0],
       cliente: client?.name ?? "",
       empresa: company?.name ?? "",
       factura: inv.number,
@@ -212,7 +217,7 @@ export async function listWhatsappToday(): Promise<WhatsappTodayItem[]> {
       invoiceId: inv.id,
       number: inv.number,
       client: client?.name ?? "—",
-      contact: contact?.full_name ?? null,
+      contact: greeting,
       balanceText,
       cuando,
       step,
@@ -223,4 +228,37 @@ export async function listWhatsappToday(): Promise<WhatsappTodayItem[]> {
     });
   }
   return items.sort((a, b) => b.step - a.step);
+}
+
+/** A quién irían los recordatorios de una factura de este cliente (se muestra en la factura). */
+export async function getReminderRecipient(clientId: string): Promise<{ text: string | null; via: "billing" | "client" | null }> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("clients")
+    .select("email, client_contacts(full_name, email, phone, is_primary, receives_billing)")
+    .eq("id", clientId)
+    .maybeSingle();
+  if (!data) return { text: null, via: null };
+  const contacts = (data.client_contacts ?? []) as {
+    full_name: string;
+    email: string | null;
+    phone: string | null;
+    is_primary: boolean;
+    receives_billing?: boolean;
+  }[];
+  const primary = contacts.find((c) => c.is_primary) ?? contacts[0] ?? null;
+  const r = pickEmailRecipient({
+    client_name: null,
+    client_email: data.email,
+    client_phone: null,
+    contact_name: primary?.full_name ?? null,
+    contact_email: primary?.email ?? null,
+    contact_phone: primary?.phone ?? null,
+    billing: contacts.filter((c) => c.receives_billing).map((c) => ({ name: c.full_name, email: c.email, phone: c.phone })),
+  });
+  if (!r) return { text: null, via: null };
+  return {
+    text: r.via === "billing" ? `${r.label.replace(/ \(cobros\)$/, "")} · ${r.emails.join(", ")}` : `${r.emails[0]} (correo del cliente)`,
+    via: r.via,
+  };
 }
