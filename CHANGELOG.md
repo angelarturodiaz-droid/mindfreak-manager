@@ -1,5 +1,23 @@
 # CHANGELOG — Mindfreak Manager
 
+## v1.0.0 — Política de Privacidad, Términos de Uso y versión (2026-10-19)
+
+- Primera versión numerada: **v1.0.0** (`package.json` y `lib/app-info.ts`;
+  una prueba revisa que coincidan). Cada cambio importante sube la versión y
+  se anota aquí (1.0.1 corrección, 1.1.0 función nueva, 2.0.0 cambio grande).
+- **Pie de página** en el login (y las demás pantallas de acceso) y en todas
+  las pantallas del sistema: Política de Privacidad | Términos de Uso |
+  Soporte · «Mindfreak Events © 2026. Todos los derechos reservados. • v1.0.0»
+  (el año cambia solo).
+- **Ventana** de Política / Términos con índice (Ley 172-13 de RD) y páginas
+  públicas `/legal/privacidad` y `/legal/terminos` (sin iniciar sesión).
+  Textos en `lib/legal/content.ts` (versión de los textos 1.0) — borrador a
+  revisar por el abogado / contador.
+- **Menú de usuario**: Política, Términos, Soporte (info@mindfreakevents.com)
+  y la versión.
+- **Configuración → Sistema → Información del sistema**: nombre, empresa y
+  RNC, versión, ambiente, última actualización y enlaces.
+
 ## Recordatorios y Mensajes al cliente con lista por tipo (2026-10-19)
 
 - Migración **087**: `reminder_settings.invoice_enabled` (encendido propio de

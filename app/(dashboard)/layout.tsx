@@ -11,6 +11,7 @@ import { UserMenu } from "@/components/layout/user-menu";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { SidebarProvider } from "@/components/layout/sidebar-context";
 import { MobileMenuButton } from "@/components/layout/mobile-menu-button";
+import { LegalFooter } from "@/components/legal/legal-footer";
 
 export default async function DashboardLayout({
   children,
@@ -87,6 +88,7 @@ export default async function DashboardLayout({
           <UserMenu fullName={fullName} email={user.email ?? ""} brandAccent={brandAccent} />
         </header>
         <div className="flex flex-1 flex-col overflow-x-hidden bg-brand-background">{children}</div>
+        <LegalFooter className="border-t border-brand-border bg-brand-background" />
       </div>
     );
   }
@@ -121,6 +123,7 @@ export default async function DashboardLayout({
             {user && <UserMenu fullName={fullName} email={user.email ?? ""} brandAccent={brandAccent} />}
           </header>
           <div className="flex flex-1 flex-col overflow-x-hidden bg-brand-background">{children}</div>
+          <LegalFooter className="border-t border-brand-border bg-brand-background" />
         </div>
       </div>
     </SidebarProvider>

@@ -2,8 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, ShieldCheck, FileText, LifeBuoy } from "lucide-react";
 import { signOut } from "@/features/auth/actions";
+import { LegalDialog } from "@/components/legal/legal-dialog";
+import type { LegalSlug } from "@/lib/legal/content";
+import { APP_VERSION, SUPPORT_EMAIL } from "@/lib/app-info";
 
 function initials(name: string | null, email: string) {
   const source = name?.trim() || email;
@@ -22,6 +25,7 @@ export function UserMenu({
   brandAccent: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [legal, setLegal] = useState<LegalSlug | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -63,6 +67,35 @@ export function UserMenu({
             <User size={14} /> Mi perfil
           </Link>
 
+          <div className="mt-1 flex flex-col border-t border-brand-border pt-1 text-sm">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setLegal("privacidad");
+              }}
+              className="flex items-center justify-center gap-1.5 rounded-[var(--radius-md)] py-2 text-brand-text hover:bg-brand-surface-hover"
+            >
+              <ShieldCheck size={14} className="text-brand-muted" /> Política de Privacidad
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setLegal("terminos");
+              }}
+              className="flex items-center justify-center gap-1.5 rounded-[var(--radius-md)] py-2 text-brand-text hover:bg-brand-surface-hover"
+            >
+              <FileText size={14} className="text-brand-muted" /> Términos de Uso
+            </button>
+            <a
+              href={`mailto:${SUPPORT_EMAIL}?subject=Soporte%20Mindfreak%20Manager`}
+              className="flex items-center justify-center gap-1.5 rounded-[var(--radius-md)] py-2 text-brand-text hover:bg-brand-surface-hover"
+            >
+              <LifeBuoy size={14} className="text-brand-muted" /> Soporte
+            </a>
+          </div>
+
           <form action={signOut}>
             <button
               type="submit"
@@ -71,8 +104,10 @@ export function UserMenu({
               <LogOut size={14} /> Cerrar sesión
             </button>
           </form>
+          <p className="mt-2 text-[11px] text-brand-muted">Versión {APP_VERSION}</p>
         </div>
       )}
+      <LegalDialog slug={legal} onClose={() => setLegal(null)} />
     </div>
   );
 }

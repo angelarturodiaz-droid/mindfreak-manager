@@ -1035,3 +1035,9 @@ pulsa el botón.
   recordatorios de cobro»). Factura sin vencimiento: la alerta se movió arriba
   (debajo de «Emitida…», no sale si está Pagada o Cancelada); se quitó de la
   tarjeta NCF / Vencimiento; sigue la nota en Gestión de cobro.
+- (19-oct, v1.0.0) Política de Privacidad y Términos de Uso: textos en
+  `lib/legal/content.ts` (subir LEGAL_VERSION/LEGAL_DATE al cambiarlos).
+  Versión del sistema en `package.json` + `lib/app-info.ts` (APP_VERSION,
+  RELEASE_DATE; la prueba `tests/unit/app-info.test.ts` exige que coincidan).
+  `/legal/*` es ruta pública en `lib/supabase/proxy.ts`. Pie: `LegalFooter`
+  (AuthShell y layout del dashboard). Soporte = mailto info@mindfreakevents.com.

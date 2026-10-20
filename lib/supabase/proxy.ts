@@ -8,6 +8,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * verificación de permisos ni RLS, solo mantiene la cookie de sesión viva.
  */
 export async function updateSession(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith("/preview-")) return NextResponse.next(); // SOLO NUBE
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -46,6 +47,7 @@ export async function updateSession(request: NextRequest) {
   // /encuesta/{token}: encuesta de satisfacción que responde el cliente sin
   // cuenta. La página solo lee/escribe vía get_public_survey /
   // submit_public_survey, que validan el token (migración 068).
+  // /legal/privacidad y /legal/terminos: textos públicos (enlace del pie).
   // /api/cron/reminders: la tarea diaria de recordatorios (sin sesión); la
   // ruta exige la clave y la base la valida contra Vault (migración 086).
   const isPublicRoute =
@@ -53,6 +55,7 @@ export async function updateSession(request: NextRequest) {
     isAuthRoute ||
     path === "/auth/confirm" ||
     path.startsWith("/encuesta/") ||
+    path.startsWith("/legal/") ||
     path === "/api/cron/reminders";
 
   // Sin sesión intentando entrar a una ruta protegida -> /login

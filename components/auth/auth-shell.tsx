@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import type { ReactNode } from "react";
+import { LegalFooter } from "@/components/legal/legal-footer";
 
 /**
  * Envoltorio compartido por las 3 pantallas de autenticación (login,
@@ -67,7 +68,8 @@ export function AuthShell({
       </div>
 
       {/* Panel de formulario */}
-      <div className="flex flex-1 flex-col items-center justify-center px-6 py-10">
+      <div className="flex flex-1 flex-col items-center px-6 pt-10">
+        <div className="flex w-full flex-1 flex-col items-center justify-center">
         {/* Marca compacta — solo en mobile/tablet */}
         <div className="mb-8 flex items-center lg:hidden">
           <div className="inline-flex items-center rounded-xl bg-brand-secondary px-5 py-3">
@@ -83,6 +85,9 @@ export function AuthShell({
         </div>
 
         <div className="flex w-full max-w-sm flex-col gap-8">{children}</div>
+        </div>
+        {/* Política, términos, soporte, derechos y versión. */}
+        <LegalFooter className="mt-8" />
       </div>
     </main>
   );
