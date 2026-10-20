@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { ExternalLink, X } from "lucide-react";
 import { LEGAL_DOCS, type LegalSlug } from "@/lib/legal/content";
@@ -16,10 +17,12 @@ export function LegalDialog({ slug, onClose }: { slug: LegalSlug | null; onClose
     return () => document.removeEventListener("keydown", onKey);
   }, [slug, onClose]);
 
-  if (!slug) return null;
+  if (!slug || typeof document === "undefined") return null;
   const doc = LEGAL_DOCS[slug];
 
-  return (
+  // Se dibuja directo en <body>: si se abre desde el menú de usuario (dentro
+  // del encabezado con efecto de desenfoque), quedaba encerrada y cortada.
+  return createPortal(
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 text-left sm:p-6">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
       <div
@@ -53,6 +56,7 @@ export function LegalDialog({ slug, onClose }: { slug: LegalSlug | null; onClose
           {copyrightText()} · v{APP_VERSION}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

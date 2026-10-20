@@ -14,7 +14,7 @@
   Textos en `lib/legal/content.ts` (versión de los textos 1.0) — borrador a
   revisar por el abogado / contador.
 - **Menú de usuario**: Política, Términos, Soporte (info@mindfreakevents.com)
-  y la versión.
+  y la versión. (Corregido: la ventana abierta desde el menú salía cortada.)
 - **Configuración → Sistema → Información del sistema**: nombre, empresa y
   RNC, versión, ambiente, última actualización y enlaces.
 
