@@ -65,54 +65,15 @@ export function SurveySettingsForm({ settings, canManage }: { settings: Settings
           hint="La pregunta “¿Deseas enviar la encuesta de satisfacción al cliente?” aparece marcada; se puede desmarcar en cada cierre."
         />
 
-        <details className="rounded-[var(--radius-md)] border border-brand-border px-4 py-3">
-          <summary className="cursor-pointer text-sm font-medium text-brand-text">
-            Recordatorios automáticos
-          </summary>
-          <p className="mt-2 text-xs text-brand-muted">
-            Si el cliente no responde, se le manda un recordatorio por correo cada «Recordar después de» días, hasta el
-            máximo. Salen solos cada día a las 8:15 a. m. siempre que en Configuración → Recordatorios estén encendidos
-            los envíos automáticos. «Enviar después de (horas)» todavía no se usa: la encuesta sale al finalizar el
-            proyecto.
-          </p>
-          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Input
-              label="Enviar después de (horas)"
-              name="send_delay_hours"
-              type="number"
-              min={0}
-              max={720}
-              defaultValue={settings.send_delay_hours}
-              disabled={!canManage}
-            />
-            <Input
-              label="Recordar después de (días)"
-              name="reminder_after_days"
-              type="number"
-              min={1}
-              max={60}
-              defaultValue={settings.reminder_after_days}
-              disabled={!canManage}
-            />
-            <Input
-              label="Máximo de recordatorios"
-              name="max_reminders"
-              type="number"
-              min={0}
-              max={5}
-              defaultValue={settings.max_reminders}
-              disabled={!canManage}
-            />
-          </div>
-          <div className="mt-3">
-            <Toggle
-              name="reminder_enabled"
-              defaultChecked={settings.reminder_enabled}
-              disabled={!canManage}
-              label="Recordatorios automáticos"
-            />
-          </div>
-        </details>
+        <p className="rounded-[var(--radius-md)] bg-brand-surface-hover px-3 py-2 text-xs text-brand-muted">
+          Los <strong>recordatorios</strong> a quien no responde (cada cuántos días y cuántas veces) se configuran en{" "}
+          <a href="/settings/reminders" className="text-brand-accent hover:underline">
+            Configuración → Recordatorios
+          </a>
+          , junto con los de las facturas.
+        </p>
+        {/* Se conserva tal cual (todavía no se usa: la encuesta sale al finalizar el proyecto). */}
+        <input type="hidden" name="send_delay_hours" value={settings.send_delay_hours} />
       </Card>
 
       <Card className="flex flex-col gap-4">

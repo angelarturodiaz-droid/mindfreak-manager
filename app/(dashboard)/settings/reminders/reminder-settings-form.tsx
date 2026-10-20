@@ -18,7 +18,22 @@ type Settings = {
   invoice_subject: string;
   invoice_message: string;
   whatsapp_message: string;
+  /** Recordatorios de la encuesta (se guardan en survey_settings). */
+  survey_reminder_enabled: boolean;
+  survey_after_days: number;
+  survey_max: number;
 };
+
+/** Título de cada bloque (1, 2, 3…) para que se vea el orden de la pantalla. */
+function BlockTitle({ n, title, hint }: { n: number; title: string; hint: string }) {
+  return (
+    <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-brand-muted">
+      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-accent text-[11px] text-white">{n}</span>
+      {title}
+      <InfoHint text={hint} />
+    </h3>
+  );
+}
 
 const VARIABLES =
   "Variables que se reemplazan solas: {cliente} (nombre del cliente), {contacto} (primer nombre del contacto), {factura} (número), {monto} (lo pendiente, con moneda), {vence} (fecha de vencimiento), {cuando} (ej. «vence hoy», «venció hace 10 días») y {empresa}.";
@@ -30,6 +45,7 @@ export function ReminderSettingsForm({ settings }: { settings: Settings }) {
   useSuccessToast({ success: state.success, successId: state.successId });
   const [days, setDays] = useState<number[]>(normalizeDays(settings.invoice_days));
   const [enabled, setEnabled] = useState(settings.auto_send_enabled);
+  const [surveyOn, setSurveyOn] = useState(settings.survey_reminder_enabled);
   const [newAmount, setNewAmount] = useState("5");
   const [newWhen, setNewWhen] = useState<"before" | "on" | "after">("after");
   const [problem, setProblem] = useState<string | null>(null);
@@ -78,6 +94,12 @@ export function ReminderSettingsForm({ settings }: { settings: Settings }) {
     >
       <input type="hidden" name="invoice_days" value={days.join(",")} />
 
+      <BlockTitle
+        n={1}
+        title="Interruptor general"
+        hint="Vale para todos los recordatorios por correo: facturas y encuesta. Apagado = no sale ningún correo a clientes."
+      />
+
       <Card className="flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -85,7 +107,7 @@ export function ReminderSettingsForm({ settings }: { settings: Settings }) {
               Envíos automáticos por correo
               <InfoHint text="Si está encendido, cada día a las 8:15 a. m. el sistema revisa las facturas abiertas y las encuestas sin responder, y les manda el correo al cliente cuando toca. Cada envío queda en la Gestión de cobro de la factura y en la campana del responsable. Apagado = no sale ningún correo a clientes (la lista de WhatsApp sigue funcionando)." />
             </h3>
-            <p className="text-xs text-brand-muted">Facturas por vencer o vencidas y encuestas sin responder.</p>
+            <p className="text-xs text-brand-muted">Vale para las facturas (bloque 2) y la encuesta (bloque 3).</p>
           </div>
           <span
             className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -123,6 +145,11 @@ export function ReminderSettingsForm({ settings }: { settings: Settings }) {
         </label>
       </Card>
 
+      <BlockTitle
+        n={2}
+        title="Facturas"
+        hint="Recordatorios de cobro de las facturas emitidas con saldo: cuándo salen y qué dicen (correo y WhatsApp)."
+      />
       <Card className="flex flex-col gap-4">
         <div>
           <h3 className="flex items-center gap-1.5 font-semibold text-brand-text">
@@ -186,7 +213,7 @@ export function ReminderSettingsForm({ settings }: { settings: Settings }) {
       <Card className="flex flex-col gap-4">
         <div>
           <h3 className="flex items-center gap-1.5 font-semibold text-brand-text">
-            Mensajes
+            Mensajes de la factura
             <InfoHint text={VARIABLES} />
           </h3>
           <p className="text-xs text-brand-muted">
@@ -206,10 +233,64 @@ export function ReminderSettingsForm({ settings }: { settings: Settings }) {
         />
       </Card>
 
-      <div>
+      <BlockTitle
+        n={3}
+        title="Encuesta de satisfacción"
+        hint="Si el cliente no responde la encuesta que se le envió al terminar el proyecto, se le recuerda por correo. Sale solo si el interruptor general (bloque 1) también está encendido. El asunto y el texto del correo de la encuesta están en Configuración → Encuesta de satisfacción."
+      />
+      <Card className="flex flex-col gap-4">
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            name="survey_reminder_enabled"
+            checked={surveyOn}
+            onChange={(e) => setSurveyOn(e.target.checked)}
+            className="peer sr-only"
+          />
+          <span
+            aria-hidden
+            className="relative mt-0.5 h-5 w-9 shrink-0 rounded-full bg-brand-disabled transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow after:transition-all peer-checked:bg-brand-accent peer-checked:after:left-[18px] peer-focus-visible:ring-2 peer-focus-visible:ring-brand-accent"
+          />
+          <span className="flex flex-col">
+            <span className="text-sm font-medium text-brand-text">Recordar la encuesta si el cliente no responde</span>
+            <span className="text-xs text-brand-muted">
+              {!surveyOn
+                ? "Apagado: no se le recuerda la encuesta al cliente."
+                : enabled
+                  ? "Encendido: sale sola en la revisión diaria (o con «Enviar ahora»)."
+                  : "Ojo: el interruptor general (bloque 1) está apagado, así que no saldrá hasta encenderlo."}
+            </span>
+          </span>
+        </label>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input
+            label="Recordar cada (días)"
+            name="survey_after_days"
+            type="number"
+            min={1}
+            max={60}
+            defaultValue={settings.survey_after_days}
+            disabled={!surveyOn}
+            hint="Días sin respuesta desde el último envío o recordatorio."
+          />
+          <Input
+            label="Máximo de recordatorios"
+            name="survey_max"
+            type="number"
+            min={0}
+            max={5}
+            defaultValue={settings.survey_max}
+            disabled={!surveyOn}
+            hint="Después de esto no se le insiste más."
+          />
+        </div>
+      </Card>
+
+      <div className="flex flex-wrap items-center gap-3 border-t border-brand-border pt-4">
         <Button type="submit" loading={pending}>
           Guardar cambios
         </Button>
+        <span className="text-xs text-brand-muted">Guarda los bloques 1, 2 y 3.</span>
       </div>
 
       <ResultDialog open={Boolean(problem)} tone="warning" title="Revisa el recordatorio" onClose={() => setProblem(null)}>

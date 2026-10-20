@@ -60,7 +60,14 @@ export default async function RemindersSettingsPage({
         </span>
       ),
     },
-    { header: "Para", accessor: (r) => <span className="text-brand-muted">{r.recipient || "—"}</span> },
+    {
+      header: "Para",
+      accessor: (r) => (
+        <span className="text-brand-muted">
+          {r.recipient || (r.channel === "WHATSAPP" ? "sin teléfono (se eligió el chat)" : "—")}
+        </span>
+      ),
+    },
     {
       header: "Estado",
       accessor: (r) => (
@@ -89,30 +96,18 @@ export default async function RemindersSettingsPage({
       )}
 
       <ReminderSettingsForm
-        key={settings.updated_at ?? "nuevo"}
+        key={`${settings.updated_at ?? "nuevo"}-${survey?.updated_at ?? ""}`}
         settings={{
           auto_send_enabled: settings.auto_send_enabled,
           invoice_days: settings.invoice_days,
           invoice_subject: settings.invoice_subject,
           invoice_message: settings.invoice_message,
           whatsapp_message: settings.whatsapp_message,
+          survey_reminder_enabled: Boolean(survey?.reminder_enabled),
+          survey_after_days: survey?.reminder_after_days ?? 3,
+          survey_max: survey?.max_reminders ?? 1,
         }}
       />
-
-      <Card className="flex flex-col gap-2">
-        <h3 className="flex items-center gap-1.5 font-semibold text-brand-text">
-          Encuesta de satisfacción
-          <InfoHint text="Si el cliente no responde, se le recuerda por correo cada cierto número de días, hasta un máximo. Se configura en Configuración → Encuesta de satisfacción y sale solo si los envíos automáticos de arriba están encendidos." />
-        </h3>
-        <p className="text-sm text-brand-text">
-          {survey?.reminder_enabled
-            ? `Se recuerda cada ${survey.reminder_after_days} día${survey.reminder_after_days === 1 ? "" : "s"} si no ha respondido, hasta ${survey.max_reminders} ${survey.max_reminders === 1 ? "vez" : "veces"}.`
-            : "Los recordatorios de la encuesta están apagados."}{" "}
-          <Link href="/settings/surveys" className="text-brand-accent hover:underline">
-            Cambiar en Encuesta de satisfacción
-          </Link>
-        </p>
-      </Card>
 
       <RemindersToday autoSendEnabled={settings.auto_send_enabled} />
 

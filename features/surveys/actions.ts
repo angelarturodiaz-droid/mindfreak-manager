@@ -605,9 +605,12 @@ export async function updateSurveySettingsAction(_prev: SurveyActionState, formD
 
   const cid = await companyId();
   const supabase = await createClient();
+  // Los recordatorios de la encuesta se guardan en Configuración → Recordatorios: aquí no se tocan.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { reminder_enabled, reminder_after_days, max_reminders, ...rest } = parsed.data;
   const { error } = await supabase
     .from("survey_settings")
-    .upsert({ company_id: cid, ...parsed.data, survey_intro: parsed.data.survey_intro ?? "" });
+    .upsert({ company_id: cid, ...rest, survey_intro: rest.survey_intro ?? "" });
   if (error) return { error: error.message };
   revalidatePath("/settings/surveys");
   return { error: null, success: "Configuración guardada.", successId: Date.now() };

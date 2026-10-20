@@ -64,15 +64,36 @@ export async function saveReminderSettingsAction(
   });
   if (error) return { error: "No se pudo guardar. Intenta de nuevo." };
 
+  // Bloque 3: recordatorios de la encuesta (viven en survey_settings).
+  const survey_reminder_enabled = formData.get("survey_reminder_enabled") === "on";
+  const afterRaw = formData.get("survey_after_days");
+  const maxRaw = formData.get("survey_max");
+  const surveyUpdate: { reminder_enabled: boolean; reminder_after_days?: number; max_reminders?: number } = {
+    reminder_enabled: survey_reminder_enabled,
+  };
+  if (afterRaw !== null) {
+    const n = Number(afterRaw);
+    if (!Number.isInteger(n) || n < 1 || n > 60) return { error: "«Recordar cada» debe estar entre 1 y 60 días." };
+    surveyUpdate.reminder_after_days = n;
+  }
+  if (maxRaw !== null) {
+    const n = Number(maxRaw);
+    if (!Number.isInteger(n) || n < 0 || n > 5) return { error: "El máximo de recordatorios de la encuesta va de 0 a 5." };
+    surveyUpdate.max_reminders = n;
+  }
+  const { error: surveyError } = await supabase.from("survey_settings").update(surveyUpdate).eq("company_id", ids[0]);
+  if (surveyError) return { error: "Se guardó lo de facturas, pero no lo de la encuesta. Intenta de nuevo." };
+
   await logAudit({
     companyId: ids[0],
     action: "UPDATE",
     entityType: "reminder_settings",
     entityId: ids[0],
     oldValues: before ?? null,
-    newValues: { auto_send_enabled, invoice_days },
+    newValues: { auto_send_enabled, invoice_days, encuesta: surveyUpdate },
   });
   revalidatePath("/settings/reminders");
+  revalidatePath("/settings/surveys");
   return {
     error: null,
     success: auto_send_enabled

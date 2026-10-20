@@ -1,5 +1,15 @@
 # CHANGELOG — Mindfreak Manager
 
+## Recordatorios en una sola pantalla (2026-10-19)
+
+- Configuración → Recordatorios en 3 bloques numerados: interruptor general,
+  Facturas y **Encuesta** (sus ajustes de recordatorio se mueven aquí desde
+  Configuración → Encuesta; se guardan en `survey_settings`). Un solo
+  «Guardar cambios» al final. La Encuesta ya no toca esos campos al guardar.
+- La etiqueta dice solo Encendido/Apagado; 8:15 a. m. se explica como hora de
+  la revisión diaria (en producción).
+- Historial: WhatsApp sin número → «sin teléfono (se eligió el chat)».
+
 ## Facturar desde una cotización sin proyecto (2026-10-18 noche)
 
 - Aviso en la factura: **sin fecha de vencimiento no hay recordatorios**
