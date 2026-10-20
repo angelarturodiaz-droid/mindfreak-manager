@@ -901,8 +901,16 @@ export default async function ProjectDetailPage({
           {itemsLocked ? (
             <Callout
               icon={<Lock size={18} />}
-              title={`Estas líneas vienen de ${quotationNumber ?? "la cotización"} (aprobada) y quedan fijas`}
-              description="Es lo que el cliente aprobó. Si pide algo de más, haz una cotización adicional: cuando la apruebe, sus líneas se suman aquí solas. El costo estimado (interno) sí se puede corregir con el lápiz."
+              title={
+                items.length === 0
+                  ? `La cotización ${quotationNumber ?? ""} se aprobó sin líneas`
+                  : `Estas líneas vienen de ${quotationNumber ?? "la cotización"} (aprobada) y quedan fijas`
+              }
+              description={
+                items.length === 0
+                  ? "Este proyecto no tiene servicios todavía. Si el cliente pidió algo, hazlo en una cotización adicional: cuando la apruebe, sus líneas aparecen aquí solas (y en cada línea podrás corregir el costo estimado con el lápiz)."
+                  : "Es lo que el cliente aprobó. Si pide algo de más, haz una cotización adicional: cuando la apruebe, sus líneas se suman aquí solas. El costo estimado (interno) sí se puede corregir con el lápiz."
+              }
             >
               <div className="flex flex-wrap items-center gap-2">
                 {canCreateQuotation && !isCancelled && (

@@ -15,6 +15,8 @@
   revisar por el abogado / contador.
 - **Menú de usuario**: Política, Términos, Soporte (info@mindfreakevents.com)
   y la versión. (Corregido: la ventana abierta desde el menú salía cortada.)
+- Proyecto → Servicios: si la cotización se aprobó sin líneas, el aviso lo
+  dice («se aprobó sin líneas») en vez de «quedan fijas».
 - **Configuración → Sistema → Información del sistema**: nombre, empresa y
   RNC, versión, ambiente, última actualización y enlaces.
 
