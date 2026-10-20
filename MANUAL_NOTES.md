@@ -958,7 +958,9 @@ pulsa el botón.
 - Solo facturas emitidas, contando desde su **vencimiento**. Factura de un
   proyecto: aviso con la fecha del evento junto a Vencimiento; **Usar otra
   fecha** permite escribir el vencimiento aunque haya condición de pago.
-- Arranca **apagado**. Encendido: sale solo cada día a las 8:15 a. m. Un
+- Arranca **apagado**. Encendido: el sistema revisa una vez al día a las 8:15 a. m.
+  (hora de la revisión, no de cuando se encendió; solo en producción, con la
+  clave en Vault). En localhost se envía con «Enviar ahora». Un
   recordatorio nunca se repite; si un día no corrió, se recupera hasta 2 días
   tarde.
 - *Ver qué sale hoy* (no envía; muestra el correo) · *Enviar ahora* (igual que

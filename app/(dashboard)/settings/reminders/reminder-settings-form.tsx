@@ -92,7 +92,7 @@ export function ReminderSettingsForm({ settings }: { settings: Settings }) {
               enabled ? "bg-brand-success-bg text-brand-success" : "bg-brand-surface-hover text-brand-muted"
             }`}
           >
-            {enabled ? "Encendido · 8:15 a. m." : "Apagado"}
+            {enabled ? "Encendido" : "Apagado"}
           </span>
         </div>
         <label className="flex cursor-pointer items-start gap-3">
@@ -113,6 +113,11 @@ export function ReminderSettingsForm({ settings }: { settings: Settings }) {
               A los contactos del cliente marcados «Recibe recordatorios de cobro» (ej. el contable) o, si no hay, al
               correo del cliente. Solo facturas emitidas, contando desde su vencimiento. Enciéndelo cuando trabajes con
               clientes reales.
+            </span>
+            <span className="mt-1 text-xs text-brand-muted">
+              <strong>Cuándo salen:</strong> el sistema revisa solo <strong>una vez al día, a las 8:15 a. m.</strong>{" "}
+              (esa es la hora de la revisión, no la hora en que lo encendiste). La revisión diaria funciona cuando el
+              sistema está en producción; mientras pruebas en tu computadora, usa «Enviar ahora» abajo.
             </span>
           </span>
         </label>
