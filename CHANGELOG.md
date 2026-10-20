@@ -16,6 +16,8 @@
   `saveSurveyReminderAction`, `saveInvoiceMessagesAction`; la Encuesta guarda
   solo sus textos.
 - Respaldo A0 → migración 088; limpieza Go-Live A1 → 089.
+- «Descartar cambios» en cada formulario; tras «Enviar ahora» la lista de
+  «hoy» se actualiza sola (antes seguía mostrando lo ya enviado).
 
 ## Recordatorios en una sola pantalla (2026-10-19)
 

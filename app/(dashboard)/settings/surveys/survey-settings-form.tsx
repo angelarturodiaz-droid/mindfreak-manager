@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useActionState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { Input, Textarea } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,6 +23,19 @@ type Settings = {
 
 
 export function SurveySettingsForm({ settings, canManage }: { settings: Settings; canManage: boolean }) {
+  const [k, setK] = useState(0);
+  return <SurveySettingsFormInner key={k} settings={settings} canManage={canManage} onDiscard={() => setK(k + 1)} />;
+}
+
+function SurveySettingsFormInner({
+  settings,
+  canManage,
+  onDiscard,
+}: {
+  settings: Settings;
+  canManage: boolean;
+  onDiscard: () => void;
+}) {
   const [state, formAction, pending] = useActionState<SurveyActionState, FormData>(updateSurveySettingsAction, {
     error: null,
   });
@@ -78,9 +91,12 @@ export function SurveySettingsForm({ settings, canManage }: { settings: Settings
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
       {canManage && (
-        <div>
+        <div className="flex flex-wrap gap-2">
           <Button type="submit" loading={pending}>
             Guardar mensajes
+          </Button>
+          <Button type="button" variant="outline" onClick={onDiscard} hint="Deja los textos como estaban guardados. No se guarda nada.">
+            Descartar cambios
           </Button>
         </div>
       )}

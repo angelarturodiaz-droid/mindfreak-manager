@@ -13,11 +13,14 @@ const VARIABLES =
   "Se reemplazan solas: {cliente} (nombre del cliente), {contacto} (primer nombre del contacto de cobros o principal), {factura} (número), {monto} (lo pendiente, con moneda), {vence} (fecha de vencimiento), {cuando} (ej. «vence hoy», «venció hace 10 días») y {empresa}.";
 
 /** Mensajes al cliente → Facturación: lo que dice el recordatorio de cobro. */
-export function InvoiceMessagesForm({
-  settings,
-}: {
-  settings: { invoice_subject: string; invoice_message: string; whatsapp_message: string };
-}) {
+type InvoiceMessages = { invoice_subject: string; invoice_message: string; whatsapp_message: string };
+
+export function InvoiceMessagesForm({ settings }: { settings: InvoiceMessages }) {
+  const [k, setK] = useState(0);
+  return <InvoiceMessagesFormInner key={k} settings={settings} onDiscard={() => setK(k + 1)} />;
+}
+
+function InvoiceMessagesFormInner({ settings, onDiscard }: { settings: InvoiceMessages; onDiscard: () => void }) {
   const [state, formAction, pending] = useActionState<ReminderSettingsState, FormData>(saveInvoiceMessagesAction, {
     error: null,
   });
@@ -55,9 +58,12 @@ export function InvoiceMessagesForm({
           defaultValue={settings.whatsapp_message}
           hint="Se usa en la lista «Para recordar hoy por WhatsApp» de Facturas: el botón abre el chat con este mensaje ya escrito."
         />
-        <div className="border-t border-brand-border pt-4">
+        <div className="flex flex-wrap gap-2 border-t border-brand-border pt-4">
           <Button type="submit" loading={pending}>
             Guardar mensajes
+          </Button>
+          <Button type="button" variant="outline" onClick={onDiscard} hint="Deja los textos como estaban guardados. No se guarda nada.">
+            Descartar cambios
           </Button>
         </div>
       </Card>

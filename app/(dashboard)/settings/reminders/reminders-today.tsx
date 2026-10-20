@@ -44,7 +44,9 @@ export function RemindersToday({ autoSendEnabled }: { autoSendEnabled: boolean }
         setDialog({ tone: "danger", title: "No se pudo enviar", text: r.error });
         return;
       }
-      setResult(r);
+      // La lista de "hoy" se vuelve a revisar sola: lo que ya salió deja de aparecer.
+      const fresh = await previewRemindersAction();
+      setResult(fresh.error ? { ...r, items: [] } : fresh);
       if ((r.sent ?? 0) === 0 && (r.failed ?? 0) === 0) {
         setDialog({ tone: "warning", title: "No había nada que enviar", text: "Hoy no toca ningún recordatorio (o ya se enviaron)." });
       } else if ((r.failed ?? 0) > 0) {

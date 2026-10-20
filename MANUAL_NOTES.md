@@ -1026,3 +1026,6 @@ pulsa el botón.
   WhatsApp. Interruptor general apagado → no sale ningún correo.
 - Migraciones: 087 = encendido propio de facturas. Respaldo A0 → 088,
   limpieza Go-Live A1 → 089.
+- (19-oct) Cada formulario de Recordatorios y de Mensajes al cliente tiene
+  **«Descartar cambios»** junto a Guardar. Tras «Enviar ahora», la lista de
+  «hoy» se vuelve a revisar sola.

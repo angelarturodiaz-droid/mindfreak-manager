@@ -65,6 +65,20 @@ function useErrorDialog(state: ReminderSettingsState) {
   };
 }
 
+/** "Descartar cambios": vuelve a lo guardado sin guardar nada. */
+function DiscardButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={onClick}
+      hint="Deja todo como estaba guardado. No se guarda nada."
+    >
+      Descartar cambios
+    </Button>
+  );
+}
+
 function MessagesLink({ tipo, label }: { tipo: string; label: string }) {
   return (
     <Link
@@ -131,7 +145,14 @@ export function GeneralSwitch({ enabled: initial }: { enabled: boolean }) {
 
 // ───────────────────────────── Facturas por cobrar
 
-export function InvoiceReminderForm({ settings }: { settings: { invoice_enabled: boolean; invoice_days: number[] } }) {
+type InvoiceReminderSettings = { invoice_enabled: boolean; invoice_days: number[] };
+
+export function InvoiceReminderForm({ settings }: { settings: InvoiceReminderSettings }) {
+  const [k, setK] = useState(0);
+  return <InvoiceReminderFormInner key={k} settings={settings} onDiscard={() => setK(k + 1)} />;
+}
+
+function InvoiceReminderFormInner({ settings, onDiscard }: { settings: InvoiceReminderSettings; onDiscard: () => void }) {
   const [state, formAction, pending] = useActionState<ReminderSettingsState, FormData>(saveInvoiceReminderAction, {
     error: null,
   });
@@ -219,9 +240,12 @@ export function InvoiceReminderForm({ settings }: { settings: { invoice_enabled:
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-brand-border pt-4">
-          <Button type="submit" loading={pending}>
-            Guardar
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" loading={pending}>
+              Guardar
+            </Button>
+            <DiscardButton onClick={onDiscard} />
+          </div>
           <MessagesLink tipo="facturacion" label="Editar el texto que recibe el cliente →" />
         </div>
       </Card>
@@ -237,12 +261,26 @@ export function InvoiceReminderForm({ settings }: { settings: { invoice_enabled:
 
 // ───────────────────────────── Encuesta de satisfacción
 
-export function SurveyReminderForm({
+type SurveyReminderSettings = {
+  send_by_default: boolean;
+  reminder_enabled: boolean;
+  reminder_after_days: number;
+  max_reminders: number;
+};
+
+export function SurveyReminderForm({ settings, generalOn }: { settings: SurveyReminderSettings; generalOn: boolean }) {
+  const [k, setK] = useState(0);
+  return <SurveyReminderFormInner key={k} settings={settings} generalOn={generalOn} onDiscard={() => setK(k + 1)} />;
+}
+
+function SurveyReminderFormInner({
   settings,
   generalOn,
+  onDiscard,
 }: {
-  settings: { send_by_default: boolean; reminder_enabled: boolean; reminder_after_days: number; max_reminders: number };
+  settings: SurveyReminderSettings;
   generalOn: boolean;
+  onDiscard: () => void;
 }) {
   const [state, formAction, pending] = useActionState<ReminderSettingsState, FormData>(saveSurveyReminderAction, {
     error: null,
@@ -304,9 +342,12 @@ export function SurveyReminderForm({
           />
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-brand-border pt-4">
-          <Button type="submit" loading={pending}>
-            Guardar
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" loading={pending}>
+              Guardar
+            </Button>
+            <DiscardButton onClick={onDiscard} />
+          </div>
           <MessagesLink tipo="encuesta" label="Editar el texto que recibe el cliente →" />
         </div>
       </Card>
