@@ -10,7 +10,15 @@ import { Pagination } from "@/components/ui/pagination";
 import { Chip } from "@/components/ui/page-kit";
 import { PAGE_SIZE, parsePage } from "@/lib/utils/pagination";
 import { formatDateTime } from "@/lib/utils/dates";
-import { ReminderSettingsForm } from "./reminder-settings-form";
+import { GeneralSwitch, InvoiceReminderForm, SurveyReminderForm } from "./reminder-settings-form";
+import { TypePicker } from "@/components/settings/type-picker";
+
+/** Tipos de recordatorio (los "próximamente" quedan listos para agregarse). */
+const TYPES = [
+  { value: "facturas", label: "Facturas por cobrar" },
+  { value: "encuesta", label: "Encuesta de satisfacción" },
+  { value: "cotizaciones", label: "Cotizaciones por vencer", soon: true },
+];
 import { RemindersToday } from "./reminders-today";
 
 const STATUS: Record<ReminderLogRow["status"], { label: string; tone: "success" | "danger" | "muted" }> = {
@@ -22,9 +30,11 @@ const STATUS: Record<ReminderLogRow["status"], { label: string; tone: "success" 
 export default async function RemindersSettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; tipo?: string }>;
 }) {
-  const page = parsePage((await searchParams).page);
+  const sp = await searchParams;
+  const page = parsePage(sp.page);
+  const tipo = TYPES.some((t) => t.value === sp.tipo) ? sp.tipo! : "facturas";
   const [settings, log, survey] = await Promise.all([
     getReminderSettings(),
     listReminderLog(page),
@@ -85,9 +95,15 @@ export default async function RemindersSettingsPage({
       <div>
         <h2 className="flex items-center gap-2 text-lg font-semibold text-brand-primary">
           Recordatorios
-          <InfoHint text="El sistema recuerda a los clientes sus facturas por vencer o vencidas y las encuestas sin responder, por correo (automático) y por WhatsApp (lista diaria en Facturas, lo envías tú). Los avisos internos de la campana al responsable de cobro siguen funcionando aparte." />
+          <InfoHint text="Aquí se decide QUÉ recordatorios están encendidos y CUÁNDO salen. Lo que dice cada mensaje se edita en Configuración → Mensajes al cliente. Los avisos internos de la campana al responsable de cobro siguen funcionando aparte." />
         </h2>
-        <p className="text-sm text-brand-muted">Correos automáticos a clientes y lista diaria para WhatsApp.</p>
+        <p className="text-sm text-brand-muted">
+          Qué se le recuerda al cliente y cuándo. Los textos están en{" "}
+          <Link href="/settings/messages" className="text-brand-accent hover:underline">
+            Mensajes al cliente
+          </Link>
+          .
+        </p>
       </div>
 
       {!settings.ready && (
@@ -96,26 +112,45 @@ export default async function RemindersSettingsPage({
         </Card>
       )}
 
-      <ReminderSettingsForm
-        key={`${settings.updated_at ?? "nuevo"}-${survey?.updated_at ?? ""}`}
-        settings={{
-          auto_send_enabled: settings.auto_send_enabled,
-          invoice_days: settings.invoice_days,
-          invoice_subject: settings.invoice_subject,
-          invoice_message: settings.invoice_message,
-          whatsapp_message: settings.whatsapp_message,
-          survey_reminder_enabled: Boolean(survey?.reminder_enabled),
-          survey_after_days: survey?.reminder_after_days ?? 3,
-          survey_max: survey?.max_reminders ?? 1,
-        }}
+      <GeneralSwitch key={`g-${settings.updated_at ?? ""}`} enabled={settings.auto_send_enabled} />
+
+      <TypePicker
+        label="¿Qué recordatorio quieres configurar?"
+        hint="Cada tipo tiene su propio encendido y su calendario. Los textos que recibe el cliente se editan en Configuración → Mensajes al cliente."
+        options={TYPES}
+        value={tipo}
       />
+
+      {tipo === "facturas" && (
+        <InvoiceReminderForm
+          key={`f-${settings.updated_at ?? ""}`}
+          settings={{ invoice_enabled: settings.invoice_enabled, invoice_days: settings.invoice_days }}
+        />
+      )}
+      {tipo === "encuesta" && (
+        <SurveyReminderForm
+          key={`e-${survey?.updated_at ?? ""}`}
+          generalOn={settings.auto_send_enabled}
+          settings={{
+            send_by_default: survey?.send_by_default ?? true,
+            reminder_enabled: Boolean(survey?.reminder_enabled),
+            reminder_after_days: survey?.reminder_after_days ?? 3,
+            max_reminders: survey?.max_reminders ?? 1,
+          }}
+        />
+      )}
+      {tipo === "cotizaciones" && (
+        <Card className="text-sm text-brand-muted">
+          <strong className="text-brand-text">Próximamente.</strong> Avisar al cliente antes de que venza su cotización.
+          Cuando se agregue, tendrá aquí su encendido y su calendario, y su texto en Mensajes al cliente.
+        </Card>
+      )}
 
       <RemindersToday autoSendEnabled={settings.auto_send_enabled} />
 
       <section className="flex flex-col gap-3">
         <h3 className="flex items-center gap-1.5 font-semibold text-brand-text">
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-accent text-[11px] font-semibold text-white">5</span>
-          Historial de envíos — facturas y encuesta
+          Historial de envíos — todos los tipos
           <InfoHint text="Cada recordatorio enviado (o que falló) por correo o WhatsApp, de facturas y de la encuesta. Pasa el mouse por «Falló» para ver el motivo." />
         </h3>
         <DataTable

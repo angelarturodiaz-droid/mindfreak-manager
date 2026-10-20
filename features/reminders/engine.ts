@@ -33,6 +33,8 @@ type CompanyRow = {
   brand_primary: string | null;
   brand_accent: string | null;
   auto_send_enabled: boolean;
+  /** Recordatorios de facturas encendidos (migración 087; si falta, se toma como encendido). */
+  invoice_enabled?: boolean;
   invoice_days: number[];
   invoice_subject: string | null;
   invoice_message: string | null;
@@ -117,7 +119,7 @@ export function planReminders(data: Candidates, today: string, origin: string): 
 
   for (const inv of data.invoices) {
     const co = byCompany.get(inv.company_id);
-    if (!co) continue;
+    if (!co || co.invoice_enabled === false) continue;
     const done = inv.sent_steps.filter((s) => s.kind === "INVOICE").map((s) => s.step);
     const step = invoiceStepForToday({ dueDate: inv.due_date, today, days: co.invoice_days, done });
     if (step === null) continue;
@@ -231,7 +233,7 @@ export async function runReminders(opts: {
   const enabled = new Set(candidates.companies.filter((c) => c.auto_send_enabled).map((c) => c.company_id));
   const planned = planReminders(candidates, today, opts.origin).map((p) =>
     !p.blocked && !enabled.has(p.companyId)
-      ? { ...p, blocked: "Envíos automáticos apagados (Configuración → Recordatorios)." }
+      ? { ...p, blocked: "Interruptor general apagado (Configuración → Recordatorios)." }
       : p,
   );
   const result: ReminderRunResult = {

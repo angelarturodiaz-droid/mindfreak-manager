@@ -21,6 +21,7 @@ export const DEFAULT_WHATSAPP =
 export type ReminderSettings = {
   ready: boolean;
   auto_send_enabled: boolean;
+  invoice_enabled: boolean;
   invoice_days: number[];
   invoice_subject: string;
   invoice_message: string;
@@ -33,11 +34,12 @@ export async function getReminderSettings(): Promise<ReminderSettings> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("reminder_settings")
-    .select("auto_send_enabled, invoice_days, invoice_subject, invoice_message, whatsapp_message, updated_at")
+    .select("auto_send_enabled, invoice_enabled, invoice_days, invoice_subject, invoice_message, whatsapp_message, updated_at")
     .maybeSingle();
   return {
     ready: !error,
     auto_send_enabled: data?.auto_send_enabled ?? false,
+    invoice_enabled: data?.invoice_enabled ?? true,
     invoice_days: data?.invoice_days ?? DEFAULT_INVOICE_DAYS,
     invoice_subject: data?.invoice_subject ?? DEFAULT_SUBJECT,
     invoice_message: data?.invoice_message ?? DEFAULT_MESSAGE,
@@ -139,7 +141,8 @@ export async function listWhatsappToday(): Promise<WhatsappTodayItem[]> {
   const supabase = await createClient();
   const today = todayISO();
   const settings = await getReminderSettings();
-  if (!settings.ready) return [];
+  // Recordatorios de facturas apagados (Configuración → Recordatorios) → no hay lista.
+  if (!settings.ready || !settings.invoice_enabled) return [];
 
   const min = new Date(Date.now() - 130 * 86_400_000).toISOString().slice(0, 10);
   const max = new Date(Date.now() + 70 * 86_400_000).toISOString().slice(0, 10);

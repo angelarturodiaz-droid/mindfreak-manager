@@ -1009,3 +1009,20 @@ pulsa el botón.
 - La encuesta de satisfacción ya no tiene esos ajustes en su pantalla: dice
   «se configuran en Configuración → Recordatorios».
 - Historial: WhatsApp sin número → «sin teléfono (se eligió el chat)».
+
+**Recordatorios y Mensajes al cliente separados (19-oct, migración 087)**
+- **Configuración → Recordatorios** = qué está encendido y cuándo sale:
+  interruptor general (se guarda al tocarlo; revisión diaria 8:15 a. m. en
+  producción) + lista «¿Qué recordatorio quieres configurar?»:
+  *Facturas por cobrar* (encendido propio + días), *Encuesta de satisfacción*
+  (ofrecer al finalizar + recordar si no responde, cada X días, máximo N),
+  *Cotizaciones por vencer* (próximamente). Abajo: hoy e historial de todo.
+- **Configuración → Mensajes al cliente** (antes «Encuesta de satisfacción») =
+  lo que recibe el cliente, con lista «¿Qué mensajes quieres editar?»:
+  *Encuesta* (preguntas + textos del correo, WhatsApp y página),
+  *Facturación* (correo y WhatsApp del recordatorio de cobro),
+  *Cotizaciones* (próximamente).
+- Facturas por cobrar apagado → no sale correo ni aparece en la lista de
+  WhatsApp. Interruptor general apagado → no sale ningún correo.
+- Migraciones: 087 = encendido propio de facturas. Respaldo A0 → 088,
+  limpieza Go-Live A1 → 089.

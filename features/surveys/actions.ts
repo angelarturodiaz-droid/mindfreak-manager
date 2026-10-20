@@ -294,7 +294,7 @@ async function createSurvey(
 
   const questions = await buildSnapshot();
   if (questions.length === 0) {
-    return { error: "No hay preguntas activas. Configúralas en Configuración → Encuesta de satisfacción." };
+    return { error: "No hay preguntas activas. Configúralas en Configuración → Mensajes al cliente → Encuesta de satisfacción." };
   }
   const recipient = await resolveSurveyRecipient(projectId);
   const userId = await currentUserId();
@@ -586,34 +586,37 @@ export async function reopenSurveyAction(surveyId: string, projectId: string): P
 
 // ───────────────────────── Configuración ─────────────────────────
 
+/** Mensajes al cliente → Encuesta: textos (correo, WhatsApp y página de la encuesta). */
 export async function updateSurveySettingsAction(_prev: SurveyActionState, formData: FormData): Promise<SurveyActionState> {
   await requirePermission("surveys.manage");
-  const parsed = settingsSchema.safeParse({
-    send_by_default: formData.get("send_by_default") === "on",
-    send_delay_hours: formData.get("send_delay_hours") ?? 0,
-    reminder_enabled: formData.get("reminder_enabled") === "on",
-    reminder_after_days: formData.get("reminder_after_days") ?? 3,
-    max_reminders: formData.get("max_reminders") ?? 1,
-    email_subject: String(formData.get("email_subject") ?? ""),
-    email_message: String(formData.get("email_message") ?? ""),
-    survey_title: String(formData.get("survey_title") ?? ""),
-    survey_intro: String(formData.get("survey_intro") ?? ""),
-    thank_you_message: String(formData.get("thank_you_message") ?? ""),
-    whatsapp_message: String(formData.get("whatsapp_message") ?? ""),
-  });
+  const parsed = settingsSchema
+    .pick({
+      email_subject: true,
+      email_message: true,
+      survey_title: true,
+      survey_intro: true,
+      thank_you_message: true,
+      whatsapp_message: true,
+    })
+    .safeParse({
+      email_subject: String(formData.get("email_subject") ?? ""),
+      email_message: String(formData.get("email_message") ?? ""),
+      survey_title: String(formData.get("survey_title") ?? ""),
+      survey_intro: String(formData.get("survey_intro") ?? ""),
+      thank_you_message: String(formData.get("thank_you_message") ?? ""),
+      whatsapp_message: String(formData.get("whatsapp_message") ?? ""),
+    });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
 
+  // Envío al finalizar y recordatorios se guardan en Configuración → Recordatorios: aquí no se tocan.
   const cid = await companyId();
   const supabase = await createClient();
-  // Los recordatorios de la encuesta se guardan en Configuración → Recordatorios: aquí no se tocan.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { reminder_enabled, reminder_after_days, max_reminders, ...rest } = parsed.data;
   const { error } = await supabase
     .from("survey_settings")
-    .upsert({ company_id: cid, ...rest, survey_intro: rest.survey_intro ?? "" });
+    .upsert({ company_id: cid, ...parsed.data, survey_intro: parsed.data.survey_intro ?? "" });
   if (error) return { error: error.message };
-  revalidatePath("/settings/surveys");
-  return { error: null, success: "Configuración guardada.", successId: Date.now() };
+  revalidatePath("/settings/messages");
+  return { error: null, success: "Mensajes de la encuesta guardados.", successId: Date.now() };
 }
 
 function parseQuestion(formData: FormData) {
@@ -663,7 +666,7 @@ export async function createSurveyQuestionAction(_prev: SurveyActionState, formD
     metric: q.metric || null,
   });
   if (error) return { error: questionError(error.message) };
-  revalidatePath("/settings/surveys");
+  revalidatePath("/settings/messages");
   return { error: null, success: "Pregunta agregada.", successId: Date.now() };
 }
 
@@ -689,7 +692,7 @@ export async function updateSurveyQuestionAction(
     })
     .eq("id", questionId);
   if (error) return { error: questionError(error.message) };
-  revalidatePath("/settings/surveys");
+  revalidatePath("/settings/messages");
   return { error: null, success: "Pregunta guardada. Aplica a las encuestas que se envíen de ahora en adelante.", successId: Date.now() };
 }
 
@@ -703,7 +706,7 @@ export async function toggleSurveyQuestionAction(questionId: string, field: "is_
     .update({ [field]: !q[field] })
     .eq("id", questionId);
   if (error) throw new Error(questionError(error.message));
-  revalidatePath("/settings/surveys");
+  revalidatePath("/settings/messages");
 }
 
 /** Sube o baja una pregunta un lugar (renumera todo para que quede 1..n). */
@@ -722,7 +725,7 @@ export async function moveSurveyQuestionAction(questionId: string, direction: "u
       if (error) throw new Error(error.message);
     }
   }
-  revalidatePath("/settings/surveys");
+  revalidatePath("/settings/messages");
 }
 
 /**
@@ -739,7 +742,7 @@ export async function deleteSurveyQuestionAction(questionId: string): Promise<Su
   if ((count ?? 0) > 0) {
     const { error } = await supabase.from("survey_questions").update({ is_active: false }).eq("id", questionId);
     if (error) return { error: error.message };
-    revalidatePath("/settings/surveys");
+    revalidatePath("/settings/messages");
     return {
       error: null,
       success: "Esta pregunta ya tiene respuestas, así que se desactivó en lugar de borrarse (se conserva para los reportes).",
@@ -748,6 +751,6 @@ export async function deleteSurveyQuestionAction(questionId: string): Promise<Su
   }
   const { error } = await supabase.from("survey_questions").delete().eq("id", questionId);
   if (error) return { error: error.message };
-  revalidatePath("/settings/surveys");
+  revalidatePath("/settings/messages");
   return { error: null, success: "Pregunta eliminada.", successId: Date.now() };
 }

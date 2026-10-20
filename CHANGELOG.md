@@ -1,5 +1,22 @@
 # CHANGELOG — Mindfreak Manager
 
+## Recordatorios y Mensajes al cliente con lista por tipo (2026-10-19)
+
+- Migración **087**: `reminder_settings.invoice_enabled` (encendido propio de
+  Facturas por cobrar) y `reminders_candidates` lo devuelve. Aplicada.
+- **Configuración → Recordatorios**: interruptor general (se guarda al
+  tocarlo) + lista para elegir el tipo (`?tipo=facturas|encuesta|cotizaciones`)
+  con su encendido y calendario; cada uno con «Editar el texto que recibe el
+  cliente →». Hoy e historial de todos los tipos debajo.
+- **Configuración → Mensajes al cliente** (`/settings/messages`, reemplaza la
+  pestaña Encuesta; `/settings/surveys` redirige): lista para elegir
+  Encuesta (preguntas + textos) / Facturación (correo y WhatsApp de cobro) /
+  Cotizaciones (próximamente).
+- Acciones separadas: `setAutoSendAction`, `saveInvoiceReminderAction`,
+  `saveSurveyReminderAction`, `saveInvoiceMessagesAction`; la Encuesta guarda
+  solo sus textos.
+- Respaldo A0 → migración 088; limpieza Go-Live A1 → 089.
+
 ## Recordatorios en una sola pantalla (2026-10-19)
 
 - Configuración → Recordatorios en 3 bloques numerados: interruptor general,

@@ -71,8 +71,7 @@ export function RemindersToday({ autoSendEnabled }: { autoSendEnabled: boolean }
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="flex items-center gap-1.5 font-semibold text-brand-text">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-accent text-[11px] font-semibold text-white">4</span>
-            Recordatorios de hoy — facturas y encuesta
+            Recordatorios de hoy — todos los tipos
             <InfoHint text="Vale para los dos: los recordatorios de facturas (bloque 2) y los de la encuesta (bloque 3). «Ver qué sale hoy» muestra, sin enviar nada, a quién le tocaría hoy un recordatorio y por qué. «Enviar ahora» hace lo mismo que la tarea diaria de las 8:15 a. m. (útil para probar). Un mismo recordatorio nunca sale dos veces." />
           </h3>
           <p className="text-xs text-brand-muted">Revisa antes de que salgan, o envía ya sin esperar a mañana.</p>

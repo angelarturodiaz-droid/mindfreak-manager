@@ -12,15 +12,47 @@ export type ReminderSettingsState = { error: string | null; success?: string; su
 
 const MAX_TEXT = 1000;
 
-/** Guarda Configuración → Recordatorios. */
-export async function saveReminderSettingsAction(
+async function companyAndUser() {
+  const ids = await getCurrentUserCompanyIds();
+  if (!ids.length) throw new Error("Tu usuario no está asignado a ninguna compañía.");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return { companyId: ids[0], supabase, userId: user?.id ?? null };
+}
+
+function revalidateAll() {
+  revalidatePath("/settings/reminders");
+  revalidatePath("/settings/messages");
+  revalidatePath("/invoices");
+}
+
+/** Interruptor general (vale para todos los recordatorios por correo). Se guarda al tocarlo. */
+export async function setAutoSendAction(value: boolean): Promise<{ error: string | null }> {
+  await requirePermission("settings.manage");
+  const { companyId, supabase, userId } = await companyAndUser();
+  const { error } = await supabase
+    .from("reminder_settings")
+    .upsert({ company_id: companyId, auto_send_enabled: value, updated_at: new Date().toISOString(), updated_by: userId });
+  if (error) return { error: "No se pudo guardar. Intenta de nuevo." };
+  await logAudit({
+    companyId,
+    action: "UPDATE",
+    entityType: "reminder_settings",
+    entityId: companyId,
+    newValues: { interruptor_general: value },
+  });
+  revalidateAll();
+  return { error: null };
+}
+
+/** Recordatorios → Facturas por cobrar: encendido y días respecto al vencimiento. */
+export async function saveInvoiceReminderAction(
   _prev: ReminderSettingsState,
   formData: FormData,
 ): Promise<ReminderSettingsState> {
   await requirePermission("settings.manage");
-  const ids = await getCurrentUserCompanyIds();
-  if (!ids.length) return { error: "Tu usuario no está asignado a ninguna compañía." };
-
   const rawDays = String(formData.get("invoice_days") ?? "")
     .split(",")
     .map((d) => d.trim())
@@ -31,7 +63,70 @@ export async function saveReminderSettingsAction(
     return { error: "Cada recordatorio debe estar entre 60 días antes y 120 días después del vencimiento." };
   }
   const invoice_days = normalizeDays(rawDays);
+  const invoice_enabled = formData.get("invoice_enabled") === "on";
+  const { companyId, supabase, userId } = await companyAndUser();
+  const { error } = await supabase.from("reminder_settings").upsert({
+    company_id: companyId,
+    invoice_enabled,
+    invoice_days,
+    updated_at: new Date().toISOString(),
+    updated_by: userId,
+  });
+  if (error) return { error: "No se pudo guardar. ¿Ya se aplicó la migración 087?" };
+  await logAudit({
+    companyId,
+    action: "UPDATE",
+    entityType: "reminder_settings",
+    entityId: companyId,
+    newValues: { facturas: { encendido: invoice_enabled, dias: invoice_days } },
+  });
+  revalidateAll();
+  return { error: null, success: "Recordatorios de facturas guardados.", successId: Date.now() };
+}
 
+/** Recordatorios → Encuesta: ofrecerla al finalizar el proyecto y recordarla si no responden. */
+export async function saveSurveyReminderAction(
+  _prev: ReminderSettingsState,
+  formData: FormData,
+): Promise<ReminderSettingsState> {
+  await requirePermission("surveys.manage");
+  const update: { send_by_default: boolean; reminder_enabled: boolean; reminder_after_days?: number; max_reminders?: number } = {
+    send_by_default: formData.get("send_by_default") === "on",
+    reminder_enabled: formData.get("reminder_enabled") === "on",
+  };
+  const afterRaw = formData.get("reminder_after_days");
+  const maxRaw = formData.get("max_reminders");
+  if (afterRaw !== null) {
+    const n = Number(afterRaw);
+    if (!Number.isInteger(n) || n < 1 || n > 60) return { error: "«Recordar cada» debe estar entre 1 y 60 días." };
+    update.reminder_after_days = n;
+  }
+  if (maxRaw !== null) {
+    const n = Number(maxRaw);
+    if (!Number.isInteger(n) || n < 0 || n > 5) return { error: "El máximo de recordatorios va de 0 a 5." };
+    update.max_reminders = n;
+  }
+  const { companyId, supabase } = await companyAndUser();
+  const { error } = await supabase.from("survey_settings").update(update).eq("company_id", companyId);
+  if (error) return { error: "No se pudo guardar. Intenta de nuevo." };
+  await logAudit({
+    companyId,
+    action: "UPDATE",
+    entityType: "survey_settings",
+    entityId: companyId,
+    newValues: { recordatorios_encuesta: update },
+  });
+  revalidateAll();
+  revalidatePath("/settings/messages");
+  return { error: null, success: "Recordatorios de la encuesta guardados.", successId: Date.now() };
+}
+
+/** Mensajes al cliente → Facturación: textos del recordatorio de cobro (correo y WhatsApp). */
+export async function saveInvoiceMessagesAction(
+  _prev: ReminderSettingsState,
+  formData: FormData,
+): Promise<ReminderSettingsState> {
+  await requirePermission("settings.manage");
   const invoice_subject = String(formData.get("invoice_subject") ?? "").trim();
   const invoice_message = String(formData.get("invoice_message") ?? "").trim();
   const whatsapp_message = String(formData.get("whatsapp_message") ?? "").trim();
@@ -41,66 +136,25 @@ export async function saveReminderSettingsAction(
   if ([invoice_subject, invoice_message, whatsapp_message].some((t) => t.length > MAX_TEXT)) {
     return { error: `Cada texto puede tener hasta ${MAX_TEXT} caracteres.` };
   }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: before } = await supabase
-    .from("reminder_settings")
-    .select("auto_send_enabled, invoice_days")
-    .eq("company_id", ids[0])
-    .maybeSingle();
-  const auto_send_enabled = formData.get("auto_send_enabled") === "on";
+  const { companyId, supabase, userId } = await companyAndUser();
   const { error } = await supabase.from("reminder_settings").upsert({
-    company_id: ids[0],
-    auto_send_enabled,
-    invoice_days,
+    company_id: companyId,
     invoice_subject,
     invoice_message,
     whatsapp_message,
     updated_at: new Date().toISOString(),
-    updated_by: user?.id ?? null,
+    updated_by: userId,
   });
   if (error) return { error: "No se pudo guardar. Intenta de nuevo." };
-
-  // Bloque 3: recordatorios de la encuesta (viven en survey_settings).
-  const survey_reminder_enabled = formData.get("survey_reminder_enabled") === "on";
-  const afterRaw = formData.get("survey_after_days");
-  const maxRaw = formData.get("survey_max");
-  const surveyUpdate: { reminder_enabled: boolean; reminder_after_days?: number; max_reminders?: number } = {
-    reminder_enabled: survey_reminder_enabled,
-  };
-  if (afterRaw !== null) {
-    const n = Number(afterRaw);
-    if (!Number.isInteger(n) || n < 1 || n > 60) return { error: "«Recordar cada» debe estar entre 1 y 60 días." };
-    surveyUpdate.reminder_after_days = n;
-  }
-  if (maxRaw !== null) {
-    const n = Number(maxRaw);
-    if (!Number.isInteger(n) || n < 0 || n > 5) return { error: "El máximo de recordatorios de la encuesta va de 0 a 5." };
-    surveyUpdate.max_reminders = n;
-  }
-  const { error: surveyError } = await supabase.from("survey_settings").update(surveyUpdate).eq("company_id", ids[0]);
-  if (surveyError) return { error: "Se guardó lo de facturas, pero no lo de la encuesta. Intenta de nuevo." };
-
   await logAudit({
-    companyId: ids[0],
+    companyId,
     action: "UPDATE",
     entityType: "reminder_settings",
-    entityId: ids[0],
-    oldValues: before ?? null,
-    newValues: { auto_send_enabled, invoice_days, encuesta: surveyUpdate },
+    entityId: companyId,
+    newValues: { mensajes_factura: true },
   });
-  revalidatePath("/settings/reminders");
-  revalidatePath("/settings/surveys");
-  return {
-    error: null,
-    success: auto_send_enabled
-      ? "Guardado. Los recordatorios por correo salen solos cada día a las 8:15 a. m."
-      : "Guardado. Los envíos automáticos están apagados: no sale ningún correo a clientes.",
-    successId: Date.now(),
-  };
+  revalidateAll();
+  return { error: null, success: "Mensajes de cobro guardados.", successId: Date.now() };
 }
 
 export type ReminderPreviewItem = Omit<PlannedReminder, "html"> & { html: string };

@@ -21,21 +21,6 @@ type Settings = {
   whatsapp_message: string;
 };
 
-function Toggle({ name, defaultChecked, label, hint, disabled }: { name: string; defaultChecked: boolean; label: string; hint?: string; disabled?: boolean }) {
-  return (
-    <label className="flex cursor-pointer items-start gap-3">
-      <input type="checkbox" name={name} defaultChecked={defaultChecked} disabled={disabled} className="peer sr-only" />
-      <span
-        aria-hidden
-        className="relative mt-0.5 h-5 w-9 shrink-0 rounded-full bg-brand-disabled transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow after:transition-all peer-checked:bg-brand-accent peer-checked:after:left-[18px] peer-focus-visible:ring-2 peer-focus-visible:ring-brand-accent"
-      />
-      <span className="flex flex-col">
-        <span className="text-sm font-medium text-brand-text">{label}</span>
-        {hint && <span className="text-xs text-brand-muted">{hint}</span>}
-      </span>
-    </label>
-  );
-}
 
 export function SurveySettingsForm({ settings, canManage }: { settings: Settings; canManage: boolean }) {
   const [state, formAction, pending] = useActionState<SurveyActionState, FormData>(updateSurveySettingsAction, {
@@ -52,33 +37,10 @@ export function SurveySettingsForm({ settings, canManage }: { settings: Settings
       }}
       className="flex flex-col gap-6"
     >
-      <Card className="flex flex-col gap-4">
-        <div>
-          <h3 className="font-semibold text-brand-text">Envío</h3>
-          <p className="text-xs text-brand-muted">Cómo se ofrece la encuesta al cerrar un proyecto.</p>
-        </div>
-        <Toggle
-          name="send_by_default"
-          defaultChecked={settings.send_by_default}
-          disabled={!canManage}
-          label="Activar el envío por defecto al finalizar un proyecto"
-          hint="La pregunta “¿Deseas enviar la encuesta de satisfacción al cliente?” aparece marcada; se puede desmarcar en cada cierre."
-        />
-
-        <p className="rounded-[var(--radius-md)] bg-brand-surface-hover px-3 py-2 text-xs text-brand-muted">
-          Los <strong>recordatorios</strong> a quien no responde (cada cuántos días y cuántas veces) se configuran en{" "}
-          <a href="/settings/reminders" className="text-brand-accent hover:underline">
-            Configuración → Recordatorios
-          </a>
-          , junto con los de las facturas.
-        </p>
-        {/* Se conserva tal cual (todavía no se usa: la encuesta sale al finalizar el proyecto). */}
-        <input type="hidden" name="send_delay_hours" value={settings.send_delay_hours} />
-      </Card>
 
       <Card className="flex flex-col gap-4">
         <div>
-          <h3 className="font-semibold text-brand-text">Textos</h3>
+          <h3 className="font-semibold text-brand-text">Lo que recibe el cliente</h3>
           <p className="text-xs text-brand-muted">
             Puedes usar {"{cliente}"}, {"{proyecto}"}, {"{empresa}"} y {"{contacto}"} (y {"{enlace}"} en WhatsApp); se
             reemplazan por los datos de cada proyecto.
@@ -118,7 +80,7 @@ export function SurveySettingsForm({ settings, canManage }: { settings: Settings
       {canManage && (
         <div>
           <Button type="submit" loading={pending}>
-            Guardar configuración
+            Guardar mensajes
           </Button>
         </div>
       )}
