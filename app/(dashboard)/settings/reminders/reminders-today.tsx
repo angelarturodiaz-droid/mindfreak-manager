@@ -71,8 +71,9 @@ export function RemindersToday({ autoSendEnabled }: { autoSendEnabled: boolean }
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="flex items-center gap-1.5 font-semibold text-brand-text">
-            Recordatorios de hoy
-            <InfoHint text="«Ver qué sale hoy» muestra, sin enviar nada, a quién le tocaría hoy un recordatorio y por qué. «Enviar ahora» hace lo mismo que la tarea diaria de las 8:15 a. m. (útil para probar). Un mismo recordatorio nunca sale dos veces." />
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-accent text-[11px] font-semibold text-white">4</span>
+            Recordatorios de hoy — facturas y encuesta
+            <InfoHint text="Vale para los dos: los recordatorios de facturas (bloque 2) y los de la encuesta (bloque 3). «Ver qué sale hoy» muestra, sin enviar nada, a quién le tocaría hoy un recordatorio y por qué. «Enviar ahora» hace lo mismo que la tarea diaria de las 8:15 a. m. (útil para probar). Un mismo recordatorio nunca sale dos veces." />
           </h3>
           <p className="text-xs text-brand-muted">Revisa antes de que salgan, o envía ya sin esperar a mañana.</p>
         </div>
@@ -120,7 +121,8 @@ export function RemindersToday({ autoSendEnabled }: { autoSendEnabled: boolean }
               {items.map((it) => (
                 <li key={`${it.kind}-${it.entityId}-${it.step}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5 text-sm">
                   <Mail size={15} className="shrink-0 text-brand-muted" aria-hidden />
-                  <span className="font-medium text-brand-text">{it.title}</span>
+                  <Chip tone={it.kind === "SURVEY" ? "success" : "muted"}>{it.kind === "SURVEY" ? "Encuesta" : "Factura"}</Chip>
+                  <span className="font-medium text-brand-text">{it.title.replace(/^Encuesta · /, "")}</span>
                   <Chip tone={it.kind === "SURVEY" ? "accent" : it.step > 0 ? "danger" : it.step === 0 ? "warning" : "accent"}>
                     {it.stepText}
                   </Chip>

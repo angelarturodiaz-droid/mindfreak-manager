@@ -1003,7 +1003,9 @@ pulsa el botón.
 - Configuración → Recordatorios en bloques: **1 · Interruptor general** (facturas
   y encuesta), **2 · Facturas** (días + mensajes de correo y WhatsApp),
   **3 · Encuesta** (encender, cada X días, máximo N). Un solo «Guardar cambios»
-  al final guarda los tres. Debajo: Recordatorios de hoy e Historial.
+  al final guarda los tres. Debajo: **4 · Recordatorios de hoy** y **5 · Historial
+  de envíos**, los dos para facturas y encuesta (cada fila dice «Factura» o
+  «Encuesta»).
 - La encuesta de satisfacción ya no tiene esos ajustes en su pantalla: dice
   «se configuran en Configuración → Recordatorios».
 - Historial: WhatsApp sin número → «sin teléfono (se eligió el chat)».

@@ -56,7 +56,8 @@ export default async function RemindersSettingsPage({
           ) : (
             <Mail size={14} className="text-brand-muted" aria-label="Correo" />
           )}
-          {r.kind === "SURVEY" ? `Encuesta · recordatorio ${r.step}` : stepLabel(r.step)}
+          <Chip tone={r.kind === "SURVEY" ? "success" : "muted"}>{r.kind === "SURVEY" ? "Encuesta" : "Factura"}</Chip>
+          {r.kind === "SURVEY" ? `recordatorio ${r.step}` : stepLabel(r.step)}
         </span>
       ),
     },
@@ -113,8 +114,9 @@ export default async function RemindersSettingsPage({
 
       <section className="flex flex-col gap-3">
         <h3 className="flex items-center gap-1.5 font-semibold text-brand-text">
-          Historial de envíos
-          <InfoHint text="Cada recordatorio enviado (o que falló) por correo o WhatsApp. Pasa el mouse por «Falló» para ver el motivo." />
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-accent text-[11px] font-semibold text-white">5</span>
+          Historial de envíos — facturas y encuesta
+          <InfoHint text="Cada recordatorio enviado (o que falló) por correo o WhatsApp, de facturas y de la encuesta. Pasa el mouse por «Falló» para ver el motivo." />
         </h3>
         <DataTable
           columns={columns}
