@@ -263,6 +263,59 @@ export async function createContactAction(
   return { error: null };
 }
 
+/** Editar un contacto del cliente (nombre, cargo, correo, teléfono, principal, cobros). */
+export async function updateContactAction(
+  contactId: string,
+  clientId: string,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requirePermission("clients.update");
+
+  const parsed = clientContactSchema.safeParse({
+    full_name: String(formData.get("full_name") ?? ""),
+    position: String(formData.get("position") ?? ""),
+    email: String(formData.get("email") ?? ""),
+    phone: String(formData.get("phone") ?? ""),
+    is_primary: formData.get("is_primary") === "on",
+    receives_billing: formData.get("receives_billing") === "on",
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+  }
+  if (parsed.data.receives_billing && !parsed.data.email) {
+    return { error: "Para recibir los recordatorios de cobro el contacto necesita un correo." };
+  }
+
+  const supabase = await createSupabaseClient();
+  const values = {
+    full_name: parsed.data.full_name,
+    position: parsed.data.position || null,
+    email: parsed.data.email || null,
+    phone: parsed.data.phone || null,
+    is_primary: parsed.data.is_primary,
+    receives_billing: parsed.data.receives_billing,
+  };
+  const { data: contact, error } = await supabase
+    .from("client_contacts")
+    .update(values)
+    .eq("id", contactId)
+    .eq("client_id", clientId)
+    .select("company_id")
+    .single();
+  if (error || !contact) return { error: "No se pudo guardar el contacto. Intenta de nuevo." };
+
+  await logAudit({
+    companyId: contact.company_id,
+    action: "UPDATE",
+    entityType: "client",
+    entityId: clientId,
+    newValues: { contacto_editado: values },
+  });
+  revalidatePath(`/clients/${clientId}`);
+  return { error: null };
+}
+
 /** Marca o desmarca un contacto como «Recibe recordatorios de cobro». */
 export async function toggleContactBillingAction(
   contactId: string,

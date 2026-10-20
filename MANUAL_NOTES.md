@@ -1029,3 +1029,9 @@ pulsa el botón.
 - (19-oct) Cada formulario de Recordatorios y de Mensajes al cliente tiene
   **«Descartar cambios»** junto a Guardar. Tras «Enviar ahora», la lista de
   «hoy» se vuelve a revisar sola.
+- (19-oct, BE-1/2/3) «Ver qué sale hoy» sin nada → ventana «Hoy no hay
+  recordatorios para enviar». Contactos del cliente: botón **Editar** (action
+  `updateContactAction`, permiso clients.update; exige correo si «Recibe
+  recordatorios de cobro»). Factura sin vencimiento: la alerta se movió arriba
+  (debajo de «Emitida…», no sale si está Pagada o Cancelada); se quitó de la
+  tarjeta NCF / Vencimiento; sigue la nota en Gestión de cobro.

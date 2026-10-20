@@ -112,16 +112,6 @@ export function InvoiceHeaderForm({
         </label>
       )}
 
-      {!dueDateValue && (
-        <div className="flex items-start gap-2 rounded-[var(--radius-md)] bg-brand-warning-bg px-3 py-2 text-xs text-brand-text">
-          <AlertTriangle size={14} className="mt-0.5 shrink-0 text-brand-warning" aria-hidden />
-          <span>
-            <strong>Sin vencimiento no hay recordatorios de cobro.</strong> Elige una condición de pago o escribe la fecha
-            de vencimiento para que el cliente reciba los recordatorios (y la factura cuente como vencida si no paga).
-          </span>
-        </div>
-      )}
-
       {projectEvent && (
         <div
           className={`flex items-start gap-2 rounded-[var(--radius-md)] px-3 py-2 text-xs ${

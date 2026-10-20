@@ -12,6 +12,7 @@ import {
   Copy,
   Send,
   Building2,
+  AlertTriangle,
   CalendarDays,
   Clock,
   FileText,
@@ -530,6 +531,24 @@ export default async function InvoiceDetailPage({
             </dl>
           </div>
         </div>
+
+        {/* Alerta visible: sin vencimiento no hay recordatorios ni se marca como vencida. */}
+        {!invoice.due_date && invoice.status !== "PAID" && invoice.status !== "CANCELLED" && (
+          <div
+            role="alert"
+            className="flex items-start gap-2 rounded-[var(--radius-md)] border border-brand-warning/40 bg-brand-warning-bg px-3 py-2.5 text-sm text-brand-text"
+          >
+            <AlertTriangle size={16} className="mt-0.5 shrink-0 text-brand-warning" aria-hidden />
+            <span>
+              <strong>Esta factura no tiene fecha de vencimiento:</strong> no se le enviarán recordatorios de cobro ni se
+              marcará como vencida.{" "}
+              {invoice.status === "DRAFT"
+                ? "Ponle una condición de pago o una fecha en «NCF / Vencimiento» (a la derecha) antes de emitirla."
+                : "Como ya está emitida, el vencimiento no se puede cambiar; dale seguimiento manual en «Gestión de cobro»."}
+            </span>
+            <InfoHint text="Los recordatorios automáticos (Configuración → Recordatorios) se cuentan desde la fecha de vencimiento: días antes, el día que vence y días después. Sin fecha, la factura no entra en esa lista ni en la de WhatsApp de hoy." />
+          </div>
+        )}
 
         {flowIndex >= 0 ? (
           <FlowSteps

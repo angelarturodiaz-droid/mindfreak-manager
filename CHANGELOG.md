@@ -16,6 +16,9 @@
   `saveSurveyReminderAction`, `saveInvoiceMessagesAction`; la Encuesta guarda
   solo sus textos.
 - Respaldo A0 → migración 088; limpieza Go-Live A1 → 089.
+- «Ver qué sale hoy» avisa en una ventana cuando no hay nada para hoy.
+- Contactos del cliente: botón **Editar** (con Descartar cambios).
+- Factura sin vencimiento: alerta visible arriba (antes repetida en NCF / Vencimiento).
 - «Descartar cambios» en cada formulario; tras «Enviar ahora» la lista de
   «hoy» se actualiza sola (antes seguía mostrando lo ya enviado).
 

@@ -45,6 +45,7 @@ import {
 import { ClientEditForm } from "./client-edit-form";
 import { NewContactForm } from "./new-contact-form";
 import { BillingContactToggle } from "./billing-contact-toggle";
+import { EditContactButton } from "./edit-contact-button";
 import { DocumentList } from "@/components/documents/document-list";
 import { UploadDocumentForm } from "@/components/documents/upload-document-form";
 import { listDocuments } from "@/features/documents/queries";
@@ -585,12 +586,15 @@ export default async function ClientDetailPage({
                           <p className="truncate text-xs text-brand-muted">{contact.position || "Sin cargo"}</p>
                         </div>
                       </div>
-                      <ConfirmButton
-                        label="Eliminar"
-                        icon={<Trash2 size={14} />}
-                        confirmTitle={`¿Eliminar a ${contact.full_name}?`}
-                        onConfirm={deleteContactAction.bind(null, contact.id, client.id)}
-                      />
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        {canEditContacts && <EditContactButton contact={contact} clientId={client.id} />}
+                        <ConfirmButton
+                          label="Eliminar"
+                          icon={<Trash2 size={14} />}
+                          confirmTitle={`¿Eliminar a ${contact.full_name}?`}
+                          onConfirm={deleteContactAction.bind(null, contact.id, client.id)}
+                        />
+                      </div>
                     </div>
                     <div className="flex flex-col gap-1 pl-12 text-sm">
                       {contact.email && (

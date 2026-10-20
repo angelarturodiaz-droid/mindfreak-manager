@@ -30,8 +30,18 @@ export function RemindersToday({ autoSendEnabled }: { autoSendEnabled: boolean }
     setMode("preview");
     startTransition(async () => {
       const r = await previewRemindersAction();
-      if (r.error) setDialog({ tone: "danger", title: "No se pudo revisar", text: r.error });
-      else setResult(r);
+      if (r.error) {
+        setDialog({ tone: "danger", title: "No se pudo revisar", text: r.error });
+        return;
+      }
+      setResult(r);
+      if ((r.items ?? []).length === 0) {
+        setDialog({
+          tone: "success",
+          title: "Hoy no hay recordatorios para enviar",
+          text: "Ninguna factura ni encuesta tiene un recordatorio pendiente para hoy (o ya se enviaron). No hay que hacer nada.",
+        });
+      }
     });
   }
 
