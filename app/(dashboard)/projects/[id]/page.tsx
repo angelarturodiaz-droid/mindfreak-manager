@@ -395,9 +395,13 @@ export default async function ProjectDetailPage({
     (q) => q.id !== project.quotation_id && ["DRAFT", "SENT", "VIEWED", "NEGOTIATING"].includes(q.status),
   );
 
+  // Total de líneas = con impuesto (lo que paga el cliente).
   const linesTotal = items.reduce((sum, i) => sum + i.subtotal, 0);
+  // Venta sin impuesto (cantidad × precio unitario): el ITBIS no es ganancia,
+  // así que el margen estimado se calcula sobre esta base.
+  const linesBase = items.reduce((sum, i) => sum + Number(i.quantity) * Number(i.unit_price), 0);
   const estimatedCostTotal = items.reduce((sum, i) => sum + i.estimated_cost, 0);
-  const estimatedMargin = linesTotal > 0 ? ((linesTotal - estimatedCostTotal) / linesTotal) * 100 : null;
+  const estimatedMargin = linesBase > 0 ? ((linesBase - estimatedCostTotal) / linesBase) * 100 : null;
   const porCobrar = Math.max(0, profitability.facturado - profitability.cobrado);
 
   const itemColumns: Column<ProjectItemRow>[] = [
@@ -408,14 +412,21 @@ export default async function ProjectDetailPage({
       accessor: (i) => (i.source ? <Chip tone="accent">De {i.source.number}</Chip> : <Chip tone="muted">Escrita a mano</Chip>),
     },
     { header: "Cant.", className: "text-right", accessor: (i) => <span className="tabular-nums">{i.quantity}</span> },
-    { header: "Precio", className: "text-right", accessor: (i) => <span className="tabular-nums">{formatMoney(i.unit_price)}</span> },
     {
-      header: "Costo est.",
-      info: "Costo estimado total de la línea (interno). Con el lápiz se corrige; queda en la Auditoría.",
+      header: "Precio unit.",
+      info: "Lo que se le cobra al cliente por cada unidad, sin impuesto.",
+      className: "text-right",
+      accessor: (i) => <span className="tabular-nums">{formatMoney(i.unit_price)}</span>,
+    },
+    {
+      header: "Costo unit. est.",
+      info: "Lo que crees que te cuesta cada unidad (interno, el cliente no lo ve). Con el lápiz se corrige; queda en la Auditoría. Escríbelo sin ITBIS si el proveedor te da un comprobante válido para crédito fiscal; si no lo puedes recuperar (proveedor informal o venta exenta), inclúyelo.",
       className: "text-right",
       accessor: (i) => (
         <span className="inline-flex items-center justify-end gap-1">
-          <span className="tabular-nums text-brand-muted">{formatMoney(i.estimated_cost)}</span>
+          <span className="tabular-nums text-brand-muted">
+            {formatMoney(Number(i.quantity) > 0 ? Number(i.estimated_cost) / Number(i.quantity) : 0)}
+          </span>
           {canUpdate && !isCancelled && (
             <EditCostButton
               itemId={i.id}
@@ -429,7 +440,14 @@ export default async function ProjectDetailPage({
       ),
     },
     {
-      header: "Subtotal",
+      header: "Costo total est.",
+      info: "Cantidad × costo unitario estimado: lo que crees que te costará toda la línea.",
+      className: "hidden text-right sm:table-cell",
+      accessor: (i) => <span className="tabular-nums text-brand-muted">{formatMoney(i.estimated_cost)}</span>,
+    },
+    {
+      header: "Total línea",
+      info: "Lo que paga el cliente por esta línea: cantidad × precio unitario, más el impuesto (ITBIS) si aplica.",
       className: "text-right",
       accessor: (i) => <span className="font-medium tabular-nums">{formatMoney(i.subtotal)}</span>,
     },
@@ -971,7 +989,10 @@ export default async function ProjectDetailPage({
 
           <Card className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <p className="text-xs text-brand-muted">Total de líneas</p>
+              <p className="flex items-center gap-1 text-xs text-brand-muted">
+                Total de líneas
+                <InfoHint text="Lo que paga el cliente por todas las líneas, con impuesto." />
+              </p>
               <p className="text-lg font-semibold tabular-nums">{formatMoney(linesTotal)}</p>
             </div>
             <div>
@@ -984,7 +1005,7 @@ export default async function ProjectDetailPage({
             <div>
               <p className="flex items-center gap-1 text-xs text-brand-muted">
                 Margen estimado
-                <InfoHint text="(Total de líneas − costo estimado) ÷ total de líneas. La utilidad real (con los gastos de verdad) está en Finanzas." />
+                <InfoHint text={`(Venta sin impuesto − costo estimado) ÷ venta sin impuesto. Venta sin impuesto: ${formatMoney(linesBase)} (el ITBIS no es ganancia, se le paga a la DGII). La utilidad real (con los gastos de verdad) está en Finanzas.`} />
               </p>
               <p
                 className={`text-lg font-semibold tabular-nums ${estimatedMargin !== null && estimatedMargin < 0 ? "text-brand-danger" : ""}`}

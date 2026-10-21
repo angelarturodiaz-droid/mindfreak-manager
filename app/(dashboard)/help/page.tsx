@@ -563,7 +563,11 @@ const SECTIONS: Section[] = [
         </p>
         <p className="text-sm text-brand-text">
           <strong>Servicios</strong>: lo que se le vende al cliente en el evento, cada línea con su <em>origen</em> (la
-          cotización de donde viene), precio y costo estimado. Si el proyecto viene de una cotización aprobada, las
+          cotización de donde viene), <em>precio unit.</em> y <em>costo unit. est.</em> (por cada unidad),{" "}
+          <em>costo total est.</em> (cantidad × costo unitario) y <em>total línea</em> (lo que paga el cliente, con
+          impuesto). El costo se escribe sin ITBIS si el proveedor da comprobante válido para crédito fiscal; si no se
+          puede recuperar (informal o venta exenta), con ITBIS. El <em>margen estimado</em> se calcula sobre la venta{" "}
+          <strong>sin impuesto</strong> (el ITBIS no es ganancia). Si el proyecto viene de una cotización aprobada, las
           líneas quedan <strong>fijas</strong> (es lo que el cliente aprobó; también lo protege la base de datos): solo se
           corrige el <em>costo estimado</em> con el lápiz, y queda en la Auditoría. Si el cliente pide algo de más:{" "}
           <strong>Nueva cotización adicional</strong> (ya trae el cliente y el proyecto) → cuando el cliente la aprueba,

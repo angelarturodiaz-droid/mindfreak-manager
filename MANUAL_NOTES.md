@@ -1041,3 +1041,8 @@ pulsa el botón.
   RELEASE_DATE; la prueba `tests/unit/app-info.test.ts` exige que coincidan).
   `/legal/*` es ruta pública en `lib/supabase/proxy.ts`. Pie: `LegalFooter`
   (AuthShell y layout del dashboard). Soporte = mailto info@mindfreakevents.com.
+- (20-oct) Proyecto → Servicios: `estimated_cost` sigue siendo el total de la
+  línea (no cambió la base); en pantalla se muestra unitario (÷ cantidad) y
+  total. Margen estimado = (Σ cantidad×precio − Σ costo) ÷ Σ cantidad×precio.
+  OJO pendiente (sin tocar): `getProjectProfitability` (Finanzas, «Utilidad
+  real») usa totales con impuesto de cotizaciones, facturas y gastos.

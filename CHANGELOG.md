@@ -15,6 +15,12 @@
   revisar por el abogado / contador.
 - **Menú de usuario**: Política, Términos, Soporte (info@mindfreakevents.com)
   y la versión. (Corregido: la ventana abierta desde el menú salía cortada.)
+- Proyecto → Servicios: columnas claras **Precio unit.**, **Costo unit. est.**
+  (con el lápiz), **Costo total est.** y **Total línea** (con impuesto); la
+  ventana del lápiz hace la cuenta «cantidad × costo = total». El **margen
+  estimado** (Servicios y Resumen) se calcula sobre la venta **sin impuesto**
+  (antes incluía el ITBIS y salía un poco más alto). Nota en la ⓘ: costo sin
+  ITBIS si es recuperable; con ITBIS si no (informal / venta exenta).
 - Proyecto → Servicios: si la cotización se aprobó sin líneas, el aviso lo
   dice («se aprobó sin líneas») en vez de «quedan fijas».
 - **Configuración → Sistema → Información del sistema**: nombre, empresa y

@@ -9,6 +9,9 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { ResultDialog } from "@/components/ui/result-dialog";
 import { toast } from "@/components/ui/toaster";
 import { updateProjectItemCostAction } from "@/features/projects/actions";
+import { formatMoney } from "@/lib/utils/money";
+
+const money = (n: number) => formatMoney(Math.round(n * 100) / 100);
 
 /** Corregir el costo estimado de una línea (dato interno; precio y cantidad no cambian). */
 export function EditCostButton({
@@ -59,18 +62,24 @@ export function EditCostButton({
       <Modal open={open} onClose={() => setOpen(false)} title="Corregir costo estimado">
         <div className="flex flex-col gap-3">
           <p className="text-sm text-brand-muted">
-            <strong className="text-brand-text">{description}</strong> · cantidad {quantity}. El precio al cliente no cambia;
-            solo la utilidad estimada. Queda en la Auditoría.
+            <strong className="text-brand-text">{description}</strong> · cantidad {quantity}
           </p>
           <Input
             label="Costo por unidad"
+            info="Lo que te cuesta cada unidad. Escríbelo sin ITBIS si el proveedor te da un comprobante válido para crédito fiscal; si no lo puedes recuperar (proveedor informal o venta exenta), inclúyelo."
             type="number"
             min={0}
             step="0.01"
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            hint={`Costo total: ${(Number(value || 0) * quantity).toLocaleString("es-DO", { minimumFractionDigits: 2 })}`}
           />
+          <p className="rounded-[var(--radius-md)] bg-brand-surface-hover px-3 py-2 text-sm text-brand-text">
+            Costo total de la línea: {quantity} × {money(Number(value || 0))} ={" "}
+            <strong className="tabular-nums">{money(Number(value || 0) * quantity)}</strong>
+          </p>
+          <p className="text-xs text-brand-muted">
+            El precio al cliente no cambia; solo el margen estimado. Queda en la Auditoría.
+          </p>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancelar
