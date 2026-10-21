@@ -236,7 +236,15 @@ export default async function QuotationDetailPage({
           : quotation.status === "APPROVED"
             ? quotation.project_id
               ? { tone: "done", text: "ya es un proyecto. Sigue el trabajo desde Ver proyecto." }
-              : { tone: "next", text: "pulsa Convertir a Proyecto para empezar a organizar el evento." }
+              : directInvoices.length > 0
+                ? {
+                    tone: "done",
+                    text: `ya se facturó sin proyecto (${directInvoices.map((d) => d.number).join(", ")}). El cobro se sigue desde la factura.`,
+                  }
+                : {
+                    tone: "next",
+                    text: "pulsa Convertir a Proyecto si es un evento, o Facturar sin proyecto si es una venta directa (ej. recarga de extintores).",
+                  }
             : shownStatus === "EXPIRED"
               ? {
                   tone: "warning",

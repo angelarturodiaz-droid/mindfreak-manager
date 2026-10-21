@@ -15,6 +15,9 @@
   revisar por el abogado / contador.
 - **Menú de usuario**: Política, Términos, Soporte (info@mindfreakevents.com)
   y la versión. (Corregido: la ventana abierta desde el menú salía cortada.)
+- Cotización aprobada y ya facturada sin proyecto: «Siguiente paso» ya no dice
+  «pulsa Convertir a Proyecto»; dice que se facturó (INV-…) y que el cobro
+  sigue desde la factura. Sin facturar, ofrece las dos opciones.
 - Proyecto → Servicios: columnas claras **Precio unit.**, **Costo unit. est.**
   (con el lápiz), **Costo total est.** y **Total línea** (con impuesto); la
   ventana del lápiz hace la cuenta «cantidad × costo = total». El **margen
