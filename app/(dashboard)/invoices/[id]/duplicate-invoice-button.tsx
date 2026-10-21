@@ -36,6 +36,7 @@ export function DuplicateInvoiceButton({
         loading={isPending}
         icon={<Copy size={14} />}
         onClick={() => (fromQuotation ? setConfirm(true) : run())}
+        hint="Crea una factura nueva en Borrador con las mismas líneas. Sirve para ventas que no necesitan cotización, por ejemplo un servicio que se repite cada mes al mismo cliente (inspección, alquiler): copias la anterior, ajustas fecha y montos, y la emites. Para una venta nueva que el cliente debe aprobar, mejor «Duplicar cotización»."
       >
         Duplicar factura
       </Button>
@@ -55,9 +56,22 @@ export function DuplicateInvoiceButton({
           </>
         }
       >
-        Esta factura viene de la cotización {fromQuotation}, y cada cotización tiene una sola factura. La copia saldrá
-        como <strong>factura directa</strong> (sin cotización). Si es una venta nueva para el cliente, lo recomendable es
-        <strong> duplicar la cotización</strong> y facturar la nueva, para que quede lo que el cliente aprobó.
+        <span className="flex flex-col gap-2">
+          <span>
+            Esta factura viene de la cotización <strong>{fromQuotation}</strong>, y cada cotización tiene una sola
+            factura. La copia saldrá como <strong>factura directa</strong>: no queda amarrada a ninguna cotización (en
+            Facturas, su Origen dirá «Directa»).
+          </span>
+          <span>
+            <strong>Úsala para</strong> ventas que no necesitan cotización, por ejemplo un servicio que se repite cada mes
+            al mismo cliente.
+          </span>
+          <span>
+            <strong>Si es una venta nueva</strong> que el cliente debe aprobar, vuelve atrás y usa{" "}
+            <strong>Duplicar cotización</strong> en {fromQuotation}: la cotización nueva se envía, se aprueba y tendrá su
+            propia factura.
+          </span>
+        </span>
       </ResultDialog>
     </>
   );

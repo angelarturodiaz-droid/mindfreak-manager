@@ -85,7 +85,7 @@ export default async function InvoicesPage({
     },
     {
       header: "Origen",
-      info: "De dónde viene la factura: de un proyecto (evento), de una cotización sin proyecto (venta directa; una cotización = una factura) o directa (hecha a mano).",
+      info: "De dónde viene la factura: de un proyecto (evento), de una cotización sin proyecto (venta directa; una cotización = una factura) o directa (hecha en Nueva factura o duplicada de otra, sin cotización ni proyecto: ej. un servicio que se repite cada mes).",
       accessor: (inv) => {
         const project = relationRow<{ number: string; name: string }>(inv.project);
         const quotation = relationRow<{ number: string }>(inv.origin_quotation);
@@ -101,7 +101,14 @@ export default async function InvoicesPage({
               <FileText size={12} aria-hidden /> {quotation?.number ?? "Cotización"} · sin proyecto
             </span>
           );
-        return <span className="text-xs text-brand-muted">Directa</span>;
+        return (
+          <span
+            className="text-xs text-brand-muted"
+            title="Factura directa: hecha en Nueva factura o duplicada de otra. No está amarrada a una cotización ni a un proyecto (ej. un servicio que se repite cada mes)."
+          >
+            Directa
+          </span>
+        );
       },
     },
     {

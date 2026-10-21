@@ -19,7 +19,8 @@
   solo si no tiene factura activa; si hay borrador, lo abre; se quita «Otra
   factura de esta cotización» (para algo nuevo: Duplicar cotización). Duplicar
   una factura de cotización sin proyecto → la copia sale directa (sin
-  cotización), con aviso. Facturas: columna **Origen** (Proyecto / Cotización ·
+  cotización), con aviso que explica para qué sirven las facturas directas
+  (ventas sin cotización, ej. servicio mensual). Facturas: columna **Origen** (Proyecto / Cotización ·
   sin proyecto / Directa). Detalle: «De la cotización COT-… · sin proyecto».
   Cotización: etiqueta de su factura con estado. Proyectos: sin cambios.
 - Números internos en español: facturas nuevas **FAC-** (antes INV-) y proyectos

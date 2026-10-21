@@ -644,8 +644,11 @@ const SECTIONS: Section[] = [
           ya está emitida, no se crea otra (solo si se cancela). Si el cliente pide algo nuevo, <em>Duplicar cotización</em>{" "}
           y se factura la nueva; los pagos por partes van como abonos en la misma factura. La cotización muestra su factura
           con el estado y su último paso pasa a <em>Facturada</em>. Si ya se facturó sin proyecto, ya no se convierte en
-          proyecto. Al <em>duplicar una factura</em> que vino de una cotización sin proyecto, la copia sale como factura
-          directa. En la lista de Facturas, la columna <strong>Origen</strong> dice de dónde viene cada una (Proyecto,
+          proyecto. <strong>Duplicar factura</strong> crea una <em>factura directa</em> (sin cotización): sirve para ventas que no
+          necesitan cotización, como un servicio que se repite cada mes al mismo cliente (copias la anterior, ajustas fecha y
+          montos, y la emites). Si la factura vino de una cotización sin proyecto, antes sale un aviso: la copia no queda
+          amarrada a esa cotización ni a otra; para una venta nueva que el cliente debe aprobar, se usa <em>Duplicar
+          cotización</em>. Las facturas de proyecto se duplican dentro del mismo proyecto. En la lista de Facturas, la columna <strong>Origen</strong> dice de dónde viene cada una (Proyecto,
           Cotización · sin proyecto, o Directa). Los proyectos sí pueden tener varias facturas (anticipo, balance).
         </p>
         <p className="text-sm text-brand-text">

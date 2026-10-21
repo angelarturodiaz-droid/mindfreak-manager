@@ -1054,3 +1054,7 @@ pulsa el botón.
   `duplicateInvoiceAction` deja `quotation_id` null si no hay proyecto.
   PENDIENTE tras la limpieza A1: índice único parcial en la base
   (invoices.quotation_id where project_id is null and status <> 'CANCELLED').
+- (20-oct) Decidido (opción B): «Duplicar factura» se permite siempre. De
+  cotización sin proyecto → copia DIRECTA (sin cotización), con aviso; de
+  proyecto → mismo proyecto. Uso: ventas sin cotización (servicio mensual).
+  Venta nueva que el cliente aprueba → Duplicar cotización.
