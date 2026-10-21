@@ -60,7 +60,7 @@ export type ReminderLogRow = {
   source: "CRON" | "MANUAL" | "USER";
   created_at: string;
   sent_at: string | null;
-  /** INV-0033 / nombre del proyecto de la encuesta. */
+  /** FAC-0033 / nombre del proyecto de la encuesta. */
   document: string | null;
   href: string | null;
   who: string | null;

@@ -1,5 +1,6 @@
 "use server";
 
+import { DOC_PREFIX, nextDocNumber } from "@/lib/utils/doc-number";
 import { dbErrorMessage } from "@/lib/utils/db-error";
 import { validationErrorState, type MoneyActionState } from "@/lib/utils/bank-errors";
 
@@ -41,11 +42,7 @@ async function getPrimaryCompanyId(): Promise<string> {
 async function generateInvoiceNumber(companyId: string): Promise<string> {
   const supabase = await createSupabaseClient();
   const { data } = await supabase.from("invoices").select("number").eq("company_id", companyId);
-  const maxNum = (data ?? []).reduce((max, row) => {
-    const n = parseInt(row.number.replace(/\D/g, ""), 10);
-    return Number.isFinite(n) && n > max ? n : max;
-  }, 0);
-  return `INV-${String(maxNum + 1).padStart(4, "0")}`;
+  return nextDocNumber(DOC_PREFIX.invoice, (data ?? []).map((r) => r.number));
 }
 
 async function recalculateInvoiceTotals(invoiceId: string) {

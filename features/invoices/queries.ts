@@ -23,7 +23,8 @@ export async function listInvoices(filters: InvoiceListFilters = {}) {
       { count: "exact" },
     )
     .order("issue_date", { ascending: false })
-    .order("number", { ascending: false })
+    // Mismo día: la más reciente primero (no por texto: «INV-» quedaría antes que «FAC-»).
+    .order("created_at", { ascending: false })
     .range(from, to);
 
   // "Vencida" se calcula por fecha (ver overdue.ts): abiertas con balance y

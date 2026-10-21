@@ -1,5 +1,6 @@
 "use server";
 
+import { DOC_PREFIX, nextDocNumber } from "@/lib/utils/doc-number";
 import { revalidatePath } from "next/cache";
 import { dbErrorMessage } from "@/lib/utils/db-error";
 import { redirect } from "next/navigation";
@@ -27,11 +28,7 @@ async function getPrimaryCompanyId(): Promise<string> {
 async function generateProjectNumber(companyId: string): Promise<string> {
   const supabase = await createSupabaseClient();
   const { data } = await supabase.from("projects").select("number").eq("company_id", companyId);
-  const maxNum = (data ?? []).reduce((max, row) => {
-    const n = parseInt(row.number.replace(/\D/g, ""), 10);
-    return Number.isFinite(n) && n > max ? n : max;
-  }, 0);
-  return `PROJ-${String(maxNum + 1).padStart(4, "0")}`;
+  return nextDocNumber(DOC_PREFIX.project, (data ?? []).map((r) => r.number));
 }
 
 function parseHeaderFields(formData: FormData) {

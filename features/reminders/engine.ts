@@ -85,7 +85,7 @@ export type PlannedReminder = {
   entityId: string;
   companyId: string;
   step: number;
-  /** "INV-0033 · Cliente SRL" / "Encuesta · Evento X" */
+  /** "FAC-0033 · Cliente SRL" / "Encuesta · Evento X" */
   title: string;
   /** "3 días antes", "Recordatorio 1 de 2"… */
   stepText: string;

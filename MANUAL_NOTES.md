@@ -1046,3 +1046,6 @@ pulsa el botón.
   total. Margen estimado = (Σ cantidad×precio − Σ costo) ÷ Σ cantidad×precio.
   OJO pendiente (sin tocar): `getProjectProfitability` (Finanzas, «Utilidad
   real») usa totales con impuesto de cotizaciones, facturas y gastos.
+- (20-oct) Prefijos internos: FAC (facturas), PROY (proyectos), COT, ACU en
+  `lib/utils/doc-number.ts`. Tras la limpieza Go-Live (A1) arrancan en 0001.
+  El número oficial DGII sigue siendo el NCF.

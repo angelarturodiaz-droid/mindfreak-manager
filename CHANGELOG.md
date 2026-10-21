@@ -15,6 +15,10 @@
   revisar por el abogado / contador.
 - **Menú de usuario**: Política, Términos, Soporte (info@mindfreakevents.com)
   y la versión. (Corregido: la ventana abierta desde el menú salía cortada.)
+- Números internos en español: facturas nuevas **FAC-** (antes INV-) y proyectos
+  nuevos **PROY-** (antes PROJ-). Las existentes conservan su número; la
+  numeración sigue (FAC-0037…). `lib/utils/doc-number.ts` + prueba. Lista de
+  facturas: mismo día → la más reciente primero (por fecha de creación).
 - Cotización aprobada y ya facturada sin proyecto: «Siguiente paso» ya no dice
   «pulsa Convertir a Proyecto»; dice que se facturó (INV-…) y que el cobro
   sigue desde la factura. Sin facturar, ofrece las dos opciones.
