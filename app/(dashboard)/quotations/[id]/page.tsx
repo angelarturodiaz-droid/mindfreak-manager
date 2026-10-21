@@ -106,6 +106,15 @@ const SENT_DETAIL: Record<string, { label: string; sub: string }> = {
   NEGOTIATING: { label: "En negociación", sub: "Ajustando con el cliente" },
 };
 
+/** Estado de la factura, para la etiqueta de la cotización. */
+const INVOICE_STATUS_LABEL: Record<string, string> = {
+  DRAFT: "en preparación",
+  ISSUED: "Emitida",
+  PARTIALLY_PAID: "Pago parcial",
+  PAID: "Pagada",
+  OVERDUE: "Vencida",
+};
+
 export default async function QuotationDetailPage({
   params,
   searchParams,
@@ -237,10 +246,15 @@ export default async function QuotationDetailPage({
             ? quotation.project_id
               ? { tone: "done", text: "ya es un proyecto. Sigue el trabajo desde Ver proyecto." }
               : directInvoices.length > 0
-                ? {
-                    tone: "done",
-                    text: `ya se facturó sin proyecto (${directInvoices.map((d) => d.number).join(", ")}). El cobro se sigue desde la factura.`,
-                  }
+                ? directInvoices[0].status === "DRAFT"
+                  ? {
+                      tone: "next",
+                      text: `revisa y emite la factura ${directInvoices[0].number} (está en Borrador).`,
+                    }
+                  : {
+                      tone: "done",
+                      text: `ya se facturó sin proyecto (${directInvoices[0].number}). El cobro se sigue desde la factura. Si el cliente pide algo nuevo, usa «Duplicar cotización».`,
+                    }
                 : {
                     tone: "next",
                     text: "pulsa Convertir a Proyecto si es un evento, o Facturar sin proyecto si es una venta directa (ej. recarga de extintores).",
@@ -369,12 +383,14 @@ export default async function QuotationDetailPage({
               return {
                 label: invoicedDirect ? "Facturada" : lastNoProject ? "Proyecto o factura" : sent?.label ?? step.label,
                 sub: invoicedDirect
-                  ? "Se facturó sin proyecto"
+                  ? directInvoices[0].status === "DRAFT"
+                    ? "Factura en Borrador"
+                    : "Se facturó sin proyecto"
                   : lastNoProject
                     ? "Evento → proyecto · venta → factura"
                     : sent?.sub ?? step.sub,
                 help: invoicedDirect
-                  ? "Venta sin evento: se facturó directo desde esta cotización (sin proyecto). Las facturas están arriba, junto a los botones."
+                  ? "Venta sin evento: se facturó directo desde esta cotización (sin proyecto). Cada cotización tiene una sola factura; está arriba, junto a los botones. Para algo nuevo, «Duplicar cotización»."
                   : lastNoProject
                     ? "Cuando el cliente aprueba: si es un evento, «Convertir a Proyecto» (para planificar y facturar desde el proyecto); si es una venta sin evento, «Facturar sin proyecto» crea la factura con estas líneas."
                     : step.help,
@@ -443,17 +459,25 @@ export default async function QuotationDetailPage({
               </Link>
             )}
             {/* Venta sin evento: factura directa con las líneas de la cotización. */}
-            {quotation.status === "APPROVED" && !quotation.project_id && canCreateInvoice && (
-              <InvoiceFromQuotationButton quotationId={quotation.id} existing={directInvoices} />
+            {/* Venta sin evento: una cotización = una factura. */}
+            {quotation.status === "APPROVED" && !quotation.project_id && canCreateInvoice && directInvoices.length === 0 && (
+              <InvoiceFromQuotationButton quotationId={quotation.id} />
             )}
             {directInvoices.map((inv) => (
               <Link
                 key={inv.id}
                 href={`/invoices/${inv.id}`}
-                className="inline-flex items-center gap-1.5 rounded-full bg-brand-accent-light px-2.5 py-1 text-xs font-medium text-brand-accent hover:underline"
-                title="Factura hecha desde esta cotización (sin proyecto)"
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium hover:underline ${
+                  inv.status === "DRAFT" ? "bg-brand-surface-hover text-brand-text" : "bg-brand-accent-light text-brand-accent"
+                }`}
+                title={
+                  inv.status === "DRAFT"
+                    ? "La factura de esta cotización está en Borrador: ábrela para revisarla y emitirla."
+                    : "La factura de esta cotización (venta sin proyecto)."
+                }
               >
-                <Receipt size={12} aria-hidden /> {inv.number} · {formatMoney(inv.total, inv.currency)}
+                <Receipt size={12} aria-hidden /> {inv.status === "DRAFT" ? "Borrador" : "Facturada en"} {inv.number} ·{" "}
+                {INVOICE_STATUS_LABEL[inv.status] ?? inv.status} · {formatMoney(inv.total, inv.currency)}
               </Link>
             ))}
             {quotation.project_id && (

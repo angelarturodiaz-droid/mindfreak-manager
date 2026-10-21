@@ -772,7 +772,9 @@ export async function duplicateInvoiceAction(invoiceId: string): Promise<void> {
       company_id: companyId,
       client_id: original.client_id,
       project_id: original.project_id,
-      quotation_id: original.quotation_id,
+      // Una cotización sin proyecto = una factura: la copia queda como factura
+      // directa (sin cotización). Las de proyecto conservan su enlace.
+      quotation_id: original.project_id ? original.quotation_id : null,
       number,
       issue_date: todayISO(),
       currency: original.currency,
@@ -1001,7 +1003,9 @@ function relationNameOf(rel: unknown): string | null {
  * que no tiene proyecto. Copia cliente, moneda y tasa, condición de pago,
  * comisión (con su tratamiento fiscal ya resuelto), datos bancarios y las
  * líneas con su impuesto tal cual se aprobaron. Se puede revisar todo antes
- * de emitir. Varias facturas por cotización (anticipo, balance) se permiten.
+ * de emitir. Regla (20-oct): UNA cotización sin proyecto = UNA factura. Si ya
+ * tiene un borrador, se abre ese; si ya tiene una factura activa (no
+ * cancelada), no se crea otra: para algo nuevo se duplica la cotización.
  */
 export async function createInvoiceFromQuotationAction(quotationId: string): Promise<{ error: string | null }> {
   await requirePermission("invoices.create");
@@ -1019,6 +1023,23 @@ export async function createInvoiceFromQuotationAction(quotationId: string): Pro
   if (q.status !== "APPROVED") return { error: "Solo se puede facturar una cotización aprobada." };
   if (q.project_id) {
     return { error: "Esta cotización ya es parte de un proyecto: factura desde el proyecto (pestaña Ventas y cobros)." };
+  }
+
+  // Una cotización = una factura (las canceladas no cuentan).
+  const { data: existing } = await supabase
+    .from("invoices")
+    .select("id, number, status")
+    .eq("quotation_id", quotationId)
+    .is("project_id", null)
+    .neq("status", "CANCELLED")
+    .order("created_at")
+    .limit(1);
+  const current = existing?.[0];
+  if (current?.status === "DRAFT") redirect(`/invoices/${current.id}`);
+  if (current) {
+    return {
+      error: `Esta cotización ya tiene su factura (${current.number}). Si el cliente pide algo nuevo, usa «Duplicar cotización» y factura la nueva.`,
+    };
   }
 
   const { data: items, error: itemsError } = await supabase

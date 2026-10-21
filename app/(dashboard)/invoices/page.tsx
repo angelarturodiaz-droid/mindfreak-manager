@@ -80,17 +80,29 @@ export default async function InvoicesPage({
               <MailCheck size={12} className="text-brand-success" aria-label="Enviada al cliente" />
             </span>
           )}
-          {inv.project_id ? (
-            <span title={`Del proyecto ${relationRow<{ number: string }>(inv.project)?.number ?? ""}`.trim()}>
-              <FolderKanban size={12} className="text-brand-accent" aria-label="Del proyecto" />
-            </span>
-          ) : inv.quotation_id ? (
-            <span title={`De la cotización ${relationRow<{ number: string }>(inv.origin_quotation)?.number ?? ""}`.trim()}>
-              <FileText size={12} className="text-brand-accent" aria-label="De la cotización" />
-            </span>
-          ) : null}
         </Link>
       ),
+    },
+    {
+      header: "Origen",
+      info: "De dónde viene la factura: de un proyecto (evento), de una cotización sin proyecto (venta directa; una cotización = una factura) o directa (hecha a mano).",
+      accessor: (inv) => {
+        const project = relationRow<{ number: string; name: string }>(inv.project);
+        const quotation = relationRow<{ number: string }>(inv.origin_quotation);
+        if (inv.project_id)
+          return (
+            <span className="inline-flex items-center gap-1 whitespace-nowrap text-xs text-brand-accent" title={project?.name ?? undefined}>
+              <FolderKanban size={12} aria-hidden /> Proyecto {project?.number ?? ""}
+            </span>
+          );
+        if (inv.quotation_id)
+          return (
+            <span className="inline-flex items-center gap-1 whitespace-nowrap text-xs text-brand-accent">
+              <FileText size={12} aria-hidden /> {quotation?.number ?? "Cotización"} · sin proyecto
+            </span>
+          );
+        return <span className="text-xs text-brand-muted">Directa</span>;
+      },
     },
     {
       header: "Cliente",

@@ -11,14 +11,7 @@ import { isNavigationSignal } from "@/lib/utils/navigation-signal";
  * Venta sin evento: crea una factura en Borrador con las líneas de la
  * cotización aprobada (sin crear proyecto).
  */
-export function InvoiceFromQuotationButton({
-  quotationId,
-  existing,
-}: {
-  quotationId: string;
-  /** Facturas ya hechas desde esta cotización (ej. el anticipo). */
-  existing: { number: string }[];
-}) {
+export function InvoiceFromQuotationButton({ quotationId }: { quotationId: string }) {
   const [pending, startTransition] = useTransition();
   const [confirm, setConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,19 +32,19 @@ export function InvoiceFromQuotationButton({
     <>
       <Button
         type="button"
-        variant={existing.length ? "outline" : "secondary"}
+        variant="secondary"
         size="sm"
         icon={<Receipt size={14} />}
         loading={pending}
         onClick={() => setConfirm(true)}
-        hint="Para una venta sin evento: crea una factura en Borrador con las líneas, la comisión, la condición de pago y los datos bancarios de esta cotización, sin crear proyecto. La revisas y la emites."
+        hint="Para una venta sin evento: crea una factura en Borrador con las líneas, la comisión, la condición de pago y los datos bancarios de esta cotización, sin crear proyecto. La revisas y la emites. Cada cotización tiene una sola factura."
       >
-        {existing.length ? "Otra factura de esta cotización" : "Facturar sin proyecto"}
+        Facturar sin proyecto
       </Button>
       <ResultDialog
         open={confirm}
         tone="warning"
-        title={existing.length ? "¿Hacer otra factura de esta cotización?" : "¿Facturar esta cotización sin proyecto?"}
+        title="¿Facturar esta cotización sin proyecto?"
         onClose={() => setConfirm(false)}
         actions={
           <>
@@ -64,18 +57,9 @@ export function InvoiceFromQuotationButton({
           </>
         }
       >
-        {existing.length ? (
-          <>
-            Ya hay {existing.length === 1 ? "una factura" : "facturas"} de esta cotización (
-            {existing.map((e) => e.number).join(", ")}). La nueva también copia todas las líneas: ajústalas (ej. el
-            balance) antes de emitir.
-          </>
-        ) : (
-          <>
-            Se crea una factura en Borrador con las mismas líneas e impuestos que aprobó el cliente. Es para ventas sin
-            evento: no se crea proyecto (si es un evento, usa «Convertir a Proyecto»). Revísala y emítela.
-          </>
-        )}
+        Se crea <strong>la factura</strong> de esta cotización en Borrador, con las mismas líneas e impuestos que aprobó el
+        cliente. Cada cotización tiene una sola factura: si luego el cliente pide algo nuevo, usa «Duplicar cotización».
+        Es para ventas sin evento (si es un evento, usa «Convertir a Proyecto»). Revísala y emítela.
       </ResultDialog>
       <ResultDialog open={Boolean(error)} tone="danger" title="No se creó la factura" onClose={() => setError(null)}>
         {error}

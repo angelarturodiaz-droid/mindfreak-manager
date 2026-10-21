@@ -640,9 +640,13 @@ const SECTIONS: Section[] = [
           en la pestaña Ventas y cobros del proyecto); (2) <em>Cliente directo</em> en Nueva factura, escribiendo las líneas;
           (3) <strong>Facturar sin proyecto</strong> desde una cotización <em>Aprobada</em> que no es un evento: crea la factura
           en Borrador con las mismas líneas, impuestos, comisión, condición de pago y datos bancarios que aprobó el cliente.
-          Se pueden hacer varias (ej. anticipo y balance: cada una copia todas las líneas, ajústalas antes de emitir). La
-          cotización muestra sus facturas y su último paso pasa a <em>Facturada</em>. Si ya se facturó sin proyecto, ya no
-          se convierte en proyecto (esas facturas quedarían fuera de él).
+          <strong>Una cotización = una factura</strong>: si ya tiene su factura en Borrador, el botón abre ese borrador; si
+          ya está emitida, no se crea otra (solo si se cancela). Si el cliente pide algo nuevo, <em>Duplicar cotización</em>{" "}
+          y se factura la nueva; los pagos por partes van como abonos en la misma factura. La cotización muestra su factura
+          con el estado y su último paso pasa a <em>Facturada</em>. Si ya se facturó sin proyecto, ya no se convierte en
+          proyecto. Al <em>duplicar una factura</em> que vino de una cotización sin proyecto, la copia sale como factura
+          directa. En la lista de Facturas, la columna <strong>Origen</strong> dice de dónde viene cada una (Proyecto,
+          Cotización · sin proyecto, o Directa). Los proyectos sí pueden tener varias facturas (anticipo, balance).
         </p>
         <p className="text-sm text-brand-text">
           <strong>Para recordar hoy por WhatsApp</strong>: arriba de la lista de Facturas sale (cuando hay) un recuadro verde con las

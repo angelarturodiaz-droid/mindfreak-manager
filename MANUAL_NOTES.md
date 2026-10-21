@@ -1049,3 +1049,8 @@ pulsa el botón.
 - (20-oct) Prefijos internos: FAC (facturas), PROY (proyectos), COT, ACU en
   `lib/utils/doc-number.ts`. Tras la limpieza Go-Live (A1) arrancan en 0001.
   El número oficial DGII sigue siendo el NCF.
+- (20-oct) Una cotización sin proyecto = una factura: validado en
+  `createInvoiceFromQuotationAction` (borrador → redirect; activa → error).
+  `duplicateInvoiceAction` deja `quotation_id` null si no hay proyecto.
+  PENDIENTE tras la limpieza A1: índice único parcial en la base
+  (invoices.quotation_id where project_id is null and status <> 'CANCELLED').

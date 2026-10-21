@@ -15,6 +15,13 @@
   revisar por el abogado / contador.
 - **Menú de usuario**: Política, Términos, Soporte (info@mindfreakevents.com)
   y la versión. (Corregido: la ventana abierta desde el menú salía cortada.)
+- **Una cotización = una factura** (ventas sin proyecto): «Facturar sin proyecto»
+  solo si no tiene factura activa; si hay borrador, lo abre; se quita «Otra
+  factura de esta cotización» (para algo nuevo: Duplicar cotización). Duplicar
+  una factura de cotización sin proyecto → la copia sale directa (sin
+  cotización), con aviso. Facturas: columna **Origen** (Proyecto / Cotización ·
+  sin proyecto / Directa). Detalle: «De la cotización COT-… · sin proyecto».
+  Cotización: etiqueta de su factura con estado. Proyectos: sin cambios.
 - Números internos en español: facturas nuevas **FAC-** (antes INV-) y proyectos
   nuevos **PROY-** (antes PROJ-). Las existentes conservan su número; la
   numeración sigue (FAC-0037…). `lib/utils/doc-number.ts` + prueba. Lista de

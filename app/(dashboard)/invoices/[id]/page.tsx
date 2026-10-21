@@ -507,6 +507,7 @@ export default async function InvoiceDetailPage({
                       {originQuotation}
                     </Link>
                   </dd>
+                  {!invoice.project_id && <span className="text-xs text-brand-accent">· sin proyecto</span>}
                 </div>
               )}
               <div className="flex items-center gap-1.5">
@@ -608,7 +609,12 @@ export default async function InvoiceDetailPage({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <InvoiceShareLinkButton invoiceId={invoice.id} />
-            {canEdit && <DuplicateInvoiceButton invoiceId={invoice.id} />}
+            {canEdit && (
+              <DuplicateInvoiceButton
+                invoiceId={invoice.id}
+                fromQuotation={!invoice.project_id && invoice.quotation_id ? originQuotation : null}
+              />
+            )}
             {invoice.status !== "CANCELLED" &&
               invoice.status !== "PAID" &&
               canEdit && (
