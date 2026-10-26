@@ -1744,7 +1744,8 @@ async function CustomerWithholdingsReport({ params }: { params: Params }) {
 // ---- Ingresos por tipo de impuesto (V1-1) ----
 
 function monthLongLabel(ym: string) {
-  return new Date(`${ym}-15T12:00:00Z`).toLocaleDateString("es-DO", { month: "long", year: "numeric", timeZone: "UTC" });
+  const t = new Date(`${ym}-15T12:00:00Z`).toLocaleDateString("es-DO", { month: "long", year: "numeric", timeZone: "UTC" });
+  return t.charAt(0).toUpperCase() + t.slice(1); // «Octubre de 2026»
 }
 
 async function IncomeByTaxReport({ params }: { params: Params }) {
@@ -1761,7 +1762,7 @@ async function IncomeByTaxReport({ params }: { params: Params }) {
   const { months, invoices, totals } = data;
 
   const monthColumns: Column<IncomeByTaxMonthRow>[] = [
-    { header: "Mes", accessor: (m) => <span className="font-medium capitalize text-brand-text">{monthLongLabel(m.month)}</span> },
+    { header: "Mes", accessor: (m) => <span className="whitespace-nowrap font-medium text-brand-text">{monthLongLabel(m.month)}</span> },
     { header: "Facturas", className: "text-right", accessor: (m) => <span className="tabular-nums">{m.facturas}</span> },
     { header: "Gravado", info: "Ventas con ITBIS, sin el ITBIS (base sobre la que se cobró el impuesto).", className: "text-right", accessor: (m) => <Money value={m.gravado} /> },
     { header: "Exento", info: "Ventas exentas o no sujetas a ITBIS (ej. capacitaciones exentas).", className: "text-right", accessor: (m) => <Money value={m.exento} /> },

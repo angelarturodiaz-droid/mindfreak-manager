@@ -374,7 +374,9 @@ async function buildSections(report: string, p: ReportExportParams, base: string
         { label: "Total facturado", value: money(totals.total, base) },
       );
       const monthName = (ym: string) =>
-        new Date(`${ym}-15T12:00:00Z`).toLocaleDateString("es-DO", { month: "long", year: "numeric", timeZone: "UTC" });
+        new Date(`${ym}-15T12:00:00Z`)
+          .toLocaleDateString("es-DO", { month: "long", year: "numeric", timeZone: "UTC" })
+          .replace(/^./, (c) => c.toUpperCase());
       sections.push({
         title: "Por mes",
         columns: [
