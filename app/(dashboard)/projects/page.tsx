@@ -14,6 +14,7 @@ import {
 import {
   listProjects,
   listConvertibleQuotations,
+  CONVERTIBLE_PAGE_SIZE,
   getProjectStats,
 } from "@/features/projects/queries";
 import { PROJECT_STATUSES } from "@/features/projects/schema";
@@ -70,15 +71,16 @@ function StatCard({
 export default async function ProjectsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; client?: string; q?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; client?: string; q?: string; page?: string; cpage?: string }>;
 }) {
   const params = await searchParams;
   const page = parsePage(params.page);
+  const cpage = parsePage(params.cpage);
   const q = cleanSearch(params.q);
-  const [{ rows: projects, total, pageSize }, convertibleQuotations, clientOptions, stats] =
+  const [{ rows: projects, total, pageSize }, { rows: convertibleQuotations, total: convertibleTotal }, clientOptions, stats] =
     await Promise.all([
       listProjects({ status: params.status, clientId: params.client, search: q, page }),
-      listConvertibleQuotations(),
+      listConvertibleQuotations(cpage),
       listClientOptions(),
       getProjectStats(params.client),
     ]);
@@ -221,23 +223,27 @@ export default async function ProjectsPage({
 
       {/* Convertir cotizaciones en proyecto: solo quien puede crear proyectos. */}
       <IfCan permission="projects.create">
-        {convertibleQuotations.length > 0 && (
-          <section className="rounded-[var(--radius-lg)] border border-brand-accent/25 bg-brand-accent-light p-5">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        {convertibleTotal > 0 && (
+          <details open className="group rounded-[var(--radius-lg)] border border-brand-accent/25 bg-brand-accent-light p-5">
+            <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 group-open:mb-4" title="Pulsa para plegar o desplegar">
               <div className="flex items-center gap-3">
                 <IconBadge icon={<FileCheck2 size={18} />} tone="blue" />
                 <div>
                   <p className="text-sm font-semibold text-brand-text">
-                    {convertibleQuotations.length === 1
-                      ? "1 cotización aprobada sin proyecto"
-                      : `${convertibleQuotations.length} cotizaciones aprobadas sin proyecto`}
+                    {convertibleTotal === 1
+                      ? "1 cotización aprobada sin proyecto ni factura"
+                      : `${convertibleTotal} cotizaciones aprobadas sin proyecto ni factura`}
                   </p>
                   <p className="text-xs text-brand-muted">
-                    Conviértelas en proyecto para empezar a planificar el evento.
+                    Si es un evento, conviértela en proyecto; si es una venta directa, factúrala desde la cotización.
                   </p>
                 </div>
               </div>
-            </div>
+              <span className="text-xs font-medium text-brand-accent">
+                <span className="group-open:hidden">Mostrar</span>
+                <span className="hidden group-open:inline">Ocultar</span>
+              </span>
+            </summary>
             <ul className="flex flex-col gap-2">
               {convertibleQuotations.map((q) => (
                 <li
@@ -267,7 +273,18 @@ export default async function ProjectsPage({
                 </li>
               ))}
             </ul>
-          </section>
+            <div className="mt-3">
+              <Pagination
+                basePath="/projects"
+                page={cpage}
+                pageSize={CONVERTIBLE_PAGE_SIZE}
+                total={convertibleTotal}
+                pageParam="cpage"
+                params={{ status: params.status, client: params.client, q, page: params.page }}
+                compact
+              />
+            </div>
+          </details>
         )}
       </IfCan>
 

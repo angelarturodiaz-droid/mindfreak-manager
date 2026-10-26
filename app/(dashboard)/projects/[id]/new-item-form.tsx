@@ -55,7 +55,7 @@ export function NewProjectItemForm({
         key={selectedService?.id ?? "custom"}
         className="w-48"
       />
-      <Input label="Cant." name="quantity" type="number" step="0.01" min="0.01" defaultValue="1" className="w-20" />
+      <Input label="Cant." name="quantity" type="number" step="any" min="0.01" title="Las flechas van de 1 en 1; una fracción (ej. 1.5) se escribe a mano." defaultValue="1" className="w-20" />
       <MoneyInput
         label="Precio"
         name="unit_price"

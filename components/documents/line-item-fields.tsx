@@ -154,8 +154,9 @@ export function LineItemFields({
           label={unit ? `Cantidad (${unit})` : "Cantidad"}
           name="quantity"
           type="number"
-          step="0.01"
+          step="any"
           min="0.01"
+          info="Las flechas suben y bajan de 1 en 1 (números enteros). Si hace falta una fracción, escríbela a mano (ej. 1.5 horas)."
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
         />

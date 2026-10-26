@@ -1058,3 +1058,7 @@ pulsa el botón.
   cotización sin proyecto → copia DIRECTA (sin cotización), con aviso; de
   proyecto → mismo proyecto. Uso: ventas sin cotización (servicio mensual).
   Venta nueva que el cliente aprueba → Duplicar cotización.
+- (25-oct) Cantidad: `step="any"` (flechas de 1 en 1, decimales a mano) en
+  line-item-fields, new-item-form del proyecto y delivery-form.
+  `listConvertibleQuotations(page)` excluye cotizaciones con factura directa
+  activa y pagina de 5 (CONVERTIBLE_PAGE_SIZE, parámetro `cpage`).

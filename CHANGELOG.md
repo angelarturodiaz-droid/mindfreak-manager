@@ -1,5 +1,14 @@
 # CHANGELOG — Mindfreak Manager
 
+## Ajustes tras la prueba BR (2026-10-25)
+
+- **Cantidad** en las líneas (cotizaciones, facturas, servicios del proyecto y
+  entregas): las flechas suben y bajan de 1 en 1 (enteros); una fracción se
+  escribe a mano (ej. 1.5). Antes iban de 0.01 en 0.01.
+- **Proyectos → «Cotizaciones aprobadas sin proyecto ni factura»:** de 5 en 5
+  con paginación propia (`?cpage=`), se puede ocultar, y ya **no** muestra las
+  cotizaciones que se facturaron sin proyecto (antes ofrecía convertirlas).
+
 ## v1.0.0 — Política de Privacidad, Términos de Uso y versión (2026-10-19)
 
 - Primera versión numerada: **v1.0.0** (`package.json` y `lib/app-info.ts`;

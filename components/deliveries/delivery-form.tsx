@@ -298,7 +298,8 @@ export function DeliveryForm({
                       aria-label={`Cantidad línea ${i + 1}`}
                       type="number"
                       min="0.01"
-                      step="0.01"
+                      step="any"
+                      title="Las flechas van de 1 en 1; una fracción (ej. 1.5) se escribe a mano."
                       value={r.quantity}
                       onChange={(e) => updateRow(r.key, { quantity: e.target.value })}
                       className="w-full rounded-[var(--radius-md)] border border-brand-border bg-brand-surface px-2 py-2 text-right text-sm tabular-nums outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent-light"

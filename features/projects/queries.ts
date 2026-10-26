@@ -207,17 +207,38 @@ export async function listCompanyMembers() {
   return members;
 }
 
-/** Cotizaciones aprobadas que aún no se han convertido en proyecto. */
-export async function listConvertibleQuotations() {
+export const CONVERTIBLE_PAGE_SIZE = 5;
+
+/**
+ * Cotizaciones aprobadas que faltan por decidir: sin proyecto y SIN factura
+ * (las que ya se facturaron sin proyecto no se convierten: una cotización =
+ * una factura). Paginado de 5 en 5.
+ */
+export async function listConvertibleQuotations(page = 1): Promise<{
+  rows: { id: string; number: string; total: number; currency: string; clients: unknown }[];
+  total: number;
+}> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data: invoiced } = await supabase
+    .from("invoices")
+    .select("quotation_id")
+    .is("project_id", null)
+    .not("quotation_id", "is", null)
+    .neq("status", "CANCELLED");
+  const invoicedIds = [...new Set((invoiced ?? []).map((r) => r.quotation_id as string))];
+  const from = (page - 1) * CONVERTIBLE_PAGE_SIZE;
+  let query = supabase
     .from("quotations")
-    .select("id, number, total, currency, clients(name)")
+    .select("id, number, total, currency, clients(name)", { count: "exact" })
     .eq("status", "APPROVED")
     .is("project_id", null)
-    .order("issue_date", { ascending: false });
+    .order("issue_date", { ascending: false })
+    .order("number", { ascending: false })
+    .range(from, from + CONVERTIBLE_PAGE_SIZE - 1);
+  if (invoicedIds.length) query = query.not("id", "in", `(${invoicedIds.join(",")})`);
+  const { data, error, count } = await query;
   if (error) throw new Error(error.message);
-  return data;
+  return { rows: data ?? [], total: count ?? 0 };
 }
 
 export async function getQuotationForConversion(id: string) {
