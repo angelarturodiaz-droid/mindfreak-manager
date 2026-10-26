@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { quotationMarginPct } from "@/features/profitability/net-of-tax";
 import { FlowSteps } from "@/components/documents/flow-steps";
 import { InvoiceFromQuotationButton } from "./invoice-from-quotation-button";
 import { safeReturnTo, returnToLabel } from "@/lib/utils/return-to";
@@ -536,8 +537,9 @@ export default async function QuotationDetailPage({
           },
           {
             label: "Margen estimado",
-            value: `${quotation.estimated_margin?.toFixed(1) ?? "0.0"} %`,
-            info: "Margen sobre el total según los costos estimados. Interno: no lo ve el cliente.",
+            // Se calcula al mostrarla (sin ITBIS), así las cotizaciones viejas también salen bien.
+            value: `${quotationMarginPct(quotation).toFixed(1)} %`,
+            info: `(Venta sin ITBIS − costo estimado) ÷ venta sin ITBIS. Venta sin ITBIS: ${formatMoney(Number(quotation.total) - Number(quotation.tax), quotation.currency)}. El ITBIS no es ganancia: se le paga a la DGII. Interno: no lo ve el cliente.`,
             tone: "muted" as const,
           },
         ]}

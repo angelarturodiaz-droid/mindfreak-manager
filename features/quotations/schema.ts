@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { quotationMarginPct } from "@/features/profitability/net-of-tax";
 import { currencyCodeSchema } from "@/features/currencies/schema";
 
 export const QUOTATION_STATUSES = [
@@ -117,7 +118,8 @@ export function calculateQuotationTotals(
   const tax = lineTax + commissionTax;
 
   const total = Math.max(0, subtotal + commissionAmount - discount + tax);
-  const estimatedMargin = total > 0 ? ((total - estimatedCost) / total) * 100 : 0;
+  // Margen sobre la venta SIN ITBIS (V1-1): el ITBIS no es ganancia.
+  const estimatedMargin = quotationMarginPct({ total, tax, estimated_cost: estimatedCost });
 
   return {
     subtotal,

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { pctDelta, type Period } from "./period";
+import { expenseNet, profit, saleNet } from "@/features/profitability/net-of-tax";
 
 type NameRel = { name: string } | { name: string }[] | null;
 function relName(rel: NameRel): string | null {
@@ -48,35 +49,35 @@ export async function getProjectProfitabilityComparison(period: Period) {
     const [invoices, expenses] = await Promise.all([
       supabase
         .from("invoices")
-        .select("project_id, total, exchange_rate")
+        .select("project_id, total, tax, exchange_rate")
         .in("project_id", projectIds)
         .not("status", "in", NOT_SALES),
       supabase
         .from("expenses")
-        .select("project_id, total, exchange_rate")
+        .select("project_id, subtotal, total, exchange_rate")
         .in("project_id", projectIds)
         .neq("status", ACTIVE_EXPENSE_STATUSES_EXCLUDE),
     ]);
     if (invoices.error) throw new Error(invoices.error.message);
     if (expenses.error) throw new Error(expenses.error.message);
 
-    function sumByProject(rows: { project_id: string | null; total: number; exchange_rate: number }[] | null) {
-      const map = new Map<string, number>();
-      for (const r of rows ?? []) {
-        if (!r.project_id) continue;
-        map.set(r.project_id, (map.get(r.project_id) ?? 0) + r.total * r.exchange_rate);
-      }
-      return map;
+    // V1-1: ingresos sin ITBIS (total − ITBIS) y gastos sin ITBIS (subtotal).
+    const ingresosMap = new Map<string, number>();
+    for (const r of invoices.data ?? []) {
+      if (!r.project_id) continue;
+      ingresosMap.set(r.project_id, (ingresosMap.get(r.project_id) ?? 0) + saleNet(r));
     }
-
-    const ingresosMap = sumByProject(invoices.data);
-    const gastosMap = sumByProject(expenses.data);
+    const gastosMap = new Map<string, number>();
+    for (const r of expenses.data ?? []) {
+      if (!r.project_id) continue;
+      gastosMap.set(r.project_id, (gastosMap.get(r.project_id) ?? 0) + expenseNet(r));
+    }
 
     return projects.map((p) => {
       const ingresos = ingresosMap.get(p.id) ?? 0;
       const gastos = gastosMap.get(p.id) ?? 0;
-      const utilidad = ingresos - gastos;
-      return { ...p, ingresos, gastos, utilidad, margen: ingresos > 0 ? (utilidad / ingresos) * 100 : null };
+      const { utilidad, margen } = profit(ingresos, gastos);
+      return { ...p, ingresos, gastos, utilidad, margen };
     });
   }
 
@@ -323,7 +324,7 @@ export async function getClientProfitabilityComparison(period: Period) {
     const [invoicesRes, projectsRes] = await Promise.all([
       supabase
         .from("invoices")
-        .select("client_id, total, exchange_rate, clients(name)")
+        .select("client_id, total, tax, exchange_rate, clients(name)")
         .not("status", "in", NOT_SALES)
         .gte("issue_date", from)
         .lte("issue_date", to),
@@ -340,14 +341,14 @@ export async function getClientProfitabilityComparison(period: Period) {
       if (!row.client_id) continue;
       const name = relName(row.clients) ?? "—";
       const current = map.get(row.client_id) ?? { name, ingresos: 0, costos: 0 };
-      current.ingresos += row.total * row.exchange_rate;
+      current.ingresos += saleNet(row);
       map.set(row.client_id, current);
     }
 
     if (projectIds.length > 0) {
       const { data: expenses, error: expError } = await supabase
         .from("expenses")
-        .select("project_id, total, exchange_rate")
+        .select("project_id, subtotal, total, exchange_rate")
         .neq("status", ACTIVE_EXPENSE_STATUSES_EXCLUDE)
         .gte("expense_date", from)
         .lte("expense_date", to)
@@ -358,7 +359,7 @@ export async function getClientProfitabilityComparison(period: Period) {
         const clientId = projectToClient.get(row.project_id);
         if (!clientId) continue;
         const current = map.get(clientId) ?? { name: "—", ingresos: 0, costos: 0 };
-        current.costos += row.total * row.exchange_rate;
+        current.costos += expenseNet(row);
         map.set(clientId, current);
       }
     }
@@ -430,13 +431,13 @@ export async function getPeriodOverPeriodComparison(period: Period) {
     const [invoicesRes, expensesRes] = await Promise.all([
       supabase
         .from("invoices")
-        .select("total, exchange_rate")
+        .select("total, tax, exchange_rate")
         .not("status", "in", NOT_SALES)
         .gte("issue_date", from)
         .lte("issue_date", to),
       supabase
         .from("expenses")
-        .select("total, exchange_rate")
+        .select("subtotal, total, exchange_rate")
         .neq("status", ACTIVE_EXPENSE_STATUSES_EXCLUDE)
         .gte("expense_date", from)
         .lte("expense_date", to),
@@ -444,10 +445,11 @@ export async function getPeriodOverPeriodComparison(period: Period) {
     if (invoicesRes.error) throw new Error(invoicesRes.error.message);
     if (expensesRes.error) throw new Error(expensesRes.error.message);
 
-    const ventas = (invoicesRes.data ?? []).reduce((a, r) => a + r.total * r.exchange_rate, 0);
-    const gastos = (expensesRes.data ?? []).reduce((a, r) => a + r.total * r.exchange_rate, 0);
-    const utilidad = ventas - gastos;
-    return { ventas, gastos, utilidad, margen: ventas > 0 ? (utilidad / ventas) * 100 : null };
+    // V1-1: sin ITBIS (ventas = total − ITBIS; gastos = subtotal).
+    const ventas = (invoicesRes.data ?? []).reduce((a, r) => a + saleNet(r), 0);
+    const gastos = (expensesRes.data ?? []).reduce((a, r) => a + expenseNet(r), 0);
+    const { utilidad, margen } = profit(ventas, gastos);
+    return { ventas, gastos, utilidad, margen };
   }
 
   const [current, previous] = await Promise.all([

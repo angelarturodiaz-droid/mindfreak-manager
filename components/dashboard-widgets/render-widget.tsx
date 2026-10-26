@@ -109,10 +109,11 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
         <KpiTile
           href="/invoices"
           label="Ventas del mes"
+          info="Facturas emitidas este mes, sin ITBIS (el ITBIS que cobras es de la DGII). Debajo, el total con ITBIS. El anillo compara lo cobrado con lo facturado con ITBIS, porque los dos son dinero."
           value={money0(kpis.ventas)}
-          title={money(kpis.ventas)}
-          ring={{ value: ratio(kpis.cobros, kpis.ventas), tone: "success", label: "Cobrado vs. facturado este mes" }}
-          sub={`Cobrado este mes ${money0(kpis.cobros)}`}
+          title={`${money(kpis.ventas)} sin ITBIS`}
+          ring={{ value: ratio(kpis.cobros, kpis.ventasConItbis), tone: "success", label: "Cobrado vs. facturado (con ITBIS) este mes" }}
+          sub={`Con ITBIS ${money0(kpis.ventasConItbis)} · Cobrado ${money0(kpis.cobros)}`}
           subTone="success"
         />
       );
@@ -121,8 +122,9 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
         <KpiTile
           href="/expenses"
           label="Gastos del mes"
+          info="Gastos del mes por su subtotal, sin ITBIS (se pagan con ITBIS, pero ese ITBIS no es costo). El anillo es el % de las ventas sin ITBIS."
           value={money0(kpis.gastos)}
-          title={money(kpis.gastos)}
+          title={`${money(kpis.gastos)} sin ITBIS · con ITBIS ${money(kpis.gastosConItbis)}`}
           ring={{
             value: ratio(kpis.gastos, kpis.ventas),
             tone: kpis.ventas > 0 && kpis.gastos > kpis.ventas ? "danger" : "warning",
@@ -130,10 +132,10 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
           }}
           sub={
             kpis.ventas <= 0
-              ? `Sin ventas este mes · Pagado ${money0(kpis.pagos)}`
+              ? `Con ITBIS ${money0(kpis.gastosConItbis)} · Sin ventas este mes`
               : kpis.gastos > kpis.ventas
-                ? `Superan las ventas (${money0(kpis.ventas)})`
-                : "de las ventas del mes"
+                ? `Con ITBIS ${money0(kpis.gastosConItbis)} · Superan las ventas`
+                : `Con ITBIS ${money0(kpis.gastosConItbis)}`
           }
           subTone={kpis.ventas > 0 && kpis.gastos > kpis.ventas ? "danger" : undefined}
         />
@@ -147,7 +149,8 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
           danger={kpis.utilidad < 0}
           icon={<PiggyBank size={20} />}
           tone={kpis.utilidad < 0 ? "danger" : "success"}
-          sub="Ventas − gastos del mes"
+          info="Ventas sin ITBIS − gastos sin ITBIS del mes. El ITBIS que cobras se le paga a la DGII y el de tus compras no es costo, por eso no cuentan."
+          sub="Ventas − gastos, sin ITBIS"
         />
       );
     case "margen_mes":
@@ -156,8 +159,9 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
           label="Margen del mes"
           value={percent(kpis.margen)}
           danger={(kpis.margen ?? 0) < 0}
-          ring={{ value: kpis.margen, tone: (kpis.margen ?? 0) < 0 ? "danger" : "success", label: "Utilidad / ventas" }}
-          sub={kpis.ventas > 0 ? "Utilidad ÷ ventas del mes" : "Sin ventas este mes"}
+          ring={{ value: kpis.margen, tone: (kpis.margen ?? 0) < 0 ? "danger" : "success", label: "Utilidad / ventas sin ITBIS" }}
+          info="Utilidad del mes ÷ ventas sin ITBIS del mes."
+          sub={kpis.ventas > 0 ? "Utilidad ÷ ventas, sin ITBIS" : "Sin ventas este mes"}
         />
       );
     case "total_por_cobrar":

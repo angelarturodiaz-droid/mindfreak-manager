@@ -1,5 +1,23 @@
 # CHANGELOG — Mindfreak Manager
 
+## V1-1 — Rentabilidad sin ITBIS + reporte «Ingresos por tipo de impuesto» (2026-10-25)
+
+- **La utilidad y el margen se calculan sin ITBIS** (decisión con el contador, 22-oct):
+  venta = total − ITBIS; gasto = subtotal. Los documentos se siguen registrando y pagando
+  con ITBIS; nada fiscal cambia. Una sola cuenta (`features/profitability`) para:
+  - **Proyecto:** tarjeta Utilidad real y pestaña Finanzas (Cotizado/Facturado con «Sin
+    ITBIS: …» debajo; Costo real sin ITBIS con «Pagado con ITBIS: …»; presupuesto
+    comparado con gastos sin ITBIS; Cobrado y Por cobrar siguen con ITBIS).
+  - **Cotización:** margen estimado sobre la venta sin ITBIS (también las viejas).
+  - **Reportes → Rentabilidad por proyecto** (pantalla, Excel y PDF).
+  - **Comparaciones:** rentabilidad por proyecto, por cliente y período vs. período.
+  - **Dashboard:** Ventas y Gastos del mes sin ITBIS (con ITBIS en la línea de abajo),
+    Utilidad y Margen del mes. El anillo de cobrado compara con lo facturado con ITBIS.
+  - ⓘ en cada número nuevo.
+- **Reporte nuevo «Ingresos por tipo de impuesto»** (Reportes → Ventas): por mes,
+  facturas emitidas, gravado, exento, total sin ITBIS, ITBIS facturado y total; detalle
+  por factura con NCF; filtros fechas, cliente y proyecto; Excel y PDF.
+
 ## Ajustes tras la prueba BR (2026-10-25)
 
 - **Cantidad** en las líneas (cotizaciones, facturas, servicios del proyecto y

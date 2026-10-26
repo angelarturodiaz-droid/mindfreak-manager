@@ -120,15 +120,16 @@ async function ProjectProfitabilityTab({ period }: { period: Period }) {
   const columns: Column<(typeof rows)[number]>[] = [
     { header: "Proyecto", accessor: (p) => `${p.number} — ${p.name}` },
     { header: "Estado", accessor: (p) => <Badge status={p.status}>{PROJECT_STATUS_LABELS[p.status] ?? p.status}</Badge> },
-    { header: "Ingresos", accessor: (p) => formatMoneyPrecise(p.ingresos) },
-    { header: "Gastos", accessor: (p) => formatMoneyPrecise(p.gastos) },
+    { header: "Ingresos", info: "Facturas emitidas, sin ITBIS (total − ITBIS). El ITBIS que cobras es de la DGII: no es venta.", accessor: (p) => formatMoneyPrecise(p.ingresos) },
+    { header: "Gastos", info: "Gastos por su subtotal, sin ITBIS. Se pagan con ITBIS, pero ese ITBIS no es costo.", accessor: (p) => formatMoneyPrecise(p.gastos) },
     {
       header: "Utilidad",
+      info: "Ingresos sin ITBIS − gastos sin ITBIS.",
       accessor: (p) => (
         <span className={p.utilidad < 0 ? "font-medium text-brand-danger" : "font-medium"}>{formatMoneyPrecise(p.utilidad)}</span>
       ),
     },
-    { header: "Margen", accessor: (p) => <span className="text-brand-muted">{formatPercent(p.margen)}</span> },
+    { header: "Margen", info: "Utilidad ÷ ventas sin ITBIS.", accessor: (p) => <span className="text-brand-muted">{formatPercent(p.margen)}</span> },
     { header: "vs. período anterior", accessor: (p) => <DeltaPill pct={p.deltaUtilidadPct} /> },
   ];
 
@@ -136,19 +137,22 @@ async function ProjectProfitabilityTab({ period }: { period: Period }) {
     <div className="flex flex-col gap-6">
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <KpiCard
-          label="Ingresos"
+          label="Ingresos sin ITBIS"
+          info={"Facturas emitidas, sin ITBIS (total − ITBIS). El ITBIS que cobras es de la DGII: no es venta."}
           value={formatMoney(totals.ingresos)}
           trend={totals.deltaIngresosPct !== null ? `${totals.deltaIngresosPct >= 0 ? "+" : ""}${totals.deltaIngresosPct.toFixed(1)}%` : undefined}
           icon={<TrendingUp size={16} />}
         />
         <KpiCard
-          label="Gastos"
+          label="Gastos sin ITBIS"
+          info={"Gastos por su subtotal, sin ITBIS. Se pagan con ITBIS, pero ese ITBIS no es costo."}
           value={formatMoney(totals.gastos)}
           trend={totals.deltaGastosPct !== null ? `${totals.deltaGastosPct >= 0 ? "+" : ""}${totals.deltaGastosPct.toFixed(1)}%` : undefined}
           icon={<CreditCard size={16} />}
         />
         <KpiCard
           label="Utilidad"
+          info={"Ingresos sin ITBIS − gastos sin ITBIS."}
           value={formatMoney(totals.utilidad)}
           danger={totals.utilidad < 0}
           trend={totals.deltaUtilidadPct !== null ? `${totals.deltaUtilidadPct >= 0 ? "+" : ""}${totals.deltaUtilidadPct.toFixed(1)}%` : undefined}
@@ -345,24 +349,26 @@ async function ClientProfitabilityTab({ period }: { period: Period }) {
 
   const columns: Column<(typeof rows)[number]>[] = [
     { header: "Cliente", accessor: (c) => c.name },
-    { header: "Ingresos", accessor: (c) => formatMoneyPrecise(c.ingresos) },
-    { header: "Costos", accessor: (c) => formatMoneyPrecise(c.costos) },
+    { header: "Ingresos", info: "Facturas emitidas, sin ITBIS (total − ITBIS). El ITBIS que cobras es de la DGII: no es venta.", accessor: (c) => formatMoneyPrecise(c.ingresos) },
+    { header: "Costos", info: "Gastos por su subtotal, sin ITBIS. Se pagan con ITBIS, pero ese ITBIS no es costo.", accessor: (c) => formatMoneyPrecise(c.costos) },
     {
       header: "Utilidad",
+      info: "Ingresos sin ITBIS − gastos sin ITBIS.",
       accessor: (c) => (
         <span className={c.utilidad < 0 ? "font-medium text-brand-danger" : "font-medium"}>{formatMoneyPrecise(c.utilidad)}</span>
       ),
     },
-    { header: "Margen", accessor: (c) => <span className="text-brand-muted">{formatPercent(c.margen)}</span> },
+    { header: "Margen", info: "Utilidad ÷ ventas sin ITBIS.", accessor: (c) => <span className="text-brand-muted">{formatPercent(c.margen)}</span> },
     { header: "vs. período anterior", accessor: (c) => <DeltaPill pct={c.deltaUtilidadPct} /> },
   ];
 
   return (
     <div className="flex flex-col gap-6">
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        <KpiCard label="Ingresos" value={formatMoney(totals.ingresos)} icon={<TrendingUp size={16} />} />
-        <KpiCard label="Costos" value={formatMoney(totals.costos)} icon={<CreditCard size={16} />} />
+        <KpiCard label="Ingresos sin ITBIS" info={"Facturas emitidas, sin ITBIS (total − ITBIS). El ITBIS que cobras es de la DGII: no es venta."} value={formatMoney(totals.ingresos)} icon={<TrendingUp size={16} />} />
+        <KpiCard label="Costos sin ITBIS" info={"Gastos por su subtotal, sin ITBIS. Se pagan con ITBIS, pero ese ITBIS no es costo."} value={formatMoney(totals.costos)} icon={<CreditCard size={16} />} />
         <KpiCard
+          info={"Ingresos sin ITBIS − gastos sin ITBIS."}
           label="Utilidad"
           value={formatMoney(totals.utilidad)}
           danger={totals.utilidad < 0}
@@ -422,19 +428,22 @@ async function PeriodOverPeriodTab({ period }: { period: Period }) {
     <div className="flex flex-col gap-6">
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
-          label="Ventas"
+          label="Ventas sin ITBIS"
+          info={"Facturas emitidas, sin ITBIS (total − ITBIS). El ITBIS que cobras es de la DGII: no es venta."}
           value={formatMoney(data.current.ventas)}
           trend={data.deltaVentas.pct !== null ? `${data.deltaVentas.pct >= 0 ? "+" : ""}${data.deltaVentas.pct.toFixed(1)}%` : undefined}
           icon={<TrendingUp size={16} />}
         />
         <KpiCard
-          label="Gastos"
+          label="Gastos sin ITBIS"
+          info={"Gastos por su subtotal, sin ITBIS. Se pagan con ITBIS, pero ese ITBIS no es costo."}
           value={formatMoney(data.current.gastos)}
           trend={data.deltaGastos.pct !== null ? `${data.deltaGastos.pct >= 0 ? "+" : ""}${data.deltaGastos.pct.toFixed(1)}%` : undefined}
           icon={<CreditCard size={16} />}
         />
         <KpiCard
           label="Utilidad"
+          info={"Ingresos sin ITBIS − gastos sin ITBIS."}
           value={formatMoney(data.current.utilidad)}
           danger={data.current.utilidad < 0}
           trend={data.deltaUtilidad.pct !== null ? `${data.deltaUtilidad.pct >= 0 ? "+" : ""}${data.deltaUtilidad.pct.toFixed(1)}%` : undefined}
@@ -442,6 +451,7 @@ async function PeriodOverPeriodTab({ period }: { period: Period }) {
         />
         <KpiCard
           label="Margen"
+          info={"Utilidad ÷ ventas sin ITBIS."}
           value={formatPercent(data.current.margen)}
           trend={data.deltaMargen !== null ? `${data.deltaMargen >= 0 ? "+" : ""}${data.deltaMargen.toFixed(1)} pts` : undefined}
           icon={<CalendarRange size={16} />}
@@ -485,7 +495,7 @@ type PeriodDetailRow = {
 function periodDetailRows(data: Awaited<ReturnType<typeof getPeriodOverPeriodComparison>>): PeriodDetailRow[] {
   return [
     {
-      metric: "Ventas",
+      metric: "Ventas sin ITBIS",
       isPercent: false,
       current: data.current.ventas,
       previous: data.previous.ventas,
@@ -494,7 +504,7 @@ function periodDetailRows(data: Awaited<ReturnType<typeof getPeriodOverPeriodCom
       positiveIsGood: true,
     },
     {
-      metric: "Gastos",
+      metric: "Gastos sin ITBIS",
       isPercent: false,
       current: data.current.gastos,
       previous: data.previous.gastos,

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { profit, sumExpenses, sumSales } from "@/features/profitability/net-of-tax";
 
 /**
  * Mes calendario en hora de República Dominicana. El servidor corre en UTC:
@@ -50,7 +51,7 @@ export async function getDashboardKPIs() {
   ] = await Promise.all([
     supabase
       .from("invoices")
-      .select("total, exchange_rate")
+      .select("total, tax, exchange_rate")
       // Borradores y canceladas no son ventas.
       .not("status", "in", "(CANCELLED,DRAFT)")
       .gte("issue_date", start)
@@ -62,7 +63,7 @@ export async function getDashboardKPIs() {
       .lt("payment_date", end),
     supabase
       .from("expenses")
-      .select("total, exchange_rate")
+      .select("subtotal, total, exchange_rate")
       .neq("status", "CANCELLED")
       .gte("expense_date", start)
       .lt("expense_date", end),
@@ -107,23 +108,31 @@ export async function getDashboardKPIs() {
     if (r.error) throw new Error(r.error.message);
   }
 
-  const ventas = sumConverted(invoicesThisMonth.data);
+  // V1-1: ventas y gastos SIN ITBIS para la utilidad y el margen; con ITBIS
+  // como referencia (y para comparar con lo cobrado, que es dinero).
+  const ventasT = sumSales(invoicesThisMonth.data);
+  const gastosT = sumExpenses(expensesThisMonth.data);
+  const ventas = ventasT.net;
   const cobros = sumConverted(paymentsThisMonth.data, "amount");
-  const gastos = sumConverted(expensesThisMonth.data);
+  const gastos = gastosT.net;
   const pagos = sumConverted(supplierPaymentsThisMonth.data, "amount");
   const cuentasPorCobrar = sumConverted(receivables.data, "balance");
   const cuentasPorPagar = sumConverted(payables.data, "balance");
-  const utilidad = ventas - gastos;
+  const { utilidad, margen } = profit(ventas, gastos);
 
   return {
+    /** Sin ITBIS. */
     ventas,
+    ventasConItbis: ventasT.gross,
     cobros,
+    /** Sin ITBIS. */
     gastos,
+    gastosConItbis: gastosT.gross,
     pagos,
     cuentasPorCobrar,
     cuentasPorPagar,
     utilidad,
-    margen: ventas > 0 ? (utilidad / ventas) * 100 : null,
+    margen,
     proyectosActivos: activeProjects.count ?? 0,
     cotizacionesPendientes: pendingQuotations.count ?? 0,
     cotizacionesAprobadas: approvedQuotations.count ?? 0,

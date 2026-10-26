@@ -10,7 +10,7 @@ describe("reportes por rol", () => {
     expect(canSeeComparisons(ventas)).toBe(false);
   });
   it("Finanzas ve todos", () => {
-    expect(allowedReports(finanzas)).toHaveLength(9);
+    expect(allowedReports(finanzas)).toHaveLength(10);
     expect(canSeeComparisons(finanzas)).toBe(true);
   });
   it("sin Ver reportes no ve ninguno", () => {

@@ -14,6 +14,9 @@ import {
   getCashflowByCategoryReport,
   getPaymentsByCurrencyReport,
   getCustomerWithholdingsReport,
+  getIncomeByTaxTypeReport,
+  type IncomeByTaxInvoiceRow,
+  type IncomeByTaxMonthRow,
   CASHFLOW_ORIGINS,
   type CashflowOrigin,
   listBankAccountsForFilter,
@@ -90,7 +93,13 @@ const REPORT_CATALOG: { category: string; reports: { key: string; label: string 
       { key: "por-moneda", label: "Pagos y cobros por moneda" },
     ],
   },
-  { category: "Ventas", reports: [{ key: "ventas-cliente", label: "Ventas por cliente" }] },
+  {
+    category: "Ventas",
+    reports: [
+      { key: "ventas-cliente", label: "Ventas por cliente" },
+      { key: "ingresos-impuesto", label: "Ingresos por tipo de impuesto" },
+    ],
+  },
   { category: "Gastos", reports: [{ key: "gastos-categoria", label: "Gastos por categoría" }] },
 ];
 
@@ -122,6 +131,7 @@ type Params = {
   p_proximas?: string;
   p_cotizaciones?: string;
   p_aceptadas?: string;
+  p_facturas?: string;
 };
 
 /** Monedas del catálogo (Configuración → Monedas y tasas), incluidas las inactivas: puede haber documentos en ellas. */
@@ -193,6 +203,7 @@ export default async function ReportsPage({
         {activeReport === "cxc" && <ReceivableReport params={params} />}
         {activeReport === "cxp" && <PayableReport params={params} />}
         {activeReport === "ventas-cliente" && <SalesByClientReport params={params} />}
+        {activeReport === "ingresos-impuesto" && <IncomeByTaxReport params={params} />}
         {activeReport === "flujo-categoria" && <CashflowByCategoryReport params={params} />}
         {activeReport === "gastos-categoria" && <ExpensesByCategoryReport params={params} />}
         {activeReport === "por-moneda" && <PaymentsByCurrencyReport params={params} />}
@@ -323,17 +334,19 @@ async function ProfitabilityReport({ params }: { params: Params }) {
       header: "Estado",
       accessor: (p) => <Badge status={p.status}>{PROJECT_STATUS_LABELS[p.status] ?? p.status}</Badge>,
     },
-    { header: "Cotizado", className: "text-right", accessor: (p) => <Money value={p.cotizado} /> },
-    { header: "Facturado", className: "text-right", accessor: (p) => <Money value={p.facturado} /> },
-    { header: "Cobrado", className: "text-right", accessor: (p) => <Money value={p.cobrado} /> },
-    { header: "Costo real", className: "text-right", accessor: (p) => <Money value={p.costoReal} /> },
+    { header: "Cotizado", info: "Cotizaciones aprobadas, sin ITBIS.", className: "text-right", accessor: (p) => <Money value={p.cotizado} /> },
+    { header: "Facturado", info: "Facturas emitidas, sin ITBIS: el ITBIS que le cobras al cliente es de la DGII, no es venta.", className: "text-right", accessor: (p) => <Money value={p.facturado} /> },
+    { header: "Cobrado", info: "Dinero que ya entró por el proyecto (con ITBIS, porque es dinero real).", className: "text-right", accessor: (p) => <Money value={p.cobrado} /> },
+    { header: "Costo real", info: "Gastos del proyecto por su subtotal, sin ITBIS (se pagan con ITBIS, pero el ITBIS no es costo).", className: "text-right", accessor: (p) => <Money value={p.costoReal} /> },
     {
       header: "Utilidad real",
+      info: "Facturado sin ITBIS − costo real sin ITBIS.",
       className: "text-right",
       accessor: (p) => <Money value={p.utilidadReal} strong tone={p.utilidadReal < 0 ? "danger" : undefined} />,
     },
     {
       header: "Margen",
+      info: "Utilidad real ÷ facturado sin ITBIS.",
       className: "text-right",
       accessor: (p) =>
         p.margenReal === null ? (
@@ -352,7 +365,7 @@ async function ProfitabilityReport({ params }: { params: Params }) {
     <div>
       <ReportTitle params={params}
         title="Rentabilidad por proyecto"
-        description="Cotizado, facturado, cobrado y costo real de cada proyecto, con su utilidad y margen."
+        description="Cotizado, facturado, cobrado y costo real de cada proyecto, con su utilidad y margen. La utilidad se calcula sin ITBIS (el cobrado es dinero real, con ITBIS)."
       />
       <FilterBar report="rentabilidad">
         <DateRangeFields from={params.from} to={params.to} />
@@ -392,9 +405,9 @@ async function ProfitabilityReport({ params }: { params: Params }) {
 
       {profitability.length > 0 && (
         <section className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Facturado" value={formatMoney(profitability.reduce((a, p) => a + p.facturado, 0))} icon={<ArrowDownCircle size={20} />} tone="blue" hint={`${profitability.length} proyectos`} />
+          <StatCard label="Facturado sin ITBIS" value={formatMoney(profitability.reduce((a, p) => a + p.facturado, 0))} icon={<ArrowDownCircle size={20} />} tone="blue" hint={`${profitability.length} proyectos · con ITBIS ${formatMoney(profitability.reduce((a, p) => a + p.facturadoConItbis, 0))}`} />
           <StatCard label="Cobrado" value={formatMoney(profitability.reduce((a, p) => a + p.cobrado, 0))} icon={<CalendarDays size={20} />} tone="green" />
-          <StatCard label="Costo real" value={formatMoney(profitability.reduce((a, p) => a + p.costoReal, 0))} icon={<Clock size={20} />} tone="amber" />
+          <StatCard label="Costo real sin ITBIS" value={formatMoney(profitability.reduce((a, p) => a + p.costoReal, 0))} icon={<Clock size={20} />} tone="amber" />
           <StatCard
             label="Utilidad real"
             value={formatMoney(profitability.reduce((a, p) => a + p.utilidadReal, 0))}
@@ -1723,6 +1736,142 @@ async function CustomerWithholdingsReport({ params }: { params: Params }) {
         )
       ) : (
         <PagedDataTable basePath="/reports" params={params as Record<string, string | undefined>} pageParam="page" columns={columns} rows={rows} keyFor={(r) => r.id} maxWidth="max-w-none" />
+      )}
+    </div>
+  );
+}
+
+// ---- Ingresos por tipo de impuesto (V1-1) ----
+
+function monthLongLabel(ym: string) {
+  return new Date(`${ym}-15T12:00:00Z`).toLocaleDateString("es-DO", { month: "long", year: "numeric", timeZone: "UTC" });
+}
+
+async function IncomeByTaxReport({ params }: { params: Params }) {
+  const [data, clients, projects] = await Promise.all([
+    getIncomeByTaxTypeReport({
+      from: params.from,
+      to: params.to,
+      clientId: params.client_id,
+      projectId: params.project_id,
+    }),
+    listClientsForFilter(),
+    listProjectsForFilter(),
+  ]);
+  const { months, invoices, totals } = data;
+
+  const monthColumns: Column<IncomeByTaxMonthRow>[] = [
+    { header: "Mes", accessor: (m) => <span className="font-medium capitalize text-brand-text">{monthLongLabel(m.month)}</span> },
+    { header: "Facturas", className: "text-right", accessor: (m) => <span className="tabular-nums">{m.facturas}</span> },
+    { header: "Gravado", info: "Ventas con ITBIS, sin el ITBIS (base sobre la que se cobró el impuesto).", className: "text-right", accessor: (m) => <Money value={m.gravado} /> },
+    { header: "Exento", info: "Ventas exentas o no sujetas a ITBIS (ej. capacitaciones exentas).", className: "text-right", accessor: (m) => <Money value={m.exento} /> },
+    { header: "Total sin ITBIS", info: "Gravado + exento. Es la venta que cuenta para la utilidad.", className: "text-right", accessor: (m) => <Money value={m.totalSinItbis} strong /> },
+    { header: "ITBIS facturado", info: "ITBIS que se le cobró al cliente en esas facturas. No es venta: se le paga a la DGII.", className: "text-right", accessor: (m) => <Money value={m.itbis} /> },
+    { header: "Total facturado", info: "Total de las facturas, con ITBIS.", className: "text-right", accessor: (m) => <Money value={m.total} /> },
+  ];
+
+  const invoiceColumns: Column<IncomeByTaxInvoiceRow>[] = [
+    { header: "Fecha", accessor: (r) => <span className="whitespace-nowrap text-brand-muted">{formatDate(r.issueDate)}</span> },
+    {
+      header: "Factura",
+      accessor: (r) => (
+        <Link href={`/invoices/${r.id}`} className="font-medium text-brand-text hover:text-brand-accent">
+          {r.number}
+        </Link>
+      ),
+    },
+    { header: "NCF", info: "Comprobante fiscal de la factura (NCF o e-NCF).", accessor: (r) => <span className="whitespace-nowrap tabular-nums text-brand-muted">{r.ncf ?? "—"}</span> },
+    { header: "Cliente", accessor: (r) => <span className="text-brand-text">{r.clientName}</span> },
+    { header: "Proyecto", accessor: (r) => <span className="text-brand-muted">{r.projectNumber ?? "—"}</span> },
+    { header: "Gravado", className: "text-right", accessor: (r) => <Money value={r.gravado} /> },
+    { header: "Exento", className: "text-right", accessor: (r) => <Money value={r.exento} /> },
+    { header: "ITBIS", className: "text-right", accessor: (r) => <Money value={r.itbis} /> },
+    {
+      header: "Total",
+      info: "Total con ITBIS, en pesos. Si la factura es en otra moneda, se convirtió con su tasa.",
+      className: "text-right",
+      accessor: (r) => (
+        <span className="flex flex-col items-end">
+          <Money value={r.total} strong />
+          {r.currency !== "DOP" && <span className="text-[11px] text-brand-muted">Factura en {r.currency}</span>}
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <ReportTitle
+        params={params}
+        title="Ingresos por tipo de impuesto"
+        description="Facturas emitidas por mes: cuánto fue gravado, cuánto exento, el ITBIS facturado y el total. En la moneda base, por fecha de emisión."
+      />
+      <FilterBar report="ingresos-impuesto">
+        <DateRangeFields from={params.from} to={params.to} />
+        <Select label="Cliente" name="client_id" defaultValue={params.client_id ?? ""}>
+          <option value="">Todos</option>
+          {clients.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </Select>
+        <Select label="Proyecto" name="project_id" defaultValue={params.project_id ?? ""}>
+          <option value="">Todos</option>
+          {projects.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.number} — {p.name}
+            </option>
+          ))}
+        </Select>
+      </FilterBar>
+
+      {invoices.length > 0 && (
+        <section className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Gravado" value={formatMoney(totals.gravado)} icon={<Receipt size={20} />} tone="blue" hint={`${totals.facturas} facturas emitidas`} />
+          <StatCard label="Exento" value={formatMoney(totals.exento)} icon={<FileCheck2 size={20} />} tone="green" />
+          <StatCard label="ITBIS facturado" value={formatMoney(totals.itbis)} icon={<FileWarning size={20} />} tone="amber" hint="Se le paga a la DGII" />
+          <StatCard label="Total sin ITBIS" value={formatMoney(totals.totalSinItbis)} icon={<ArrowDownCircle size={20} />} tone="violet" hint={`Con ITBIS ${formatMoney(totals.total)}`} />
+        </section>
+      )}
+
+      <SectionHeader title="Por mes" description="Un renglón por mes, del más reciente al más antiguo." />
+      <PagedDataTable
+        basePath="/reports"
+        params={params as Record<string, string | undefined>}
+        pageParam="page"
+        columns={monthColumns}
+        rows={months}
+        keyFor={(m) => m.month}
+        emptyMessage="Sin facturas emitidas que coincidan con el filtro."
+        filtered={hasReportFilters(params)}
+        noResultsHint="Cambia los filtros de arriba y pulsa Aplicar filtros, o límpialos para ver todo."
+        clearHref={`/reports?report=${params.report ?? ""}`}
+        what="meses"
+        maxWidth="max-w-none"
+      />
+
+      {invoices.length > 0 && (
+        <div className="mt-6">
+          <CollapsibleSection
+            title="Detalle por factura"
+            description="Cada factura emitida con su NCF, separada en gravado, exento e ITBIS."
+            count={invoices.length}
+            summary={<Money value={totals.total} strong />}
+            open={!!params.p_facturas}
+          >
+            <PagedDataTable
+              basePath="/reports"
+              params={params as Record<string, string | undefined>}
+              pageParam="p_facturas"
+              columns={invoiceColumns}
+              rows={invoices}
+              keyFor={(r) => r.id}
+              emptyMessage="Sin facturas."
+              maxWidth="max-w-none"
+            />
+          </CollapsibleSection>
+        </div>
       )}
     </div>
   );

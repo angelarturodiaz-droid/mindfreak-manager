@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { relationName } from "@/lib/utils/relation";
+import { groupExpenses, groupSales, profit, splitInvoiceByTax } from "@/features/profitability/net-of-tax";
 import {
   summarizePaymentsByCurrency,
   toPaymentFxRow,
@@ -79,6 +81,8 @@ export type ProfitabilityFilters = {
 
 /**
  * Rentabilidad de proyectos (filtrable). Período = `projects.event_date`.
+ * V1-1: cotizado, facturado, costo y utilidad SIN ITBIS (ver
+ * features/profitability). Cobrado es dinero (con ITBIS).
  */
 export async function getProjectsProfitabilityReport(filters: ProfitabilityFilters = {}) {
   const supabase = await createClient();
@@ -102,10 +106,10 @@ export async function getProjectsProfitabilityReport(filters: ProfitabilityFilte
 
   const [quotations, invoices, payments, items, expenses] = await Promise.all([
     // Cotizado = cotizaciones aprobadas (la del proyecto y las adicionales).
-    supabase.from("quotations").select("project_id, total, exchange_rate").in("project_id", projectIds).eq("status", "APPROVED"),
+    supabase.from("quotations").select("project_id, total, tax, exchange_rate").in("project_id", projectIds).eq("status", "APPROVED"),
     supabase
       .from("invoices")
-      .select("project_id, total, exchange_rate")
+      .select("project_id, total, tax, exchange_rate")
       .in("project_id", projectIds)
       // Facturado = facturas emitidas (sin borradores ni canceladas).
       .not("status", "in", "(CANCELLED,DRAFT)"),
@@ -113,7 +117,7 @@ export async function getProjectsProfitabilityReport(filters: ProfitabilityFilte
     supabase.from("project_items").select("project_id, estimated_cost").in("project_id", projectIds),
     supabase
       .from("expenses")
-      .select("project_id, total, exchange_rate")
+      .select("project_id, subtotal, total, exchange_rate")
       .in("project_id", projectIds)
       .neq("status", "CANCELLED"),
   ]);
@@ -132,31 +136,37 @@ export async function getProjectsProfitabilityReport(filters: ProfitabilityFilte
     return map;
   }
 
-  const cotizadoMap = groupSum(quotations.data);
-  const facturadoMap = groupSum(invoices.data);
+  const cotizadoMap = groupSales(quotations.data, (r) => r.project_id);
+  const facturadoMap = groupSales(invoices.data, (r) => r.project_id);
   const cobradoMap = groupSum(payments.data);
-  const costoRealMap = groupSum(expenses.data);
+  const costoRealMap = groupExpenses(expenses.data, (r) => r.project_id);
   const costoEstimadoMap = new Map<string, number>();
   for (const r of items.data ?? []) {
     costoEstimadoMap.set(r.project_id, (costoEstimadoMap.get(r.project_id) ?? 0) + r.estimated_cost);
   }
 
   return projects.map((p) => {
-    const cotizado = cotizadoMap.get(p.id) ?? 0;
-    const facturado = facturadoMap.get(p.id) ?? 0;
+    const cotizado = cotizadoMap.get(p.id)?.net ?? 0;
+    const facturado = facturadoMap.get(p.id)?.net ?? 0;
     const cobrado = cobradoMap.get(p.id) ?? 0;
     const costoEstimado = costoEstimadoMap.get(p.id) ?? 0;
-    const costoReal = costoRealMap.get(p.id) ?? 0;
-    const utilidadReal = facturado - costoReal;
+    const costoReal = costoRealMap.get(p.id)?.net ?? 0;
+    const { utilidad: utilidadReal, margen: margenReal } = profit(facturado, costoReal);
     return {
       ...p,
+      /** Sin ITBIS. */
       cotizado,
+      /** Sin ITBIS. */
       facturado,
+      /** Con ITBIS (referencia). */
+      facturadoConItbis: facturadoMap.get(p.id)?.gross ?? 0,
+      /** Dinero que entró (con ITBIS). */
       cobrado,
       costoEstimado,
+      /** Sin ITBIS. */
       costoReal,
       utilidadReal,
-      margenReal: facturado > 0 ? (utilidadReal / facturado) * 100 : null,
+      margenReal,
     };
   });
 }
@@ -286,6 +296,112 @@ export async function getSalesByClientReport(filters: SalesByClientFilters = {})
   return Array.from(map.entries())
     .map(([clientId, v]) => ({ clientId, ...v }))
     .sort((a, b) => b.total - a.total);
+}
+
+export type IncomeByTaxFilters = {
+  from?: string;
+  to?: string;
+  clientId?: string;
+  projectId?: string;
+};
+
+export type IncomeByTaxInvoiceRow = {
+  id: string;
+  number: string;
+  issueDate: string;
+  ncf: string | null;
+  clientName: string;
+  projectNumber: string | null;
+  currency: string;
+  gravado: number;
+  exento: number;
+  totalSinItbis: number;
+  itbis: number;
+  total: number;
+};
+
+export type IncomeByTaxMonthRow = {
+  month: string; // YYYY-MM
+  facturas: number;
+  gravado: number;
+  exento: number;
+  totalSinItbis: number;
+  itbis: number;
+  total: number;
+};
+
+/**
+ * Ingresos por tipo de impuesto (V1-1). Facturas EMITIDAS (sin borradores ni
+ * canceladas) por fecha de emisión, separadas en gravado y exento según el
+ * impuesto de cada línea (y del cargo por servicio), con el ITBIS facturado.
+ * Todo en moneda base con la tasa congelada de cada factura. Ver
+ * splitInvoiceByTax en features/profitability.
+ */
+export async function getIncomeByTaxTypeReport(filters: IncomeByTaxFilters = {}) {
+  const supabase = await createClient();
+  let query = supabase
+    .from("invoices")
+    .select(
+      "id, number, issue_date, ncf, e_ncf, currency, total, tax, exchange_rate, commission_amount, commission_tax_treatment, clients(name), projects!invoices_project_id_fkey(number), invoice_items(subtotal, tax, tax_treatment)",
+    )
+    .not("status", "in", "(CANCELLED,DRAFT)")
+    .order("issue_date", { ascending: false })
+    .order("number", { ascending: false });
+  if (filters.from) query = query.gte("issue_date", filters.from);
+  if (filters.to) query = query.lte("issue_date", filters.to);
+  if (filters.clientId) query = query.eq("client_id", filters.clientId);
+  if (filters.projectId) query = query.eq("project_id", filters.projectId);
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+
+  const invoices: IncomeByTaxInvoiceRow[] = (data ?? []).map((inv) => {
+    const split = splitInvoiceByTax({
+      total: inv.total,
+      tax: inv.tax,
+      exchange_rate: inv.exchange_rate,
+      commission_amount: inv.commission_amount,
+      commission_tax_treatment: inv.commission_tax_treatment,
+      lines: (inv.invoice_items ?? []) as { subtotal: number; tax: number; tax_treatment: string | null }[],
+    });
+    const project = inv.projects as { number: string } | { number: string }[] | null;
+    return {
+      id: inv.id,
+      number: inv.number,
+      issueDate: inv.issue_date,
+      ncf: inv.e_ncf || inv.ncf || null,
+      clientName: relationName(inv.clients) ?? "—",
+      projectNumber: (Array.isArray(project) ? project[0]?.number : project?.number) ?? null,
+      currency: inv.currency,
+      ...split,
+    };
+  });
+
+  const byMonth = new Map<string, IncomeByTaxMonthRow>();
+  for (const r of invoices) {
+    const month = r.issueDate.slice(0, 7);
+    const m = byMonth.get(month) ?? { month, facturas: 0, gravado: 0, exento: 0, totalSinItbis: 0, itbis: 0, total: 0 };
+    m.facturas += 1;
+    m.gravado += r.gravado;
+    m.exento += r.exento;
+    m.totalSinItbis += r.totalSinItbis;
+    m.itbis += r.itbis;
+    m.total += r.total;
+    byMonth.set(month, m);
+  }
+  const months = Array.from(byMonth.values()).sort((a, b) => b.month.localeCompare(a.month));
+  const totals = months.reduce(
+    (a, m) => ({
+      facturas: a.facturas + m.facturas,
+      gravado: a.gravado + m.gravado,
+      exento: a.exento + m.exento,
+      totalSinItbis: a.totalSinItbis + m.totalSinItbis,
+      itbis: a.itbis + m.itbis,
+      total: a.total + m.total,
+    }),
+    { facturas: 0, gravado: 0, exento: 0, totalSinItbis: 0, itbis: 0, total: 0 },
+  );
+  return { months, invoices, totals };
 }
 
 export type ExpensesByCategoryFilters = {

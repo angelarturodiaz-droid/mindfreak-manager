@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { profit, sumExpenses, sumSales } from "@/features/profitability/net-of-tax";
 import { getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { PAGE_SIZE, pageRange } from "@/lib/utils/pagination";
 import { idsByName, searchOr } from "@/lib/utils/search";
@@ -267,6 +268,10 @@ export async function listQuotationItemsFor(quotationId: string) {
  * Rentabilidad del proyecto (F15), consolidado en la moneda base de la
  * empresa usando el `exchange_rate` ya congelado de cada registro (nunca la
  * tasa actual) — ver F0-Arquitectura, sección P.
+ *
+ * V1-1 (25-oct): la utilidad y el margen se calculan SIN ITBIS (venta =
+ * total − ITBIS; gasto = subtotal). Los montos con ITBIS (`*ConItbis`) se
+ * devuelven para mostrarlos como referencia. Ver features/profitability.
  */
 export async function getProjectProfitability(projectId: string) {
   const supabase = await createClient();
@@ -275,13 +280,13 @@ export async function getProjectProfitability(projectId: string) {
     await Promise.all([
       supabase
         .from("quotations")
-        .select("total, exchange_rate")
+        .select("total, tax, exchange_rate")
         .eq("project_id", projectId)
         // Cotizado = lo que el cliente aprobó (la cotización del proyecto y las adicionales aprobadas).
         .eq("status", "APPROVED"),
       supabase
         .from("invoices")
-        .select("total, exchange_rate")
+        .select("total, tax, exchange_rate")
         .eq("project_id", projectId)
         // Facturado = facturas emitidas (sin borradores ni canceladas).
         .not("status", "in", "(CANCELLED,DRAFT)"),
@@ -295,7 +300,7 @@ export async function getProjectProfitability(projectId: string) {
         .eq("project_id", projectId),
       supabase
         .from("expenses")
-        .select("total, exchange_rate")
+        .select("subtotal, total, exchange_rate")
         .eq("project_id", projectId)
         .neq("status", "CANCELLED"),
       supabase.from("projects").select("budget").eq("id", projectId).single(),
@@ -305,37 +310,42 @@ export async function getProjectProfitability(projectId: string) {
     if (r.error) throw new Error(r.error.message);
   }
 
-  const sum = (rows: { amount?: number; total?: number; exchange_rate?: number }[] | null) =>
-    (rows ?? []).reduce(
-      (acc, r) => acc + (r.total ?? r.amount ?? 0) * (r.exchange_rate ?? 1),
-      0,
-    );
-
-  const cotizado = sum(quotations.data);
-  const facturado = sum(invoices.data);
-  const cobrado = sum(customerPayments.data);
-  const costoEstimado = (projectItems.data ?? []).reduce(
-    (acc, r) => acc + r.estimated_cost,
+  const cot = sumSales(quotations.data);
+  const fac = sumSales(invoices.data);
+  const gastos = sumExpenses(expenses.data);
+  // Cobrado = dinero que entró (con ITBIS): es flujo, no rentabilidad.
+  const cobrado = (customerPayments.data ?? []).reduce(
+    (acc, r) => acc + Number(r.amount ?? 0) * Number(r.exchange_rate ?? 1),
     0,
   );
-  const costoReal = sum(expenses.data);
-  const presupuesto = project.data?.budget ?? 0;
+  const costoEstimado = (projectItems.data ?? []).reduce(
+    (acc, r) => acc + Number(r.estimated_cost ?? 0),
+    0,
+  );
+  const presupuesto = Number(project.data?.budget ?? 0);
 
-  const utilidadEstimada = cotizado - costoEstimado;
-  const utilidadReal = facturado - costoReal;
+  const estimada = profit(cot.net, costoEstimado);
+  const real = profit(fac.net, gastos.net);
 
   return {
-    cotizado,
-    facturado,
+    /** Cotizado y facturado SIN ITBIS (base de la utilidad). */
+    cotizado: cot.net,
+    facturado: fac.net,
+    /** Montos de los documentos, con ITBIS (lo que dice cada cotización/factura). */
+    cotizadoConItbis: cot.gross,
+    facturadoConItbis: fac.gross,
     cobrado,
     costoEstimado,
-    costoReal,
-    utilidadEstimada,
-    utilidadReal,
-    margenEstimado: cotizado > 0 ? (utilidadEstimada / cotizado) * 100 : null,
-    margenReal: facturado > 0 ? (utilidadReal / facturado) * 100 : null,
+    /** Gastos sin ITBIS (costo para la rentabilidad). */
+    costoReal: gastos.net,
+    /** Gastos con ITBIS (lo que se paga al proveedor). */
+    costoRealConItbis: gastos.gross,
+    utilidadEstimada: estimada.utilidad,
+    utilidadReal: real.utilidad,
+    margenEstimado: estimada.margen,
+    margenReal: real.margen,
     presupuesto,
-    presupuestoConsumidoPct: presupuesto > 0 ? (costoReal / presupuesto) * 100 : null,
+    presupuestoConsumidoPct: presupuesto > 0 ? (gastos.net / presupuesto) * 100 : null,
   };
 }
 

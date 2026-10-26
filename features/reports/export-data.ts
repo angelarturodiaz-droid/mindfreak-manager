@@ -12,6 +12,7 @@ import {
   getProjectsProfitabilityReport,
   getReceivablesDashboard,
   getSalesByClientReport,
+  getIncomeByTaxTypeReport,
   type CashflowOrigin,
 } from "./queries";
 import {
@@ -50,7 +51,7 @@ export type ReportExportParams = Partial<
 export const EXPORTABLE_REPORTS: Record<string, { title: string; description: string }> = {
   rentabilidad: {
     title: "Rentabilidad por proyecto",
-    description: "Cotizado, facturado, cobrado y costo real de cada proyecto, con su utilidad y margen (moneda base).",
+    description: "Cotizado, facturado, cobrado y costo real de cada proyecto, con su utilidad y margen (moneda base). Utilidad sin ITBIS.",
   },
   vencimientos: {
     title: "Cuentas por cobrar y vencimientos",
@@ -61,6 +62,10 @@ export const EXPORTABLE_REPORTS: Record<string, { title: string; description: st
   "ventas-cliente": {
     title: "Ventas por cliente",
     description: "Total facturado por cliente en la moneda base, de mayor a menor.",
+  },
+  "ingresos-impuesto": {
+    title: "Ingresos por tipo de impuesto",
+    description: "Facturas emitidas por mes: gravado, exento, ITBIS facturado y total, en la moneda base (fecha de emisión).",
   },
   "gastos-categoria": {
     title: "Gastos por categoría",
@@ -167,9 +172,9 @@ async function buildSections(report: string, p: ReportExportParams, base: string
       const util = sum((r) => r.utilidadReal);
       summary.push(
         { label: "Proyectos", value: rows.length },
-        { label: "Facturado", value: money(fact, base) },
-        { label: "Cobrado", value: money(sum((r) => r.cobrado), base) },
-        { label: "Costo real", value: money(sum((r) => r.costoReal), base) },
+        { label: "Facturado sin ITBIS", value: money(fact, base) },
+        { label: "Cobrado (con ITBIS)", value: money(sum((r) => r.cobrado), base) },
+        { label: "Costo real sin ITBIS", value: money(sum((r) => r.costoReal), base) },
         { label: "Utilidad real", value: money(util, base) },
       );
       sections.push({
@@ -177,10 +182,10 @@ async function buildSections(report: string, p: ReportExportParams, base: string
           { header: "N.º", kind: "text" },
           { header: "Proyecto", kind: "text" },
           { header: "Estado", kind: "text" },
-          { header: "Cotizado", kind: "money", currency: base },
-          { header: "Facturado", kind: "money", currency: base },
-          { header: "Cobrado", kind: "money", currency: base },
-          { header: "Costo real", kind: "money", currency: base },
+          { header: "Cotizado sin ITBIS", kind: "money", currency: base },
+          { header: "Facturado sin ITBIS", kind: "money", currency: base },
+          { header: "Cobrado (con ITBIS)", kind: "money", currency: base },
+          { header: "Costo real sin ITBIS", kind: "money", currency: base },
           { header: "Utilidad real", kind: "money", currency: base },
           { header: "Margen", kind: "percent" },
         ],
@@ -207,7 +212,7 @@ async function buildSections(report: string, p: ReportExportParams, base: string
           fact > 0 ? (util / fact) * 100 : null,
         ],
       });
-      notes.push("Utilidad real = facturado − costo real. Margen = utilidad ÷ facturado.");
+      notes.push("Utilidad real = facturado sin ITBIS − gastos sin ITBIS (subtotal). Margen = utilidad ÷ facturado sin ITBIS. El ITBIS cobrado es de la DGII y el de las compras no es costo; el cobrado es dinero real, con ITBIS.");
       break;
     }
 
@@ -350,6 +355,71 @@ async function buildSections(report: string, p: ReportExportParams, base: string
         rows: rows.map((r) => [r.name, total > 0 ? (r.total / total) * 100 : null, r.total]),
         totals: ["Total", total > 0 ? 100 : null, total],
       });
+      break;
+    }
+
+    case "ingresos-impuesto": {
+      const { months, invoices, totals } = await getIncomeByTaxTypeReport({
+        from: p.from,
+        to: p.to,
+        clientId: p.client_id,
+        projectId: p.project_id,
+      });
+      summary.push(
+        { label: "Facturas emitidas", value: totals.facturas },
+        { label: "Gravado", value: money(totals.gravado, base) },
+        { label: "Exento", value: money(totals.exento, base) },
+        { label: "Total sin ITBIS", value: money(totals.totalSinItbis, base) },
+        { label: "ITBIS facturado", value: money(totals.itbis, base) },
+        { label: "Total facturado", value: money(totals.total, base) },
+      );
+      const monthName = (ym: string) =>
+        new Date(`${ym}-15T12:00:00Z`).toLocaleDateString("es-DO", { month: "long", year: "numeric", timeZone: "UTC" });
+      sections.push({
+        title: "Por mes",
+        columns: [
+          { header: "Mes", kind: "text" },
+          { header: "Facturas", kind: "number" },
+          { header: "Gravado", kind: "money", currency: base },
+          { header: "Exento", kind: "money", currency: base },
+          { header: "Total sin ITBIS", kind: "money", currency: base },
+          { header: "ITBIS facturado", kind: "money", currency: base },
+          { header: "Total facturado", kind: "money", currency: base },
+        ],
+        rows: months.map((m) => [monthName(m.month), m.facturas, m.gravado, m.exento, m.totalSinItbis, m.itbis, m.total]),
+        totals: ["Total", totals.facturas, totals.gravado, totals.exento, totals.totalSinItbis, totals.itbis, totals.total],
+      });
+      sections.push({
+        title: "Detalle por factura",
+        columns: [
+          { header: "Fecha", kind: "date" },
+          { header: "Factura", kind: "text" },
+          { header: "NCF", kind: "text" },
+          { header: "Cliente", kind: "text" },
+          { header: "Proyecto", kind: "text" },
+          { header: "Moneda", kind: "text" },
+          { header: "Gravado", kind: "money", currency: base },
+          { header: "Exento", kind: "money", currency: base },
+          { header: "ITBIS", kind: "money", currency: base },
+          { header: "Total", kind: "money", currency: base },
+        ],
+        rows: invoices.map((r) => [
+          r.issueDate,
+          r.number,
+          r.ncf ?? "",
+          r.clientName,
+          r.projectNumber ?? "",
+          r.currency,
+          r.gravado,
+          r.exento,
+          r.itbis,
+          r.total,
+        ]),
+        totals: ["Total", "", "", "", "", "", totals.gravado, totals.exento, totals.itbis, totals.total],
+      });
+      notes.push(
+        "Solo facturas emitidas (sin borradores ni canceladas). Gravado y exento se separan por el impuesto de cada línea y del cargo por servicio; gravado + exento = total sin ITBIS. Montos en la moneda base con la tasa de cada factura.",
+      );
       break;
     }
 

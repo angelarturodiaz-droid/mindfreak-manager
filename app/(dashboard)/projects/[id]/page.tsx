@@ -278,16 +278,21 @@ function MetricCard({
   hint,
   pct,
   danger,
+  info,
 }: {
   label: string;
   value: string;
+  info?: string;
   hint?: React.ReactNode;
   pct?: number | null;
   danger?: boolean;
 }) {
   return (
     <Card className="@container flex min-w-0 flex-col gap-2">
-      <p className="text-sm font-medium text-brand-muted">{label}</p>
+      <p className="flex items-center gap-1 text-sm font-medium text-brand-muted">
+        {label}
+        {info && <InfoHint text={info} />}
+      </p>
       <p
         className={`whitespace-nowrap text-base @[12rem]:text-lg @[15rem]:text-xl font-semibold tracking-tight tabular-nums ${danger ? "text-brand-danger" : "text-brand-text"}`}
       >
@@ -298,6 +303,11 @@ function MetricCard({
     </Card>
   );
 }
+
+const UTILIDAD_REAL_INFO =
+  "Lo que de verdad se ganó: facturado sin ITBIS − gastos sin ITBIS. El ITBIS que le cobras al cliente se le paga a la DGII y el de tus compras no es costo, por eso no cuentan. El margen es la utilidad ÷ lo facturado sin ITBIS.";
+const PRESUPUESTO_INFO =
+  "Cuánto del presupuesto del proyecto ya se usó, comparando con los gastos sin ITBIS (igual que el costo real).";
 
 type ProjectItemRow = Awaited<ReturnType<typeof listProjectItems>>[number];
 type QuotationRow = Awaited<ReturnType<typeof listProjectQuotations>>[number];
@@ -402,7 +412,8 @@ export default async function ProjectDetailPage({
   const linesBase = items.reduce((sum, i) => sum + Number(i.quantity) * Number(i.unit_price), 0);
   const estimatedCostTotal = items.reduce((sum, i) => sum + i.estimated_cost, 0);
   const estimatedMargin = linesBase > 0 ? ((linesBase - estimatedCostTotal) / linesBase) * 100 : null;
-  const porCobrar = Math.max(0, profitability.facturado - profitability.cobrado);
+  // Por cobrar es dinero: se compara con lo facturado CON ITBIS.
+  const porCobrar = Math.max(0, profitability.facturadoConItbis - profitability.cobrado);
 
   const itemColumns: Column<ProjectItemRow>[] = [
     { header: "Descripción", accessor: (i) => <span className="text-brand-text">{i.description}</span> },
@@ -818,15 +829,16 @@ export default async function ProjectDetailPage({
           value={formatMoney(profitability.presupuesto)}
           pct={profitability.presupuestoConsumidoPct}
           danger={(profitability.presupuestoConsumidoPct ?? 0) > 100}
+          info={PRESUPUESTO_INFO}
           hint={
             profitability.presupuesto > 0
-              ? `Gastado ${formatMoney(profitability.costoReal)} (${formatPercent(profitability.presupuestoConsumidoPct)})`
+              ? `Gastado sin ITBIS ${formatMoney(profitability.costoReal)} (${formatPercent(profitability.presupuestoConsumidoPct)})`
               : "Sin presupuesto definido"
           }
         />
         <MetricCard
           label="Facturado"
-          value={formatMoney(profitability.facturado)}
+          value={formatMoney(profitability.facturadoConItbis)}
           pct={billing.pct}
           danger={billing.state === "over"}
           hint={
@@ -842,14 +854,15 @@ export default async function ProjectDetailPage({
         <MetricCard
           label="Cobrado"
           value={formatMoney(profitability.cobrado)}
-          pct={profitability.facturado > 0 ? (profitability.cobrado / profitability.facturado) * 100 : null}
+          pct={profitability.facturadoConItbis > 0 ? (profitability.cobrado / profitability.facturadoConItbis) * 100 : null}
           hint={porCobrar > 0 ? `Por cobrar ${formatMoney(porCobrar)}` : "Nada pendiente por cobrar"}
         />
         <MetricCard
           label="Utilidad real"
           value={formatMoney(profitability.utilidadReal)}
           danger={profitability.utilidadReal < 0}
-          hint={`Margen ${formatPercent(profitability.margenReal)} · Facturado − gastos`}
+          info={UTILIDAD_REAL_INFO}
+          hint={`Margen ${formatPercent(profitability.margenReal)} · Facturado − gastos, sin ITBIS`}
         />
       </section>
 
@@ -1031,9 +1044,23 @@ export default async function ProjectDetailPage({
           <section>
             <SectionHeader title="Ingresos" description="Lo que se le cotizó, facturó y cobró al cliente." />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <KpiCard label="Cotizado" value={formatMoney(profitability.cotizado)} />
-              <KpiCard label="Facturado" value={formatMoney(profitability.facturado)} />
-              <KpiCard label="Cobrado" value={formatMoney(profitability.cobrado)} />
+              <KpiCard
+                label="Cotizado"
+                value={formatMoney(profitability.cotizadoConItbis)}
+                hint={`Sin ITBIS: ${formatMoney(profitability.cotizado)}`}
+                info="Total de las cotizaciones aprobadas, tal como las vio el cliente (con ITBIS). Debajo, la venta sin ITBIS, que es la que cuenta para la utilidad."
+              />
+              <KpiCard
+                label="Facturado"
+                value={formatMoney(profitability.facturadoConItbis)}
+                hint={`Sin ITBIS: ${formatMoney(profitability.facturado)}`}
+                info="Total de las facturas emitidas (con ITBIS). Debajo, la venta sin ITBIS: el ITBIS que le cobras al cliente no es tuyo, se le paga a la DGII."
+              />
+              <KpiCard
+                label="Cobrado"
+                value={formatMoney(profitability.cobrado)}
+                info="Dinero que ya entró por este proyecto. Es dinero real, con ITBIS."
+              />
               <KpiCard label="Por cobrar" value={formatMoney(porCobrar)} danger={porCobrar > 0} />
             </div>
           </section>
@@ -1041,9 +1068,15 @@ export default async function ProjectDetailPage({
             <SectionHeader title="Costos" description="Lo estimado en las líneas contra lo gastado de verdad." />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <KpiCard label="Costo estimado" value={formatMoney(profitability.costoEstimado)} />
-              <KpiCard label="Costo real (gastos)" value={formatMoney(profitability.costoReal)} />
+              <KpiCard
+                label="Costo real (gastos, sin ITBIS)"
+                value={formatMoney(profitability.costoReal)}
+                hint={`Pagado con ITBIS: ${formatMoney(profitability.costoRealConItbis)}`}
+                info="Lo que costaron los gastos del proyecto sin su ITBIS. Los gastos se siguen registrando y pagando con ITBIS (el monto de abajo); para la utilidad se toma el subtotal."
+              />
               <MetricCard
                 label="Presupuesto consumido"
+                info={PRESUPUESTO_INFO}
                 value={formatPercent(profitability.presupuestoConsumidoPct)}
                 pct={profitability.presupuestoConsumidoPct}
                 danger={(profitability.presupuestoConsumidoPct ?? 0) > 100}
@@ -1058,19 +1091,23 @@ export default async function ProjectDetailPage({
                 label="Utilidad estimada"
                 value={formatMoney(profitability.utilidadEstimada)}
                 danger={profitability.utilidadEstimada < 0}
-                hint={`Margen ${formatPercent(profitability.margenEstimado)} · Cotizado − costo estimado`}
+                info="Lo que se espera ganar: cotizado sin ITBIS − costo estimado de las líneas. El margen es esa utilidad ÷ el cotizado sin ITBIS."
+                hint={`Margen ${formatPercent(profitability.margenEstimado)} · Cotizado sin ITBIS − costo estimado`}
               />
               <MetricCard
                 label="Utilidad real"
                 value={formatMoney(profitability.utilidadReal)}
                 danger={profitability.utilidadReal < 0}
-                hint={`Margen ${formatPercent(profitability.margenReal)} · Facturado − costo real`}
+                info={UTILIDAD_REAL_INFO}
+                hint={`Margen ${formatPercent(profitability.margenReal)} · Facturado sin ITBIS − costo real sin ITBIS`}
               />
             </div>
           </section>
           <p className="text-xs text-brand-muted">
-            Todos los montos se consolidan en la moneda base de la empresa, usando la tasa de
-            cambio ya congelada de cada factura, gasto o cobro (nunca la tasa actual).
+            La utilidad y el margen se calculan sin ITBIS: el ITBIS que cobras es de la DGII y el
+            de tus compras no es costo. Todos los montos se consolidan en la moneda base de la
+            empresa, usando la tasa de cambio ya congelada de cada factura, gasto o cobro (nunca la
+            tasa actual).
           </p>
         </div>
       ) : activeTab === "ventas" && quotations && invoices && customerPayments ? (

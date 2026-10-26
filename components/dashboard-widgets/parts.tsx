@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
+import { InfoHint } from "@/components/ui/info-hint";
 
 /** Colores del sistema para indicadores (ver app/globals.css). */
 export type Tone = "accent" | "success" | "warning" | "danger" | "violet" | "teal";
@@ -95,9 +96,12 @@ export function KpiTile({
   href,
   danger,
   title,
+  info,
 }: {
   label: string;
   value: string;
+  /** Explicación (ⓘ) junto a la etiqueta. */
+  info?: string;
   /** Monto exacto al pasar el mouse (cuando `value` va redondeado). */
   title?: string;
   sub?: ReactNode;
@@ -111,9 +115,12 @@ export function KpiTile({
 }) {
   const body = (
     <div className="@container flex h-full min-w-0 flex-col gap-2 rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface px-3.5 py-3 shadow-[var(--shadow-sm)] transition-shadow hover:shadow-[var(--shadow-md)]">
-      <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-brand-muted" title={label}>
-        {label}
-      </p>
+      <div className="flex min-w-0 items-center gap-1">
+        <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-brand-muted" title={label}>
+          {label}
+        </p>
+        {info && <InfoHint text={info} />}
+      </div>
       <div className="flex min-w-0 items-center gap-3">
         {ring ? (
           <RingGauge value={ring.value} tone={ring.tone ?? tone} label={ring.label} />

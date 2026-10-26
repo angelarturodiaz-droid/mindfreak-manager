@@ -12,6 +12,7 @@ export const REPORT_PERMISSIONS: Record<string, string[]> = {
   "flujo-categoria": ["banks.view"],
   "por-moneda": ["payments.view"],
   "ventas-cliente": ["invoices.view"],
+  "ingresos-impuesto": ["invoices.view"],
   "gastos-categoria": ["expenses.view"],
 };
 

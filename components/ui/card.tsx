@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { InfoHint } from "./info-hint";
 
 export function Card({
   children,
@@ -30,9 +31,12 @@ export function KpiCard({
   danger,
   icon,
   hint,
+  info,
 }: {
   label: string;
   value: string;
+  /** Explicación al pasar el mouse por la ⓘ junto al título. */
+  info?: string;
   /** Texto chico debajo del valor (ej. desglose). */
   hint?: ReactNode;
   /** Ej. "+12.4%" o "-3.1%" respecto al período anterior */
@@ -44,7 +48,10 @@ export function KpiCard({
   return (
     <Card className="@container flex h-full min-w-0 flex-col gap-3 transition-shadow hover:shadow-[var(--shadow-md)]">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-sm font-medium text-brand-muted">{label}</p>
+        <p className="flex items-center gap-1 text-sm font-medium text-brand-muted">
+          {label}
+          {info && <InfoHint text={info} />}
+        </p>
         {icon && (
           <span
             className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-md)] ${

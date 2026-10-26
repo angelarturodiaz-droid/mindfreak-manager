@@ -251,12 +251,12 @@ const SECTIONS: Section[] = [
               <strong>indicadores</strong> compactos (hasta 5 por fila) y debajo
               los <strong>gráficos y listas</strong> en 3 columnas. Cada indicador
               trae una línea de detalle y, cuando aplica, un anillo con un %:
-              Ventas = cuánto se cobró este mes frente a lo facturado; Gastos = %
-              de las ventas; Margen = utilidad sobre ventas; Por cobrar / Total
+              Ventas = cuánto se cobró este mes frente a lo facturado con ITBIS (los dos son dinero); Gastos = %
+              de las ventas sin ITBIS; Margen = utilidad sobre ventas sin ITBIS; Por cobrar / Total
               vencido = qué parte de lo pendiente ya está vencida.
             </>,
             <>
-              <strong>Cómo se calculan Ventas, Gastos y Margen del mes</strong>: Ventas = total de las facturas <strong>emitidas</strong> del mes (fecha de emisión; no cuentan los <strong>borradores</strong>, que están en espera, ni las canceladas); Gastos = total de los gastos del mes (fecha del gasto, sin los cancelados), pagados o no; los dos con ITBIS y convertidos a pesos con la tasa de cada documento. Utilidad = Ventas − Gastos y Margen = Utilidad ÷ Ventas. Si en el mes hay muy pocas ventas, el % puede ser enorme (ej. −812,310 %): el anillo muestra como máximo <em>&gt;999%</em> y, si los gastos superan las ventas, se pone en rojo con el aviso <em>Superan las ventas</em>. El mes es el de la hora de República Dominicana.
+              <strong>Cómo se calculan Ventas, Gastos y Margen del mes</strong>: Ventas = total de las facturas <strong>emitidas</strong> del mes (fecha de emisión; no cuentan los <strong>borradores</strong>, que están en espera, ni las canceladas); Gastos = gastos del mes (fecha del gasto, sin los cancelados), pagados o no. <strong>Desde el 25-oct los dos van sin ITBIS</strong> (ventas = total − ITBIS; gastos = subtotal), convertidos a pesos con la tasa de cada documento; debajo de cada tarjeta sale el monto <em>con ITBIS</em>. El ITBIS que le cobras al cliente es de la DGII y el de tus compras no es costo, por eso no cuentan en la ganancia. Utilidad = Ventas − Gastos (sin ITBIS) y Margen = Utilidad ÷ Ventas sin ITBIS. El <em>Flujo financiero</em> sigue con dinero real (con ITBIS). Si en el mes hay muy pocas ventas, el % puede ser enorme (ej. −812,310 %): el anillo muestra como máximo <em>&gt;999%</em> y, si los gastos superan las ventas, se pone en rojo con el aviso <em>Superan las ventas</em>. El mes es el de la hora de República Dominicana.
             </>,
             <>
               <strong>Flujo financiero</strong>: cobros (verde) y pagos (rojo) de
@@ -509,7 +509,7 @@ const SECTIONS: Section[] = [
         <Bullets
           items={[
             "Mientras está en Borrador se puede editar libremente; una vez enviada, los cambios importantes quedan registrados.",
-            <><strong>Cómo está organizado el detalle</strong>: arriba el <em>Avance de la cotización</em> (Borrador → Enviada → Aprobada → Proyecto): cada paso tiene su ⓘ, una línea corta que dice qué significa y, <strong>al pasar el mouse</strong>, la explicación completa; el paso 2 dice si está enviada, vista por el cliente o en negociación. Debajo, la franja <strong>Siguiente paso</strong> (ej. &ldquo;comparte el PDF y pulsa Marcar como enviada&rdquo;, &ldquo;espera la respuesta del cliente…&rdquo;, &ldquo;pulsa Convertir a Proyecto&rdquo;). Debajo, en una franja, Subtotal, Comisión, Descuento, Impuesto, <strong>Total</strong> y, aparte, el <em>costo y margen estimados</em> (internos, no salen en el PDF). A la derecha, tarjetas que se abren y cierran: Condición de pago, Condiciones y Datos bancarios.</>,
+            <><strong>Cómo está organizado el detalle</strong>: arriba el <em>Avance de la cotización</em> (Borrador → Enviada → Aprobada → Proyecto): cada paso tiene su ⓘ, una línea corta que dice qué significa y, <strong>al pasar el mouse</strong>, la explicación completa; el paso 2 dice si está enviada, vista por el cliente o en negociación. Debajo, la franja <strong>Siguiente paso</strong> (ej. &ldquo;comparte el PDF y pulsa Marcar como enviada&rdquo;, &ldquo;espera la respuesta del cliente…&rdquo;, &ldquo;pulsa Convertir a Proyecto&rdquo;). Debajo, en una franja, Subtotal, Comisión, Descuento, Impuesto, <strong>Total</strong> y, aparte, el <em>costo y margen estimados</em> (internos, no salen en el PDF). El <strong>margen estimado</strong> se calcula sobre la venta <strong>sin ITBIS</strong>: (total − ITBIS − costo estimado) ÷ (total − ITBIS); la ⓘ muestra la venta sin ITBIS. Ej.: COT-0026 pasó de 47.0 % a 37.5 %. A la derecha, tarjetas que se abren y cierran: Condición de pago, Condiciones y Datos bancarios.</>,
             <><strong>Muchas líneas en el PDF</strong>: si no caben en una página, siguen solas en la siguiente. El encabezado de la tabla se repite en cada página, abajo dice <em>Página 1 de 2</em>, una línea nunca queda partida y los totales y los datos bancarios no se separan. Igual en facturas.</>,
             <><strong>Datos bancarios (opcional)</strong>: en el detalle de la cotización, la tarjeta <em>Datos bancarios para el pago</em> permite marcar cuentas para que salgan en el PDF (ej. para que el cliente deposite el anticipo). En cotizaciones viene <strong>vacía</strong>: solo sale si la marcas. Se ofrecen las cuentas marcadas en Bancos como <em>Mostrar en facturas y cotizaciones</em>.</>,
             <><strong>Negociando</strong>: si el cliente pide cambios después de enviada, pulsa <strong>Pasar a negociación</strong>; así puedes editar líneas y precios. Luego <strong>Marcar como enviada de nuevo</strong>, o directamente Aprobar o Rechazar.</>,
@@ -546,6 +546,17 @@ const SECTIONS: Section[] = [
           asignado, fechas, y acumula lo cotizado, lo facturado, lo cobrado y
           el costo real (gastos asociados), de donde sale la utilidad real y
           el margen — visibles también en el reporte de Rentabilidad.
+        </p>
+        <p className="text-sm text-brand-text">
+          <strong>Rentabilidad sin ITBIS</strong> (desde el 25-oct): la utilidad y el margen se calculan{" "}
+          <strong>sin ITBIS</strong>. Venta = total de la factura (o cotización) − ITBIS; costo = subtotal de cada gasto.
+          El ITBIS que le cobras al cliente se le paga a la DGII y el de tus compras no es costo. Los gastos se siguen
+          registrando y pagando <em>con</em> su ITBIS, y nada fiscal cambia (retenciones, neto a pagar, totales). En la
+          pestaña <em>Finanzas</em>: <em>Cotizado</em> y <em>Facturado</em> muestran el monto del documento (con ITBIS) y
+          debajo «Sin ITBIS: …»; <em>Costo real (gastos, sin ITBIS)</em> con «Pagado con ITBIS: …» debajo;{" "}
+          <em>Cobrado</em> y <em>Por cobrar</em> son dinero (con ITBIS). El <em>presupuesto consumido</em> se compara con
+          los gastos sin ITBIS. Lo mismo en Reportes → Rentabilidad, Comparaciones y el Dashboard. Ejemplo (PROJ-0001):
+          gastos RD$1,191.80 con ITBIS → costo RD$1,010.00 → utilidad real −RD$1,010.00.
         </p>
         <p className="text-sm text-brand-text">
           <strong>Varias facturas por proyecto</strong>: un proyecto puede tener todas las facturas que haga falta
@@ -1061,11 +1072,12 @@ const SECTIONS: Section[] = [
         </p>
         <Bullets
           items={[
-            <><strong>Rentabilidad por proyecto</strong> — cotizado, facturado, cobrado, costo real y margen de cada proyecto.</>,
+            <><strong>Rentabilidad por proyecto</strong> — cotizado, facturado, cobrado, costo real y margen de cada proyecto. Cotizado, facturado, costo y utilidad van <strong>sin ITBIS</strong>; cobrado es dinero (con ITBIS).</>,
             <><strong>Cuentas por Cobrar y Vencimientos</strong> — el mismo consolidado que ve el Dashboard, con línea de tiempo de vencimientos.</>,
             <><strong>Cuentas por cobrar (detalle)</strong> — el listado completo de facturas pendientes, filtrable.</>,
             <><strong>Cuentas por pagar</strong> — gastos pendientes de pago a proveedores.</>,
             <><strong>Ventas por cliente</strong> — total facturado, agrupado por cliente.</>,
+            <><strong>Ingresos por tipo de impuesto</strong> (sección Ventas) — las facturas <strong>emitidas</strong> por mes: cantidad, ingreso <strong>gravado</strong> (con ITBIS, sin el ITBIS), <strong>exento</strong> (exento o no sujeto), <strong>total sin ITBIS</strong>, <strong>ITBIS facturado</strong> y <strong>total facturado</strong>. Se separa por el impuesto de cada línea y del cargo por servicio; gravado + exento = total sin ITBIS. Abajo, <em>Detalle por factura</em> con su NCF, cliente y proyecto. Filtros: fechas (de emisión), cliente y proyecto. En pesos con la tasa de cada factura. Se exporta a Excel y PDF; útil para revisar con el contador.</>,
             <>En todos los reportes, el Dashboard y el detalle del proyecto, <strong>ventas / facturado</strong> = facturas emitidas, pagadas o vencidas: los <strong>borradores</strong> (en espera) y las canceladas no cuentan.</>,
             <><strong>Gastos por categoría</strong> — total gastado, agrupado por categoría.</>,
             <><strong>Ingresos y egresos por categoría</strong> (sección Bancos) — el flujo real de dinero de tus cuentas agrupado por categoría: ingresos, egresos y neto, con vista <em>Por mes</em>. Filtros: fechas, cuenta, <strong>proyecto</strong> (incluye <em>Sin proyecto</em> para ver lo general de la empresa, ej. pagos a suplidores que no son de un evento), <strong>tipo</strong> (solo ingresos o solo egresos), <strong>origen</strong> (cobros de clientes, pagos a proveedores, gastos sin proveedor, movimientos manuales o transferencias), <strong>cliente</strong>, <strong>proveedor</strong> y <strong>categoría</strong>. Ejemplo: Origen <em>Movimientos manuales</em> + Tipo <em>Solo egresos</em> + Proyecto <em>Sin proyecto</em> muestra los egresos manuales generales. Las transferencias entre tus cuentas se excluyen por defecto (no son ingreso ni gasto) y se pueden incluir con la casilla. La fila <em>Sin categoría</em> muestra lo que falta clasificar.</>,

@@ -1062,3 +1062,29 @@ pulsa el botón.
   line-item-fields, new-item-form del proyecto y delivery-form.
   `listConvertibleQuotations(page)` excluye cotizaciones con factura directa
   activa y pagina de 5 (CONVERTIBLE_PAGE_SIZE, parámetro `cpage`).
+
+## 2026-10-25 — V1-1 Rentabilidad sin ITBIS + reporte «Ingresos por tipo de impuesto»
+
+- **Una sola cuenta:** `features/profitability/net-of-tax.ts` (funciones puras, pruebas en
+  `tests/unit/net-of-tax.test.ts`). Venta = `total − tax` (factura o cotización; incluye el cargo
+  por servicio y resta el descuento). Gasto = `subtotal` (sin ITBIS, sin importar el comprobante).
+  Todo × `exchange_rate` congelado. `profit()` → utilidad y margen sobre la venta sin ITBIS.
+- **La usan:** `getProjectProfitability` (devuelve también `cotizadoConItbis`, `facturadoConItbis`,
+  `costoRealConItbis`; `porCobrar` y la barra de Cobrado usan lo facturado CON ITBIS),
+  `getProjectsProfitabilityReport` (+ `facturadoConItbis`), las 3 comparaciones de rentabilidad
+  (proyecto, cliente, período vs. período) y `getDashboardKPIs` (`ventas`/`gastos` sin ITBIS +
+  `ventasConItbis`/`gastosConItbis`; el anillo de Ventas compara cobros con ventas CON ITBIS).
+  `topProjects` del Dashboard sale del reporte, así que ya va sin ITBIS.
+- **Cotización:** el margen estimado se calcula al mostrarlo con `quotationMarginPct` (no se toca lo
+  guardado); `calculateQuotationTotals` guarda ya el margen nuevo en las cotizaciones nuevas.
+- **No cambia:** motor fiscal, retenciones, `net_payable`, `fiscal_snapshot`, totales de documentos,
+  cobros/pagos, saldos, flujo financiero del Dashboard, margen de Productos y Servicios, «Ventas por
+  cliente» (sigue con el total facturado). Sin migraciones.
+- **Reporte nuevo** `ingresos-impuesto` (permiso `invoices.view`): `getIncomeByTaxTypeReport` →
+  facturas emitidas con `invoice_items(subtotal, tax, tax_treatment)`; `splitInvoiceByTax`: línea
+  gravada = `tax_treatment = 'GRAVADO'` (o sin tratamiento y con ITBIS) → base `subtotal − tax`
+  (el subtotal de la línea ya trae su ITBIS); cargo por servicio según `commission_tax_treatment`;
+  exento = (total − ITBIS) − gravado. Por mes + detalle por factura (NCF = `e_ncf` o `ncf`;
+  proyecto con `projects!invoices_project_id_fkey`). Exporta Excel/PDF (`export-data.ts`).
+  Paginación: meses con `page`, detalle con `p_facturas`.
+- `KpiCard`, `MetricCard` (proyecto) y `KpiTile` (Dashboard) aceptan `info` (ⓘ junto al título).
