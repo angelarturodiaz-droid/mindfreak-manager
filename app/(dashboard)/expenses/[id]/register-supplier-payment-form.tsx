@@ -241,6 +241,21 @@ export function RegisterSupplierPaymentForm({
               </option>
             ))}
           </Select>
+          <div className="sm:col-span-3">
+            {amount > 0 && amount < balance - 0.005 ? (
+              <p className="rounded-[var(--radius-md)] border border-brand-accent/25 bg-brand-accent-light px-3 py-2 text-xs text-brand-text" role="status">
+                <strong>Pago parcial:</strong> el gasto quedará en <em>Pago parcial</em> y faltará por pagar{" "}
+                <strong>{formatMoney(Math.round((balance - amount) * 100) / 100, currency)}</strong>. Así se registra un{" "}
+                <strong>anticipo al proveedor</strong>: cuando le pagues el resto, vuelve aquí y registra otro pago.
+                {fiscal ? " Los pagos son contra el neto: las retenciones se calcularon sobre el total del gasto y no cambian." : ""}
+              </p>
+            ) : (
+              <p className="inline-flex items-center gap-1 text-xs text-brand-muted">
+                ¿Le vas a adelantar dinero al proveedor? Escribe aquí solo el adelanto.
+                <InfoHint text="Anticipo a proveedor: el gasto se registra por el monto TOTAL acordado (ej. RD$100,000) y aquí se paga solo lo que le adelantas (ej. RD$40,000). El gasto queda en «Pago parcial» con lo que falta por pagar, y cuando le pagues el resto registras otro pago. Su factura (NCF) la adjuntas en Recibos y comprobantes cuando llegue. Los anticipos a proveedores con su propio documento quedan para la versión 2." />
+              </p>
+            )}
+          </div>
         </FormSection>
 
         <FormSection step={2} title={isCard ? "Tarjeta con que se paga" : "Cuenta de donde sale el dinero"} cols={2}>

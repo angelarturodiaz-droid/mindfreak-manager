@@ -10,6 +10,7 @@ import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/features/payments/sche
 import { Input, Select } from "@/components/ui/field";
 import { SearchSelect } from "@/components/ui/search-select";
 import { MoneyInput } from "@/components/ui/money-input";
+import { InfoHint } from "@/components/ui/info-hint";
 import { CurrencyExchangeFields } from "@/components/ui/currency-exchange-fields";
 import { AccountPicker } from "@/components/payments/account-picker";
 import { Button } from "@/components/ui/button";
@@ -164,6 +165,13 @@ export function NewExpenseForm({
         <MoneyInput label="Subtotal" name="subtotal" min={0} required defaultValue={0} />
         <Input label="Impuesto (%)" name="tax_percent" type="number" step="0.01" min="0" defaultValue="18" />
       </div>
+      <p className="-mt-1 inline-flex items-start gap-1 text-xs text-brand-muted">
+        <span>
+          ¿Le vas a pagar al proveedor por partes o adelantarle dinero? Registra el <strong>total acordado</strong> y deja el
+          pago en «Aún no»; luego paga cada parte con <em>Registrar pago</em>.
+        </span>
+        <InfoHint text="Ejemplo: contratas sonido por RD$100,000 + ITBIS y le adelantas RD$40,000. Registra aquí el gasto por los RD$100,000 (con su ITBIS), sin pagarlo. Después, en el gasto, usa «Registrar pago» por los RD$40,000: queda en «Pago parcial». Cuando le pagues el resto, registras otro pago y queda «Pagado». Así el costo del proyecto es el correcto desde el principio y las retenciones (si aplican) se calculan sobre el total; los pagos se hacen contra el neto." />
+      </p>
 
       <Select
         label="Método de pago"

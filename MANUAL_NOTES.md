@@ -1173,3 +1173,11 @@ pulsa el botón.
   cobro también suma los anticipos aplicados después.
 - Numeración: respaldo A0 = **091**, limpieza A1 = **092** (debe borrar también
   anticipos y sus movimientos de prueba).
+
+## 2026-10-27 — Anticipo a proveedor (cómo hacerlo en la V1)
+
+- No hay documento de anticipo a proveedor (V2). Se registra el **gasto por el total acordado**
+  (pendiente) y se paga por partes con *Registrar pago*; el gasto queda en «Pago parcial».
+- `new-expense-form.tsx`: aviso con ⓘ debajo de Subtotal/Impuesto.
+- `register-supplier-payment-form.tsx`: en «Datos del pago», línea con ⓘ; si `amount < balance`,
+  recuadro «Pago parcial» con lo que faltará (y, con retenciones, que los pagos van contra el neto).

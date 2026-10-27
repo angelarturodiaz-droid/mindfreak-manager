@@ -1,5 +1,14 @@
 # CHANGELOG — Mindfreak Manager
 
+## Anticipos a proveedores: cómo registrarlos hoy (2026-10-27)
+
+- Sin cambios en la base de datos. **Nuevo gasto**: debajo del subtotal, aviso «¿Le vas a pagar al
+  proveedor por partes o adelantarle dinero? Registra el total acordado…» con ⓘ y ejemplo.
+- **Registrar pago** (gasto): línea «¿Le vas a adelantar dinero al proveedor? Escribe aquí solo el
+  adelanto» con ⓘ; si el monto es menor que lo pendiente, recuadro azul **Pago parcial** con lo que
+  faltará y el siguiente paso.
+- Ayuda (Cobros y pagos) y manual con el ejemplo. Anticipos a proveedores con documento propio → V2.
+
 ## V1-3 — Anticipos de clientes (2026-10-27)
 
 - **Anticipo = dinero recibido ANTES de que exista la factura.** Documento propio
