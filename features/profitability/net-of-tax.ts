@@ -153,3 +153,48 @@ export function splitInvoiceByTax(inv: InvoiceForTaxSplit) {
     total: n(inv.total) * fx,
   };
 }
+
+// ---- Incentivos por proyecto (V1-2) ----
+
+/** ¿Es un incentivo por proyecto? (gasto con modo de incentivo). */
+export function isIncentive(e: { incentive_mode?: string | null }): boolean {
+  return Boolean(e.incentive_mode);
+}
+
+/**
+ * Monto de un incentivo por % de la «ganancia antes de incentivos».
+ * Sin ganancia (0 o negativa) no se puede calcular: devuelve null.
+ * Redondeado a centavos.
+ */
+export function incentiveAmountFromPercent(percent: number, base: number): number | null {
+  if (!(percent > 0) || percent > 100) return null;
+  if (!(base > 0)) return null;
+  return Math.round(base * percent) / 100;
+}
+
+/**
+ * Rentabilidad en cascada del proyecto:
+ *   ventas sin ITBIS − gastos sin ITBIS = ganancia antes de incentivos
+ *   − incentivos = ganancia final (margen sobre las ventas sin ITBIS).
+ */
+export function profitCascade(ventasNetas: number, gastosNetos: number, incentivos: number) {
+  const antesIncentivos = ventasNetas - gastosNetos;
+  const final = antesIncentivos - incentivos;
+  return {
+    antesIncentivos,
+    incentivos,
+    final,
+    margenAntes: marginPct(antesIncentivos, ventasNetas),
+    margenFinal: marginPct(final, ventasNetas),
+  };
+}
+
+/** Separa los gastos de un proyecto en gastos normales e incentivos (montos sin ITBIS). */
+export function splitExpensesAndIncentives<T extends ExpenseDoc & { incentive_mode?: string | null }>(
+  rows: readonly T[] | null | undefined,
+) {
+  const gastos: T[] = [];
+  const incentivos: T[] = [];
+  for (const r of rows ?? []) (isIncentive(r) ? incentivos : gastos).push(r);
+  return { gastos: sumExpenses(gastos), incentivos: sumExpenses(incentivos) };
+}

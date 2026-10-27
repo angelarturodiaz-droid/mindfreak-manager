@@ -348,8 +348,14 @@ async function ProfitabilityReport({ params }: { params: Params }) {
     { header: "Cobrado", info: "Dinero que el cliente ya pagó por el proyecto (con ITBIS, porque es dinero real que entró al banco).", className: "text-right", accessor: (p) => <Money value={p.cobrado} /> },
     { header: "Costo real", info: "Lo que de verdad se gastó en el proyecto (gastos registrados), sin ITBIS: se pagan con ITBIS, pero ese ITBIS no es costo.", className: "text-right", accessor: (p) => <Money value={p.costoReal} /> },
     {
+      header: "Incentivos",
+      info: "Pagos a empleados o terceros por el proyecto (sin ITBIS ni retenciones). Se restan después de los gastos.",
+      className: "text-right",
+      accessor: (p) => (p.incentivos ? <Money value={p.incentivos} /> : <span className="text-brand-muted">—</span>),
+    },
+    {
       header: "Utilidad real",
-      info: "La ganancia del proyecto: facturado sin ITBIS − costo real sin ITBIS. En rojo si se gastó más de lo facturado.",
+      info: "La ganancia final del proyecto: facturado sin ITBIS − costo real sin ITBIS − incentivos. En rojo si es pérdida.",
       className: "text-right",
       accessor: (p) => <Money value={p.utilidadReal} strong tone={p.utilidadReal < 0 ? "danger" : undefined} />,
     },
@@ -416,10 +422,17 @@ async function ProfitabilityReport({ params }: { params: Params }) {
         <section className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard label="Facturado sin ITBIS" info="Lo facturado a estos proyectos (facturas emitidas), sin ITBIS." value={formatMoney(profitability.reduce((a, p) => a + p.facturado, 0))} icon={<ArrowDownCircle size={20} />} tone="blue" hint={`${profitability.length} proyectos · con ITBIS ${formatMoney(profitability.reduce((a, p) => a + p.facturadoConItbis, 0))}`} />
           <StatCard label="Cobrado" info="Dinero que ya pagaron los clientes por estos proyectos (con ITBIS)." value={formatMoney(profitability.reduce((a, p) => a + p.cobrado, 0))} icon={<CalendarDays size={20} />} tone="green" />
-          <StatCard label="Costo real sin ITBIS" info="Lo que se gastó en estos proyectos (gastos registrados), sin ITBIS." value={formatMoney(profitability.reduce((a, p) => a + p.costoReal, 0))} icon={<Clock size={20} />} tone="amber" />
+          <StatCard
+            label="Costo real sin ITBIS"
+            info="Lo que se gastó en estos proyectos (gastos registrados), sin ITBIS. Debajo, los incentivos (se restan aparte)."
+            value={formatMoney(profitability.reduce((a, p) => a + p.costoReal, 0))}
+            icon={<Clock size={20} />}
+            tone="amber"
+            hint={`Incentivos ${formatMoney(profitability.reduce((a, p) => a + p.incentivos, 0))}`}
+          />
           <StatCard
             label="Utilidad real"
-            info="La ganancia de estos proyectos: facturado sin ITBIS − costo real sin ITBIS."
+            info="La ganancia final de estos proyectos: facturado sin ITBIS − costo real sin ITBIS − incentivos."
             value={formatMoney(profitability.reduce((a, p) => a + p.utilidadReal, 0))}
             valueTone={profitability.reduce((a, p) => a + p.utilidadReal, 0) < 0 ? "danger" : "success"}
             icon={<CalendarRange size={20} />}

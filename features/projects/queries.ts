@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { profit, sumExpenses, sumSales } from "@/features/profitability/net-of-tax";
+import { profit, profitCascade, splitExpensesAndIncentives, sumSales } from "@/features/profitability/net-of-tax";
 import { getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { PAGE_SIZE, pageRange } from "@/lib/utils/pagination";
 import { idsByName, searchOr } from "@/lib/utils/search";
@@ -300,7 +300,7 @@ export async function getProjectProfitability(projectId: string) {
         .eq("project_id", projectId),
       supabase
         .from("expenses")
-        .select("subtotal, total, exchange_rate")
+        .select("subtotal, total, exchange_rate, incentive_mode")
         .eq("project_id", projectId)
         .neq("status", "CANCELLED"),
       supabase.from("projects").select("budget").eq("id", projectId).single(),
@@ -312,7 +312,8 @@ export async function getProjectProfitability(projectId: string) {
 
   const cot = sumSales(quotations.data);
   const fac = sumSales(invoices.data);
-  const gastos = sumExpenses(expenses.data);
+  // V1-2: los incentivos van en su propio renglón, después de los gastos.
+  const { gastos, incentivos } = splitExpensesAndIncentives(expenses.data);
   // Cobrado = dinero que entró (con ITBIS): es flujo, no rentabilidad.
   const cobrado = (customerPayments.data ?? []).reduce(
     (acc, r) => acc + Number(r.amount ?? 0) * Number(r.exchange_rate ?? 1),
@@ -325,7 +326,7 @@ export async function getProjectProfitability(projectId: string) {
   const presupuesto = Number(project.data?.budget ?? 0);
 
   const estimada = profit(cot.net, costoEstimado);
-  const real = profit(fac.net, gastos.net);
+  const cascada = profitCascade(fac.net, gastos.net, incentivos.net);
 
   return {
     /** Cotizado y facturado SIN ITBIS (base de la utilidad). */
@@ -340,10 +341,16 @@ export async function getProjectProfitability(projectId: string) {
     costoReal: gastos.net,
     /** Gastos con ITBIS (lo que se paga al proveedor). */
     costoRealConItbis: gastos.gross,
+    /** Ventas sin ITBIS − gastos sin ITBIS (sin incentivos). Base del % de los incentivos. */
+    gananciaAntesIncentivos: cascada.antesIncentivos,
+    margenAntesIncentivos: cascada.margenAntes,
+    /** Incentivos por proyecto (V1-2), no cancelados. */
+    incentivos: incentivos.net,
     utilidadEstimada: estimada.utilidad,
-    utilidadReal: real.utilidad,
+    /** Ganancia final: después de gastos e incentivos. */
+    utilidadReal: cascada.final,
     margenEstimado: estimada.margen,
-    margenReal: real.margen,
+    margenReal: cascada.margenFinal,
     presupuesto,
     presupuestoConsumidoPct: presupuesto > 0 ? (gastos.net / presupuesto) * 100 : null,
   };
@@ -467,4 +474,23 @@ export async function getProjectBilling(projectId: string) {
     facturado: rows.filter((r) => r.status !== "DRAFT").reduce((a, r) => a + base(r), 0),
     borradores: rows.filter((r) => r.status === "DRAFT").reduce((a, r) => a + base(r), 0),
   };
+}
+
+/**
+ * Incentivos del proyecto (V1-2): gastos con modo de incentivo, del más
+ * reciente al más antiguo, con lo necesario para la lista de Finanzas.
+ */
+export async function listProjectIncentives(projectId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("expenses")
+    .select(
+      "id, expense_date, description, status, total, paid_amount, balance, currency, exchange_rate, incentive_recipient, incentive_recipient_type, incentive_reason, incentive_mode, incentive_percent, incentive_base, incentive_base_at",
+    )
+    .eq("project_id", projectId)
+    .not("incentive_mode", "is", null)
+    .order("expense_date", { ascending: false })
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data ?? [];
 }

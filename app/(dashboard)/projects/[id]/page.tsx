@@ -34,6 +34,7 @@ import {
   listCompanyMembers,
   listActiveServices,
   getProjectProfitability,
+  listProjectIncentives,
   getProjectBilling,
   listProjectQuotations,
   getOpenProjectQuotation,
@@ -73,6 +74,10 @@ import { ProjectEditForm } from "./project-edit-form";
 import { NewProjectItemForm } from "./new-item-form";
 import { EditCostButton } from "./edit-cost-button";
 import { CreateQuotationButton } from "./create-quotation-button";
+import { RecalcIncentiveButton } from "./recalc-incentive-button";
+import { RECIPIENT_TYPE_LABELS } from "@/features/incentives/catalog";
+import { incentiveAmountFromPercent } from "@/features/profitability/net-of-tax";
+import { formatDate } from "@/lib/utils/dates";
 import { Tooltip } from "@/components/ui/tooltip";
 import { InfoHint } from "@/components/ui/info-hint";
 import { Callout, Chip } from "@/components/ui/page-kit";
@@ -304,8 +309,33 @@ function MetricCard({
   );
 }
 
+/** Un renglón de la rentabilidad en cascada (Finanzas). */
+function CascadeRow({
+  label,
+  value,
+  info,
+  strong,
+  danger,
+}: {
+  label: string;
+  value: string;
+  info: string;
+  strong?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <dt className={`flex items-center gap-1 ${strong ? "font-semibold text-brand-text" : "text-brand-muted"}`}>
+        {label}
+        <InfoHint text={info} />
+      </dt>
+      <dd className={`whitespace-nowrap ${strong ? "font-semibold" : ""} ${danger ? "text-brand-danger" : "text-brand-text"}`}>{value}</dd>
+    </div>
+  );
+}
+
 const UTILIDAD_REAL_INFO =
-  "Lo que de verdad se ganó: facturado sin ITBIS − gastos sin ITBIS. El ITBIS que le cobras al cliente se le paga a la DGII y el de tus compras no es costo, por eso no cuentan. El margen es la utilidad ÷ lo facturado sin ITBIS.";
+  "Lo que de verdad se ganó: facturado sin ITBIS − gastos sin ITBIS − incentivos. El ITBIS que le cobras al cliente se le paga a la DGII y el de tus compras no es costo, por eso no cuentan. El margen es la utilidad ÷ lo facturado sin ITBIS.";
 const PRESUPUESTO_INFO =
   "El presupuesto es lo que planeaste gastar en este evento (lo escribes al crear o editar el proyecto). La barra muestra cuánto ya gastaste de ese monto, con los gastos sin ITBIS. Si pasa de 100 % se pone en rojo: gastaste más de lo planeado.";
 
@@ -338,13 +368,14 @@ export default async function ProjectDetailPage({
   }
   if (!project) notFound();
 
-  const [items, members, services, canUpdate, profitability, billingData] = await Promise.all([
+  const [items, members, services, canUpdate, profitability, billingData, canIncentives] = await Promise.all([
     listProjectItems(id),
     listCompanyMembers(),
     listActiveServices(),
     hasPermission("projects.update"),
     getProjectProfitability(id),
     getProjectBilling(id),
+    hasPermission("expenses.incentives"),
   ]);
   // Cotizado (aprobado) vs. facturado: un proyecto puede tener varias facturas.
   const billing = billingProgress(billingData);
@@ -363,6 +394,7 @@ export default async function ProjectDetailPage({
     canManageDocs,
     projectTasks,
     projectActivities,
+    incentives,
   ] = await Promise.all([
     isVentas ? listProjectQuotations(id) : null,
     isVentas ? listProjectInvoices(id) : null,
@@ -375,6 +407,7 @@ export default async function ProjectDetailPage({
     activeTab === "documentos" ? hasPermission("documents.upload") : false,
     activeTab === "tareas" ? listTasks({ projectId: id }) : null,
     activeTab === "actividades" ? listProjectActivities(id) : null,
+    activeTab === "finanzas" ? listProjectIncentives(id) : null,
   ]);
 
   const clientName = relationName(project.clients);
@@ -869,7 +902,7 @@ export default async function ProjectDetailPage({
           value={formatMoney(profitability.utilidadReal)}
           danger={profitability.utilidadReal < 0}
           info={UTILIDAD_REAL_INFO}
-          hint={`Margen ${formatPercent(profitability.margenReal)} · Facturado − gastos, sin ITBIS`}
+          hint={`Margen ${formatPercent(profitability.margenReal)} · Facturado − gastos − incentivos, sin ITBIS`}
         />
       </section>
 
@@ -1101,8 +1134,11 @@ export default async function ProjectDetailPage({
             </div>
           </section>
           <section>
-            <SectionHeader title="Rentabilidad" description="La ganancia del proyecto: lo vendido menos lo gastado, sin ITBIS." />
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <SectionHeader
+              title="Rentabilidad"
+              description="La ganancia del proyecto: lo vendido menos lo gastado y los incentivos, sin ITBIS."
+            />
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <MetricCard
                 label="Utilidad estimada"
                 value={formatMoney(profitability.utilidadEstimada)}
@@ -1110,14 +1146,127 @@ export default async function ProjectDetailPage({
                 info="Lo que se espera ganar: cotizado sin ITBIS − costo estimado de las líneas. El margen es esa utilidad ÷ el cotizado sin ITBIS."
                 hint={`Margen ${formatPercent(profitability.margenEstimado)} · Cotizado sin ITBIS − costo estimado`}
               />
-              <MetricCard
-                label="Utilidad real"
-                value={formatMoney(profitability.utilidadReal)}
-                danger={profitability.utilidadReal < 0}
-                info={UTILIDAD_REAL_INFO}
-                hint={`Margen ${formatPercent(profitability.margenReal)} · Facturado sin ITBIS − costo real sin ITBIS`}
-              />
+              <Card className="flex flex-col gap-2">
+                <p className="flex items-center gap-1 text-sm font-medium text-brand-muted">
+                  Utilidad real, paso a paso
+                  <InfoHint text={UTILIDAD_REAL_INFO} />
+                </p>
+                <dl className="flex flex-col gap-1.5 text-sm tabular-nums">
+                  <CascadeRow
+                    label="Ventas sin ITBIS"
+                    info="Lo facturado al cliente (facturas emitidas), sin el ITBIS."
+                    value={formatMoney(profitability.facturado)}
+                  />
+                  <CascadeRow
+                    label="− Gastos sin ITBIS"
+                    info="Lo gastado en el proyecto (gastos registrados, sin incentivos), por su subtotal."
+                    value={formatMoney(-profitability.costoReal)}
+                  />
+                  <CascadeRow
+                    label="= Ganancia antes de incentivos"
+                    info="Lo que quedó después de los gastos. Es la base para calcular los incentivos por %."
+                    value={formatMoney(profitability.gananciaAntesIncentivos)}
+                    strong
+                    danger={profitability.gananciaAntesIncentivos < 0}
+                  />
+                  <CascadeRow
+                    label="− Incentivos"
+                    info="Pagos a empleados o terceros por este proyecto (lista de abajo). Sin ITBIS ni retenciones."
+                    value={formatMoney(-profitability.incentivos)}
+                  />
+                  <div className="mt-1 border-t border-brand-border pt-2">
+                    <CascadeRow
+                      label="= Ganancia final"
+                      info="Lo que de verdad le queda a la empresa con este proyecto. Es la «Utilidad real» de arriba."
+                      value={formatMoney(profitability.utilidadReal)}
+                      strong
+                      danger={profitability.utilidadReal < 0}
+                    />
+                    <p className="mt-0.5 text-right text-xs text-brand-muted">
+                      Margen {formatPercent(profitability.margenReal)} de las ventas sin ITBIS
+                    </p>
+                  </div>
+                </dl>
+              </Card>
             </div>
+          </section>
+          <section>
+            <SectionHeader
+              title="Incentivos"
+              count={incentives?.length ?? 0}
+              description="Pagos a empleados o terceros por este proyecto (sin proveedor, ITBIS ni retenciones). A un empleado se le paga aparte de la nómina."
+              action={
+                canIncentives && !isCancelled ? (
+                  <Link href={`/projects/${project.id}/incentives/new`}>
+                    <Button variant="outline" size="sm" icon={<Plus size={14} />} hint="Registrar un incentivo por este proyecto: monto fijo o % de la ganancia antes de incentivos.">
+                      Nuevo incentivo
+                    </Button>
+                  </Link>
+                ) : undefined
+              }
+            />
+            {!incentives || incentives.length === 0 ? (
+              <p className="rounded-[var(--radius-md)] border border-dashed border-brand-border px-4 py-3 text-sm text-brand-muted">
+                Este proyecto no tiene incentivos.
+                {canIncentives ? " Usa «Nuevo incentivo» para registrar uno (monto fijo o % de la ganancia)." : ""}
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {incentives.map((inc) => {
+                  const isPct = inc.incentive_mode === "PERCENT";
+                  const todayAmount = isPct
+                    ? incentiveAmountFromPercent(Number(inc.incentive_percent), profitability.gananciaAntesIncentivos)
+                    : null;
+                  const changed =
+                    isPct &&
+                    inc.status !== "CANCELLED" &&
+                    inc.incentive_base !== null &&
+                    Math.abs(Number(inc.incentive_base) - profitability.gananciaAntesIncentivos) >= 0.01;
+                  const canRecalc = changed && canIncentives && inc.status === "PENDING" && Number(inc.paid_amount) === 0;
+                  return (
+                    <Card key={inc.id} className="flex flex-col gap-2 py-3">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <Link
+                            href={withReturnTo(`/expenses/${inc.id}`, `/projects/${project.id}?tab=finanzas`)}
+                            className="font-medium text-brand-text hover:text-brand-accent"
+                          >
+                            {inc.incentive_recipient}
+                          </Link>
+                          <span className="ml-2 text-xs text-brand-muted">
+                            {RECIPIENT_TYPE_LABELS[inc.incentive_recipient_type ?? ""] ?? ""} · {inc.incentive_reason}
+                          </span>
+                          <p className="text-xs text-brand-muted">
+                            {formatDate(inc.expense_date)} ·{" "}
+                            {isPct
+                              ? `${Number(inc.incentive_percent)} % de ${formatMoney(Number(inc.incentive_base))} (ganancia antes de incentivos al calcularlo)`
+                              : "Monto fijo"}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge status={inc.status}>{EXPENSE_STATUS_LABELS[inc.status] ?? inc.status}</Badge>
+                          <span className="font-semibold tabular-nums text-brand-text">{formatMoney(Number(inc.total))}</span>
+                        </div>
+                      </div>
+                      {changed && (
+                        <div className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-md)] bg-brand-warning-bg px-3 py-2 text-xs text-brand-text">
+                          <span>
+                            La ganancia cambió desde que se calculó: hoy es {formatMoney(profitability.gananciaAntesIncentivos)}
+                            {todayAmount !== null
+                              ? ` y el ${Number(inc.incentive_percent)} % sería ${formatMoney(todayAmount)}.`
+                              : ", y no alcanza para calcular el %."}
+                            {inc.status !== "PENDING" || Number(inc.paid_amount) > 0
+                              ? " Como ya tiene pagos, no se cambia."
+                              : " El monto no cambia solo."}
+                          </span>
+                          {canRecalc && todayAmount !== null && <RecalcIncentiveButton expenseId={inc.id} />}
+                        </div>
+                      )}
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </section>
           <p className="text-xs text-brand-muted">
             La utilidad y el margen se calculan sin ITBIS: el ITBIS que cobras es de la DGII y el
@@ -1159,13 +1308,27 @@ export default async function ProjectDetailPage({
               title="Gastos"
               count={expenses.length}
               action={
-                <Link
-                  href={`/expenses/new?project_id=${id}&return_to=${encodeURIComponent(`/projects/${id}?tab=compras`)}`}
-                >
-                  <Button variant="outline" size="sm" icon={<Plus size={14} />}>
-                    Nuevo gasto
-                  </Button>
-                </Link>
+                <div className="flex flex-wrap gap-2">
+                  {canIncentives && !isCancelled && (
+                    <Link href={`/projects/${id}/incentives/new`}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        icon={<Plus size={14} />}
+                        hint="Pago a un empleado o tercero por este proyecto, sin proveedor ni retenciones. Se ve en Finanzas, después de los gastos."
+                      >
+                        Nuevo incentivo
+                      </Button>
+                    </Link>
+                  )}
+                  <Link
+                    href={`/expenses/new?project_id=${id}&return_to=${encodeURIComponent(`/projects/${id}?tab=compras`)}`}
+                  >
+                    <Button variant="outline" size="sm" icon={<Plus size={14} />}>
+                      Nuevo gasto
+                    </Button>
+                  </Link>
+                </div>
               }
             />
             <DataTable columns={expenseColumns} rows={expenses} keyFor={(e) => e.id} emptyMessage="Sin gastos todavía." maxWidth="max-w-none" />

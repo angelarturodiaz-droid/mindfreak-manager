@@ -175,6 +175,7 @@ async function buildSections(report: string, p: ReportExportParams, base: string
         { label: "Facturado sin ITBIS", value: money(fact, base) },
         { label: "Cobrado (con ITBIS)", value: money(sum((r) => r.cobrado), base) },
         { label: "Costo real sin ITBIS", value: money(sum((r) => r.costoReal), base) },
+        { label: "Incentivos", value: money(sum((r) => r.incentivos), base) },
         { label: "Utilidad real", value: money(util, base) },
       );
       sections.push({
@@ -186,6 +187,7 @@ async function buildSections(report: string, p: ReportExportParams, base: string
           { header: "Facturado sin ITBIS", kind: "money", currency: base },
           { header: "Cobrado (con ITBIS)", kind: "money", currency: base },
           { header: "Costo real sin ITBIS", kind: "money", currency: base },
+          { header: "Incentivos", kind: "money", currency: base },
           { header: "Utilidad real", kind: "money", currency: base },
           { header: "Margen", kind: "percent" },
         ],
@@ -197,6 +199,7 @@ async function buildSections(report: string, p: ReportExportParams, base: string
           r.facturado,
           r.cobrado,
           r.costoReal,
+          r.incentivos,
           r.utilidadReal,
           r.margenReal,
         ]),
@@ -208,11 +211,12 @@ async function buildSections(report: string, p: ReportExportParams, base: string
           fact,
           sum((r) => r.cobrado),
           sum((r) => r.costoReal),
+          sum((r) => r.incentivos),
           util,
           fact > 0 ? (util / fact) * 100 : null,
         ],
       });
-      notes.push("Utilidad real = facturado sin ITBIS − gastos sin ITBIS (subtotal). Margen = utilidad ÷ facturado sin ITBIS. El ITBIS cobrado es de la DGII y el de las compras no es costo; el cobrado es dinero real, con ITBIS.");
+      notes.push("Utilidad real = facturado sin ITBIS − gastos sin ITBIS (subtotal) − incentivos por proyecto. Margen = utilidad ÷ facturado sin ITBIS. El ITBIS cobrado es de la DGII y el de las compras no es costo; el cobrado es dinero real, con ITBIS.");
       break;
     }
 

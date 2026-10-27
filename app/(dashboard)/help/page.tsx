@@ -553,6 +553,28 @@ const SECTIONS: Section[] = [
           el margen — visibles también en el reporte de Rentabilidad.
         </p>
         <p className="text-sm text-brand-text">
+          <strong>Incentivos por proyecto</strong>: un pago a un <em>empleado</em> o a un <em>tercero</em> por un evento
+          (ej. por coordinarlo o por conseguirlo). Se registra en el proyecto con <strong>Nuevo incentivo</strong> (pestaña{" "}
+          <em>Finanzas</em> o <em>Gastos y proveedores</em>; solo Administrador y Finanzas): para quién, si es empleado o
+          tercero, el motivo y cómo se calcula — <strong>monto fijo</strong> o <strong>% de la ganancia antes de
+          incentivos</strong> (lo vendido menos lo gastado, sin ITBIS; el sistema calcula el monto y guarda la base usada).
+          Si ya se pagó, eliges el método y la cuenta en pesos; si no, queda pendiente y se paga desde el gasto con{" "}
+          <em>Registrar pago</em>. Queda como un gasto de la categoría <em>Incentivo por proyecto</em>,{" "}
+          <strong>sin proveedor, sin ITBIS y sin retenciones</strong>, con la descripción armada sola (ej. «Incentivo por
+          proyecto – María Rodríguez (empleado) – coordinación del evento – PROY-0010»). En <em>Finanzas</em> la
+          rentabilidad sale en cascada: <em>Ventas sin ITBIS − Gastos sin ITBIS = Ganancia antes de incentivos −
+          Incentivos = Ganancia final</em> (ej. 100,000 − 60,000 = 40,000; un incentivo del 10 % = 4,000 y otro fijo de
+          2,000 → ganancia final 34,000, margen 34 %). Si después cambia la ganancia (entra otra factura o gasto), un
+          incentivo por % <strong>no cambia solo</strong>: sale un aviso amarillo con lo que sería hoy y, si no se ha
+          pagado, el botón <em>Recalcular</em>. Un incentivo no se edita como gasto: si está mal, se cancela y se crea otro.
+          A un <strong>empleado</strong> se le paga <strong>aparte de la nómina</strong> (no dentro de la transferencia de
+          nómina), para no contarlo dos veces. Un incentivo <strong>fuera de un proyecto</strong> se registra en Bancos →
+          Movimiento manual → Salida con la categoría <em>Incentivo por proyecto</em>. Distinto de una{" "}
+          <em>comisión comercial</em> a un proveedor que te factura con RNC/cédula: esa es un gasto normal con sus
+          retenciones. En el Dashboard y Comparaciones los incentivos cuentan como gasto de la empresa; en el reporte de
+          Rentabilidad tienen su propia columna.
+        </p>
+        <p className="text-sm text-brand-text">
           <strong>Rentabilidad sin ITBIS</strong> (desde el 25-oct): la utilidad y el margen se calculan{" "}
           <strong>sin ITBIS</strong>. Venta = total de la factura (o cotización) − ITBIS; costo = subtotal de cada gasto.
           El ITBIS que le cobras al cliente se le paga a la DGII y el de tus compras no es costo. Los gastos se siguen

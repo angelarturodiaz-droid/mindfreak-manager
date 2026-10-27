@@ -3,9 +3,12 @@ import {
   expenseNet,
   groupExpenses,
   groupSales,
+  incentiveAmountFromPercent,
   profit,
+  profitCascade,
   quotationMarginPct,
   saleNet,
+  splitExpensesAndIncentives,
   splitInvoiceByTax,
   sumExpenses,
   sumSales,
@@ -110,5 +113,34 @@ describe("ingresos por tipo de impuesto", () => {
     expect(r.gravado).toBe(6000);
     expect(r.exento).toBe(0);
     expect(r.itbis).toBe(1080);
+  });
+});
+
+
+describe("incentivos por proyecto (V1-2)", () => {
+  it("monto por % de la ganancia antes de incentivos", () => {
+    expect(incentiveAmountFromPercent(10, 40000)).toBe(4000);
+    expect(incentiveAmountFromPercent(7.5, 12345.67)).toBe(925.93);
+    expect(incentiveAmountFromPercent(10, 0)).toBeNull();
+    expect(incentiveAmountFromPercent(10, -500)).toBeNull();
+    expect(incentiveAmountFromPercent(0, 1000)).toBeNull();
+    expect(incentiveAmountFromPercent(150, 1000)).toBeNull();
+  });
+
+  it("cascada: ventas − gastos = antes de incentivos − incentivos = final", () => {
+    const c = profitCascade(100000, 60000, 6000);
+    expect(c).toEqual({ antesIncentivos: 40000, incentivos: 6000, final: 34000, margenAntes: 40, margenFinal: 34 });
+    expect(profitCascade(0, 1010, 0).margenFinal).toBeNull();
+  });
+
+  it("los incentivos no se mezclan con los gastos", () => {
+    const r = splitExpensesAndIncentives([
+      { subtotal: 50000, total: 59000, incentive_mode: null },
+      { subtotal: 10000, total: 11800 },
+      { subtotal: 4000, total: 4000, incentive_mode: "PERCENT" },
+      { subtotal: 2000, total: 2000, incentive_mode: "FIXED" },
+    ]);
+    expect(r.gastos.net).toBe(60000);
+    expect(r.incentivos.net).toBe(6000);
   });
 });

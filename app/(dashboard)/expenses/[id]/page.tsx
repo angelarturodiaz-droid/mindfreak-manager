@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { safeReturnTo, returnToLabel } from "@/lib/utils/return-to";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarDays, FolderKanban, Tag, Truck } from "lucide-react";
+import { ArrowLeft, CalendarDays, FolderKanban, Tag, Truck, Gift } from "lucide-react";
 import {
   getExpense,
   listExpenseCategories,
@@ -24,7 +24,7 @@ import { getFxContext, listCurrencyOptions } from "@/features/currencies/queries
 import { getAccountFunds } from "@/features/banks/queries";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { MetricCard, SectionHeader } from "@/components/ui/page-kit";
+import { Callout, MetricCard, SectionHeader } from "@/components/ui/page-kit";
 import { formatDate } from "@/lib/utils/dates";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { RegisteredDate } from "@/components/ui/registered-date";
@@ -109,7 +109,9 @@ export default async function ExpenseDetailPage({
     | { name: string; bank_name: string | null }
     | null;
 
-  const isEditable = canEdit && expense.status === "PENDING" && expense.paid_amount === 0;
+  // V1-2: los incentivos por proyecto no se editan como gasto.
+  const isIncentive = Boolean(expense.incentive_mode);
+  const isEditable = canEdit && !isIncentive && expense.status === "PENDING" && expense.paid_amount === 0;
 
   const paymentColumns: Column<PaymentRow>[] = [
     { header: "Fecha", accessor: (p) => <RegisteredDate date={p.payment_date} createdAt={p.created_at} className="text-brand-text" /> },
@@ -372,6 +374,23 @@ export default async function ExpenseDetailPage({
             )}
           </section>
 
+          {isIncentive && (
+            <Callout tone="blue" icon={<Gift size={18} />} title="Incentivo por proyecto">
+              <p>
+                Para <strong>{expense.incentive_recipient}</strong> (
+                {expense.incentive_recipient_type === "EMPLOYEE" ? "empleado" : "tercero"}) · {expense.incentive_reason}.{" "}
+                {expense.incentive_mode === "PERCENT"
+                  ? `Calculado como ${Number(expense.incentive_percent)} % de ${formatMoney(Number(expense.incentive_base), "DOP")} (ganancia antes de incentivos del proyecto al calcularlo).`
+                  : "Monto fijo."}
+              </p>
+              <p className="mt-1">
+                Sin proveedor, sin ITBIS y sin retenciones: se paga el monto completo. En la rentabilidad del proyecto se
+                resta después de los gastos. No se edita aquí: si está mal, cancélalo y crea otro desde el proyecto
+                {expense.incentive_mode === "PERCENT" ? " (o usa Recalcular en Finanzas del proyecto)" : ""}.
+              </p>
+            </Callout>
+          )}
+
           {isEditable ? (
             <section>
               <SectionHeader title="Editar gasto" description="Solo mientras está pendiente y sin pagos." />
@@ -391,7 +410,7 @@ export default async function ExpenseDetailPage({
               </Card>
             </section>
           ) : (
-            expense.status !== "CANCELLED" && (
+            expense.status !== "CANCELLED" && !isIncentive && (
               <p className="text-sm text-brand-muted">
                 Este gasto ya no se puede editar (tiene pagos registrados o no está
                 pendiente).

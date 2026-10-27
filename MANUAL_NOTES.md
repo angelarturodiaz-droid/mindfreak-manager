@@ -1103,3 +1103,24 @@ pulsa el botón.
 - `StatCard` (page-kit) y `Panel` (dashboard-widgets/parts) aceptan `info`.
 - Número de proyecto en negrita primero: proyectos/page, reports (rentabilidad),
   comparisons (rentabilidad por proyecto), dashboard (BarRow label=number, hint=name).
+
+## 2026-10-26 — V1-2 Incentivos por proyecto (migración 088)
+
+- **Datos:** `expenses.incentive_recipient`, `incentive_recipient_type` (EMPLOYEE/THIRD_PARTY),
+  `incentive_reason`, `incentive_mode` (FIXED/PERCENT; nulo = gasto normal),
+  `incentive_percent`, `incentive_base` (ganancia antes de incentivos usada, moneda base),
+  `incentive_base_at`. Check `expenses_incentive_shape_check`: sin proveedor, tax 0, con
+  proyecto, con destinatario y, si es %, con % y base. Categoría «Incentivo por proyecto»
+  (catálogo) y permiso `expenses.incentives` (ADMIN, FINANCE).
+- **Acciones:** `features/incentives/actions.ts` → `createIncentiveAction` (monto en el
+  servidor con `incentiveAmountFromPercent`; pagado al crear vía `create_card_expense` y luego
+  `update` de las columnas de incentivo; solo cuentas en DOP) y `recalculateIncentiveAction`
+  (solo PENDING y sin pagos; recalcula fiscal = «sin proveedor», neto = total).
+- **Rentabilidad:** `splitExpensesAndIncentives` + `profitCascade` (net-of-tax.ts).
+  `getProjectProfitability` devuelve `gananciaAntesIncentivos`, `incentivos`, y `utilidadReal`
+  = ganancia final; `costoReal` ya NO incluye incentivos. El reporte de rentabilidad trae
+  `incentivos`. Dashboard/Comparaciones no separan (para la empresa es gasto).
+- **UI:** `/projects/[id]/incentives/new`; Finanzas con cascada (`CascadeRow`) y lista de
+  incentivos con aviso de base cambiada y `RecalcIncentiveButton`. `updateExpenseAction`
+  rechaza incentivos; el detalle del gasto muestra un `Callout`.
+- **Numeración de migraciones:** el respaldo A0 y la limpieza A1 pasan a 089 y 090.

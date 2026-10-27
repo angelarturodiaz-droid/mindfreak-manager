@@ -249,10 +249,14 @@ export async function updateExpenseAction(
   // y ya no se edita libremente — mismo principio que cotizaciones/facturas).
   const { data: existing, error: fetchError } = await supabase
     .from("expenses")
-    .select("status, paid_amount, currency")
+    .select("status, paid_amount, currency, incentive_mode")
     .eq("id", expenseId)
     .single();
   if (fetchError || !existing) return { error: "Gasto no encontrado." };
+  // V1-2: un incentivo no se edita como gasto (no lleva proveedor ni ITBIS).
+  if (existing.incentive_mode) {
+    return { error: "Este gasto es un incentivo por proyecto: no se edita aquí. Si está mal, cancélalo y crea otro desde el proyecto (o usa Recalcular si es por %)." };
+  }
   if (existing.status !== "PENDING" || existing.paid_amount > 0) {
     return { error: "Este gasto ya no se puede editar (tiene pagos registrados)." };
   }

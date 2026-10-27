@@ -1,5 +1,21 @@
 # CHANGELOG — Mindfreak Manager
 
+## V1-2 — Incentivos por proyecto (2026-10-26)
+
+- **Nuevo incentivo** en el proyecto (Finanzas y Gastos y proveedores; permiso nuevo
+  `expenses.incentives`, solo Administrador y Finanzas): para quién, empleado o tercero,
+  motivo, **monto fijo** o **% de la ganancia antes de incentivos** (calculado en el
+  servidor; guarda % y base), fecha y, si ya se pagó, método y cuenta en pesos.
+- Se guarda como gasto del proyecto en la categoría nueva **«Incentivo por proyecto»**,
+  sin proveedor, sin ITBIS y sin retenciones; descripción automática. No se edita como
+  gasto (aviso en el detalle); se cancela y se crea otro.
+- **Rentabilidad en cascada** en Finanzas: ventas − gastos = ganancia antes de incentivos
+  − incentivos = ganancia final (= Utilidad real). Lista de incentivos con aviso cuando la
+  ganancia cambió y botón **Recalcular** (solo pendiente y sin pagos).
+- **Reportes → Rentabilidad**: columna *Incentivos* (pantalla, Excel y PDF). Dashboard y
+  Comparaciones: los incentivos cuentan como gasto de la empresa.
+- Migración **088** (solo agrega: columnas `incentive_*`, categoría, permiso).
+
 ## Ajustes tras la prueba BS (2026-10-26)
 
 - **Filtros de Reportes:** «Limpiar» dejaba la lista (ej. Cliente) mostrando el valor

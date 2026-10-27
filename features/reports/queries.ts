@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { relationName } from "@/lib/utils/relation";
-import { groupExpenses, groupSales, profit, splitInvoiceByTax } from "@/features/profitability/net-of-tax";
+import { groupExpenses, groupSales, profitCascade, splitInvoiceByTax } from "@/features/profitability/net-of-tax";
 import {
   summarizePaymentsByCurrency,
   toPaymentFxRow,
@@ -117,7 +117,7 @@ export async function getProjectsProfitabilityReport(filters: ProfitabilityFilte
     supabase.from("project_items").select("project_id, estimated_cost").in("project_id", projectIds),
     supabase
       .from("expenses")
-      .select("project_id, subtotal, total, exchange_rate")
+      .select("project_id, subtotal, total, exchange_rate, incentive_mode")
       .in("project_id", projectIds)
       .neq("status", "CANCELLED"),
   ]);
@@ -139,7 +139,9 @@ export async function getProjectsProfitabilityReport(filters: ProfitabilityFilte
   const cotizadoMap = groupSales(quotations.data, (r) => r.project_id);
   const facturadoMap = groupSales(invoices.data, (r) => r.project_id);
   const cobradoMap = groupSum(payments.data);
-  const costoRealMap = groupExpenses(expenses.data, (r) => r.project_id);
+  // V1-2: incentivos aparte de los gastos (se restan después).
+  const costoRealMap = groupExpenses((expenses.data ?? []).filter((e) => !e.incentive_mode), (r) => r.project_id);
+  const incentivosMap = groupExpenses((expenses.data ?? []).filter((e) => e.incentive_mode), (r) => r.project_id);
   const costoEstimadoMap = new Map<string, number>();
   for (const r of items.data ?? []) {
     costoEstimadoMap.set(r.project_id, (costoEstimadoMap.get(r.project_id) ?? 0) + r.estimated_cost);
@@ -151,7 +153,10 @@ export async function getProjectsProfitabilityReport(filters: ProfitabilityFilte
     const cobrado = cobradoMap.get(p.id) ?? 0;
     const costoEstimado = costoEstimadoMap.get(p.id) ?? 0;
     const costoReal = costoRealMap.get(p.id)?.net ?? 0;
-    const { utilidad: utilidadReal, margen: margenReal } = profit(facturado, costoReal);
+    const incentivos = incentivosMap.get(p.id)?.net ?? 0;
+    const cascada = profitCascade(facturado, costoReal, incentivos);
+    const utilidadReal = cascada.final;
+    const margenReal = cascada.margenFinal;
     return {
       ...p,
       /** Sin ITBIS. */
@@ -165,6 +170,8 @@ export async function getProjectsProfitabilityReport(filters: ProfitabilityFilte
       costoEstimado,
       /** Sin ITBIS. */
       costoReal,
+      /** Incentivos por proyecto (V1-2). */
+      incentivos,
       utilidadReal,
       margenReal,
     };
