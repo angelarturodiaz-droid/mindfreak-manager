@@ -17,6 +17,8 @@ const ENTITY_LABELS: Record<string, string> = {
   project: "Proyecto",
   invoice: "Factura",
   customer_payment: "Cobro",
+  customer_advance: "Anticipo de cliente",
+  customer_withholding: "Retención del cliente",
   expense: "Gasto",
   supplier_payment: "Pago a proveedor",
   bank_account: "Cuenta bancaria",
@@ -39,6 +41,10 @@ const ACTION_LABELS: Record<string, string> = {
   UNRECONCILE: "Desconcilió",
   STATUS_CANCELLED: "Canceló",
   EXPORT: "Exportó",
+  APPLY: "Aplicó a factura",
+  VOID_APPLY: "Quitó de factura",
+  REFUND: "Devolvió",
+  TRANSFER: "Pasó a otro proyecto",
 };
 
 const ACTION_TONES: Record<string, BadgeTone> = {
@@ -51,6 +57,10 @@ const ACTION_TONES: Record<string, BadgeTone> = {
   UNRECONCILE: "neutral",
   STATUS_CANCELLED: "danger",
   EXPORT: "info",
+  APPLY: "success",
+  VOID_APPLY: "neutral",
+  REFUND: "danger",
+  TRANSFER: "info",
 };
 
 type LogRow = Awaited<ReturnType<typeof listAuditLogs>>["rows"][number];

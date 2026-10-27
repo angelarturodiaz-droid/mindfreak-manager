@@ -89,6 +89,14 @@ function TransactionOrigin({ t }: { t: TransactionRow }) {
       </Link>
     );
   }
+  if (t.customer_advance_id) {
+    const adv = relationRow<{ number: string }>(t.customer_advances);
+    return (
+      <Link href={`/advances/${t.customer_advance_id}`} className="whitespace-nowrap text-brand-accent hover:underline">
+        {t.type === "EXPENSE" ? "Devolución" : "Anticipo"} {adv?.number ?? ""}
+      </Link>
+    );
+  }
   if (t.expense_id) {
     const desc = relationRow<{ description: string }>(t.expenses)?.description;
     return (
@@ -185,6 +193,13 @@ export default async function BankAccountDetailPage({
         label: `Cobro factura ${n ?? ""} · ${date} · ${amt}`,
         detail: `${date} · ${amt}`,
         href: p ? `/invoices/${p.invoice_id}` : null,
+      });
+    } else if (t.customer_advance_id && t.type === "INCOME") {
+      const n = relationRow<{ number: string }>(t.customer_advances)?.number;
+      feeLinkMap.set(`customer_advance:${t.customer_advance_id}`, {
+        label: `Anticipo ${n ?? ""} · ${date} · ${amt}`,
+        detail: `${date} · ${amt}`,
+        href: `/advances/${t.customer_advance_id}`,
       });
     } else if (t.supplier_payment_id) {
       const sp = relationRow<{ expense_id: string; expenses: unknown }>(t.supplier_payments);

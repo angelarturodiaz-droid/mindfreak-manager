@@ -1,5 +1,36 @@
 # CHANGELOG — Mindfreak Manager
 
+## V1-3 — Anticipos de clientes (2026-10-27)
+
+- **Anticipo = dinero recibido ANTES de que exista la factura.** Documento propio
+  **RECIBO DE ANTICIPO**, numeración **ANT-0001**, sin impuestos, con la leyenda «no es
+  factura ni comprobante fiscal»: recibido, total cotizado, recibido hasta hoy y **resta por
+  pagar**. Los recibos de cobro siguen como *RECIBO DE COBRO* (REC-…).
+- **Registrar anticipo** (`/advances/new`) desde el proyecto (Ventas y cobros → *Anticipos*),
+  la cotización aprobada o *Cobros y pagos → Anticipos de clientes*; ligado a un proyecto,
+  una cotización aprobada o **solo al cliente**. Paso a paso, con el % pactado de la
+  cotización, lo que resta, cuenta en otra moneda y el recuadro *Qué va a pasar*.
+  **Recibido antes del corte** (antes del 1-ene-2027): no mueve el banco.
+- **Detalle del anticipo** (`/advances/[id]`): tarjetas Recibido / Aplicado / Devuelto /
+  Disponible con ⓘ, siguiente paso, facturas donde aplicarlo, historial, **Devolver al
+  cliente** (sale del banco, «Devolución a cliente») y **Pasar a otro proyecto o cotización**
+  (sin mover dinero). Ambos solo Administrador y Finanzas (`payments.void`), con motivo.
+- **Factura**: recuadro **Aplicar anticipos** (sugeridos hasta cubrir el balance) que baja el
+  saldo sin mover el banco; lista *Anticipos aplicados* con **Quitar**; *Aplicado* muestra el
+  desglose. En *Registrar cobro* ya no se ofrece la categoría «Anticipo de cliente» y hay una
+  nota que explica anticipo vs. cobro. Cancelar la factura devuelve lo aplicado al anticipo.
+- **Proyecto**: *Cobrado* incluye los anticipos aplicados y muestra aparte «+ Anticipos sin
+  aplicar». El anticipo no es venta: la rentabilidad no cambia hasta la factura.
+- **Bancos**: el movimiento dice «Anticipo ANT-…» / «Devolución ANT-…» con enlace; la
+  comisión del banco se puede ligar a un anticipo. **Auditoría**: crear, aplicar, quitar,
+  devolver y pasar.
+- Migración **090** (solo agrega): tablas `customer_advances` y `customer_advance_movements`,
+  `bank_transactions.customer_advance_id`, funciones `register_customer_advance`,
+  `apply_customer_advance`, `void_customer_advance_application`, `refund_customer_advance`,
+  `transfer_customer_advance` y dos triggers (factura cancelada; cotización que pasa a
+  proyecto). No toca el motor fiscal ni `register_customer_payment`.
+- **V2**: anticipos a proveedores y penalidad por cancelación.
+
 ## Ajustes tras la prueba BV (2026-10-27)
 
 - **Pagar un incentivo pendiente** (antes no se podía: todo pago exigía proveedor).

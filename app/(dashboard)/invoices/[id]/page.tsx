@@ -55,6 +55,9 @@ import { hasPermission } from "@/lib/auth/permissions";
 import { NewInvoiceItemForm } from "./new-item-form";
 import { InvoiceHeaderForm } from "./invoice-header-form";
 import { RegisterPaymentForm } from "./register-payment-form";
+import { ApplyAdvancesForm } from "./apply-advances-form";
+import { listApplicableAdvances, listInvoiceAdvanceApplications, advanceTargetOf } from "@/features/advances/queries";
+import { VoidApplicationButton } from "@/components/advances/void-application-button";
 import { InvoiceShareLinkButton } from "./share-link-button";
 import { DuplicateInvoiceButton } from "./duplicate-invoice-button";
 import { DiscardInvoiceButton } from "./discard-invoice-button";
@@ -165,6 +168,30 @@ export default async function InvoiceDetailPage({
     ]);
   // Anular retenciones del cliente (migración 083).
   const canVoid = await hasPermission("payments.void");
+  // Anticipos (V1-3): los que se pueden aplicar a esta factura y los ya aplicados.
+  const invoiceOpen = ["ISSUED", "PARTIALLY_PAID", "OVERDUE"].includes(invoice.status) && invoice.balance > 0;
+  const [applicableAdvances, advanceApplications] = await Promise.all([
+    invoiceOpen && canPay
+      ? listApplicableAdvances({
+          client_id: invoice.client_id,
+          project_id: invoice.project_id,
+          quotation_id: (invoice as { quotation_id?: string | null }).quotation_id ?? null,
+          currency: invoice.currency,
+        }).catch(() => [])
+      : Promise.resolve([]),
+    invoice.status !== "DRAFT" ? listInvoiceAdvanceApplications(id).catch(() => []) : Promise.resolve([]),
+  ]);
+  const activeApplications = advanceApplications.filter((a) => a.status === "ACTIVE");
+  const appliedAdvances = activeApplications.reduce((acc, a) => acc + Number(a.amount), 0);
+  // «Anticipo de cliente» no se elige en un cobro: un anticipo se registra aparte (recibo ANT).
+  const paymentCategories = categories.filter(
+    (c) => c.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase() !== "anticipo de cliente",
+  );
+  const advanceScope = invoice.project_id
+    ? "Este proyecto"
+    : (invoice as { quotation_id?: string | null }).quotation_id
+      ? "Esta cotización"
+      : "Este cliente";
   // Para "Cambiar cliente" (solo en Borrador).
   const activeClients = invoice.status === "DRAFT" && canEdit ? await listActiveClients() : [];
   // Borrador de un proyecto: "con esta factura quedaría por facturar…" (solo aviso).
@@ -657,10 +684,18 @@ export default async function InvoiceDetailPage({
             label: "Aplicado",
             value: formatMoney(invoice.paid_amount, invoice.currency),
             tone: "success" as const,
-            info: "Lo que ya rebajó el saldo: dinero recibido en banco + retenciones del cliente.",
+            info: "Lo que ya rebajó el saldo: dinero recibido en banco + retenciones del cliente + anticipos aplicados.",
             note:
-              Number(invoice.withholding_total) > 0
-                ? `Recibido ${formatMoney(invoice.paid_amount - Number(invoice.withholding_total), invoice.currency)} · Retenciones ${formatMoney(Number(invoice.withholding_total), invoice.currency)}`
+              Number(invoice.withholding_total) > 0 || appliedAdvances > 0
+                ? [
+                    `Recibido ${formatMoney(invoice.paid_amount - Number(invoice.withholding_total) - appliedAdvances, invoice.currency)}`,
+                    Number(invoice.withholding_total) > 0
+                      ? `Retenciones ${formatMoney(Number(invoice.withholding_total), invoice.currency)}`
+                      : null,
+                    appliedAdvances > 0 ? `Anticipos ${formatMoney(appliedAdvances, invoice.currency)}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")
                 : undefined,
           },
           {
@@ -715,13 +750,78 @@ export default async function InvoiceDetailPage({
           {invoice.status !== "DRAFT" && (
           <section className={`flex flex-col gap-4 ${isEditable ? "order-2" : "order-1"}`}>
             <SectionHeader title="Cobros" count={payments.length} />
-            <DataTable columns={paymentColumns} rows={payments} keyFor={(p) => p.id} maxWidth="max-w-none" emptyMessage="Sin cobros registrados todavía." />
+            <DataTable columns={paymentColumns} rows={payments} keyFor={(p) => p.id} maxWidth="max-w-none" emptyMessage={activeApplications.length ? "Sin cobros en dinero todavía (abajo, los anticipos aplicados)." : "Sin cobros registrados todavía."} />
+
+            {advanceApplications.length > 0 && (
+              <div className="rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface">
+                <p className="flex items-center gap-1 border-b border-brand-border px-4 py-2.5 text-sm font-semibold text-brand-text">
+                  Anticipos aplicados
+                  <InfoHint text="Dinero que el cliente entregó antes de esta factura (recibos ANT). Rebaja el saldo, pero no mueve el banco: entró el día del anticipo." />
+                </p>
+                <ul className="divide-y divide-brand-border">
+                  {advanceApplications.map((m) => {
+                    const adv = relationRow<{ number: string; receipt_date: string }>(m.customer_advances);
+                    const voided = m.status === "VOIDED";
+                    return (
+                      <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm">
+                        <span className={voided ? "text-brand-muted line-through" : "text-brand-text"}>
+                          <Link href={`/advances/${m.advance_id}`} className="font-medium text-brand-accent hover:underline">
+                            {adv?.number ?? "Anticipo"}
+                          </Link>{" "}
+                          <span className="text-brand-muted">
+                            · recibido {formatDate(adv?.receipt_date ?? m.movement_date)} · aplicado {formatDate(m.movement_date)}
+                          </span>
+                        </span>
+                        {voided && <span className="text-xs text-brand-muted">Quitado: {m.void_reason ?? "—"}</span>}
+                        <span className="flex items-center gap-2">
+                          <span className={`whitespace-nowrap font-medium tabular-nums ${voided ? "text-brand-muted line-through" : "text-brand-success"}`}>
+                            {formatMoney(Number(m.amount), invoice.currency)}
+                          </span>
+                          {!voided && canVoid && invoice.status !== "CANCELLED" && (
+                            <VoidApplicationButton
+                              movementId={m.id}
+                              amount={Number(m.amount)}
+                              currency={invoice.currency}
+                              advanceNumber={adv?.number ?? "anticipo"}
+                              invoiceNumber={invoice.number}
+                            />
+                          )}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+
+            {applicableAdvances.length > 0 && (
+              <ApplyAdvancesForm
+                key={applicableAdvances.map((a) => `${a.id}:${a.available_amount}`).join("|") + `|${invoice.balance}`}
+                invoiceId={invoice.id}
+                balance={invoice.balance}
+                currency={invoice.currency}
+                scopeLabel={advanceScope}
+                advances={applicableAdvances.map((a) => ({
+                  id: a.id,
+                  number: a.number,
+                  receipt_date: a.receipt_date,
+                  available: Number(a.available_amount),
+                  target: advanceTargetOf(a).label,
+                }))}
+              />
+            )}
 
             {["ISSUED", "PARTIALLY_PAID", "OVERDUE"].includes(invoice.status) &&
               invoice.balance > 0 &&
               canPay && (
                 <Card>
-                  <p className="mb-3 text-sm font-medium text-brand-text">Registrar cobro</p>
+                  <p className="text-sm font-medium text-brand-text">Registrar cobro</p>
+                  <p className="mb-3 flex items-center gap-1 text-xs text-brand-muted">
+                    {applicableAdvances.length > 0
+                      ? "Primero aplica los anticipos (arriba); aquí va solo lo que el cliente pague ahora."
+                      : "¿El cliente pagó antes de que existiera esta factura? Eso es un anticipo: se registra en el proyecto o la cotización y aquí se aplica."}
+                    <InfoHint text="Anticipo = dinero recibido ANTES de facturar (recibo ANT, sin impuestos). Cobro = dinero recibido de una factura ya emitida (recibo REC). Así no se cobra dos veces." />
+                  </p>
                   {bankAccounts.length === 0 ? (
                     <p className="text-sm text-brand-muted">
                       Necesitas crear al menos una{" "}
@@ -739,7 +839,7 @@ export default async function InvoiceDetailPage({
                       balance={invoice.balance}
                       currency={invoice.currency}
                       bankAccounts={bankAccounts}
-                      categories={categories}
+                      categories={paymentCategories}
                       fxContext={fxContext}
                       funds={funds}
                       invoiceRate={Number(invoice.exchange_rate) || 1}

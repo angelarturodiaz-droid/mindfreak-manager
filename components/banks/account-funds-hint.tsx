@@ -92,10 +92,13 @@ export function AccountIncomingHint({
   amount,
   amountCurrency,
   bank,
+  what = "cobro",
 }: {
   funds: AccountFunds | undefined;
   amount?: number;
   amountCurrency?: string;
+  /** Qué entra (texto): «cobro» o «anticipo». */
+  what?: string;
   /** Cuenta en otra moneda: lo que se escribió en "¿Cuánto acreditó realmente el banco?" y la comisión. */
   bank?: { amount: number; fee: number };
 }) {
@@ -112,7 +115,7 @@ export function AccountIncomingHint({
         Saldo actual de la cuenta: <strong>{formatMoney(funds.balance, cur)}</strong>
         {after !== null && (
           <>
-            {" "}→ con este cobro quedará en <strong>{formatMoney(after, cur)}</strong>
+            {" "}→ con este {what} quedará en <strong>{formatMoney(after, cur)}</strong>
           </>
         )}
       </span>

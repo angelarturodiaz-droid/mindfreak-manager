@@ -13,6 +13,7 @@ import {
   FileText,
   FolderOpen,
   Gift,
+  HandCoins,
   Truck,
   Wallet,
   Paperclip,
@@ -63,6 +64,8 @@ import { DocumentList } from "@/components/documents/document-list";
 import { UploadDocumentForm } from "@/components/documents/upload-document-form";
 import { listDocuments } from "@/features/documents/queries";
 import { listTasks } from "@/features/tasks/queries";
+import { listProjectAdvances } from "@/features/advances/queries";
+import { AdvanceTable } from "@/components/advances/advance-table";
 import { NewTaskForm } from "@/components/tasks/new-task-form";
 import { TaskList } from "@/components/tasks/task-list";
 import { listProjectActivities } from "@/features/activities/queries";
@@ -373,7 +376,7 @@ export default async function ProjectDetailPage({
   }
   if (!project) notFound();
 
-  const [items, members, services, canUpdate, profitability, billingData, canIncentives] = await Promise.all([
+  const [items, members, services, canUpdate, profitability, billingData, canIncentives, canPay] = await Promise.all([
     listProjectItems(id),
     listCompanyMembers(),
     listActiveServices(),
@@ -381,6 +384,7 @@ export default async function ProjectDetailPage({
     getProjectProfitability(id),
     getProjectBilling(id),
     hasPermission("expenses.incentives"),
+    hasPermission("payments.create"),
   ]);
   // Cotizado (aprobado) vs. facturado: un proyecto puede tener varias facturas.
   const billing = billingProgress(billingData);
@@ -400,6 +404,7 @@ export default async function ProjectDetailPage({
     projectTasks,
     projectActivities,
     incentives,
+    advances,
   ] = await Promise.all([
     isVentas ? listProjectQuotations(id) : null,
     isVentas ? listProjectInvoices(id) : null,
@@ -413,6 +418,7 @@ export default async function ProjectDetailPage({
     activeTab === "tareas" ? listTasks({ projectId: id }) : null,
     activeTab === "actividades" ? listProjectActivities(id) : null,
     activeTab === "finanzas" ? listProjectIncentives(id) : null,
+    isVentas ? listProjectAdvances(id) : null,
   ]);
 
   const clientName = relationName(project.clients);
@@ -901,10 +907,12 @@ export default async function ProjectDetailPage({
         />
         <MetricCard
           label="Cobrado"
-          info="Dinero que el cliente ya pagó por este proyecto. La barra es la parte de lo facturado que ya entró al banco."
+          info="Dinero que el cliente ya pagó de las facturas de este proyecto (incluye los anticipos ya aplicados a una factura). La barra es la parte de lo facturado que ya se cobró. Los anticipos que esperan la factura salen aparte, debajo."
           value={formatMoney(profitability.cobrado)}
           pct={profitability.facturadoConItbis > 0 ? (profitability.cobrado / profitability.facturadoConItbis) * 100 : null}
-          hint={porCobrar > 0 ? `Por cobrar ${formatMoney(porCobrar)}` : "Nada pendiente por cobrar"}
+          hint={`${porCobrar > 0 ? `Por cobrar ${formatMoney(porCobrar)}` : "Nada pendiente por cobrar"}${
+            profitability.anticiposSinAplicar > 0 ? ` · + Anticipos sin aplicar ${formatMoney(profitability.anticiposSinAplicar)}` : ""
+          }`}
         />
         <MetricCard
           label="Utilidad real"
@@ -1114,7 +1122,8 @@ export default async function ProjectDetailPage({
               <KpiCard
                 label="Cobrado"
                 value={formatMoney(profitability.cobrado)}
-                info="Dinero que ya entró por este proyecto. Es dinero real, con ITBIS."
+                hint={profitability.anticiposSinAplicar > 0 ? `+ Anticipos sin aplicar ${formatMoney(profitability.anticiposSinAplicar)}` : undefined}
+                info="Dinero que ya entró por las facturas de este proyecto (con ITBIS), incluidos los anticipos ya aplicados a una factura. Los anticipos que esperan la factura final no son venta todavía: salen aparte."
               />
               <KpiCard
                 label="Por cobrar"
@@ -1339,6 +1348,40 @@ export default async function ProjectDetailPage({
             }
           >
             <DataTable columns={invoiceColumns} rows={invoices} keyFor={(i) => i.id} emptyMessage="Sin facturas todavía." maxWidth="max-w-none" />
+          </FoldableSection>
+          <FoldableSection
+            storageKey="proyecto.ventas.anticipos"
+            title="Anticipos"
+            icon={<HandCoins size={16} />}
+            count={advances?.length ?? 0}
+            info="Dinero que el cliente entregó ANTES de la factura (ej. 50 % para separar la fecha). Tiene su recibo ANT, sin impuestos, y no es venta todavía. Cuando emitas la factura final, ábrela y pulsa «Aplicar anticipos»."
+            summary={
+              profitability.anticiposSinAplicar > 0 ? (
+                <span className="text-xs font-medium text-brand-accent">
+                  Sin aplicar {formatMoney(profitability.anticiposSinAplicar)}
+                </span>
+              ) : undefined
+            }
+            action={
+              canPay && !isCancelled ? (
+                <Link href={`/advances/new?project=${project.id}`}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    icon={<Plus size={14} />}
+                    hint="Dinero que el cliente entrega antes de facturar. Se le da un recibo de anticipo (ANT) y luego se descuenta de la factura final."
+                  >
+                    Registrar anticipo
+                  </Button>
+                </Link>
+              ) : undefined
+            }
+          >
+            <AdvanceTable
+              rows={advances ?? []}
+              showTarget={false}
+              emptyMessage="Sin anticipos. Si el cliente paga algo antes de la factura, regístralo con «Registrar anticipo»."
+            />
           </FoldableSection>
           <FoldableSection
             storageKey="proyecto.ventas.cobros"

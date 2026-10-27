@@ -17,8 +17,13 @@ import {
   Clock,
   FolderKanban,
   Handshake,
+  HandCoins,
+  Plus,
   Receipt,
 } from "lucide-react";
+import { FoldableSection } from "@/components/ui/foldable-section";
+import { AdvanceTable } from "@/components/advances/advance-table";
+import { listQuotationAdvances } from "@/features/advances/queries";
 import {
   getQuotation,
   listQuotationItems,
@@ -149,6 +154,13 @@ export default async function QuotationDetailPage({
     // Venta sin evento: facturas hechas desde esta cotización sin proyecto.
     listDirectInvoicesFromQuotation(id),
   ]);
+  // Anticipos (V1-3): solo en una cotización aprobada.
+  const isApproved = quotation.status === "APPROVED";
+  const [quotationAdvances, canPay] = isApproved
+    ? await Promise.all([listQuotationAdvances(id).catch(() => []), hasPermission("payments.create")])
+    : [[], false];
+  const advancesAvailable = quotationAdvances.reduce((acc, a) => acc + Number(a.available_amount), 0);
+  const advanceHref = quotation.project_id ? `/advances/new?project=${quotation.project_id}` : `/advances/new?quotation=${id}`;
   // Para "Cambiar cliente" (solo en Borrador).
   const activeClients = quotation.status === "DRAFT" && canUpdate ? await listActiveClients() : [];
 
@@ -544,6 +556,47 @@ export default async function QuotationDetailPage({
           },
         ]}
       />
+
+      {isApproved && (
+        <FoldableSection
+          storageKey="cotizacion.anticipos"
+          title="Anticipos"
+          icon={<HandCoins size={16} />}
+          count={quotationAdvances.length}
+          info="Dinero que el cliente entregó antes de la factura (ej. el % de anticipo de la condición de pago). Tiene su recibo ANT, sin impuestos, y se descuenta de la factura final."
+          summary={
+            advancesAvailable > 0 ? (
+              <span className="text-xs font-medium text-brand-accent">
+                Sin aplicar {formatMoney(advancesAvailable, quotation.currency)}
+              </span>
+            ) : Number(quotation.advance_percent) > 0 ? (
+              <span className="text-xs text-brand-muted">
+                Anticipo pactado: {Number(quotation.advance_percent)} % ={" "}
+                {formatMoney((Number(quotation.total) * Number(quotation.advance_percent)) / 100, quotation.currency)}
+              </span>
+            ) : undefined
+          }
+          action={
+            canPay ? (
+              <Link href={advanceHref}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={<Plus size={14} />}
+                  hint="Dinero que el cliente entrega antes de facturar. Se le da un recibo de anticipo (ANT) y luego se descuenta de la factura final."
+                >
+                  Registrar anticipo
+                </Button>
+              </Link>
+            ) : undefined
+          }
+        >
+          <AdvanceTable
+            rows={quotationAdvances}
+            emptyMessage="Sin anticipos. Si el cliente paga algo para separar la fecha, regístralo con «Registrar anticipo»."
+          />
+        </FoldableSection>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <section className="flex min-w-0 flex-col gap-4 lg:col-span-2">

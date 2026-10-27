@@ -357,12 +357,31 @@ export async function getPaymentReceiptDataAction(
   type One<T> = T | T[] | null;
   const invoiceData = payment.invoices as One<{ number: string; balance: number }>;
   const invoiceNow = Array.isArray(invoiceData) ? invoiceData[0] : invoiceData;
-  const { data: invoicePayments } = await supabase
-    .from("customer_payments")
-    .select("id, amount, amount_applied, payment_date, created_at")
-    .eq("invoice_id", payment.invoice_id);
+  const [{ data: invoicePayments }, { data: advanceApplications }] = await Promise.all([
+    supabase
+      .from("customer_payments")
+      .select("id, amount, amount_applied, payment_date, created_at")
+      .eq("invoice_id", payment.invoice_id),
+    // Anticipos aplicados (V1-3) también rebajan el saldo: cuentan si se aplicaron después de este cobro.
+    supabase
+      .from("customer_advance_movements")
+      .select("id, amount, movement_date, created_at")
+      .eq("invoice_id", payment.invoice_id)
+      .eq("kind", "APPLY")
+      .eq("status", "ACTIVE"),
+  ]);
+  const allRows = [
+    ...(invoicePayments ?? []),
+    ...(advanceApplications ?? []).map((m) => ({
+      id: m.id,
+      amount: Number(m.amount),
+      amount_applied: Number(m.amount),
+      payment_date: m.movement_date,
+      created_at: m.created_at,
+    })),
+  ];
   const invoice = invoiceNow
-    ? { ...invoiceNow, balance: balanceAfterPayment(Number(invoiceNow.balance), invoicePayments ?? [], payment.id) }
+    ? { ...invoiceNow, balance: balanceAfterPayment(Number(invoiceNow.balance), allRows, payment.id) }
     : null;
   const clientData = payment.clients as One<{
     name: string;

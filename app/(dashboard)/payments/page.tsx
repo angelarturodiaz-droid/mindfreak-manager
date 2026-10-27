@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { ArrowDownLeft, ArrowUpRight, Scale, TrendingUp } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, HandCoins, Plus, Scale, TrendingUp } from "lucide-react";
+import { countAdvances, getAdvanceTotals, listAdvancesPage } from "@/features/advances/queries";
+import { AdvanceTable } from "@/components/advances/advance-table";
+import { Callout } from "@/components/ui/page-kit";
+import { Button } from "@/components/ui/button";
+import { hasPermission } from "@/lib/auth/permissions";
 import {
   listCustomerPaymentsPage,
   listSupplierPaymentsPage,
@@ -47,24 +52,34 @@ function BankCell({ bankAccounts, brandOf }: { bankAccounts: unknown; brandOf: (
 const TABS = [
   { key: "cobros", label: "Cobros de clientes", icon: ArrowDownLeft },
   { key: "pagos", label: "Pagos a proveedores", icon: ArrowUpRight },
+  { key: "anticipos", label: "Anticipos de clientes", icon: HandCoins },
 ] as const;
 
 export default async function PaymentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; q?: string; page?: string }>;
+  searchParams: Promise<{ tab?: string; q?: string; page?: string; ver?: string }>;
 }) {
   const params = await searchParams;
-  const activeTab = params.tab === "pagos" ? "pagos" : "cobros";
+  const activeTab = params.tab === "pagos" ? "pagos" : params.tab === "anticipos" ? "anticipos" : "cobros";
+  const onlyAvailable = params.ver !== "todos";
   const q = cleanSearch(params.q);
   const page = parsePage(params.page);
   // Solo se pide la pestaña abierta (15 por página); las pestañas muestran el total.
-  const [list, counts, stats, brandOf] = await Promise.all([
-    activeTab === "cobros" ? listCustomerPaymentsPage({ search: q, page }) : listSupplierPaymentsPage({ search: q, page }),
+  const [list, counts, stats, brandOf, advanceCount, advanceTotals, canPay] = await Promise.all([
+    activeTab === "cobros"
+      ? listCustomerPaymentsPage({ search: q, page })
+      : activeTab === "pagos"
+        ? listSupplierPaymentsPage({ search: q, page })
+        : listAdvancesPage({ search: q, page, onlyAvailable }),
     countPaymentsByKind(),
     getPaymentStats(),
     getBankBrands(),
+    countAdvances().catch(() => 0),
+    getAdvanceTotals().catch(() => ({ sinAplicar: 0, sinAplicarCount: 0 })),
+    hasPermission("payments.create"),
   ]);
+  const advances = activeTab === "anticipos" ? (list.rows as Awaited<ReturnType<typeof listAdvancesPage>>["rows"]) : [];
   const payments = activeTab === "cobros" ? (list.rows as PaymentRow[]) : [];
   const supplierPayments = activeTab === "pagos" ? (list.rows as SupplierPaymentRow[]) : [];
   const monthName = new Intl.DateTimeFormat("es-DO", {
@@ -180,8 +195,9 @@ export default async function PaymentsPage({
       <div>
         <h1 className="text-xl font-semibold text-brand-primary">Cobros y pagos</h1>
         <p className="text-sm text-brand-muted">
-          El dinero que entra (cobros de clientes) y el que sale (pagos a proveedores). Para
-          registrar uno nuevo, ve a la factura o al gasto correspondiente.
+          El dinero que entra (cobros de clientes y anticipos) y el que sale (pagos a proveedores). Para
+          registrar un cobro o un pago, ve a la factura o al gasto; un anticipo se registra aquí, en el proyecto o en
+          la cotización.
         </p>
       </div>
 
@@ -222,7 +238,7 @@ export default async function PaymentsPage({
         {TABS.map((t) => {
           const Icon = t.icon;
           const active = activeTab === t.key;
-          const count = t.key === "cobros" ? counts.cobros : counts.pagos;
+          const count = t.key === "cobros" ? counts.cobros : t.key === "pagos" ? counts.pagos : advanceCount;
           return (
             <Link
               key={t.key}
@@ -247,8 +263,10 @@ export default async function PaymentsPage({
         <input type="hidden" name="tab" value={activeTab} />
         <LiveSearchInput
           defaultValue={q ?? ""}
-          placeholder={activeTab === "cobros" ? "Buscar cliente o referencia…" : "Buscar proveedor o referencia…"}
-          ariaLabel={activeTab === "cobros" ? "Buscar cobro" : "Buscar pago"}
+          placeholder={
+            activeTab === "pagos" ? "Buscar proveedor o referencia…" : activeTab === "anticipos" ? "Buscar cliente o ANT…" : "Buscar cliente o referencia…"
+          }
+          ariaLabel={activeTab === "cobros" ? "Buscar cobro" : activeTab === "anticipos" ? "Buscar anticipo" : "Buscar pago"}
           className="w-72"
         />
         {q && (
@@ -261,7 +279,63 @@ export default async function PaymentsPage({
         )}
       </form>
 
-      {activeTab === "cobros" ? (
+      {activeTab === "anticipos" ? (
+        <section className="flex flex-col gap-4">
+          <Callout
+            icon={<HandCoins size={18} />}
+            title={
+              advanceTotals.sinAplicar > 0
+                ? `Anticipos sin aplicar: ${formatMoney(advanceTotals.sinAplicar)} (${advanceTotals.sinAplicarCount} ${advanceTotals.sinAplicarCount === 1 ? "anticipo" : "anticipos"})`
+                : "No hay anticipos esperando factura"
+            }
+            description="Dinero que los clientes entregaron antes de la factura (recibos ANT, sin impuestos). No es venta todavía: cuando emitas la factura final, ábrela y pulsa «Aplicar anticipos». En pesos, con la tasa del día de cada anticipo."
+          >
+            {canPay && (
+              <Link href="/advances/new">
+                <Button size="sm" icon={<Plus size={14} />}>
+                  Registrar anticipo
+                </Button>
+              </Link>
+            )}
+          </Callout>
+          <div>
+            <SectionHeader
+              title={onlyAvailable ? "Anticipos con saldo disponible" : "Todos los anticipos"}
+              description={
+                <>
+                  Del más reciente al más antiguo ·{" "}
+                  <Link
+                    href={`/payments?tab=anticipos${onlyAvailable ? "&ver=todos" : ""}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
+                    className="text-brand-accent hover:underline"
+                  >
+                    {onlyAvailable ? "Ver también los ya aplicados o devueltos" : "Ver solo los que tienen saldo"}
+                  </Link>
+                </>
+              }
+            />
+            <AdvanceTable
+              rows={advances}
+              showClient
+              emptyMessage={
+                q
+                  ? "Ningún anticipo coincide con la búsqueda."
+                  : onlyAvailable
+                    ? "No hay anticipos con saldo disponible."
+                    : "Aún no se ha registrado ningún anticipo."
+              }
+            />
+            <div className="mt-4">
+              <Pagination
+                basePath="/payments"
+                page={page}
+                pageSize={list.pageSize}
+                total={list.total}
+                params={{ tab: "anticipos", q, ver: onlyAvailable ? undefined : "todos" }}
+              />
+            </div>
+          </div>
+        </section>
+      ) : activeTab === "cobros" ? (
         <section>
           <SectionHeader
             title="Cobros de clientes"

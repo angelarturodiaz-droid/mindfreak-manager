@@ -1140,3 +1140,36 @@ pulsa el botón.
   `localStorage` (`mf.fold.<storageKey>`) con `useSyncExternalStore` (sin setState en efectos);
   el contenido queda montado (solo `hidden`). `MetricCard` de page-kit acepta `info`.
 - Numeración: el respaldo A0 pasa a la **090** y la limpieza A1 a la **091**.
+
+## 2026-10-27 — V1-3 Anticipos de clientes (migración 090)
+
+- Anticipo = dinero recibido **antes** de la factura. Si la factura existe, es un cobro.
+- Tablas: `customer_advances` (número `ANT-0001` consecutivo por compañía con
+  `pg_advisory_xact_lock`; `available_amount` generado = amount − applied − refunded;
+  `before_cutoff`; datos de moneda diferente como en los cobros) y
+  `customer_advance_movements` (`APPLY` a factura sin banco, `REFUND` con banco, `TRANSFER`;
+  `ACTIVE`/`VOIDED`). Solo lectura por RLS; se escribe con las funciones.
+- `register_customer_advance`: cotización aprobada, mismo cliente, moneda = la de la
+  cotización; si la cotización ya está en un proyecto, el anticipo queda en el proyecto.
+  Banco: INCOME categoría «Anticipo de cliente» (`customer_advance_id`); comisión aparte
+  (`related_source_type = 'customer_advance'`). `before_cutoff` solo con fecha < `mf_cutoff_date()`
+  (2027-01-01) y sin banco.
+- `apply_customer_advance`: factura emitida con balance, mismo cliente y moneda; del mismo
+  proyecto o cotización, o anticipo «solo del cliente». Sube `paid_amount`, baja `balance`,
+  estado `PARTIALLY_PAID`/`PAID` (misma fórmula que los cobros).
+- `void_customer_advance_application` (`payments.void`, motivo): devuelve el saldo a la
+  factura (`ISSUED`/`PARTIALLY_PAID`) y al anticipo.
+- `refund_customer_advance` (`payments.void`, motivo, regla de fondos/sobregiro):
+  EXPENSE «Devolución a cliente»; si la cuenta es de otra moneda pide lo que salió.
+- `transfer_customer_advance` (`payments.void`): solo sin nada aplicado; mismo cliente,
+  cotización aprobada en la misma moneda, proyecto no cancelado, o «solo el cliente».
+- Triggers: factura → CANCELLED anula sus aplicaciones (vuelven al anticipo); cotización con
+  nuevo `project_id` → sus anticipos pasan a ese proyecto.
+- Probado con rollback (27-oct): ANT-0001/0002, corte bloqueado en 2027, aplicar 3,000 →
+  factura 8,800 parcial, exceso bloqueado, quitar, devolver 500, pasar a solo cliente,
+  cancelar factura → aplicado vuelve a 0.
+- Rentabilidad: `getProjectProfitability.cobrado` = cobros + anticipos aplicados a
+  facturas del proyecto; `anticiposSinAplicar` aparte. Recibo de cobro: el saldo después del
+  cobro también suma los anticipos aplicados después.
+- Numeración: respaldo A0 = **091**, limpieza A1 = **092** (debe borrar también
+  anticipos y sus movimientos de prueba).

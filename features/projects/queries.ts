@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getProjectAdvanceTotals } from "@/features/advances/queries";
 import { profit, profitCascade, splitExpensesAndIncentives, sumSales } from "@/features/profitability/net-of-tax";
 import { getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { PAGE_SIZE, pageRange } from "@/lib/utils/pagination";
@@ -309,16 +310,19 @@ export async function getProjectProfitability(projectId: string) {
   for (const r of [quotations, invoices, customerPayments, projectItems, expenses, project]) {
     if (r.error) throw new Error(r.error.message);
   }
+  // V1-3: anticipos del proyecto. Lo aplicado a sus facturas cuenta como cobrado.
+  const anticipos = await getProjectAdvanceTotals(projectId).catch(() => ({ recibido: 0, aplicado: 0, sinAplicar: 0, count: 0 }));
 
   const cot = sumSales(quotations.data);
   const fac = sumSales(invoices.data);
   // V1-2: los incentivos van en su propio renglón, después de los gastos.
   const { gastos, incentivos } = splitExpensesAndIncentives(expenses.data);
   // Cobrado = dinero que entró (con ITBIS): es flujo, no rentabilidad.
-  const cobrado = (customerPayments.data ?? []).reduce(
+  const cobradoFacturas = (customerPayments.data ?? []).reduce(
     (acc, r) => acc + Number(r.amount ?? 0) * Number(r.exchange_rate ?? 1),
     0,
   );
+  const cobrado = cobradoFacturas + anticipos.aplicado;
   const costoEstimado = (projectItems.data ?? []).reduce(
     (acc, r) => acc + Number(r.estimated_cost ?? 0),
     0,
@@ -336,6 +340,9 @@ export async function getProjectProfitability(projectId: string) {
     cotizadoConItbis: cot.gross,
     facturadoConItbis: fac.gross,
     cobrado,
+    /** Anticipos (V1-3): aplicados a facturas (ya dentro de «cobrado») y los que esperan la factura. */
+    anticiposAplicados: anticipos.aplicado,
+    anticiposSinAplicar: anticipos.sinAplicar,
     costoEstimado,
     /** Gastos sin ITBIS (costo para la rentabilidad). */
     costoReal: gastos.net,

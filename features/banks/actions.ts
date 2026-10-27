@@ -266,6 +266,7 @@ export async function createManualTransactionAction(
 
 const FEE_LINK_COLUMN = {
   customer_payment: "customer_payment_id",
+  customer_advance: "customer_advance_id",
   supplier_payment: "supplier_payment_id",
   bank_transfer: "transfer_group_id",
 } as const;
