@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Card } from "./card";
 import { IconBadge, type IconBadgeTone } from "./icon-badge";
+import { InfoHint } from "./info-hint";
 
 /**
  * Piezas de diseño compartidas por las pantallas de lista y detalle
@@ -17,9 +18,12 @@ export function StatCard({
   icon,
   tone = "blue",
   valueTone,
+  info,
 }: {
   label: string;
   value: string;
+  /** Explicación (ⓘ) junto al título, en palabras sencillas. */
+  info?: string;
   hint?: ReactNode;
   icon: ReactNode;
   tone?: IconBadgeTone;
@@ -42,7 +46,10 @@ export function StatCard({
       <div className="flex flex-col gap-3 @[17rem]:flex-row @[17rem]:items-start @[17rem]:gap-4">
         <IconBadge icon={icon} tone={tone} size="lg" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-brand-muted">{label}</p>
+          <p className="flex items-center gap-1 text-sm font-medium text-brand-muted">
+            {label}
+            {info && <InfoHint text={info} />}
+          </p>
           <p
             className={`mt-0.5 whitespace-nowrap text-base font-semibold tracking-tight tabular-nums @[11rem]:text-lg @[14rem]:text-xl @[22rem]:text-2xl ${valueColor}`}
           >

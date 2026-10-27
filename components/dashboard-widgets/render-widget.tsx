@@ -83,6 +83,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
         <KpiTile
           href="/banks"
           label="En bancos · pesos"
+          info="El dinero que hay hoy en tus cuentas de banco en pesos (ahorros y corrientes). No incluye tarjetas de crédito. Haz clic para ver cada cuenta."
           value={money0(bankCash.dop.total, "DOP")}
           title={moneyIn(bankCash.dop.total, "DOP")}
           danger={bankCash.dop.total < 0}
@@ -96,6 +97,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
         <KpiTile
           href="/banks"
           label="En bancos · dólares"
+          info="El dinero que hay hoy en tus cuentas de banco en dólares. Va aparte de los pesos: no se convierte."
           value={money0(bankCash.usd.total, "USD")}
           title={moneyIn(bankCash.usd.total, "USD")}
           danger={bankCash.usd.total < 0}
@@ -108,8 +110,8 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
       return (
         <KpiTile
           href="/invoices"
-          label="Ventas del mes"
-          info="Facturas emitidas este mes, sin ITBIS (el ITBIS que cobras es de la DGII). Debajo, el total con ITBIS. El anillo compara lo cobrado con lo facturado con ITBIS, porque los dos son dinero."
+          label="Ventas del mes (facturado)"
+          info="Ventas = las facturas que emitiste este mes (no cuentan borradores ni canceladas), sin el ITBIS, porque el ITBIS es de la DGII. Debajo, el total de esas facturas con ITBIS y lo que ya cobraste. El anillo dice qué parte de lo facturado ya entró al banco."
           value={money0(kpis.ventas)}
           title={`${money(kpis.ventas)} sin ITBIS`}
           ring={{ value: ratio(kpis.cobros, kpis.ventasConItbis), tone: "success", label: "Cobrado vs. facturado (con ITBIS) este mes" }}
@@ -121,8 +123,8 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
       return (
         <KpiTile
           href="/expenses"
-          label="Gastos del mes"
-          info="Gastos del mes por su subtotal, sin ITBIS (se pagan con ITBIS, pero ese ITBIS no es costo). El anillo es el % de las ventas sin ITBIS."
+          label="Gastos del mes (registrado)"
+          info="Gastos = los gastos que registraste este mes, pagados o no (no cuentan los cancelados), sin el ITBIS, porque ese ITBIS no es costo. Debajo, el total con ITBIS. El anillo dice cuánto gastaste por cada RD$100 vendidos."
           value={money0(kpis.gastos)}
           title={`${money(kpis.gastos)} sin ITBIS · con ITBIS ${money(kpis.gastosConItbis)}`}
           ring={{
@@ -149,7 +151,9 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
           danger={kpis.utilidad < 0}
           icon={<PiggyBank size={20} />}
           tone={kpis.utilidad < 0 ? "danger" : "success"}
-          info="Ventas sin ITBIS − gastos sin ITBIS del mes. El ITBIS que cobras se le paga a la DGII y el de tus compras no es costo, por eso no cuentan."
+          info={`La ganancia (o pérdida) del mes: lo que vendiste menos lo que gastaste, los dos sin ITBIS. ${
+            kpis.utilidad >= 0 ? "Este mes ganaste" : "Este mes perdiste"
+          } ${money0(Math.abs(kpis.utilidad))}. El ITBIS no cuenta porque el que cobras es de la DGII y el de tus compras no es costo. Ojo: es la ganancia de lo facturado y gastado en el mes, no el dinero que entró al banco (eso es el Flujo financiero).`}
           sub="Ventas − gastos, sin ITBIS"
         />
       );
@@ -160,7 +164,15 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
           value={percent(kpis.margen)}
           danger={(kpis.margen ?? 0) < 0}
           ring={{ value: kpis.margen, tone: (kpis.margen ?? 0) < 0 ? "danger" : "success", label: "Utilidad / ventas sin ITBIS" }}
-          info="Utilidad del mes ÷ ventas sin ITBIS del mes."
+          info={
+            kpis.margen === null
+              ? "El margen dice qué parte de lo que vendes te queda como ganancia. Este mes todavía no hay ventas (facturas emitidas), así que no se puede calcular."
+              : `El margen dice qué parte de lo que vendes te queda como ganancia. Este mes: de cada RD$100 que vendiste (sin ITBIS), ${
+                  kpis.margen >= 0
+                    ? `después de pagar los gastos te quedaron RD$${kpis.margen.toFixed(2)}`
+                    : `los gastos se comieron todo y perdiste RD$${Math.abs(kpis.margen).toFixed(2)}`
+                }. Se calcula: utilidad ÷ ventas, sin ITBIS.`
+          }
           sub={kpis.ventas > 0 ? "Utilidad ÷ ventas, sin ITBIS" : "Sin ventas este mes"}
         />
       );
@@ -169,6 +181,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
         <KpiTile
           href="/reports"
           label="Por cobrar"
+          info="Lo que los clientes todavía te deben por facturas ya emitidas. El anillo es la parte que ya pasó su fecha de pago (vencida)."
           value={money0(receivables.totalPorCobrar)}
           title={money(receivables.totalPorCobrar)}
           ring={{ value: vencidoPct, tone: "danger", label: "% vencido" }}
@@ -181,6 +194,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
         <KpiTile
           href="/reports"
           label="Total vencido"
+          info="Facturas que ya pasaron su fecha de pago y el cliente no ha pagado completo."
           value={money0(receivables.totalVencido)}
           title={money(receivables.totalVencido)}
           danger={receivables.totalVencido > 0}
@@ -193,6 +207,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
         <KpiTile
           href="/reports"
           label="Vence hoy"
+          info="Facturas cuyo plazo de pago termina hoy. Buen momento para recordarle al cliente."
           value={money0(receivables.totalVenceHoy)}
           title={money(receivables.totalVenceHoy)}
           icon={<Clock size={20} />}
@@ -205,6 +220,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
         <KpiTile
           href="/expenses"
           label="Por pagar"
+          info="Lo que todavía le debes a tus proveedores por gastos registrados (pagados en parte o sin pagar). Debajo, lo que ya les pagaste este mes."
           value={money0(kpis.cuentasPorPagar)}
           title={money(kpis.cuentasPorPagar)}
           icon={<ArrowUpCircle size={20} />}
@@ -217,6 +233,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
         <KpiTile
           href="/projects"
           label="Proyectos activos"
+          info="Eventos que están en planificación, confirmados o en curso (no cuenta los completados ni los cancelados)."
           value={String(kpis.proyectosActivos)}
           icon={<FolderKanban size={20} />}
           tone="violet"
@@ -228,6 +245,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
         <KpiTile
           href="/quotations"
           label="Cotizaciones pendientes"
+          info="Cotizaciones que esperan respuesta del cliente (en borrador, enviadas o en negociación). Debajo, las ya aprobadas."
           value={String(kpis.cotizacionesPendientes)}
           icon={<FileClock size={20} />}
           tone="accent"
@@ -246,6 +264,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
       return (
         <Panel
           title="Flujo financiero · últimos 6 meses"
+          info="Dinero real que entró y salió de tus bancos cada mes: en verde los cobros a clientes y en rojo los pagos a proveedores (con ITBIS, porque es dinero). Neto = cobros − pagos. No es la ganancia: una venta puede cobrarse otro mes y un gasto pagarse después. La ganancia está en Utilidad del mes."
           href="/reports"
           right={
             delta !== null && (
@@ -290,7 +309,11 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
       ];
       const max = Math.max(...buckets.map((b) => b.value), 1);
       return (
-        <Panel title="Por cobrar por vencimiento" href="/reports">
+        <Panel
+          title="Por cobrar por vencimiento"
+          href="/reports"
+          info="Lo que te deben los clientes, agrupado por cuándo deben pagarlo: lo ya vencido (atrasado), lo que vence hoy y lo que vence en los próximos días. Sirve para saber a quién llamar primero."
+        >
           <div className="flex flex-col gap-3.5">
             {buckets.map((b) => (
               <BarRow
@@ -313,6 +336,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
       return (
         <Panel
           title={`Facturas vencidas (${receivables.facturasVencidas.length})`}
+          info="Facturas que ya pasaron su fecha de pago y el cliente no ha pagado completo. Los días dicen cuánto tiempo llevan atrasadas."
           href="/invoices"
           right={receivables.totalVencido > 0 && <span className="text-brand-danger">{moneyShort(receivables.totalVencido)}</span>}
         >
@@ -330,7 +354,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
       );
     case "facturas_proximas":
       return (
-        <Panel title="Próximas a vencer (30 días)" href="/invoices">
+        <Panel title="Próximas a vencer (30 días)" href="/invoices" info="Facturas que el cliente debe pagar en los próximos 30 días.">
           <MiniList
             empty="Sin facturas próximas."
             rows={receivables.facturasProximasAVencer.slice(0, 5).map((inv) => ({
@@ -348,7 +372,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
       );
     case "ultimos_cobros":
       return (
-        <Panel title="Últimos cobros" href="/payments">
+        <Panel title="Últimos cobros" href="/payments" info="Los últimos pagos que te hicieron los clientes (dinero que entró).">
           <MiniList
             empty="Sin cobros registrados."
             rows={recentPayments.map((p) => ({
@@ -362,7 +386,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
       );
     case "ultimos_pagos":
       return (
-        <Panel title="Últimos pagos" href="/expenses">
+        <Panel title="Últimos pagos" href="/expenses" info="Los últimos pagos que les hiciste a tus proveedores (dinero que salió).">
           <MiniList
             empty="Sin pagos registrados."
             rows={recentSupplierPayments.map((p) => ({
@@ -376,7 +400,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
       );
     case "tareas_pendientes":
       return (
-        <Panel title="Tareas pendientes" href="/tasks">
+        <Panel title="Tareas pendientes" href="/tasks" info="Tareas sin terminar, primero las que vencen antes.">
           <MiniList
             empty="Sin tareas pendientes."
             rows={pendingTasks.map((t) => ({
@@ -391,7 +415,7 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
       );
     case "rentabilidad_proyectos":
       return (
-        <Panel title="Rentabilidad por proyecto (top 5)" href="/reports">
+        <Panel title="Rentabilidad por proyecto (top 5)" href="/reports" info="Los 5 proyectos con mejor margen: qué parte de lo facturado (sin ITBIS) les quedó como ganancia después de sus gastos.">
           {topProjects.length === 0 ? (
             <p className="py-4 text-center text-sm text-brand-muted">Sin proyectos facturados todavía.</p>
           ) : (
@@ -399,7 +423,8 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
               {topProjects.map((p) => (
                 <BarRow
                   key={p.id}
-                  label={`${p.number} — ${p.name}`}
+                  label={p.number}
+                  hint={p.name}
                   valueLabel={percent(p.margenReal)}
                   pct={Math.abs(p.margenReal ?? 0)}
                   tone={(p.margenReal ?? 0) < 0 ? "danger" : "success"}

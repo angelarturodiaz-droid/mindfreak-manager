@@ -1,5 +1,26 @@
 # CHANGELOG — Mindfreak Manager
 
+## Ajustes tras la prueba BS (2026-10-26)
+
+- **Filtros de Reportes:** «Limpiar» dejaba la lista (ej. Cliente) mostrando el valor
+  viejo aunque los datos ya eran de todos, y al exportar salía todo. Ahora el formulario
+  se vuelve a armar con los filtros aplicados. Lo mismo en Auditoría y en las listas con
+  filtro por cliente/estado (`AutoSubmitSelect`).
+- **Ingresos por tipo de impuesto:** columnas informativas **ITBIS retenido** e **ISR
+  retenido** por los clientes (y «Otras» si hay), en pantalla, Excel y PDF; en facturas en
+  otra moneda, debajo del total el **monto original y la tasa**; ⓘ en lenguaje sencillo en
+  cada tarjeta y columna (incluido NCF).
+- **Número del proyecto** primero y en negrita (nombre debajo) en Proyectos, Reportes →
+  Rentabilidad, Comparaciones y el Dashboard; en el detalle, etiqueta azul.
+- **Explicaciones para no financieros (ⓘ):** todas las tarjetas y paneles del Dashboard
+  (bancos, por cobrar, por pagar, flujo financiero, vencimientos, listas…); el ⓘ del Margen
+  y la Utilidad dice el número del mes en palabras («de cada RD$100 que vendiste te
+  quedaron…»). Proyecto: Presupuesto, Facturado, Cobrado, Por cobrar y Costo estimado.
+  Comparaciones: todas las pestañas. Reporte de Rentabilidad: tarjetas y columnas.
+- **Etiquetas:** «Ventas del mes (facturado)», «Gastos del mes (registrado)», «Ventas sin
+  ITBIS (facturas emitidas)», «Gastos sin ITBIS (gastos registrados)».
+- **Ayuda:** ejemplos genéricos (no dependen de datos que se borrarán en la limpieza).
+
 ## V1-1 — Rentabilidad sin ITBIS + reporte «Ingresos por tipo de impuesto» (2026-10-25)
 
 - **La utilidad y el margen se calculan sin ITBIS** (decisión con el contador, 22-oct):

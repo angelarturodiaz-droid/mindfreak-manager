@@ -372,7 +372,10 @@ async function buildSections(report: string, p: ReportExportParams, base: string
         { label: "Total sin ITBIS", value: money(totals.totalSinItbis, base) },
         { label: "ITBIS facturado", value: money(totals.itbis, base) },
         { label: "Total facturado", value: money(totals.total, base) },
+        { label: "ITBIS retenido por clientes", value: money(totals.itbisRetenido, base) },
+        { label: "ISR retenido por clientes", value: money(totals.isrRetenido, base) },
       );
+      const otras = totals.otrasRetenciones > 0;
       const monthName = (ym: string) =>
         new Date(`${ym}-15T12:00:00Z`)
           .toLocaleDateString("es-DO", { month: "long", year: "numeric", timeZone: "UTC" })
@@ -387,9 +390,34 @@ async function buildSections(report: string, p: ReportExportParams, base: string
           { header: "Total sin ITBIS", kind: "money", currency: base },
           { header: "ITBIS facturado", kind: "money", currency: base },
           { header: "Total facturado", kind: "money", currency: base },
+          { header: "ITBIS retenido", kind: "money", currency: base },
+          { header: "ISR retenido", kind: "money", currency: base },
+          ...(otras ? [{ header: "Otras retenciones", kind: "money" as const, currency: base }] : []),
         ],
-        rows: months.map((m) => [monthName(m.month), m.facturas, m.gravado, m.exento, m.totalSinItbis, m.itbis, m.total]),
-        totals: ["Total", totals.facturas, totals.gravado, totals.exento, totals.totalSinItbis, totals.itbis, totals.total],
+        rows: months.map((m) => [
+          monthName(m.month),
+          m.facturas,
+          m.gravado,
+          m.exento,
+          m.totalSinItbis,
+          m.itbis,
+          m.total,
+          m.itbisRetenido,
+          m.isrRetenido,
+          ...(otras ? [m.otrasRetenciones] : []),
+        ]),
+        totals: [
+          "Total",
+          totals.facturas,
+          totals.gravado,
+          totals.exento,
+          totals.totalSinItbis,
+          totals.itbis,
+          totals.total,
+          totals.itbisRetenido,
+          totals.isrRetenido,
+          ...(otras ? [totals.otrasRetenciones] : []),
+        ],
       });
       sections.push({
         title: "Detalle por factura",
@@ -400,10 +428,15 @@ async function buildSections(report: string, p: ReportExportParams, base: string
           { header: "Cliente", kind: "text" },
           { header: "Proyecto", kind: "text" },
           { header: "Moneda", kind: "text" },
+          { header: "Total original", kind: "money" },
+          { header: "Tasa", kind: "rate" },
           { header: "Gravado", kind: "money", currency: base },
           { header: "Exento", kind: "money", currency: base },
           { header: "ITBIS", kind: "money", currency: base },
           { header: "Total", kind: "money", currency: base },
+          { header: "ITBIS retenido", kind: "money", currency: base },
+          { header: "ISR retenido", kind: "money", currency: base },
+          ...(otras ? [{ header: "Otras retenciones", kind: "money" as const, currency: base }] : []),
         ],
         rows: invoices.map((r) => [
           r.issueDate,
@@ -412,15 +445,36 @@ async function buildSections(report: string, p: ReportExportParams, base: string
           r.clientName,
           r.projectNumber ?? "",
           r.currency,
+          money(r.originalTotal, r.currency),
+          r.rate,
           r.gravado,
           r.exento,
           r.itbis,
           r.total,
+          r.itbisRetenido,
+          r.isrRetenido,
+          ...(otras ? [r.otrasRetenciones] : []),
         ]),
-        totals: ["Total", "", "", "", "", "", totals.gravado, totals.exento, totals.itbis, totals.total],
+        totals: [
+          "Total",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          totals.gravado,
+          totals.exento,
+          totals.itbis,
+          totals.total,
+          totals.itbisRetenido,
+          totals.isrRetenido,
+          ...(otras ? [totals.otrasRetenciones] : []),
+        ],
       });
       notes.push(
-        "Solo facturas emitidas (sin borradores ni canceladas). Gravado y exento se separan por el impuesto de cada línea y del cargo por servicio; gravado + exento = total sin ITBIS. Montos en la moneda base con la tasa de cada factura.",
+        "Solo facturas emitidas (sin borradores ni canceladas). Gravado = venta que lleva ITBIS (sin el ITBIS); exento = venta sin ITBIS; gravado + exento = total sin ITBIS. Montos en la moneda base con la tasa de cada factura («Total original» y «Tasa» son la referencia de las facturas en otra moneda). Las retenciones son las que hizo el cliente (activas) y se muestran junto a su factura: no bajan la venta, son impuesto ya pagado a favor de la empresa.",
       );
       break;
     }

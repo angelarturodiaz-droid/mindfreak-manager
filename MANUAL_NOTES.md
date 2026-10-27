@@ -1088,3 +1088,18 @@ pulsa el botón.
   proyecto con `projects!invoices_project_id_fkey`). Exporta Excel/PDF (`export-data.ts`).
   Paginación: meses con `page`, detalle con `p_facturas`.
 - `KpiCard`, `MetricCard` (proyecto) y `KpiTile` (Dashboard) aceptan `info` (ⓘ junto al título).
+
+## 2026-10-26 — Ajustes tras la prueba BS
+
+- **Filtros GET con valores viejos:** `<form>` y `<select defaultValue>` no se reinician al
+  navegar con `<Link>` a la misma ruta (React conserva el DOM). Solución: `FilterBar`
+  (Reportes) recibe `params` y pone `key` = filtros aplicados; `AutoSubmitSelect` pone
+  `key={defaultValue}` en el `Select`; Auditoría pone `key` al form. Ojo: no poner `key` que
+  cambie con el buscador en vivo (`q`), porque el input perdería el foco al escribir.
+- **Ingresos por tipo de impuesto:** retenciones de `customer_payment_withholdings`
+  (status ACTIVE) por factura (`itbisRetenido`, `isrRetenido`, `otrasRetenciones`; `OTRO` →
+  otras), × tasa de la factura; `originalTotal` y `rate` para la referencia en otra moneda.
+  Textos de ⓘ en `TAX_REPORT_INFO` (reports/page.tsx).
+- `StatCard` (page-kit) y `Panel` (dashboard-widgets/parts) aceptan `info`.
+- Número de proyecto en negrita primero: proyectos/page, reports (rentabilidad),
+  comparisons (rentabilidad por proyecto), dashboard (BarRow label=number, hint=name).

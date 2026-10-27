@@ -13,6 +13,9 @@ import { Select, type SelectProps } from "./field";
 export function AutoSubmitSelect({ resetOthers = false, ...props }: SelectProps & { resetOthers?: boolean }) {
   return (
     <Select
+      // Si el filtro cambia desde fuera (ej. «Limpiar filtros»), se vuelve a
+      // montar para mostrar el valor aplicado y no el que quedó en pantalla.
+      key={String(props.defaultValue ?? "")}
       {...props}
       onChange={(e) => {
         props.onChange?.(e);

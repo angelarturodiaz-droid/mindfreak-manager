@@ -118,41 +118,49 @@ async function ProjectProfitabilityTab({ period }: { period: Period }) {
   const top = rows.slice(0, 8);
 
   const columns: Column<(typeof rows)[number]>[] = [
-    { header: "Proyecto", accessor: (p) => `${p.number} — ${p.name}` },
+    {
+      header: "Proyecto",
+      accessor: (p) => (
+        <span className="block min-w-[9rem]">
+          <span className="block font-semibold tabular-nums text-brand-text">{p.number}</span>
+          <span className="text-xs text-brand-muted">{p.name}</span>
+        </span>
+      ),
+    },
     { header: "Estado", accessor: (p) => <Badge status={p.status}>{PROJECT_STATUS_LABELS[p.status] ?? p.status}</Badge> },
-    { header: "Ingresos", info: "Facturas emitidas, sin ITBIS (total − ITBIS). El ITBIS que cobras es de la DGII: no es venta.", accessor: (p) => formatMoneyPrecise(p.ingresos) },
-    { header: "Gastos", info: "Gastos por su subtotal, sin ITBIS. Se pagan con ITBIS, pero ese ITBIS no es costo.", accessor: (p) => formatMoneyPrecise(p.gastos) },
+    { header: "Ingresos", info: "Lo que vendiste: las facturas emitidas en el período (no cuentan borradores ni canceladas), sin el ITBIS, porque el ITBIS que cobras es de la DGII.", accessor: (p) => formatMoneyPrecise(p.ingresos) },
+    { header: "Gastos", info: "Lo que gastaste: los gastos registrados en el período, pagados o no (no cuentan los cancelados), sin el ITBIS, porque ese ITBIS no es costo.", accessor: (p) => formatMoneyPrecise(p.gastos) },
     {
       header: "Utilidad",
-      info: "Ingresos sin ITBIS − gastos sin ITBIS.",
+      info: "La ganancia: lo que vendiste menos lo que gastaste, los dos sin ITBIS. Si es negativa, gastaste más de lo que vendiste.",
       accessor: (p) => (
         <span className={p.utilidad < 0 ? "font-medium text-brand-danger" : "font-medium"}>{formatMoneyPrecise(p.utilidad)}</span>
       ),
     },
-    { header: "Margen", info: "Utilidad ÷ ventas sin ITBIS.", accessor: (p) => <span className="text-brand-muted">{formatPercent(p.margen)}</span> },
-    { header: "vs. período anterior", accessor: (p) => <DeltaPill pct={p.deltaUtilidadPct} /> },
+    { header: "Margen", info: "Qué parte de lo vendido te quedó de ganancia. Ej.: 20 % = de cada RD$100 vendidos te quedaron RD$20 después de los gastos.", accessor: (p) => <span className="text-brand-muted">{formatPercent(p.margen)}</span> },
+    { header: "vs. período anterior", info: "Cuánto subió (verde) o bajó (rojo) comparado con el período anterior del mismo largo.", accessor: (p) => <DeltaPill pct={p.deltaUtilidadPct} /> },
   ];
 
   return (
     <div className="flex flex-col gap-6">
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <KpiCard
-          label="Ingresos sin ITBIS"
-          info={"Facturas emitidas, sin ITBIS (total − ITBIS). El ITBIS que cobras es de la DGII: no es venta."}
+          label="Ventas sin ITBIS (facturas emitidas)"
+          info={"Lo que vendiste: las facturas emitidas en el período (no cuentan borradores ni canceladas), sin el ITBIS, porque el ITBIS que cobras es de la DGII."}
           value={formatMoney(totals.ingresos)}
           trend={totals.deltaIngresosPct !== null ? `${totals.deltaIngresosPct >= 0 ? "+" : ""}${totals.deltaIngresosPct.toFixed(1)}%` : undefined}
           icon={<TrendingUp size={16} />}
         />
         <KpiCard
-          label="Gastos sin ITBIS"
-          info={"Gastos por su subtotal, sin ITBIS. Se pagan con ITBIS, pero ese ITBIS no es costo."}
+          label="Gastos sin ITBIS (gastos registrados)"
+          info={"Lo que gastaste: los gastos registrados en el período, pagados o no (no cuentan los cancelados), sin el ITBIS, porque ese ITBIS no es costo."}
           value={formatMoney(totals.gastos)}
           trend={totals.deltaGastosPct !== null ? `${totals.deltaGastosPct >= 0 ? "+" : ""}${totals.deltaGastosPct.toFixed(1)}%` : undefined}
           icon={<CreditCard size={16} />}
         />
         <KpiCard
           label="Utilidad"
-          info={"Ingresos sin ITBIS − gastos sin ITBIS."}
+          info={"La ganancia: lo que vendiste menos lo que gastaste, los dos sin ITBIS. Si es negativa, gastaste más de lo que vendiste."}
           value={formatMoney(totals.utilidad)}
           danger={totals.utilidad < 0}
           trend={totals.deltaUtilidadPct !== null ? `${totals.deltaUtilidadPct >= 0 ? "+" : ""}${totals.deltaUtilidadPct.toFixed(1)}%` : undefined}
@@ -215,23 +223,23 @@ async function ReceivablesVsPayablesTab({ period }: { period: Period }) {
     <div className="flex flex-col gap-6">
       <section>
         <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-brand-text">
-          <span className="h-2 w-2 rounded-full bg-[var(--chart-1)]" /> Cuentas por cobrar (facturado en el período)
+          <span className="h-2 w-2 rounded-full bg-[var(--chart-1)]" /> Cuentas por cobrar — lo que te deben los clientes (facturado en el período)
         </h3>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-          <KpiCard label="Pendiente" value={formatMoney(cxc.pendiente)} icon={<ArrowDownCircle size={16} />} />
-          <KpiCard label="Vencido" value={formatMoney(cxc.vencido)} danger icon={<AlertTriangle size={16} />} />
-          <KpiCard label="Próx. 7 días" value={formatMoney(cxc.proximos7)} icon={<CalendarClock size={16} />} />
-          <KpiCard label="Próx. 15 días" value={formatMoney(cxc.proximos15)} icon={<CalendarClock size={16} />} />
-          <KpiCard label="Próx. 30 días" value={formatMoney(cxc.proximos30)} icon={<CalendarClock size={16} />} />
+          <KpiCard label="Pendiente" info="Lo que los clientes todavía te deben de las facturas emitidas en el período." value={formatMoney(cxc.pendiente)} icon={<ArrowDownCircle size={16} />} />
+          <KpiCard label="Vencido" info="La parte de lo pendiente que ya pasó su fecha de pago (atrasada)." value={formatMoney(cxc.vencido)} danger icon={<AlertTriangle size={16} />} />
+          <KpiCard label="Próx. 7 días" info="Lo que los clientes deben pagar en los próximos 7 días." value={formatMoney(cxc.proximos7)} icon={<CalendarClock size={16} />} />
+          <KpiCard label="Próx. 15 días" info="Lo que deben pagar en los próximos 15 días (incluye los 7)." value={formatMoney(cxc.proximos15)} icon={<CalendarClock size={16} />} />
+          <KpiCard label="Próx. 30 días" info="Lo que deben pagar en los próximos 30 días (incluye los 15)." value={formatMoney(cxc.proximos30)} icon={<CalendarClock size={16} />} />
         </div>
       </section>
 
       <section>
         <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-brand-text">
-          <span className="h-2 w-2 rounded-full bg-[var(--chart-4)]" /> Cuentas por pagar (registrado en el período)
+          <span className="h-2 w-2 rounded-full bg-[var(--chart-4)]" /> Cuentas por pagar — lo que le debes a tus proveedores (registrado en el período)
         </h3>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-          <KpiCard label="Pendiente" value={formatMoney(cxp.pendiente)} icon={<Wallet size={16} />} />
+          <KpiCard label="Pendiente" info="Lo que todavía le debes a tus proveedores por los gastos registrados en el período." value={formatMoney(cxp.pendiente)} icon={<Wallet size={16} />} />
         </div>
         <p className="mt-2 text-xs text-brand-muted">
           Los gastos no tienen fecha de vencimiento registrada en el sistema todavía, así que aquí solo se muestra
@@ -288,25 +296,26 @@ async function SalesByClientTab({ period }: { period: Period }) {
 
   const columns: Column<(typeof rows)[number]>[] = [
     { header: "Cliente", accessor: (c) => c.name },
-    { header: "Ventas", accessor: (c) => <span className="font-medium">{formatMoneyPrecise(c.ventas)}</span> },
-    { header: "Cobros", accessor: (c) => formatMoneyPrecise(c.cobros) },
+    { header: "Ventas", info: "Facturas emitidas al cliente en el período, con ITBIS.", accessor: (c) => <span className="font-medium">{formatMoneyPrecise(c.ventas)}</span> },
+    { header: "Cobros", info: "Lo que el cliente pagó en el período.", accessor: (c) => formatMoneyPrecise(c.cobros) },
     {
       header: "Saldo pendiente",
+      info: "Lo que el cliente todavía debe.",
       accessor: (c) => (
         <span className={c.saldoPendiente > 0 ? "font-medium text-brand-warning" : "text-brand-muted"}>
           {formatMoneyPrecise(c.saldoPendiente)}
         </span>
       ),
     },
-    { header: "vs. período anterior", accessor: (c) => <DeltaPill pct={c.deltaVentasPct} /> },
+    { header: "vs. período anterior", info: "Cuánto subió (verde) o bajó (rojo) comparado con el período anterior del mismo largo.", accessor: (c) => <DeltaPill pct={c.deltaVentasPct} /> },
   ];
 
   return (
     <div className="flex flex-col gap-6">
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        <KpiCard label="Ventas totales" value={formatMoney(totals.ventas)} icon={<TrendingUp size={16} />} />
-        <KpiCard label="Cobrado" value={formatMoney(totals.cobros)} icon={<Wallet size={16} />} />
-        <KpiCard label="Saldo pendiente" value={formatMoney(totals.saldoPendiente)} icon={<ArrowDownCircle size={16} />} />
+        <KpiCard label="Ventas totales (facturado)" info="Total de las facturas emitidas en el período, con ITBIS, como dicen las facturas. (Para la ganancia sin ITBIS, mira Rentabilidad por cliente.)" value={formatMoney(totals.ventas)} icon={<TrendingUp size={16} />} />
+        <KpiCard label="Cobrado" info="Dinero que esos clientes ya pagaron en el período." value={formatMoney(totals.cobros)} icon={<Wallet size={16} />} />
+        <KpiCard label="Saldo pendiente" info="Lo que esos clientes todavía deben de esas facturas." value={formatMoney(totals.saldoPendiente)} icon={<ArrowDownCircle size={16} />} />
       </section>
 
       {top.length > 0 && (
@@ -349,26 +358,26 @@ async function ClientProfitabilityTab({ period }: { period: Period }) {
 
   const columns: Column<(typeof rows)[number]>[] = [
     { header: "Cliente", accessor: (c) => c.name },
-    { header: "Ingresos", info: "Facturas emitidas, sin ITBIS (total − ITBIS). El ITBIS que cobras es de la DGII: no es venta.", accessor: (c) => formatMoneyPrecise(c.ingresos) },
-    { header: "Costos", info: "Gastos por su subtotal, sin ITBIS. Se pagan con ITBIS, pero ese ITBIS no es costo.", accessor: (c) => formatMoneyPrecise(c.costos) },
+    { header: "Ingresos", info: "Lo que vendiste: las facturas emitidas en el período (no cuentan borradores ni canceladas), sin el ITBIS, porque el ITBIS que cobras es de la DGII.", accessor: (c) => formatMoneyPrecise(c.ingresos) },
+    { header: "Costos", info: "Lo que gastaste: los gastos registrados en el período, pagados o no (no cuentan los cancelados), sin el ITBIS, porque ese ITBIS no es costo.", accessor: (c) => formatMoneyPrecise(c.costos) },
     {
       header: "Utilidad",
-      info: "Ingresos sin ITBIS − gastos sin ITBIS.",
+      info: "La ganancia: lo que vendiste menos lo que gastaste, los dos sin ITBIS. Si es negativa, gastaste más de lo que vendiste.",
       accessor: (c) => (
         <span className={c.utilidad < 0 ? "font-medium text-brand-danger" : "font-medium"}>{formatMoneyPrecise(c.utilidad)}</span>
       ),
     },
-    { header: "Margen", info: "Utilidad ÷ ventas sin ITBIS.", accessor: (c) => <span className="text-brand-muted">{formatPercent(c.margen)}</span> },
-    { header: "vs. período anterior", accessor: (c) => <DeltaPill pct={c.deltaUtilidadPct} /> },
+    { header: "Margen", info: "Qué parte de lo vendido te quedó de ganancia. Ej.: 20 % = de cada RD$100 vendidos te quedaron RD$20 después de los gastos.", accessor: (c) => <span className="text-brand-muted">{formatPercent(c.margen)}</span> },
+    { header: "vs. período anterior", info: "Cuánto subió (verde) o bajó (rojo) comparado con el período anterior del mismo largo.", accessor: (c) => <DeltaPill pct={c.deltaUtilidadPct} /> },
   ];
 
   return (
     <div className="flex flex-col gap-6">
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        <KpiCard label="Ingresos sin ITBIS" info={"Facturas emitidas, sin ITBIS (total − ITBIS). El ITBIS que cobras es de la DGII: no es venta."} value={formatMoney(totals.ingresos)} icon={<TrendingUp size={16} />} />
-        <KpiCard label="Costos sin ITBIS" info={"Gastos por su subtotal, sin ITBIS. Se pagan con ITBIS, pero ese ITBIS no es costo."} value={formatMoney(totals.costos)} icon={<CreditCard size={16} />} />
+        <KpiCard label="Ventas sin ITBIS (facturas emitidas)" info={"Lo que vendiste: las facturas emitidas en el período (no cuentan borradores ni canceladas), sin el ITBIS, porque el ITBIS que cobras es de la DGII."} value={formatMoney(totals.ingresos)} icon={<TrendingUp size={16} />} />
+        <KpiCard label="Costos sin ITBIS (gastos de sus proyectos)" info={"Lo que gastaste: los gastos registrados en el período, pagados o no (no cuentan los cancelados), sin el ITBIS, porque ese ITBIS no es costo."} value={formatMoney(totals.costos)} icon={<CreditCard size={16} />} />
         <KpiCard
-          info={"Ingresos sin ITBIS − gastos sin ITBIS."}
+          info={"La ganancia: lo que vendiste menos lo que gastaste, los dos sin ITBIS. Si es negativa, gastaste más de lo que vendiste."}
           label="Utilidad"
           value={formatMoney(totals.utilidad)}
           danger={totals.utilidad < 0}
@@ -428,22 +437,22 @@ async function PeriodOverPeriodTab({ period }: { period: Period }) {
     <div className="flex flex-col gap-6">
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
-          label="Ventas sin ITBIS"
-          info={"Facturas emitidas, sin ITBIS (total − ITBIS). El ITBIS que cobras es de la DGII: no es venta."}
+          label="Ventas sin ITBIS (facturas emitidas)"
+          info={"Lo que vendiste: las facturas emitidas en el período (no cuentan borradores ni canceladas), sin el ITBIS, porque el ITBIS que cobras es de la DGII."}
           value={formatMoney(data.current.ventas)}
           trend={data.deltaVentas.pct !== null ? `${data.deltaVentas.pct >= 0 ? "+" : ""}${data.deltaVentas.pct.toFixed(1)}%` : undefined}
           icon={<TrendingUp size={16} />}
         />
         <KpiCard
-          label="Gastos sin ITBIS"
-          info={"Gastos por su subtotal, sin ITBIS. Se pagan con ITBIS, pero ese ITBIS no es costo."}
+          label="Gastos sin ITBIS (gastos registrados)"
+          info={"Lo que gastaste: los gastos registrados en el período, pagados o no (no cuentan los cancelados), sin el ITBIS, porque ese ITBIS no es costo."}
           value={formatMoney(data.current.gastos)}
           trend={data.deltaGastos.pct !== null ? `${data.deltaGastos.pct >= 0 ? "+" : ""}${data.deltaGastos.pct.toFixed(1)}%` : undefined}
           icon={<CreditCard size={16} />}
         />
         <KpiCard
           label="Utilidad"
-          info={"Ingresos sin ITBIS − gastos sin ITBIS."}
+          info={"La ganancia: lo que vendiste menos lo que gastaste, los dos sin ITBIS. Si es negativa, gastaste más de lo que vendiste."}
           value={formatMoney(data.current.utilidad)}
           danger={data.current.utilidad < 0}
           trend={data.deltaUtilidad.pct !== null ? `${data.deltaUtilidad.pct >= 0 ? "+" : ""}${data.deltaUtilidad.pct.toFixed(1)}%` : undefined}
@@ -451,7 +460,7 @@ async function PeriodOverPeriodTab({ period }: { period: Period }) {
         />
         <KpiCard
           label="Margen"
-          info={"Utilidad ÷ ventas sin ITBIS."}
+          info={"Qué parte de lo vendido te quedó de ganancia. Ej.: 20 % = de cada RD$100 vendidos te quedaron RD$20 después de los gastos."}
           value={formatPercent(data.current.margen)}
           trend={data.deltaMargen !== null ? `${data.deltaMargen >= 0 ? "+" : ""}${data.deltaMargen.toFixed(1)} pts` : undefined}
           icon={<CalendarRange size={16} />}

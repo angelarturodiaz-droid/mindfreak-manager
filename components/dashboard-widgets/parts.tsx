@@ -163,8 +163,11 @@ export function Panel({
   right,
   href,
   children,
+  info,
 }: {
   title: string;
+  /** Explicación (ⓘ) junto al título, en palabras sencillas. */
+  info?: string;
   right?: ReactNode;
   href?: string;
   children: ReactNode;
@@ -172,7 +175,10 @@ export function Panel({
   return (
     <section className="flex h-full min-w-0 flex-col gap-3 rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface p-4 shadow-[var(--shadow-sm)]">
       <header className="flex items-center justify-between gap-3">
-        <h3 className="truncate text-xs font-semibold uppercase tracking-wide text-brand-text">{title}</h3>
+        <div className="flex min-w-0 items-center gap-1">
+          <h3 className="truncate text-xs font-semibold uppercase tracking-wide text-brand-text">{title}</h3>
+          {info && <InfoHint text={info} />}
+        </div>
         <div className="flex shrink-0 items-center gap-2 text-xs text-brand-muted">
           {right}
           {href && (

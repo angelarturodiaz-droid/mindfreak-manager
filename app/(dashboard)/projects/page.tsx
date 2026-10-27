@@ -105,11 +105,12 @@ export default async function ProjectsPage({
       header: "Proyecto",
       accessor: (p) => (
         <Link href={`/projects/${p.id}`} className="group block min-w-[12rem]">
-          <span className="block font-medium text-brand-text group-hover:text-brand-accent">
-            {p.name}
+          {/* El número del proyecto va primero y en negrita: es como se le conoce. */}
+          <span className="block font-semibold tabular-nums text-brand-text group-hover:text-brand-accent">
+            {p.number}
           </span>
           <span className="mt-0.5 flex items-center gap-2 text-xs text-brand-muted">
-            <span>{p.number}</span>
+            <span className="text-brand-text/80">{p.name}</span>
             {p.location_name && (
               <span className="inline-flex items-center gap-1 truncate">
                 <MapPin size={11} /> {p.location_name}

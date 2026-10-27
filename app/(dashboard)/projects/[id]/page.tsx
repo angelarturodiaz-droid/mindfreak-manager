@@ -307,7 +307,7 @@ function MetricCard({
 const UTILIDAD_REAL_INFO =
   "Lo que de verdad se ganó: facturado sin ITBIS − gastos sin ITBIS. El ITBIS que le cobras al cliente se le paga a la DGII y el de tus compras no es costo, por eso no cuentan. El margen es la utilidad ÷ lo facturado sin ITBIS.";
 const PRESUPUESTO_INFO =
-  "Cuánto del presupuesto del proyecto ya se usó, comparando con los gastos sin ITBIS (igual que el costo real).";
+  "El presupuesto es lo que planeaste gastar en este evento (lo escribes al crear o editar el proyecto). La barra muestra cuánto ya gastaste de ese monto, con los gastos sin ITBIS. Si pasa de 100 % se pone en rojo: gastaste más de lo planeado.";
 
 type ProjectItemRow = Awaited<ReturnType<typeof listProjectItems>>[number];
 type QuotationRow = Awaited<ReturnType<typeof listProjectQuotations>>[number];
@@ -640,7 +640,12 @@ export default async function ProjectDetailPage({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 text-sm text-brand-muted">
-              <span className="font-medium">{project.number}</span>
+              <span
+                className="rounded-[var(--radius-md)] bg-brand-accent-light px-2.5 py-1 text-base font-semibold tabular-nums text-brand-accent"
+                title="Número del proyecto"
+              >
+                {project.number}
+              </span>
               <Badge status={project.status}>
                 {PROJECT_STATUS_LABELS[project.status] ?? project.status}
               </Badge>
@@ -838,6 +843,7 @@ export default async function ProjectDetailPage({
         />
         <MetricCard
           label="Facturado"
+          info="Lo que ya le facturaste al cliente en este proyecto (facturas emitidas, con ITBIS, como dicen las facturas). La barra compara con lo que el cliente aprobó en las cotizaciones."
           value={formatMoney(profitability.facturadoConItbis)}
           pct={billing.pct}
           danger={billing.state === "over"}
@@ -853,6 +859,7 @@ export default async function ProjectDetailPage({
         />
         <MetricCard
           label="Cobrado"
+          info="Dinero que el cliente ya pagó por este proyecto. La barra es la parte de lo facturado que ya entró al banco."
           value={formatMoney(profitability.cobrado)}
           pct={profitability.facturadoConItbis > 0 ? (profitability.cobrado / profitability.facturadoConItbis) * 100 : null}
           hint={porCobrar > 0 ? `Por cobrar ${formatMoney(porCobrar)}` : "Nada pendiente por cobrar"}
@@ -1042,7 +1049,7 @@ export default async function ProjectDetailPage({
       ) : activeTab === "finanzas" ? (
         <div className="flex flex-col gap-8">
           <section>
-            <SectionHeader title="Ingresos" description="Lo que se le cotizó, facturó y cobró al cliente." />
+            <SectionHeader title="Ingresos" description="Lo que se le cotizó (aprobado), facturó (facturas emitidas) y cobró (dinero recibido) al cliente." />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <KpiCard
                 label="Cotizado"
@@ -1061,13 +1068,22 @@ export default async function ProjectDetailPage({
                 value={formatMoney(profitability.cobrado)}
                 info="Dinero que ya entró por este proyecto. Es dinero real, con ITBIS."
               />
-              <KpiCard label="Por cobrar" value={formatMoney(porCobrar)} danger={porCobrar > 0} />
+              <KpiCard
+                label="Por cobrar"
+                value={formatMoney(porCobrar)}
+                danger={porCobrar > 0}
+                info="Lo que el cliente todavía debe de las facturas de este proyecto (facturado − cobrado)."
+              />
             </div>
           </section>
           <section>
-            <SectionHeader title="Costos" description="Lo estimado en las líneas contra lo gastado de verdad." />
+            <SectionHeader title="Costos" description="Lo que calculaste que costaría contra lo que de verdad gastaste (gastos registrados en el proyecto)." />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <KpiCard label="Costo estimado" value={formatMoney(profitability.costoEstimado)} />
+              <KpiCard
+                label="Costo estimado"
+                value={formatMoney(profitability.costoEstimado)}
+                info="Lo que calculaste que te costaría el evento: la suma de los costos estimados de cada servicio (pestaña Servicios). Sirve para comparar con lo gastado de verdad."
+              />
               <KpiCard
                 label="Costo real (gastos, sin ITBIS)"
                 value={formatMoney(profitability.costoReal)}
@@ -1085,7 +1101,7 @@ export default async function ProjectDetailPage({
             </div>
           </section>
           <section>
-            <SectionHeader title="Rentabilidad" />
+            <SectionHeader title="Rentabilidad" description="La ganancia del proyecto: lo vendido menos lo gastado, sin ITBIS." />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <MetricCard
                 label="Utilidad estimada"

@@ -313,11 +313,18 @@ export type IncomeByTaxInvoiceRow = {
   clientName: string;
   projectNumber: string | null;
   currency: string;
+  /** Total en la moneda de la factura y su tasa (referencia para facturas en otra moneda). */
+  originalTotal: number;
+  rate: number;
   gravado: number;
   exento: number;
   totalSinItbis: number;
   itbis: number;
   total: number;
+  /** Retenciones que hizo el cliente (activas), en moneda base. Informativas: no cambian la venta. */
+  itbisRetenido: number;
+  isrRetenido: number;
+  otrasRetenciones: number;
 };
 
 export type IncomeByTaxMonthRow = {
@@ -328,6 +335,9 @@ export type IncomeByTaxMonthRow = {
   totalSinItbis: number;
   itbis: number;
   total: number;
+  itbisRetenido: number;
+  isrRetenido: number;
+  otrasRetenciones: number;
 };
 
 /**
@@ -355,6 +365,26 @@ export async function getIncomeByTaxTypeReport(filters: IncomeByTaxFilters = {})
   const { data, error } = await query;
   if (error) throw new Error(error.message);
 
+  // Retenciones que hizo el cliente sobre estas facturas (solo activas). Se
+  // muestran junto a la factura (no por la fecha del cobro) y en pesos con la
+  // tasa de la factura. No cambian la venta: son impuesto pagado a tu favor.
+  const ids = (data ?? []).map((i) => i.id);
+  const withheld = new Map<string, { ITBIS: number; ISR: number; OTRO: number }>();
+  for (let i = 0; i < ids.length; i += 200) {
+    const { data: wh, error: whError } = await supabase
+      .from("customer_payment_withholdings")
+      .select("invoice_id, withholding_type, amount")
+      .in("invoice_id", ids.slice(i, i + 200))
+      .eq("status", "ACTIVE");
+    if (whError) throw new Error(whError.message);
+    for (const w of wh ?? []) {
+      const cur = withheld.get(w.invoice_id) ?? { ITBIS: 0, ISR: 0, OTRO: 0 };
+      const t = (w.withholding_type === "ITBIS" || w.withholding_type === "ISR" ? w.withholding_type : "OTRO") as "ITBIS" | "ISR" | "OTRO";
+      cur[t] += Number(w.amount);
+      withheld.set(w.invoice_id, cur);
+    }
+  }
+
   const invoices: IncomeByTaxInvoiceRow[] = (data ?? []).map((inv) => {
     const split = splitInvoiceByTax({
       total: inv.total,
@@ -365,6 +395,8 @@ export async function getIncomeByTaxTypeReport(filters: IncomeByTaxFilters = {})
       lines: (inv.invoice_items ?? []) as { subtotal: number; tax: number; tax_treatment: string | null }[],
     });
     const project = inv.projects as { number: string } | { number: string }[] | null;
+    const fx = Number(inv.exchange_rate ?? 1) || 1;
+    const w = withheld.get(inv.id) ?? { ITBIS: 0, ISR: 0, OTRO: 0 };
     return {
       id: inv.id,
       number: inv.number,
@@ -373,20 +405,39 @@ export async function getIncomeByTaxTypeReport(filters: IncomeByTaxFilters = {})
       clientName: relationName(inv.clients) ?? "—",
       projectNumber: (Array.isArray(project) ? project[0]?.number : project?.number) ?? null,
       currency: inv.currency,
+      originalTotal: Number(inv.total),
+      rate: fx,
       ...split,
+      itbisRetenido: w.ITBIS * fx,
+      isrRetenido: w.ISR * fx,
+      otrasRetenciones: w.OTRO * fx,
     };
   });
 
   const byMonth = new Map<string, IncomeByTaxMonthRow>();
   for (const r of invoices) {
     const month = r.issueDate.slice(0, 7);
-    const m = byMonth.get(month) ?? { month, facturas: 0, gravado: 0, exento: 0, totalSinItbis: 0, itbis: 0, total: 0 };
+    const m = byMonth.get(month) ?? {
+      month,
+      facturas: 0,
+      gravado: 0,
+      exento: 0,
+      totalSinItbis: 0,
+      itbis: 0,
+      total: 0,
+      itbisRetenido: 0,
+      isrRetenido: 0,
+      otrasRetenciones: 0,
+    };
     m.facturas += 1;
     m.gravado += r.gravado;
     m.exento += r.exento;
     m.totalSinItbis += r.totalSinItbis;
     m.itbis += r.itbis;
     m.total += r.total;
+    m.itbisRetenido += r.itbisRetenido;
+    m.isrRetenido += r.isrRetenido;
+    m.otrasRetenciones += r.otrasRetenciones;
     byMonth.set(month, m);
   }
   const months = Array.from(byMonth.values()).sort((a, b) => b.month.localeCompare(a.month));
@@ -398,8 +449,21 @@ export async function getIncomeByTaxTypeReport(filters: IncomeByTaxFilters = {})
       totalSinItbis: a.totalSinItbis + m.totalSinItbis,
       itbis: a.itbis + m.itbis,
       total: a.total + m.total,
+      itbisRetenido: a.itbisRetenido + m.itbisRetenido,
+      isrRetenido: a.isrRetenido + m.isrRetenido,
+      otrasRetenciones: a.otrasRetenciones + m.otrasRetenciones,
     }),
-    { facturas: 0, gravado: 0, exento: 0, totalSinItbis: 0, itbis: 0, total: 0 },
+    {
+      facturas: 0,
+      gravado: 0,
+      exento: 0,
+      totalSinItbis: 0,
+      itbis: 0,
+      total: 0,
+      itbisRetenido: 0,
+      isrRetenido: 0,
+      otrasRetenciones: 0,
+    },
   );
   return { months, invoices, totals };
 }

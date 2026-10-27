@@ -282,10 +282,19 @@ function hasReportFilters(params: Params) {
   return Object.entries(params).some(([k, v]) => k !== "report" && k !== "view" && Boolean(v));
 }
 
-function FilterBar({ report, children }: { report: string; children: React.ReactNode }) {
+function FilterBar({ report, params, children }: { report: string; params: Params; children: React.ReactNode }) {
+  // La llave cambia con los filtros aplicados: al pulsar «Limpiar» (o cambiar
+  // de filtros) el formulario se vuelve a armar y las listas muestran lo que
+  // de verdad está aplicado. Antes, al limpiar, la lista seguía mostrando el
+  // cliente viejo aunque los datos ya eran de todos (y confundía al exportar).
+  const applied = Object.entries(params)
+    .filter(([k, v]) => v && k !== "page" && !k.startsWith("p_"))
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${v}`)
+    .join("&");
   return (
     <Card className="mb-5">
-      <form action="/reports" method="get" className="flex flex-wrap items-end gap-3">
+      <form key={applied} action="/reports" method="get" className="flex flex-wrap items-end gap-3">
         <input type="hidden" name="report" value={report} />
         {children}
         <Button type="submit" variant="primary" size="md">
@@ -325,8 +334,8 @@ async function ProfitabilityReport({ params }: { params: Params }) {
       header: "Proyecto",
       accessor: (p) => (
         <Link href={`/projects/${p.id}`} className="group block min-w-[10rem]">
-          <span className="block font-medium text-brand-text group-hover:text-brand-accent">{p.name}</span>
-          <span className="text-xs text-brand-muted">{p.number}</span>
+          <span className="block font-semibold tabular-nums text-brand-text group-hover:text-brand-accent">{p.number}</span>
+          <span className="text-xs text-brand-muted">{p.name}</span>
         </Link>
       ),
     },
@@ -334,19 +343,19 @@ async function ProfitabilityReport({ params }: { params: Params }) {
       header: "Estado",
       accessor: (p) => <Badge status={p.status}>{PROJECT_STATUS_LABELS[p.status] ?? p.status}</Badge>,
     },
-    { header: "Cotizado", info: "Cotizaciones aprobadas, sin ITBIS.", className: "text-right", accessor: (p) => <Money value={p.cotizado} /> },
-    { header: "Facturado", info: "Facturas emitidas, sin ITBIS: el ITBIS que le cobras al cliente es de la DGII, no es venta.", className: "text-right", accessor: (p) => <Money value={p.facturado} /> },
-    { header: "Cobrado", info: "Dinero que ya entró por el proyecto (con ITBIS, porque es dinero real).", className: "text-right", accessor: (p) => <Money value={p.cobrado} /> },
-    { header: "Costo real", info: "Gastos del proyecto por su subtotal, sin ITBIS (se pagan con ITBIS, pero el ITBIS no es costo).", className: "text-right", accessor: (p) => <Money value={p.costoReal} /> },
+    { header: "Cotizado", info: "Lo que el cliente aprobó en las cotizaciones del proyecto, sin ITBIS.", className: "text-right", accessor: (p) => <Money value={p.cotizado} /> },
+    { header: "Facturado", info: "Lo que ya se le facturó al cliente (facturas emitidas), sin ITBIS: el ITBIS que cobras es de la DGII, no es venta.", className: "text-right", accessor: (p) => <Money value={p.facturado} /> },
+    { header: "Cobrado", info: "Dinero que el cliente ya pagó por el proyecto (con ITBIS, porque es dinero real que entró al banco).", className: "text-right", accessor: (p) => <Money value={p.cobrado} /> },
+    { header: "Costo real", info: "Lo que de verdad se gastó en el proyecto (gastos registrados), sin ITBIS: se pagan con ITBIS, pero ese ITBIS no es costo.", className: "text-right", accessor: (p) => <Money value={p.costoReal} /> },
     {
       header: "Utilidad real",
-      info: "Facturado sin ITBIS − costo real sin ITBIS.",
+      info: "La ganancia del proyecto: facturado sin ITBIS − costo real sin ITBIS. En rojo si se gastó más de lo facturado.",
       className: "text-right",
       accessor: (p) => <Money value={p.utilidadReal} strong tone={p.utilidadReal < 0 ? "danger" : undefined} />,
     },
     {
       header: "Margen",
-      info: "Utilidad real ÷ facturado sin ITBIS.",
+      info: "Qué parte de lo facturado quedó de ganancia. Ej.: 30 % = de cada RD$100 facturados quedaron RD$30 después de los gastos.",
       className: "text-right",
       accessor: (p) =>
         p.margenReal === null ? (
@@ -367,7 +376,7 @@ async function ProfitabilityReport({ params }: { params: Params }) {
         title="Rentabilidad por proyecto"
         description="Cotizado, facturado, cobrado y costo real de cada proyecto, con su utilidad y margen. La utilidad se calcula sin ITBIS (el cobrado es dinero real, con ITBIS)."
       />
-      <FilterBar report="rentabilidad">
+      <FilterBar report="rentabilidad" params={params}>
         <DateRangeFields from={params.from} to={params.to} />
         <Select label="Proyecto" name="project_id" defaultValue={params.project_id ?? ""}>
           <option value="">Todos</option>
@@ -405,11 +414,12 @@ async function ProfitabilityReport({ params }: { params: Params }) {
 
       {profitability.length > 0 && (
         <section className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Facturado sin ITBIS" value={formatMoney(profitability.reduce((a, p) => a + p.facturado, 0))} icon={<ArrowDownCircle size={20} />} tone="blue" hint={`${profitability.length} proyectos · con ITBIS ${formatMoney(profitability.reduce((a, p) => a + p.facturadoConItbis, 0))}`} />
-          <StatCard label="Cobrado" value={formatMoney(profitability.reduce((a, p) => a + p.cobrado, 0))} icon={<CalendarDays size={20} />} tone="green" />
-          <StatCard label="Costo real sin ITBIS" value={formatMoney(profitability.reduce((a, p) => a + p.costoReal, 0))} icon={<Clock size={20} />} tone="amber" />
+          <StatCard label="Facturado sin ITBIS" info="Lo facturado a estos proyectos (facturas emitidas), sin ITBIS." value={formatMoney(profitability.reduce((a, p) => a + p.facturado, 0))} icon={<ArrowDownCircle size={20} />} tone="blue" hint={`${profitability.length} proyectos · con ITBIS ${formatMoney(profitability.reduce((a, p) => a + p.facturadoConItbis, 0))}`} />
+          <StatCard label="Cobrado" info="Dinero que ya pagaron los clientes por estos proyectos (con ITBIS)." value={formatMoney(profitability.reduce((a, p) => a + p.cobrado, 0))} icon={<CalendarDays size={20} />} tone="green" />
+          <StatCard label="Costo real sin ITBIS" info="Lo que se gastó en estos proyectos (gastos registrados), sin ITBIS." value={formatMoney(profitability.reduce((a, p) => a + p.costoReal, 0))} icon={<Clock size={20} />} tone="amber" />
           <StatCard
             label="Utilidad real"
+            info="La ganancia de estos proyectos: facturado sin ITBIS − costo real sin ITBIS."
             value={formatMoney(profitability.reduce((a, p) => a + p.utilidadReal, 0))}
             valueTone={profitability.reduce((a, p) => a + p.utilidadReal, 0) < 0 ? "danger" : "success"}
             icon={<CalendarRange size={20} />}
@@ -729,7 +739,7 @@ async function ReceivableReport({ params }: { params: Params }) {
   return (
     <div>
       <ReportTitle params={params} title="Cuentas por cobrar" description="Detalle de facturas con balance, filtrable por cliente, proyecto, estado y moneda." />
-      <FilterBar report="cxc">
+      <FilterBar report="cxc" params={params}>
         <DateRangeFields from={params.from} to={params.to} />
         <Select label="Cliente" name="client_id" defaultValue={params.client_id ?? ""}>
           <option value="">Todos</option>
@@ -806,7 +816,7 @@ async function PayableReport({ params }: { params: Params }) {
   return (
     <div>
       <ReportTitle params={params} title="Cuentas por pagar" description="Gastos con saldo pendiente con proveedores." />
-      <FilterBar report="cxp">
+      <FilterBar report="cxp" params={params}>
         <DateRangeFields from={params.from} to={params.to} />
         <Select label="Proveedor" name="supplier_id" defaultValue={params.supplier_id ?? ""}>
           <option value="">Todos</option>
@@ -883,7 +893,7 @@ async function SalesByClientReport({ params }: { params: Params }) {
   return (
     <div>
       <ReportTitle params={params} title="Ventas por cliente" description="Total facturado por cliente en la moneda base, de mayor a menor." />
-      <FilterBar report="ventas-cliente">
+      <FilterBar report="ventas-cliente" params={params}>
         <DateRangeFields from={params.from} to={params.to} />
         <Select label="Cliente" name="client_id" defaultValue={params.client_id ?? ""}>
           <option value="">Todos</option>
@@ -960,7 +970,7 @@ async function ExpensesByCategoryReport({ params }: { params: Params }) {
   return (
     <div>
       <ReportTitle params={params} title="Gastos por categoría" description="Total gastado por categoría en la moneda base, de mayor a menor." />
-      <FilterBar report="gastos-categoria">
+      <FilterBar report="gastos-categoria" params={params}>
         <DateRangeFields from={params.from} to={params.to} />
         <Select label="Categoría" name="category_id" defaultValue={params.category_id ?? ""}>
           <option value="">Todas</option>
@@ -1110,7 +1120,7 @@ async function CashflowByCategoryReport({ params }: { params: Params }) {
         title="Ingresos y egresos por categoría"
         description="Flujo real de los movimientos de banco, agrupado por categoría y en la moneda base."
       />
-      <FilterBar report="flujo-categoria">
+      <FilterBar report="flujo-categoria" params={params}>
         {monthly && <input type="hidden" name="view" value="mensual" />}
         <DateRangeFields from={params.from} to={params.to} />
         <Select label="Cuenta" name="bank_account_id" defaultValue={params.bank_account_id ?? ""}>
@@ -1426,7 +1436,7 @@ async function PaymentsByCurrencyReport({ params }: { params: Params }) {
         title="Pagos y cobros por moneda"
         description="Lo aplicado a cada factura o gasto en su moneda y lo que realmente se movió en el banco en la moneda de la cuenta, con comisiones, tasas y diferencias."
       />
-      <FilterBar report="por-moneda">
+      <FilterBar report="por-moneda" params={params}>
         <DateRangeFields from={params.from} to={params.to} />
         <Select label="Tipo" name="direction" defaultValue={direction ?? ""}>
           <option value="">Cobros y pagos</option>
@@ -1615,7 +1625,7 @@ async function CustomerWithholdingsReport({ params }: { params: Params }) {
         title="Retenciones de clientes"
         description="Lo que los clientes retuvieron al pagar las facturas (ISR, ITBIS u otras). Rebaja el saldo de la factura pero no entra al banco: el cliente lo paga a la DGII y entrega un certificado."
       />
-      <FilterBar report="retenciones-clientes">
+      <FilterBar report="retenciones-clientes" params={params}>
         <DateRangeFields from={params.from} to={params.to} />
         <Select label="Cliente" name="client_id" defaultValue={params.client_id ?? ""}>
           <option value="">Todos</option>
@@ -1761,43 +1771,61 @@ async function IncomeByTaxReport({ params }: { params: Params }) {
   ]);
   const { months, invoices, totals } = data;
 
+  const hasOtras = totals.otrasRetenciones > 0;
+  const R = TAX_REPORT_INFO;
+
   const monthColumns: Column<IncomeByTaxMonthRow>[] = [
     { header: "Mes", accessor: (m) => <span className="whitespace-nowrap font-medium text-brand-text">{monthLongLabel(m.month)}</span> },
-    { header: "Facturas", className: "text-right", accessor: (m) => <span className="tabular-nums">{m.facturas}</span> },
-    { header: "Gravado", info: "Ventas con ITBIS, sin el ITBIS (base sobre la que se cobró el impuesto).", className: "text-right", accessor: (m) => <Money value={m.gravado} /> },
-    { header: "Exento", info: "Ventas exentas o no sujetas a ITBIS (ej. capacitaciones exentas).", className: "text-right", accessor: (m) => <Money value={m.exento} /> },
-    { header: "Total sin ITBIS", info: "Gravado + exento. Es la venta que cuenta para la utilidad.", className: "text-right", accessor: (m) => <Money value={m.totalSinItbis} strong /> },
-    { header: "ITBIS facturado", info: "ITBIS que se le cobró al cliente en esas facturas. No es venta: se le paga a la DGII.", className: "text-right", accessor: (m) => <Money value={m.itbis} /> },
-    { header: "Total facturado", info: "Total de las facturas, con ITBIS.", className: "text-right", accessor: (m) => <Money value={m.total} /> },
+    { header: "Facturas", info: R.facturas, className: "text-right", accessor: (m) => <span className="tabular-nums">{m.facturas}</span> },
+    { header: "Gravado", info: R.gravado, className: "text-right", accessor: (m) => <Money value={m.gravado} /> },
+    { header: "Exento", info: R.exento, className: "text-right", accessor: (m) => <Money value={m.exento} /> },
+    { header: "Total sin ITBIS", info: R.sinItbis, className: "text-right", accessor: (m) => <Money value={m.totalSinItbis} strong /> },
+    { header: "ITBIS facturado", info: R.itbis, className: "text-right", accessor: (m) => <Money value={m.itbis} /> },
+    { header: "Total facturado", info: R.total, className: "text-right", accessor: (m) => <Money value={m.total} /> },
+    { header: "ITBIS retenido", info: R.itbisRet, className: "text-right", accessor: (m) => <RetMoney value={m.itbisRetenido} /> },
+    { header: "ISR retenido", info: R.isrRet, className: "text-right", accessor: (m) => <RetMoney value={m.isrRetenido} /> },
+    ...(hasOtras
+      ? [{ header: "Otras retenciones", info: R.otrasRet, className: "text-right", accessor: (m: IncomeByTaxMonthRow) => <RetMoney value={m.otrasRetenciones} /> }]
+      : []),
   ];
 
   const invoiceColumns: Column<IncomeByTaxInvoiceRow>[] = [
-    { header: "Fecha", accessor: (r) => <span className="whitespace-nowrap text-brand-muted">{formatDate(r.issueDate)}</span> },
+    { header: "Fecha", info: R.fecha, accessor: (r) => <span className="whitespace-nowrap text-brand-muted">{formatDate(r.issueDate)}</span> },
     {
       header: "Factura",
+      info: R.factura,
       accessor: (r) => (
         <Link href={`/invoices/${r.id}`} className="font-medium text-brand-text hover:text-brand-accent">
           {r.number}
         </Link>
       ),
     },
-    { header: "NCF", info: "Comprobante fiscal de la factura (NCF o e-NCF).", accessor: (r) => <span className="whitespace-nowrap tabular-nums text-brand-muted">{r.ncf ?? "—"}</span> },
-    { header: "Cliente", accessor: (r) => <span className="text-brand-text">{r.clientName}</span> },
-    { header: "Proyecto", accessor: (r) => <span className="text-brand-muted">{r.projectNumber ?? "—"}</span> },
-    { header: "Gravado", className: "text-right", accessor: (r) => <Money value={r.gravado} /> },
-    { header: "Exento", className: "text-right", accessor: (r) => <Money value={r.exento} /> },
-    { header: "ITBIS", className: "text-right", accessor: (r) => <Money value={r.itbis} /> },
+    { header: "NCF", info: R.ncf, accessor: (r) => <span className="whitespace-nowrap tabular-nums text-brand-muted">{r.ncf ?? "—"}</span> },
+    { header: "Cliente", info: R.cliente, accessor: (r) => <span className="text-brand-text">{r.clientName}</span> },
+    { header: "Proyecto", info: R.proyecto, accessor: (r) => <span className="whitespace-nowrap font-medium text-brand-text">{r.projectNumber ?? <span className="font-normal text-brand-muted">—</span>}</span> },
+    { header: "Gravado", info: R.gravado, className: "text-right", accessor: (r) => <Money value={r.gravado} /> },
+    { header: "Exento", info: R.exento, className: "text-right", accessor: (r) => <Money value={r.exento} /> },
+    { header: "ITBIS", info: R.itbis, className: "text-right", accessor: (r) => <Money value={r.itbis} /> },
     {
       header: "Total",
-      info: "Total con ITBIS, en pesos. Si la factura es en otra moneda, se convirtió con su tasa.",
+      info: R.totalFactura,
       className: "text-right",
       accessor: (r) => (
         <span className="flex flex-col items-end">
           <Money value={r.total} strong />
-          {r.currency !== "DOP" && <span className="text-[11px] text-brand-muted">Factura en {r.currency}</span>}
+          {r.currency !== "DOP" && (
+            <span className="whitespace-nowrap text-[11px] text-brand-muted" title="Monto original de la factura y la tasa con que se convirtió (referencia)">
+              {formatMoney(r.originalTotal, r.currency)} · tasa {r.rate.toLocaleString("es-DO", { maximumFractionDigits: 4 })}
+            </span>
+          )}
         </span>
       ),
     },
+    { header: "ITBIS retenido", info: R.itbisRet, className: "text-right", accessor: (r) => <RetMoney value={r.itbisRetenido} /> },
+    { header: "ISR retenido", info: R.isrRet, className: "text-right", accessor: (r) => <RetMoney value={r.isrRetenido} /> },
+    ...(hasOtras
+      ? [{ header: "Otras retenciones", info: R.otrasRet, className: "text-right", accessor: (r: IncomeByTaxInvoiceRow) => <RetMoney value={r.otrasRetenciones} /> }]
+      : []),
   ];
 
   return (
@@ -1805,9 +1833,9 @@ async function IncomeByTaxReport({ params }: { params: Params }) {
       <ReportTitle
         params={params}
         title="Ingresos por tipo de impuesto"
-        description="Facturas emitidas por mes: cuánto fue gravado, cuánto exento, el ITBIS facturado y el total. En la moneda base, por fecha de emisión."
+        description="Cuánto vendiste cada mes, separado en lo que lleva ITBIS (gravado) y lo que no (exento), el ITBIS que cobraste y lo que te retuvieron los clientes. Solo facturas emitidas, en pesos, por fecha de la factura."
       />
-      <FilterBar report="ingresos-impuesto">
+      <FilterBar report="ingresos-impuesto" params={params}>
         <DateRangeFields from={params.from} to={params.to} />
         <Select label="Cliente" name="client_id" defaultValue={params.client_id ?? ""}>
           <option value="">Todos</option>
@@ -1829,10 +1857,21 @@ async function IncomeByTaxReport({ params }: { params: Params }) {
 
       {invoices.length > 0 && (
         <section className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Gravado" value={formatMoney(totals.gravado)} icon={<Receipt size={20} />} tone="blue" hint={`${totals.facturas} facturas emitidas`} />
-          <StatCard label="Exento" value={formatMoney(totals.exento)} icon={<FileCheck2 size={20} />} tone="green" />
-          <StatCard label="ITBIS facturado" value={formatMoney(totals.itbis)} icon={<FileWarning size={20} />} tone="amber" hint="Se le paga a la DGII" />
-          <StatCard label="Total sin ITBIS" value={formatMoney(totals.totalSinItbis)} icon={<ArrowDownCircle size={20} />} tone="violet" hint={`Con ITBIS ${formatMoney(totals.total)}`} />
+          <StatCard label="Gravado" info={R.gravado} value={formatMoney(totals.gravado)} icon={<Receipt size={20} />} tone="blue" hint={`${totals.facturas} facturas emitidas`} />
+          <StatCard label="Exento" info={R.exento} value={formatMoney(totals.exento)} icon={<FileCheck2 size={20} />} tone="green" hint="Ventas que no llevan ITBIS" />
+          <StatCard
+            label="ITBIS facturado"
+            info={R.itbis}
+            value={formatMoney(totals.itbis)}
+            icon={<FileWarning size={20} />}
+            tone="amber"
+            hint={
+              totals.itbisRetenido + totals.isrRetenido + totals.otrasRetenciones > 0
+                ? `Se le paga a la DGII · Retenido por clientes: ITBIS ${formatMoney(totals.itbisRetenido)} · ISR ${formatMoney(totals.isrRetenido)}`
+                : "Se le paga a la DGII"
+            }
+          />
+          <StatCard label="Total sin ITBIS" info={R.sinItbis} value={formatMoney(totals.totalSinItbis)} icon={<ArrowDownCircle size={20} />} tone="violet" hint={`Con ITBIS ${formatMoney(totals.total)}`} />
         </section>
       )}
 
@@ -1856,7 +1895,7 @@ async function IncomeByTaxReport({ params }: { params: Params }) {
         <div className="mt-6">
           <CollapsibleSection
             title="Detalle por factura"
-            description="Cada factura emitida con su NCF, separada en gravado, exento e ITBIS."
+            description="Cada factura emitida con su NCF, separada en gravado, exento, ITBIS y las retenciones del cliente. Las facturas en otra moneda muestran debajo el monto original y la tasa."
             count={invoices.length}
             summary={<Money value={totals.total} strong />}
             open={!!params.p_facturas}
@@ -1877,3 +1916,34 @@ async function IncomeByTaxReport({ params }: { params: Params }) {
     </div>
   );
 }
+
+/** Monto de retención: gris si es 0 (la mayoría de las facturas no tiene). */
+function RetMoney({ value }: { value: number }) {
+  if (!value) return <span className="text-brand-muted">—</span>;
+  return <Money value={value} />;
+}
+
+/** Explicaciones en palabras sencillas del reporte «Ingresos por tipo de impuesto». */
+const TAX_REPORT_INFO = {
+  facturas: "Cuántas facturas emitiste en el mes (no cuentan los borradores ni las canceladas).",
+  gravado:
+    "Lo que vendiste que SÍ lleva ITBIS, sin contar el ITBIS. Ej.: una factura de RD$1,180 con ITBIS tiene RD$1,000 gravado y RD$180 de ITBIS.",
+  exento:
+    "Lo que vendiste que NO lleva ITBIS (exento o no sujeto, ej. capacitaciones exentas). Es venta completa: no hay impuesto que separar.",
+  sinItbis: "Gravado + exento. Es lo que de verdad vendiste: la venta que cuenta para la ganancia.",
+  itbis:
+    "El ITBIS que le cobraste a los clientes en esas facturas. No es tuyo: se le paga a la DGII en la declaración del mes (IT-1).",
+  total: "Lo que dicen las facturas en total: venta + ITBIS. Es lo que el cliente debe pagar.",
+  totalFactura:
+    "Total de la factura (venta + ITBIS), en pesos. Si la factura es en otra moneda, debajo sale el monto original y la tasa con que se convirtió: la de la factura, no la de hoy.",
+  itbisRet:
+    "ITBIS que el cliente te retuvo y le pagó directo a la DGII por ti. No baja la venta: la DGII te lo cuenta como impuesto ya pagado a tu favor. Detalle en Reportes → Retenciones de clientes.",
+  isrRet:
+    "Impuesto sobre la renta (ISR) que el cliente te retuvo y le pagó a la DGII por ti. No baja la venta: es un adelanto de tu ISR que la DGII te descuenta. Detalle en Reportes → Retenciones de clientes.",
+  otrasRet: "Otras retenciones que registró el cliente (que no son ITBIS ni ISR).",
+  fecha: "Fecha en que se emitió la factura. El reporte agrupa por esta fecha.",
+  factura: "Número interno de la factura en el sistema. Haz clic para abrirla.",
+  ncf: "Número de Comprobante Fiscal: el número que exige la DGII en cada factura (NCF o e-NCF). Si sale «—», la factura no lo tiene anotado.",
+  cliente: "A quién se le facturó.",
+  proyecto: "Proyecto (evento) al que pertenece la factura. «—» si es una venta sin proyecto.",
+};

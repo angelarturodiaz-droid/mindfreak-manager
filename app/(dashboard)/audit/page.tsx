@@ -142,7 +142,7 @@ export default async function AuditPage({
         </p>
       </div>
 
-      <form className="flex flex-wrap items-end gap-2" action="/audit" method="get">
+      <form key={`${params.entity_type ?? ""}|${params.action ?? ""}`} className="flex flex-wrap items-end gap-2" action="/audit" method="get">
         <Select name="entity_type" defaultValue={params.entity_type ?? ""} className="w-48">
           <option value="">Todas las entidades</option>
           {entityTypes.map((t) => (
