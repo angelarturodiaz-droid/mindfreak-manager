@@ -418,7 +418,7 @@ async function ClientProfitabilityTab({ period }: { period: Period }) {
           label="Utilidad"
           value={formatMoney(totals.utilidad)}
           danger={totals.utilidad < 0}
-          trend={totals.margen !== null ? `Margen ${formatPercent(totals.margen)}` : undefined}
+          hint={totals.margen !== null ? `Margen ${formatPercent(totals.margen)}` : undefined}
           icon={<Award size={16} />}
         />
       </section>
