@@ -1801,7 +1801,7 @@ async function IncomeByTaxReport({ params }: { params: Params }) {
       ),
     },
     { header: "NCF", info: R.ncf, accessor: (r) => <span className="whitespace-nowrap tabular-nums text-brand-muted">{r.ncf ?? "—"}</span> },
-    { header: "Cliente", info: R.cliente, accessor: (r) => <span className="text-brand-text">{r.clientName}</span> },
+    { header: "Cliente", info: R.cliente, accessor: (r) => <span className="block min-w-[8.5rem] text-brand-text">{r.clientName}</span> },
     { header: "Proyecto", info: R.proyecto, accessor: (r) => <span className="whitespace-nowrap font-medium text-brand-text">{r.projectNumber ?? <span className="font-normal text-brand-muted">—</span>}</span> },
     { header: "Gravado", info: R.gravado, className: "text-right", accessor: (r) => <Money value={r.gravado} /> },
     { header: "Exento", info: R.exento, className: "text-right", accessor: (r) => <Money value={r.exento} /> },
@@ -1821,11 +1821,21 @@ async function IncomeByTaxReport({ params }: { params: Params }) {
         </span>
       ),
     },
-    { header: "ITBIS retenido", info: R.itbisRet, className: "text-right", accessor: (r) => <RetMoney value={r.itbisRetenido} /> },
-    { header: "ISR retenido", info: R.isrRet, className: "text-right", accessor: (r) => <RetMoney value={r.isrRetenido} /> },
-    ...(hasOtras
-      ? [{ header: "Otras retenciones", info: R.otrasRet, className: "text-right", accessor: (r: IncomeByTaxInvoiceRow) => <RetMoney value={r.otrasRetenciones} /> }]
-      : []),
+    {
+      header: "Retenido",
+      info: R.retenidoDetalle,
+      className: "text-right",
+      accessor: (r) =>
+        r.itbisRetenido + r.isrRetenido + r.otrasRetenciones === 0 ? (
+          <span className="text-brand-muted">—</span>
+        ) : (
+          <span className="flex flex-col items-end gap-0.5 whitespace-nowrap text-xs tabular-nums">
+            {r.itbisRetenido > 0 && <span>ITBIS {formatMoney(r.itbisRetenido)}</span>}
+            {r.isrRetenido > 0 && <span>ISR {formatMoney(r.isrRetenido)}</span>}
+            {r.otrasRetenciones > 0 && <span>Otras {formatMoney(r.otrasRetenciones)}</span>}
+          </span>
+        ),
+    },
   ];
 
   return (
@@ -1897,6 +1907,7 @@ async function IncomeByTaxReport({ params }: { params: Params }) {
             title="Detalle por factura"
             description="Cada factura emitida con su NCF, separada en gravado, exento, ITBIS y las retenciones del cliente. Las facturas en otra moneda muestran debajo el monto original y la tasa."
             count={invoices.length}
+            countLabel={invoices.length === 1 ? "factura" : "facturas"}
             summary={<Money value={totals.total} strong />}
             open={!!params.p_facturas}
           >
@@ -1941,6 +1952,8 @@ const TAX_REPORT_INFO = {
   isrRet:
     "Impuesto sobre la renta (ISR) que el cliente te retuvo y le pagó a la DGII por ti. No baja la venta: es un adelanto de tu ISR que la DGII te descuenta. Detalle en Reportes → Retenciones de clientes.",
   otrasRet: "Otras retenciones que registró el cliente (que no son ITBIS ni ISR).",
+  retenidoDetalle:
+    "Lo que el cliente te retuvo en esa factura y le pagó a la DGII por ti: ITBIS, ISR u otras. No baja la venta: es impuesto ya pagado a tu favor. Detalle en Reportes → Retenciones de clientes.",
   fecha: "Fecha en que se emitió la factura. El reporte agrupa por esta fecha.",
   factura: "Número interno de la factura en el sistema. Haz clic para abrirla.",
   ncf: "Número de Comprobante Fiscal: el número que exige la DGII en cada factura (NCF o e-NCF). Si sale «—», la factura no lo tiene anotado.",

@@ -10,6 +10,7 @@ import { ChevronDown } from "lucide-react";
 export function CollapsibleSection({
   title,
   count,
+  countLabel,
   summary,
   description,
   open = false,
@@ -17,6 +18,8 @@ export function CollapsibleSection({
 }: {
   title: string;
   count?: number;
+  /** Qué se cuenta (ej. «facturas»): sale junto al número para que se entienda. */
+  countLabel?: string;
   /** A la derecha del título, ej. el total. */
   summary?: ReactNode;
   description?: ReactNode;
@@ -37,8 +40,12 @@ export function CollapsibleSection({
             <ChevronDown size={16} className="shrink-0 text-brand-muted transition-transform group-open:rotate-180" aria-hidden />
             {title}
             {count !== undefined && (
-              <span className="rounded-full bg-brand-surface-hover px-2 py-0.5 text-xs font-medium tabular-nums text-brand-muted">
+              <span
+                className="rounded-full bg-brand-surface-hover px-2 py-0.5 text-xs font-medium tabular-nums text-brand-muted"
+                title={countLabel ? `${count} ${countLabel}` : "Cantidad"}
+              >
                 {count}
+                {countLabel ? ` ${countLabel}` : ""}
               </span>
             )}
           </span>

@@ -20,6 +20,11 @@
 - **Etiquetas:** «Ventas del mes (facturado)», «Gastos del mes (registrado)», «Ventas sin
   ITBIS (facturas emitidas)», «Gastos sin ITBIS (gastos registrados)».
 - **Ayuda:** ejemplos genéricos (no dependen de datos que se borrarán en la limpieza).
+- **Ajustes de la prueba BU:** el detalle por factura del reporte de impuestos es más angosto
+  (una sola columna «Retenido» con ITBIS / ISR uno debajo del otro, cliente en menos líneas);
+  la etiqueta del detalle dice «21 facturas» (antes solo «21»); **Comparaciones** muestra
+  arriba, en un recuadro azul, para qué sirve la pestaña elegida (y al pasar el mouse por
+  cada pestaña).
 
 ## V1-1 — Rentabilidad sin ITBIS + reporte «Ingresos por tipo de impuesto» (2026-10-25)
 

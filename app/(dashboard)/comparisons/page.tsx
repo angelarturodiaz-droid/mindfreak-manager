@@ -11,6 +11,7 @@ import {
   ArrowDownCircle,
   AlertTriangle,
   CalendarClock,
+  Info,
 } from "lucide-react";
 import { hasPermission } from "@/lib/auth/permissions";
 import { resolvePeriod, type Period } from "@/features/comparisons/period";
@@ -47,12 +48,38 @@ const PROJECT_STATUS_LABELS: Record<string, string> = {
   CANCELLED: "Cancelado",
 };
 
-const TABS: { key: string; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
-  { key: "rentabilidad-proyecto", label: "Rentabilidad por proyecto", icon: TrendingUp },
-  { key: "cxc-cxp", label: "CxC vs. CxP", icon: ArrowLeftRight },
-  { key: "ventas-cliente", label: "Ventas por cliente", icon: Users },
-  { key: "rentabilidad-cliente", label: "Rentabilidad por cliente", icon: Award },
-  { key: "periodo-vs-periodo", label: "Período vs. período", icon: CalendarRange },
+/** Cada pestaña con su explicación sencilla: qué muestra y para qué sirve. */
+const TABS: { key: string; label: string; icon: React.ComponentType<{ size?: number }>; help: string }[] = [
+  {
+    key: "rentabilidad-proyecto",
+    label: "Rentabilidad por proyecto",
+    icon: TrendingUp,
+    help: "Cuánto ganó cada proyecto (evento) cuya fecha cae en el período: lo facturado menos lo gastado, sin ITBIS, y si le fue mejor o peor que en el período anterior. Sirve para saber qué eventos dejan más ganancia y cuáles perdieron dinero.",
+  },
+  {
+    key: "cxc-cxp",
+    label: "CxC vs. CxP",
+    icon: ArrowLeftRight,
+    help: "CxC = cuentas por cobrar (lo que te deben los clientes); CxP = cuentas por pagar (lo que le debes a tus proveedores). Compara las dos para ver si lo que vas a cobrar alcanza para lo que tienes que pagar, y qué cobros vencen pronto.",
+  },
+  {
+    key: "ventas-cliente",
+    label: "Ventas por cliente",
+    icon: Users,
+    help: "Cuánto le facturaste a cada cliente en el período, cuánto te pagó y cuánto te debe todavía. Sirve para ver quiénes son tus mejores clientes y a quién hay que cobrarle.",
+  },
+  {
+    key: "rentabilidad-cliente",
+    label: "Rentabilidad por cliente",
+    icon: Award,
+    help: "Cuánto ganaste con cada cliente: lo que le facturaste menos lo que gastaste en sus proyectos, sin ITBIS. Un cliente puede comprar mucho y dejar poca ganancia: aquí se ve.",
+  },
+  {
+    key: "periodo-vs-periodo",
+    label: "Período vs. período",
+    icon: CalendarRange,
+    help: "Ventas, gastos, ganancia y margen de todo el negocio en el período, comparados con el período anterior del mismo largo (ej. este mes contra el mes pasado). Sirve para ver si el negocio va mejor o peor.",
+  },
 ];
 
 const DEFAULT_TAB = "rentabilidad-proyecto";
@@ -84,6 +111,7 @@ export default async function ComparisonsPage({ searchParams }: { searchParams: 
           return (
             <Link
               key={t.key}
+              title={t.help}
               href={`/comparisons?tab=${t.key}&period=${period.key}${period.key === "custom" ? `&from=${period.from}&to=${period.to}` : ""}`}
               className={
                 isActive
@@ -97,6 +125,15 @@ export default async function ComparisonsPage({ searchParams }: { searchParams: 
           );
         })}
       </nav>
+
+      {/* Para qué sirve la pestaña elegida, en palabras sencillas. */}
+      <p className="-mt-2 flex items-start gap-2 rounded-[var(--radius-md)] border border-brand-accent/20 bg-brand-accent-light px-3 py-2 text-sm text-brand-text">
+        <Info size={16} className="mt-0.5 shrink-0 text-brand-accent" aria-hidden />
+        <span>
+          <strong>{TABS.find((t) => t.key === activeTab)?.label}:</strong> {TABS.find((t) => t.key === activeTab)?.help}{" "}
+          <span className="text-brand-muted">Pasa el mouse por las otras pestañas para ver de qué trata cada una.</span>
+        </span>
+      </p>
 
       <PeriodBar tab={activeTab} period={period} />
 
