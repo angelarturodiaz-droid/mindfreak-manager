@@ -2,6 +2,9 @@
 
 ## Anticipos a proveedores: cómo registrarlos hoy (2026-10-27)
 
+- **Nuevo gasto**: arriba del formulario, consejo azul destacado «¿Le vas a pagar al proveedor por
+  partes o adelantarle dinero?» con los 3 pasos y el ejemplo; se oculta con «Entendido, no mostrar de
+  nuevo» (se recuerda en esta computadora) y queda el enlace «Ver consejo» (`DismissibleTip`).
 - Sin cambios en la base de datos. **Nuevo gasto**: debajo del subtotal, aviso «¿Le vas a pagar al
   proveedor por partes o adelantarle dinero? Registra el total acordado…» con ⓘ y ejemplo.
 - **Registrar pago** (gasto): línea «¿Le vas a adelantar dinero al proveedor? Escribe aquí solo el

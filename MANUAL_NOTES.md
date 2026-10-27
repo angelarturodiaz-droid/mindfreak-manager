@@ -1178,6 +1178,7 @@ pulsa el botón.
 
 - No hay documento de anticipo a proveedor (V2). Se registra el **gasto por el total acordado**
   (pendiente) y se paga por partes con *Registrar pago*; el gasto queda en «Pago parcial».
-- `new-expense-form.tsx`: aviso con ⓘ debajo de Subtotal/Impuesto.
+- `new-expense-form.tsx`: aviso con ⓘ debajo de Subtotal/Impuesto. `expenses/new/page.tsx`: consejo
+  destacado arriba (`components/ui/dismissible-tip.tsx`, localStorage `mf.tip.gasto.pago-por-partes`).
 - `register-supplier-payment-form.tsx`: en «Datos del pago», línea con ⓘ; si `amount < balance`,
   recuadro «Pago parcial» con lo que faltará (y, con retenciones, que los pagos van contra el neto).

@@ -14,6 +14,7 @@ import { getAccountFunds } from "@/features/banks/queries";
 import { listServiceTypeOptions } from "@/features/supplier-service-types/queries";
 import { hasPermission } from "@/lib/auth/permissions";
 import { NewExpenseForm } from "./new-expense-form";
+import { DismissibleTip } from "@/components/ui/dismissible-tip";
 
 export default async function NewExpensePage({
   searchParams,
@@ -64,6 +65,23 @@ export default async function NewExpensePage({
               : "Puede ser de un proyecto/evento específico o un gasto general de la empresa."}
         </p>
       </div>
+      <DismissibleTip storageKey="gasto.pago-por-partes" title="¿Le vas a pagar al proveedor por partes o adelantarle dinero?">
+        <ol className="list-decimal space-y-0.5 pl-5">
+          <li>
+            Registra aquí el gasto por el <strong>total acordado</strong> (con su ITBIS) y deja el pago en{" "}
+            <strong>«Aún no»</strong>.
+          </li>
+          <li>
+            Después, en el gasto, usa <strong>Registrar pago</strong> solo por lo que le adelantas: queda en{" "}
+            <em>Pago parcial</em>.
+          </li>
+          <li>Cuando le pagues el resto, registra otro pago y queda <em>Pagado</em>.</li>
+        </ol>
+        <p className="mt-1.5 text-xs text-brand-muted">
+          Ejemplo: sonido por RD$100,000 + ITBIS, adelanto RD$40,000 → gasto de RD$118,000, pago de RD$40,000, faltan
+          RD$78,000. Su factura (NCF) la adjuntas cuando llegue.
+        </p>
+      </DismissibleTip>
       <NewExpenseForm
         categories={categories}
         suppliers={suppliers}
