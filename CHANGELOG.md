@@ -1,5 +1,21 @@
 # CHANGELOG — Mindfreak Manager
 
+## Ajustes tras la prueba BV (2026-10-27)
+
+- **Pagar un incentivo pendiente** (antes no se podía: todo pago exigía proveedor).
+  Migración **089**: `supplier_payments.supplier_id` acepta vacío solo si el gasto es un
+  incentivo sin proveedor (trigger `guard_supplier_payment_supplier`). Se paga con
+  *Registrar pago* (también desde una cuenta en dólares, con conversión y comisión, o en
+  partes); el recibo dice a quién se le pagó. Un gasto normal sigue necesitando proveedor.
+- **Pantalla del gasto**: ⓘ en cada tarjeta y bloque; *Registrar pago* siempre visible —
+  sin proveedor sale desactivado con «Falta el proveedor» y el botón *Asignar proveedor*;
+  *Editar gasto* plegado (se abre con el botón); el recuadro del incentivo arriba.
+- **Proyecto**: cada bloque de Finanzas, Ventas y cobros, Gastos y proveedores, Bancos,
+  Documentos, Tareas y Actividades se pliega y **se recuerda en esta computadora**
+  (`FoldableSection`), con ícono, cantidad, resumen y ⓘ. Facturas canceladas con el
+  balance en gris tachado.
+- **V2**: «Incentivo pactado en dólares» documentado en el backlog con un ejemplo.
+
 ## V1-2 — Incentivos por proyecto (2026-10-26)
 
 - **Nuevo incentivo** en el proyecto (Finanzas y Gastos y proveedores; permiso nuevo

@@ -57,7 +57,10 @@ export function RegisterSupplierPaymentForm({
   fiscalRule = null,
   fxContext,
   defaultMethod,
+  recipientName = null,
 }: {
+  /** V1-2: incentivo sin proveedor → a quién se le paga (cambia los textos del paso 3). */
+  recipientName?: string | null;
   expenseId: string;
   supplierId: string | null;
   projectId: string | null;
@@ -278,12 +281,12 @@ export function RegisterSupplierPaymentForm({
           )}
         </FormSection>
 
-        <FormSection step={3} title="Proveedor (opcional)" cols={2}>
+        <FormSection step={3} title={recipientName ? `A quién se le paga: ${recipientName} (opcional)` : "Proveedor (opcional)"} cols={2}>
           <Select
-            label="Banco del proveedor"
+            label={recipientName ? "Banco de quien recibe" : "Banco del proveedor"}
             name="payee_bank_name"
             defaultValue=""
-            hint="A dónde se le depositó a él, no tu cuenta de origen."
+            hint={recipientName ? "A dónde se le depositó a esa persona, no tu cuenta de origen." : "A dónde se le depositó a él, no tu cuenta de origen."}
           >
             <option value="">Sin especificar</option>
             {bankCatalog.map((b) => (

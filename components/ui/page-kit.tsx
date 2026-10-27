@@ -157,12 +157,15 @@ export function MetricCard({
   hint,
   pct,
   tone,
+  info,
 }: {
   label: string;
   value: string;
   hint?: ReactNode;
   pct?: number | null;
   tone?: "danger" | "warning" | "success";
+  /** Explicación (ⓘ) junto al título, en palabras sencillas. */
+  info?: string;
 }) {
   const color =
     tone === "danger"
@@ -174,7 +177,10 @@ export function MetricCard({
           : "text-brand-text";
   return (
     <Card className="@container flex min-w-0 flex-col gap-2">
-      <p className="text-sm font-medium text-brand-muted">{label}</p>
+      <p className="flex items-center gap-1 text-sm font-medium text-brand-muted">
+        {label}
+        {info && <InfoHint text={info} />}
+      </p>
       {/* El monto no se parte en dos líneas; la letra se ajusta al ancho de la tarjeta. */}
       <p
         className={`whitespace-nowrap text-base font-semibold tracking-tight tabular-nums @[12rem]:text-lg @[15rem]:text-xl ${color}`}

@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { safeReturnTo, returnToLabel } from "@/lib/utils/return-to";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarDays, FolderKanban, Tag, Truck, Gift } from "lucide-react";
+import { ArrowLeft, CalendarDays, FolderKanban, Tag, Truck, Gift, Lock, Pencil } from "lucide-react";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import { InfoHint } from "@/components/ui/info-hint";
+import { Button } from "@/components/ui/button";
 import {
   getExpense,
   listExpenseCategories,
@@ -54,9 +57,10 @@ export default async function ExpenseDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ return_to?: string }>;
+  searchParams: Promise<{ return_to?: string; editar?: string }>;
 }) {
   const { id } = await params;
+  const openEdit = (await searchParams).editar === "1";
   // Si se abrió desde un proyecto (o proveedor), "volver" regresa ahí.
   const returnTo = safeReturnTo((await searchParams).return_to);
 
@@ -255,14 +259,33 @@ export default async function ExpenseDetailPage({
         </div>
       </Card>
 
+      {isIncentive && (
+        <Callout tone="blue" icon={<Gift size={18} />} title="Incentivo por proyecto">
+          <p>
+            Para <strong>{expense.incentive_recipient}</strong> (
+            {expense.incentive_recipient_type === "EMPLOYEE" ? "empleado" : "tercero"}) · {expense.incentive_reason}.{" "}
+            {expense.incentive_mode === "PERCENT"
+              ? `Calculado como ${Number(expense.incentive_percent)} % de ${formatMoney(Number(expense.incentive_base), "DOP")} (ganancia antes de incentivos del proyecto al calcularlo).`
+              : "Monto fijo."}
+          </p>
+          <p className="mt-1">
+            Sin proveedor, sin ITBIS y sin retenciones: se paga el monto completo. En la rentabilidad del proyecto se
+            resta después de los gastos. No se edita aquí: si está mal, cancélalo y crea otro desde el proyecto
+            {expense.incentive_mode === "PERCENT" ? " (o usa Recalcular en Finanzas del proyecto)" : ""}.
+          </p>
+        </Callout>
+      )}
+
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Total"
+          info="Lo que dice la factura del gasto: subtotal + impuesto (ITBIS)."
           value={formatMoney(expense.total, expense.currency)}
           hint={`Subtotal ${formatMoney(expense.subtotal, expense.currency)} + impuesto ${formatMoney(expense.tax, expense.currency)}`}
         />
         <MetricCard
           label="Pagado"
+          info="Lo que ya se pagó de este gasto. La barra muestra qué parte del total (o del neto, si hay retenciones) ya salió del banco."
           value={formatMoney(expense.paid_amount, expense.currency)}
           pct={paidPct}
           tone={expense.status === "PAID" ? "success" : undefined}
@@ -270,6 +293,11 @@ export default async function ExpenseDetailPage({
         />
         <MetricCard
           label={withheld > 0 ? "Por pagar (neto)" : "Por pagar"}
+          info={
+            withheld > 0
+              ? "Lo que falta pagarle al proveedor. Ya tiene descontadas las retenciones, que se le pagan a la DGII."
+              : "Lo que falta por pagar de este gasto."
+          }
           value={formatMoney(expense.balance, expense.currency)}
           tone={isOpen && expense.balance > 0 ? "warning" : undefined}
           hint={
@@ -281,7 +309,10 @@ export default async function ExpenseDetailPage({
           }
         />
         <Card className="flex min-w-0 flex-col gap-1.5 text-sm">
-          <p className="font-medium text-brand-muted">Cómo se pagó</p>
+          <p className="flex items-center gap-1 font-medium text-brand-muted">
+            Cómo se pagó
+            <InfoHint text="Método y cuenta con que se pagó (o se piensa pagar). Si se pagó en partes con distintos métodos, dice «Varios métodos»." />
+          </p>
           {/* Si ya hay pagos, se muestra cómo se pagó de verdad (el método se
               puede decidir al registrar el pago, incluso con tarjeta). */}
           <p className="text-brand-text">
@@ -313,7 +344,11 @@ export default async function ExpenseDetailPage({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="flex min-w-0 flex-col gap-8 lg:col-span-2">
           <section className="flex flex-col gap-4">
-            <SectionHeader title="Pagos" count={payments.length} />
+            <SectionHeader
+              title="Pagos"
+              count={payments.length}
+              description="Cada pago registrado de este gasto: cuándo, cuánto y desde qué cuenta salió el dinero."
+            />
             <DataTable
               columns={paymentColumns}
               rows={payments}
@@ -322,14 +357,39 @@ export default async function ExpenseDetailPage({
               emptyMessage="Sin pagos registrados todavía."
             />
 
+            {["PENDING", "PARTIALLY_PAID"].includes(expense.status) && !canPay && (
+              <p className="text-sm text-brand-muted">Tu rol no puede registrar pagos. Pídeselo a alguien de Finanzas.</p>
+            )}
             {["PENDING", "PARTIALLY_PAID"].includes(expense.status) && canPay && (
               <Card>
-                <p className="mb-3 text-sm font-medium text-brand-text">Registrar pago</p>
-                {!expense.supplier_id ? (
-                  <p className="text-sm text-brand-muted">
-                    Este gasto no tiene proveedor asignado — agrégalo editando el
-                    gasto para poder registrarle un pago.
-                  </p>
+                <p className="mb-3 flex items-center gap-1 text-sm font-medium text-brand-text">
+                  Registrar pago
+                  <InfoHint text="Anota que se pagó (todo o una parte): elige cuánto, la fecha y la cuenta de donde salió el dinero. El gasto y el banco se actualizan solos." />
+                </p>
+                {!expense.supplier_id && !isIncentive ? (
+                  // Un gasto normal necesita proveedor para pagarse (retenciones). Se muestra
+                  // la opción desactivada con lo que hay que hacer.
+                  <div className="flex flex-col gap-3 rounded-[var(--radius-md)] border border-dashed border-brand-border bg-brand-surface-hover px-4 py-3">
+                    <p className="flex items-start gap-2 text-sm text-brand-text">
+                      <Lock size={15} className="mt-0.5 shrink-0 text-brand-muted" aria-hidden />
+                      <span>
+                        <strong>Falta el proveedor.</strong> Para registrar el pago, primero dile al sistema a quién se le
+                        paga: así calcula si hay retenciones y el pago queda en la cuenta del proveedor.
+                      </span>
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {isEditable ? (
+                        <Link href={`/expenses/${expense.id}?editar=1${returnTo ? `&return_to=${encodeURIComponent(returnTo)}` : ""}#editar-gasto`}>
+                          <Button size="sm" variant="outline" icon={<Pencil size={13} />}>
+                            Asignar proveedor
+                          </Button>
+                        </Link>
+                      ) : null}
+                      <Button size="sm" disabled hint="Se activa cuando el gasto tenga proveedor.">
+                        Registrar pago
+                      </Button>
+                    </div>
+                  </div>
                 ) : paymentAccounts.length === 0 ? (
                   <p className="text-sm text-brand-muted">
                     Necesitas crear al menos una{" "}
@@ -341,6 +401,7 @@ export default async function ExpenseDetailPage({
                   </p>
                 ) : (
                   <RegisterSupplierPaymentForm
+                    recipientName={isIncentive ? expense.incentive_recipient : null}
                     expenseId={expense.id}
                     supplierId={expense.supplier_id}
                     projectId={expense.project_id}
@@ -374,27 +435,14 @@ export default async function ExpenseDetailPage({
             )}
           </section>
 
-          {isIncentive && (
-            <Callout tone="blue" icon={<Gift size={18} />} title="Incentivo por proyecto">
-              <p>
-                Para <strong>{expense.incentive_recipient}</strong> (
-                {expense.incentive_recipient_type === "EMPLOYEE" ? "empleado" : "tercero"}) · {expense.incentive_reason}.{" "}
-                {expense.incentive_mode === "PERCENT"
-                  ? `Calculado como ${Number(expense.incentive_percent)} % de ${formatMoney(Number(expense.incentive_base), "DOP")} (ganancia antes de incentivos del proyecto al calcularlo).`
-                  : "Monto fijo."}
-              </p>
-              <p className="mt-1">
-                Sin proveedor, sin ITBIS y sin retenciones: se paga el monto completo. En la rentabilidad del proyecto se
-                resta después de los gastos. No se edita aquí: si está mal, cancélalo y crea otro desde el proyecto
-                {expense.incentive_mode === "PERCENT" ? " (o usa Recalcular en Finanzas del proyecto)" : ""}.
-              </p>
-            </Callout>
-          )}
 
           {isEditable ? (
-            <section>
-              <SectionHeader title="Editar gasto" description="Solo mientras está pendiente y sin pagos." />
-              <Card>
+            <section id="editar-gasto">
+              <CollapsibleSection
+                title="Editar gasto"
+                description="Cambiar proveedor, categoría, montos o proyecto. Solo mientras está pendiente y sin pagos."
+                open={openEdit}
+              >
                 <ExpenseEditForm
                   expense={expense}
                   categories={categories}
@@ -407,7 +455,7 @@ export default async function ExpenseDetailPage({
                   serviceTypes={serviceTypes}
                   canSeeRules={canSeeRules}
                 />
-              </Card>
+              </CollapsibleSection>
             </section>
           ) : (
             expense.status !== "CANCELLED" && !isIncentive && (

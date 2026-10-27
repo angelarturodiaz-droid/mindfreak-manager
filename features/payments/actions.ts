@@ -262,6 +262,13 @@ export async function registerSupplierPaymentAction(
     if (error.message.includes("invalid_status")) {
       return { error: "Este gasto no admite pagos en su estado actual." };
     }
+    if (error.message.includes("supplier_required")) {
+      return {
+        error: null,
+        blockedTitle: "Falta el proveedor",
+        blocked: "Para pagar este gasto primero asígnale un proveedor: abre «Editar gasto», elige el proveedor y guarda. (Solo los incentivos por proyecto se pagan sin proveedor.)",
+      };
+    }
     if (error.message.includes("inactive_account")) {
       return { error: "Esa cuenta o tarjeta está inactiva. Actívala en Bancos o elige otra." };
     }
@@ -432,7 +439,7 @@ export async function getSupplierPaymentReceiptDataAction(
     supabase
       .from("supplier_payments")
       .select(
-        "id, expense_id, payment_date, amount, method, reference, currency, payee_bank_name, expenses(description, balance, total, ncf, isr_withheld, itbis_withheld, total_withheld, net_payable), suppliers(name, tax_id, email, phone), bank_accounts(name, bank_name)",
+        "id, expense_id, payment_date, amount, method, reference, currency, payee_bank_name, expenses(description, balance, total, ncf, isr_withheld, itbis_withheld, total_withheld, net_payable, incentive_recipient), suppliers(name, tax_id, email, phone), bank_accounts(name, bank_name)",
       )
       .eq("id", paymentId)
       .single(),
@@ -455,6 +462,7 @@ export async function getSupplierPaymentReceiptDataAction(
     itbis_withheld: number | null;
     total_withheld: number | null;
     net_payable: number | null;
+    incentive_recipient: string | null;
   };
   const expenseData = payment.expenses as One<ExpenseData>;
   const rawExpense = Array.isArray(expenseData) ? expenseData[0] : expenseData;
@@ -499,7 +507,8 @@ export async function getSupplierPaymentReceiptDataAction(
       },
       payment,
       expense: expense ?? { description: "—", balance: 0 },
-      supplier: supplier ?? { name: "Proveedor", tax_id: null, email: null, phone: null },
+      // V1-2: un incentivo no tiene proveedor: el recibo dice a quién se le pagó.
+      supplier: supplier ?? { name: rawExpense?.incentive_recipient ?? "Proveedor", tax_id: null, email: null, phone: null },
       bankAccount: bankAccount ?? null,
     },
     error: null,

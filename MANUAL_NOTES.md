@@ -1124,3 +1124,19 @@ pulsa el botón.
   incentivos con aviso de base cambiada y `RecalcIncentiveButton`. `updateExpenseAction`
   rechaza incentivos; el detalle del gasto muestra un `Callout`.
 - **Numeración de migraciones:** el respaldo A0 y la limpieza A1 pasan a 089 y 090.
+
+## 2026-10-27 — Ajustes tras BV (migración 089)
+
+- `supplier_payments.supplier_id` ahora acepta NULL; el trigger
+  `guard_supplier_payment_supplier` (BEFORE INSERT/UPDATE OF supplier_id) solo lo permite si el
+  gasto tiene `supplier_id` nulo **e** `incentive_mode` no nulo; si no, `supplier_required`
+  (traducido en `registerSupplierPaymentAction` a la ventana «Falta el proveedor").
+  `register_supplier_payment` no cambió. Probado con rollback: gasto normal → bloqueado;
+  incentivo → permitido. Las consultas de pagos ya toleran proveedor nulo (relaciones opcionales).
+- Recibo de pago: si no hay proveedor usa `expenses.incentive_recipient`.
+- `RegisterSupplierPaymentForm` acepta `recipientName` (textos del paso 3).
+- Detalle del gasto: `?editar=1#editar-gasto` abre el `CollapsibleSection` de edición.
+- `components/ui/foldable-section.tsx`: sección plegable que guarda el estado en
+  `localStorage` (`mf.fold.<storageKey>`) con `useSyncExternalStore` (sin setState en efectos);
+  el contenido queda montado (solo `hidden`). `MetricCard` de page-kit acepta `info`.
+- Numeración: el respaldo A0 pasa a la **090** y la limpieza A1 a la **091**.

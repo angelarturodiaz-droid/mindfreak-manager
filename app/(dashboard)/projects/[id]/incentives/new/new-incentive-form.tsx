@@ -155,7 +155,7 @@ export function NewIncentiveForm({
           setPaymentMethod(e.target.value);
           setAccountId("");
         }}
-        info="Si ya se le pagó, elige cómo y desde qué cuenta: el incentivo queda Pagado y sale del banco. Si no, déjalo pendiente y págalo después desde el gasto (Registrar pago)."
+        info="Si ya se le pagó, elige cómo y desde qué cuenta en pesos: el incentivo queda Pagado y sale del banco. Si no (o si lo vas a pagar desde dólares), déjalo pendiente y págalo después abriendo el incentivo → «Registrar pago», en partes si quieres."
       >
         <option value="">Todavía no — queda pendiente</option>
         {PAYMENT_METHODS.map((m) => (
@@ -173,7 +173,7 @@ export function NewIncentiveForm({
           onChange={setAccountId}
           label={isCard ? "Tarjeta (en pesos)" : "Cuenta de banco (en pesos)"}
           emptyOptionLabel="Aún no — queda pendiente de pago"
-          hint="Solo cuentas en pesos. Para pagar desde una cuenta en dólares, déjalo pendiente y usa Registrar pago en el gasto."
+          hint="Solo cuentas en pesos. Para pagar desde una cuenta en dólares (con la conversión y la comisión del banco), déjalo pendiente y luego, en el incentivo, usa «Registrar pago»."
         />
       )}
       {accountId && <AccountFundsHint funds={funds[accountId]} />}

@@ -12,6 +12,10 @@ import {
   Clock,
   FileText,
   FolderOpen,
+  Gift,
+  Truck,
+  Wallet,
+  Paperclip,
   Landmark,
   Info,
   LayoutDashboard,
@@ -75,6 +79,7 @@ import { NewProjectItemForm } from "./new-item-form";
 import { EditCostButton } from "./edit-cost-button";
 import { CreateQuotationButton } from "./create-quotation-button";
 import { RecalcIncentiveButton } from "./recalc-incentive-button";
+import { FoldableSection } from "@/components/ui/foldable-section";
 import { RECIPIENT_TYPE_LABELS } from "@/features/incentives/catalog";
 import { incentiveAmountFromPercent } from "@/features/profitability/net-of-tax";
 import { formatDate } from "@/lib/utils/dates";
@@ -547,7 +552,11 @@ export default async function ProjectDetailPage({
       header: "Balance",
       className: "text-right",
       accessor: (inv) => (
-        <span className={`tabular-nums ${inv.balance > 0 ? "text-brand-warning" : "text-brand-muted"}`}>
+        // Una factura cancelada ya no se cobra: su balance sale en gris (no es deuda).
+        <span
+          className={`tabular-nums ${inv.status === "CANCELLED" ? "text-brand-muted line-through" : inv.balance > 0 ? "text-brand-warning" : "text-brand-muted"}`}
+          title={inv.status === "CANCELLED" ? "Factura cancelada: no se cobra" : undefined}
+        >
           {formatMoney(inv.balance, inv.currency)}
         </span>
       ),
@@ -1080,9 +1089,15 @@ export default async function ProjectDetailPage({
           </Card>
         </section>
       ) : activeTab === "finanzas" ? (
-        <div className="flex flex-col gap-8">
-          <section>
-            <SectionHeader title="Ingresos" description="Lo que se le cotizó (aprobado), facturó (facturas emitidas) y cobró (dinero recibido) al cliente." />
+        <div className="flex flex-col gap-4">
+          <FoldableSection
+            storageKey="proyecto.finanzas.ingresos"
+            title="Ingresos"
+            icon={<Receipt size={16} />}
+            description="Lo que se le cotizó (aprobado), facturó (facturas emitidas) y cobró (dinero recibido) al cliente."
+            info="Lo que entra por este proyecto: lo aprobado en cotizaciones, lo facturado y lo que el cliente ya pagó."
+            summary={<span className="text-xs text-brand-muted">Facturado {formatMoney(profitability.facturadoConItbis)}</span>}
+          >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <KpiCard
                 label="Cotizado"
@@ -1108,9 +1123,15 @@ export default async function ProjectDetailPage({
                 info="Lo que el cliente todavía debe de las facturas de este proyecto (facturado − cobrado)."
               />
             </div>
-          </section>
-          <section>
-            <SectionHeader title="Costos" description="Lo que calculaste que costaría contra lo que de verdad gastaste (gastos registrados en el proyecto)." />
+          </FoldableSection>
+          <FoldableSection
+            storageKey="proyecto.finanzas.costos"
+            title="Costos"
+            icon={<ShoppingCart size={16} />}
+            description="Lo que calculaste que costaría contra lo que de verdad gastaste (gastos registrados en el proyecto)."
+            info="Lo que sale por este proyecto: el costo estimado de los servicios y los gastos de verdad, sin ITBIS."
+            summary={<span className="text-xs text-brand-muted">Gastado {formatMoney(profitability.costoReal)}</span>}
+          >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <KpiCard
                 label="Costo estimado"
@@ -1132,12 +1153,20 @@ export default async function ProjectDetailPage({
                 hint={`de ${formatMoney(profitability.presupuesto)}`}
               />
             </div>
-          </section>
-          <section>
-            <SectionHeader
-              title="Rentabilidad"
-              description="La ganancia del proyecto: lo vendido menos lo gastado y los incentivos, sin ITBIS."
-            />
+          </FoldableSection>
+          <FoldableSection
+            storageKey="proyecto.finanzas.rentabilidad"
+            title="Rentabilidad"
+            icon={<TrendingUp size={16} />}
+            tone="accent"
+            description="La ganancia del proyecto: lo vendido menos lo gastado y los incentivos, sin ITBIS."
+            info="Cuánto le queda a la empresa con este proyecto, estimado (según lo cotizado) y real (según lo facturado y gastado)."
+            summary={
+              <span className={`text-xs font-medium ${profitability.utilidadReal < 0 ? "text-brand-danger" : "text-brand-success"}`}>
+                Ganancia final {formatMoney(profitability.utilidadReal)}
+              </span>
+            }
+          >
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <MetricCard
                 label="Utilidad estimada"
@@ -1189,12 +1218,15 @@ export default async function ProjectDetailPage({
                 </dl>
               </Card>
             </div>
-          </section>
-          <section>
-            <SectionHeader
-              title="Incentivos"
-              count={incentives?.length ?? 0}
-              description="Pagos a empleados o terceros por este proyecto (sin proveedor, ITBIS ni retenciones). A un empleado se le paga aparte de la nómina."
+          </FoldableSection>
+          <FoldableSection
+            storageKey="proyecto.finanzas.incentivos"
+            title="Incentivos"
+            icon={<Gift size={16} />}
+            count={incentives?.length ?? 0}
+            info="Pagos a empleados o terceros por este proyecto. Se restan después de los gastos."
+            summary={profitability.incentivos > 0 ? <span className="text-xs text-brand-muted">{formatMoney(profitability.incentivos)}</span> : undefined}
+            description="Pagos a empleados o terceros por este proyecto (sin proveedor, ITBIS ni retenciones). A un empleado se le paga aparte de la nómina."
               action={
                 canIncentives && !isCancelled ? (
                   <Link href={`/projects/${project.id}/incentives/new`}>
@@ -1204,7 +1236,7 @@ export default async function ProjectDetailPage({
                   </Link>
                 ) : undefined
               }
-            />
+          >
             {!incentives || incentives.length === 0 ? (
               <p className="rounded-[var(--radius-md)] border border-dashed border-brand-border px-4 py-3 text-sm text-brand-muted">
                 Este proyecto no tiene incentivos.
@@ -1267,7 +1299,7 @@ export default async function ProjectDetailPage({
                 })}
               </div>
             )}
-          </section>
+          </FoldableSection>
           <p className="text-xs text-brand-muted">
             La utilidad y el margen se calculan sin ITBIS: el ITBIS que cobras es de la DGII y el
             de tus compras no es costo. Todos los montos se consolidan en la moneda base de la
@@ -1276,37 +1308,58 @@ export default async function ProjectDetailPage({
           </p>
         </div>
       ) : activeTab === "ventas" && quotations && invoices && customerPayments ? (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-4">
           <BillingNotice progress={billing} context="project" />
-          <section>
-            <SectionHeader title="Cotizaciones" count={quotations.length} />
+          <FoldableSection
+            storageKey="proyecto.ventas.cotizaciones"
+            title="Cotizaciones"
+            icon={<FileText size={16} />}
+            count={quotations.length}
+            info="Las cotizaciones de este proyecto. Las aprobadas son lo que el cliente aceptó (lo «cotizado»)."
+          >
             <DataTable columns={quotationColumns} rows={quotations} keyFor={(q) => q.id} emptyMessage="Sin cotizaciones ligadas." maxWidth="max-w-none" />
-          </section>
-          <section>
-            <SectionHeader
-              title="Facturas"
-              count={invoices.length}
-              action={
-                <Link href={`/invoices/new?project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}?tab=ventas`)}`}>
-                  <Button variant="outline" size="sm" icon={<Plus size={14} />}>
-                    Nueva factura
-                  </Button>
-                </Link>
-              }
-            />
+          </FoldableSection>
+          <FoldableSection
+            storageKey="proyecto.ventas.facturas"
+            title="Facturas"
+            icon={<Receipt size={16} />}
+            count={invoices.length}
+            info="Las facturas de este proyecto (anticipo, balance, adicionales). Las canceladas salen en gris: no se cobran."
+            summary={
+              porCobrar > 0 ? (
+                <span className="text-xs font-medium text-brand-warning">Por cobrar {formatMoney(porCobrar)}</span>
+              ) : undefined
+            }
+            action={
+              <Link href={`/invoices/new?project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}?tab=ventas`)}`}>
+                <Button variant="outline" size="sm" icon={<Plus size={14} />}>
+                  Nueva factura
+                </Button>
+              </Link>
+            }
+          >
             <DataTable columns={invoiceColumns} rows={invoices} keyFor={(i) => i.id} emptyMessage="Sin facturas todavía." maxWidth="max-w-none" />
-          </section>
-          <section>
-            <SectionHeader title="Cobros recibidos" count={customerPayments.length} />
+          </FoldableSection>
+          <FoldableSection
+            storageKey="proyecto.ventas.cobros"
+            title="Cobros recibidos"
+            icon={<Wallet size={16} />}
+            count={customerPayments.length}
+            info="El dinero que el cliente ya pagó por este proyecto, con la fecha y la cuenta donde entró."
+            summary={<span className="text-xs text-brand-muted">Cobrado {formatMoney(profitability.cobrado)}</span>}
+          >
             <DataTable columns={paymentColumns} rows={customerPayments} keyFor={(p) => p.id} emptyMessage="Sin cobros todavía." maxWidth="max-w-none" />
-          </section>
+          </FoldableSection>
         </div>
       ) : activeTab === "compras" && expenses && projectSuppliers && supplierPayments ? (
-        <div className="flex flex-col gap-8">
-          <section>
-            <SectionHeader
-              title="Gastos"
-              count={expenses.length}
+        <div className="flex flex-col gap-4">
+          <FoldableSection
+            storageKey="proyecto.compras.gastos"
+            title="Gastos"
+            icon={<ShoppingCart size={16} />}
+            count={expenses.length}
+            info="Todo lo gastado en este proyecto (incluidos los incentivos). Para pagar uno, ábrelo y usa «Registrar pago»."
+            summary={<span className="text-xs text-brand-muted">Sin ITBIS {formatMoney(profitability.costoReal + profitability.incentivos)}</span>}
               action={
                 <div className="flex flex-wrap gap-2">
                   {canIncentives && !isCancelled && (
@@ -1330,12 +1383,18 @@ export default async function ProjectDetailPage({
                   </Link>
                 </div>
               }
-            />
+          >
             <DataTable columns={expenseColumns} rows={expenses} keyFor={(e) => e.id} emptyMessage="Sin gastos todavía." maxWidth="max-w-none" />
-          </section>
-          <div className="grid grid-cols-1 gap-8 xl:grid-cols-5">
-            <section className="xl:col-span-2">
-              <SectionHeader title="Proveedores" count={projectSuppliers.length} />
+          </FoldableSection>
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
+            <div className="xl:col-span-2">
+            <FoldableSection
+              storageKey="proyecto.compras.proveedores"
+              title="Proveedores"
+              icon={<Truck size={16} />}
+              count={projectSuppliers.length}
+              info="Los proveedores de los gastos de este proyecto y cuánto se les ha comprado."
+            >
               <DataTable
                 columns={supplierColumns}
                 rows={projectSuppliers}
@@ -1343,9 +1402,16 @@ export default async function ProjectDetailPage({
                 emptyMessage="Sin proveedores asociados a gastos de este proyecto."
                 maxWidth="max-w-none"
               />
-            </section>
-            <section className="xl:col-span-3">
-              <SectionHeader title="Pagos a proveedores" count={supplierPayments.length} />
+            </FoldableSection>
+            </div>
+            <div className="xl:col-span-3">
+            <FoldableSection
+              storageKey="proyecto.compras.pagos"
+              title="Pagos a proveedores"
+              icon={<Wallet size={16} />}
+              count={supplierPayments.length}
+              info="El dinero que ya salió para pagar los gastos de este proyecto."
+            >
               <DataTable
                 columns={supplierPaymentColumns}
                 rows={supplierPayments}
@@ -1353,17 +1419,31 @@ export default async function ProjectDetailPage({
                 emptyMessage="Sin pagos todavía."
                 maxWidth="max-w-none"
               />
-            </section>
+            </FoldableSection>
+            </div>
           </div>
         </div>
       ) : activeTab === "bancos" && bankTransactions ? (
-        <section>
-          <SectionHeader title="Movimientos bancarios" count={bankTransactions.length} />
+        <FoldableSection
+          storageKey="proyecto.bancos.movimientos"
+          title="Movimientos bancarios"
+          icon={<Landmark size={16} />}
+          count={bankTransactions.length}
+          info="Todo el dinero que entró o salió de los bancos ligado a este proyecto (cobros, pagos y movimientos manuales)."
+        >
           <DataTable columns={bankColumns} rows={bankTransactions} keyFor={(t) => t.id} emptyMessage="Sin movimientos todavía." maxWidth="max-w-none" />
-        </section>
+        </FoldableSection>
       ) : activeTab === "documentos" && documents ? (
-        <section className="flex max-w-3xl flex-col gap-4">
-          <SectionHeader title="Documentos" count={documents.length} description="Contratos, facturas de proveedores, planos, fotos…" />
+        <div className="max-w-3xl">
+        <FoldableSection
+          storageKey="proyecto.documentos"
+          title="Documentos"
+          icon={<Paperclip size={16} />}
+          count={documents.length}
+          description="Contratos, facturas de proveedores, planos, fotos…"
+          info="Archivos del evento guardados en el sistema. Súbelos aquí para tenerlos a mano."
+        >
+          <div className="flex flex-col gap-4">
           {canManageDocs && (
             <UploadDocumentForm
               entityType="project"
@@ -1376,10 +1456,18 @@ export default async function ProjectDetailPage({
             canDelete={canManageDocs}
             revalidatePathValue={`/projects/${id}?tab=documentos`}
           />
-        </section>
+          </div>
+        </FoldableSection>
+        </div>
       ) : activeTab === "tareas" && projectTasks ? (
-        <section className="flex flex-col gap-4">
-          <SectionHeader title="Tareas" count={projectTasks.length} />
+        <FoldableSection
+          storageKey="proyecto.tareas"
+          title="Tareas"
+          icon={<ListChecks size={16} />}
+          count={projectTasks.length}
+          info="Pendientes del evento con responsable y fecha límite. Las del proyecto también salen en el menú Tareas."
+        >
+          <div className="flex flex-col gap-4">
           {canUpdate && (
             <NewTaskForm
               members={members}
@@ -1392,14 +1480,19 @@ export default async function ProjectDetailPage({
             showProjectColumn={false}
             revalidatePathValue={`/projects/${id}?tab=tareas`}
           />
-        </section>
+          </div>
+        </FoldableSection>
       ) : activeTab === "actividades" && projectActivities ? (
-        <section className="flex max-w-3xl flex-col gap-4">
-          <SectionHeader
-            title="Actividades"
-            count={projectActivities.length}
-            description="Llamadas, reuniones, visitas y notas del evento."
-          />
+        <div className="max-w-3xl">
+        <FoldableSection
+          storageKey="proyecto.actividades"
+          title="Actividades"
+          icon={<MessageSquare size={16} />}
+          count={projectActivities.length}
+          description="Llamadas, reuniones, visitas y notas del evento."
+          info="Bitácora del evento: lo que se habló o se hizo y cuándo. Sirve para que todo el equipo esté al día."
+        >
+          <div className="flex flex-col gap-4">
           {canUpdate && (
             <NewActivityForm
               projectId={id}
@@ -1419,7 +1512,9 @@ export default async function ProjectDetailPage({
               ))}
             </ul>
           )}
-        </section>
+          </div>
+        </FoldableSection>
+        </div>
       ) : activeTab === "satisfaccion" ? (
         <ProjectSurveyPanel projectId={id} projectStatus={project.status} canSend={canSendSurvey} />
       ) : (
