@@ -1833,7 +1833,7 @@ async function IncomeByTaxReport({ params }: { params: Params }) {
       <ReportTitle
         params={params}
         title="Ingresos por tipo de impuesto"
-        description="Cuánto vendiste cada mes, separado en lo que lleva ITBIS (gravado) y lo que no (exento), el ITBIS que cobraste y lo que te retuvieron los clientes. Solo facturas emitidas, en pesos, por fecha de la factura."
+        description="Cuánto vendiste cada mes: lo que lleva ITBIS (gravado), lo que no (exento), el ITBIS cobrado y lo retenido por clientes. Facturas emitidas, en pesos."
       />
       <FilterBar report="ingresos-impuesto" params={params}>
         <DateRangeFields from={params.from} to={params.to} />
@@ -1867,7 +1867,7 @@ async function IncomeByTaxReport({ params }: { params: Params }) {
             tone="amber"
             hint={
               totals.itbisRetenido + totals.isrRetenido + totals.otrasRetenciones > 0
-                ? `Se le paga a la DGII · Retenido por clientes: ITBIS ${formatMoney(totals.itbisRetenido)} · ISR ${formatMoney(totals.isrRetenido)}`
+                ? `Se le paga a la DGII · retenido por clientes ${formatMoney(totals.itbisRetenido + totals.isrRetenido + totals.otrasRetenciones)}`
                 : "Se le paga a la DGII"
             }
           />
