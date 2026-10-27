@@ -1160,7 +1160,7 @@ export default async function ProjectDetailPage({
                   <CascadeRow
                     label="− Gastos sin ITBIS"
                     info="Lo gastado en el proyecto (gastos registrados, sin incentivos), por su subtotal."
-                    value={formatMoney(-profitability.costoReal)}
+                    value={formatMoney(profitability.costoReal > 0 ? -profitability.costoReal : 0)}
                   />
                   <CascadeRow
                     label="= Ganancia antes de incentivos"
@@ -1172,7 +1172,7 @@ export default async function ProjectDetailPage({
                   <CascadeRow
                     label="− Incentivos"
                     info="Pagos a empleados o terceros por este proyecto (lista de abajo). Sin ITBIS ni retenciones."
-                    value={formatMoney(-profitability.incentivos)}
+                    value={formatMoney(profitability.incentivos > 0 ? -profitability.incentivos : 0)}
                   />
                   <div className="mt-1 border-t border-brand-border pt-2">
                     <CascadeRow
