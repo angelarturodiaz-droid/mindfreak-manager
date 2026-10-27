@@ -169,8 +169,8 @@ export function renderWidget(type: string, data: DashboardWidgetBundle): React.R
               ? "El margen dice qué parte de lo que vendes te queda como ganancia. Este mes todavía no hay ventas (facturas emitidas), así que no se puede calcular."
               : `El margen dice qué parte de lo que vendes te queda como ganancia. Este mes: de cada RD$100 que vendiste (sin ITBIS), ${
                   kpis.margen >= 0
-                    ? `después de pagar los gastos te quedaron RD$${kpis.margen.toFixed(2)}`
-                    : `los gastos se comieron todo y perdiste RD$${Math.abs(kpis.margen).toFixed(2)}`
+                    ? `después de pagar los gastos te quedaron RD$${(Math.round(kpis.margen * 10) / 10).toFixed(2)}`
+                    : `los gastos se comieron todo y perdiste RD$${(Math.round(Math.abs(kpis.margen) * 10) / 10).toFixed(2)}`
                 }. Se calcula: utilidad ÷ ventas, sin ITBIS.`
           }
           sub={kpis.ventas > 0 ? "Utilidad ÷ ventas, sin ITBIS" : "Sin ventas este mes"}
