@@ -8,6 +8,9 @@
   adelanto» con ⓘ; si el monto es menor que lo pendiente, recuadro azul **Pago parcial** con lo que
   faltará y el siguiente paso.
 - Ayuda (Cobros y pagos) y manual con el ejemplo. Anticipos a proveedores con documento propio → V2.
+- Cotización aprobada → bloque Anticipos: «Anticipo pactado: …» solo sale si la condición de pago
+  tiene un % de anticipo **menor que 100** (ej. 50/50). Contado y Crédito (100 %) = se paga todo de
+  una vez contra la factura, no es un anticipo. Igual que el enlace «Usar el % pactado».
 
 ## V1-3 — Anticipos de clientes (2026-10-27)
 

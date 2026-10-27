@@ -569,7 +569,7 @@ export default async function QuotationDetailPage({
               <span className="text-xs font-medium text-brand-accent">
                 Sin aplicar {formatMoney(advancesAvailable, quotation.currency)}
               </span>
-            ) : Number(quotation.advance_percent) > 0 ? (
+            ) : Number(quotation.advance_percent) > 0 && Number(quotation.advance_percent) < 100 ? (
               <span className="text-xs text-brand-muted">
                 Anticipo pactado: {Number(quotation.advance_percent)} % ={" "}
                 {formatMoney((Number(quotation.total) * Number(quotation.advance_percent)) / 100, quotation.currency)}
