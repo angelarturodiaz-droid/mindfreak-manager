@@ -16,6 +16,9 @@
 - **Factura de un proyecto**: botón **Copiar todas las líneas pendientes del proyecto** (en
   Borrador): copia las líneas de las cotizaciones aprobadas (con su ITBIS) y las escritas a mano,
   menos lo ya facturado; no duplica. El «Siguiente paso» lo indica.
+- **Fechas en hora de RD**: migración **091** fija la zona America/Santo_Domingo en las funciones
+  que usan «hoy» (anticipos y recordatorios). Antes, de noche, quedaba la fecha del día siguiente
+  (UTC). Las acciones de aplicar y devolver también envían la fecha de hoy en RD.
 - **Bloques plegables**: el botón del bloque (Registrar anticipo, Nueva factura…) se ve aunque
   el bloque esté cerrado.
 

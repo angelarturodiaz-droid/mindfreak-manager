@@ -1198,3 +1198,6 @@ pulsa el botón.
   APPROVED del proyecto (misma moneda; copia tax/discount/subtotal proporcional a la cantidad
   pendiente) + `project_items` sin `source_quotation_id` (impuesto predeterminado). Pendiente =
   cantidad − lo ya facturado en facturas no canceladas del proyecto (clave descripción + precio).
+- Migración **091** (`alter function … set timezone = 'America/Santo_Domingo'`): apply/refund/
+  transfer_customer_advance, release_advances_on_invoice_cancel, generate_due_date_alerts y
+  reminders_*. Numeración: respaldo A0 = **092**, limpieza A1 = **093**.
