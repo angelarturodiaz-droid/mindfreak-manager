@@ -2,6 +2,8 @@
 
 ## Ajustes durante la prueba BX (2026-10-29)
 
+- **Número de proyecto estandarizado en PROY-** (decisión 29-oct): la Ayuda ya no menciona PROJ-. Los
+  proyectos nuevos salen PROY- desde el 20-oct; los PROJ- que quedan son de prueba y se borran en la limpieza A1.
 - **Lo último registrado sale primero** en las listas de Proyectos (antes por fecha del evento:
   los proyectos sin fecha quedaban al final), Cotizaciones, Facturas, Gastos, Cobros y pagos,
   Anticipos, Proveedores (antes por nombre), Entregas y las cotizaciones por convertir.
