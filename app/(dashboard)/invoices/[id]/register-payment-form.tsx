@@ -150,6 +150,11 @@ export function RegisterPaymentForm({
           min={0}
           required
           defaultValue={amount}
+          error={
+            !hasWithholdings && amount > balance + 0.005
+              ? `Es más de lo que falta por cobrar (${formatMoney(balance, currency)}). Bájalo para poder registrar.`
+              : undefined
+          }
           hint={
             hasWithholdings
               ? `Lo que entró al banco, sin las retenciones. Saldo ${formatMoney(balance, currency)}.`

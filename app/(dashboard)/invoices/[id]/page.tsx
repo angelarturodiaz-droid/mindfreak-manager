@@ -848,6 +848,8 @@ export default async function InvoiceDetailPage({
                     </p>
                   ) : (
                     <RegisterPaymentForm
+                      // Si el saldo cambia (ej. al aplicar o quitar un anticipo), el formulario vuelve a empezar con el saldo nuevo.
+                      key={`cobro-${invoice.balance}`}
                       invoiceId={invoice.id}
                       clientId={invoice.client_id}
                       projectId={invoice.project_id}

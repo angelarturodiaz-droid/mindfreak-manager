@@ -19,6 +19,9 @@
 - **Fechas en hora de RD**: migración **091** fija la zona America/Santo_Domingo en las funciones
   que usan «hoy» (anticipos y recordatorios). Antes, de noche, quedaba la fecha del día siguiente
   (UTC). Las acciones de aplicar y devolver también envían la fecha de hoy en RD.
+- **Registrar cobro**: si el saldo de la factura cambia (al aplicar o quitar un anticipo), el
+  monto vuelve a empezar con el saldo nuevo; si el monto pasa del saldo sale en rojo «Es más de lo
+  que falta por cobrar…» (antes el botón solo se desactivaba sin explicar).
 - **Bloques plegables**: el botón del bloque (Registrar anticipo, Nueva factura…) se ve aunque
   el bloque esté cerrado.
 
