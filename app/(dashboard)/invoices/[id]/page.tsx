@@ -56,6 +56,7 @@ import { NewInvoiceItemForm } from "./new-item-form";
 import { InvoiceHeaderForm } from "./invoice-header-form";
 import { RegisterPaymentForm } from "./register-payment-form";
 import { ApplyAdvancesForm } from "./apply-advances-form";
+import { CopyProjectLinesButton } from "./copy-project-lines-button";
 import { listApplicableAdvances, listInvoiceAdvanceApplications, advanceTargetOf } from "@/features/advances/queries";
 import { VoidApplicationButton } from "@/components/advances/void-application-button";
 import { InvoiceShareLinkButton } from "./share-link-button";
@@ -408,7 +409,12 @@ export default async function InvoiceDetailPage({
       ? null
       : invoice.status === "DRAFT"
         ? items.length === 0
-          ? { tone: "next", text: "agrega las líneas de la factura (abajo, en Agregar línea)." }
+          ? {
+              tone: "next",
+              text: invoice.project_id
+                ? "pulsa «Copiar todas las líneas pendientes del proyecto» (abajo) o agrega las líneas una por una en Agregar línea."
+                : "agrega las líneas de la factura (abajo, en Agregar línea).",
+            }
           : { tone: "next", text: "revisa las líneas, el NCF y el vencimiento, y pulsa Emitir factura." }
         : invoice.status === "PAID"
           ? { tone: "done", text: "la factura está pagada. No queda nada pendiente." }
@@ -730,6 +736,15 @@ export default async function InvoiceDetailPage({
               description={isEditable ? undefined : "Solo se pueden editar mientras la factura está en Borrador."}
             />
             <DataTable columns={itemColumns} rows={items} keyFor={(i) => i.id} maxWidth="max-w-none" emptyMessage="Sin líneas todavía." />
+
+            {isEditable && canEdit && invoice.project_id && (
+              <div className="flex flex-col gap-1 rounded-[var(--radius-md)] border border-brand-accent/25 bg-brand-accent-light px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-brand-text">
+                  <strong>Factura del proyecto {project?.number}:</strong> copia de una vez lo que falta por facturar, con su ITBIS.
+                </p>
+                <CopyProjectLinesButton invoiceId={invoice.id} projectNumber={project?.number ?? "el proyecto"} />
+              </div>
+            )}
 
             {isEditable && canEdit && (
               <Card>

@@ -13,6 +13,9 @@
   cliente ya entregó (anticipos + cobros de facturas); debajo «Anticipos RD$… (esperando la
   factura)» y «Por cobrar…» (antes de facturar: «se sabe al facturar»). Antes decía RD$0 con
   anticipos recibidos. La barra y «Por cobrar» siguen contra lo facturado.
+- **Factura de un proyecto**: botón **Copiar todas las líneas pendientes del proyecto** (en
+  Borrador): copia las líneas de las cotizaciones aprobadas (con su ITBIS) y las escritas a mano,
+  menos lo ya facturado; no duplica. El «Siguiente paso» lo indica.
 - **Bloques plegables**: el botón del bloque (Registrar anticipo, Nueva factura…) se ve aunque
   el bloque esté cerrado.
 

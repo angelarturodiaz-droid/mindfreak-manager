@@ -1112,3 +1112,168 @@ export async function createInvoiceFromQuotationAction(quotationId: string): Pro
   revalidatePath(`/quotations/${quotationId}`);
   redirect(`/invoices/${inv.id}`);
 }
+
+/**
+ * «Copiar las líneas pendientes del proyecto» (29-oct): en una factura en
+ * Borrador de un proyecto, copia de una vez lo que falta por facturar.
+ * - Fuente: las líneas de las cotizaciones APROBADAS del proyecto (con su
+ *   impuesto, descuento y tratamiento fiscal, igual que «Facturar sin
+ *   proyecto») y las líneas escritas a mano en el proyecto (con el impuesto
+ *   predeterminado).
+ * - «Pendiente» = la cantidad menos lo ya puesto en otras facturas del
+ *   proyecto (no canceladas) y en esta misma (misma descripción y precio).
+ *   Así no se duplica si se pulsa dos veces.
+ */
+export async function copyPendingProjectLinesAction(invoiceId: string): Promise<{ copied: number }> {
+  await requirePermission("invoices.create");
+  const supabase = await createSupabaseClient();
+  const companyId = await getPrimaryCompanyId();
+
+  const { data: inv } = await supabase
+    .from("invoices")
+    .select("id, status, project_id, currency")
+    .eq("id", invoiceId)
+    .single();
+  if (!inv) throw new Error("No se encontró la factura.");
+  if (inv.status !== "DRAFT") throw new Error("Solo se copian líneas mientras la factura está en Borrador.");
+  if (!inv.project_id) throw new Error("Esta factura no es de un proyecto.");
+
+  const [{ data: quotations }, { data: manual }, { data: invoices }, { data: defaultRate }] = await Promise.all([
+    supabase
+      .from("quotations")
+      .select("id, currency, quotation_items(service_id, description, quantity, unit_price, discount, tax, tax_rate_id, tax_treatment, tax_rate_percent, subtotal, sort_order)")
+      .eq("project_id", inv.project_id)
+      .eq("status", "APPROVED")
+      .order("created_at"),
+    supabase
+      .from("project_items")
+      .select("service_id, description, quantity, unit_price, sort_order")
+      .eq("project_id", inv.project_id)
+      .is("source_quotation_id", null)
+      .order("sort_order"),
+    supabase
+      .from("invoices")
+      .select("id, invoice_items(description, quantity, unit_price)")
+      .eq("project_id", inv.project_id)
+      .neq("status", "CANCELLED"),
+    supabase
+      .from("tax_rates")
+      .select("id, rate, treatment")
+      .eq("company_id", companyId)
+      .eq("is_default", true)
+      .eq("is_active", true)
+      .maybeSingle(),
+  ]);
+
+  // Lo ya facturado (en cualquier factura del proyecto, incluida esta).
+  const key = (d: string, p: number) => `${d.trim().toLowerCase()}|${Number(p).toFixed(2)}`;
+  const used = new Map<string, number>();
+  for (const i of invoices ?? []) {
+    for (const it of (i.invoice_items ?? []) as { description: string; quantity: number; unit_price: number }[]) {
+      const k = key(it.description, it.unit_price);
+      used.set(k, (used.get(k) ?? 0) + Number(it.quantity));
+    }
+  }
+  const take = (description: string, unitPrice: number, quantity: number) => {
+    const k = key(description, unitPrice);
+    const already = used.get(k) ?? 0;
+    const pending = Math.round((Number(quantity) - already) * 10000) / 10000;
+    used.set(k, Math.max(0, already - Number(quantity)));
+    return pending;
+  };
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+
+  type Row = {
+    invoice_id: string;
+    service_id: string | null;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    discount: number;
+    tax: number;
+    tax_rate_id: string | null;
+    tax_treatment: string | null;
+    tax_rate_percent: number | null;
+    subtotal: number;
+    sort_order: number;
+  };
+  const rows: Row[] = [];
+  for (const q of quotations ?? []) {
+    if (q.currency !== inv.currency) continue;
+    const items = ((q.quotation_items ?? []) as {
+      service_id: string | null;
+      description: string;
+      quantity: number;
+      unit_price: number;
+      discount: number;
+      tax: number;
+      tax_rate_id: string | null;
+      tax_treatment: string | null;
+      tax_rate_percent: number | null;
+      subtotal: number;
+      sort_order: number;
+    }[]).sort((a, b) => a.sort_order - b.sort_order);
+    for (const it of items) {
+      const qty = Number(it.quantity);
+      const pending = take(it.description, Number(it.unit_price), qty);
+      if (pending <= 0) continue;
+      const f = qty > 0 ? pending / qty : 1;
+      rows.push({
+        invoice_id: invoiceId,
+        service_id: it.service_id,
+        description: it.description,
+        quantity: pending,
+        unit_price: Number(it.unit_price),
+        discount: r2(Number(it.discount) * f),
+        tax: r2(Number(it.tax) * f),
+        tax_rate_id: it.tax_rate_id,
+        tax_treatment: it.tax_treatment,
+        tax_rate_percent: it.tax_rate_percent,
+        subtotal: r2(Number(it.subtotal) * f),
+        sort_order: rows.length,
+      });
+    }
+  }
+  for (const it of manual ?? []) {
+    const pending = take(it.description, Number(it.unit_price), Number(it.quantity));
+    if (pending <= 0) continue;
+    const base = r2(pending * Number(it.unit_price));
+    const gravado = defaultRate?.treatment === "GRAVADO";
+    const tax = gravado ? r2(base * (Number(defaultRate?.rate ?? 0) / 100)) : 0;
+    rows.push({
+      invoice_id: invoiceId,
+      service_id: it.service_id,
+      description: it.description,
+      quantity: pending,
+      unit_price: Number(it.unit_price),
+      discount: 0,
+      tax,
+      tax_rate_id: defaultRate?.id ?? null,
+      tax_treatment: defaultRate?.treatment ?? null,
+      tax_rate_percent: defaultRate ? Number(defaultRate.rate) : null,
+      subtotal: r2(base + tax),
+      sort_order: rows.length,
+    });
+  }
+
+  if (rows.length === 0) {
+    throw new Error("No hay líneas pendientes: todo lo del proyecto ya está en esta u otra factura.");
+  }
+  const { count: existing } = await supabase
+    .from("invoice_items")
+    .select("id", { count: "exact", head: true })
+    .eq("invoice_id", invoiceId);
+  const offset = existing ?? 0;
+  const { error } = await supabase.from("invoice_items").insert(rows.map((r) => ({ ...r, sort_order: r.sort_order + offset })));
+  if (error) throw new Error(dbErrorMessage(error.message));
+  await recalculateInvoiceTotals(invoiceId);
+  await logAudit({
+    companyId,
+    action: "UPDATE",
+    entityType: "invoice",
+    entityId: invoiceId,
+    newValues: { copio_lineas_del_proyecto: rows.length },
+  });
+  revalidatePath(`/invoices/${invoiceId}`);
+  return { copied: rows.length };
+}

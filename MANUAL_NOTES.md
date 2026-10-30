@@ -1194,3 +1194,7 @@ pulsa el botón.
 - `getProjectProfitability.recibidoCliente` = cobros de facturas + anticipos recibidos (menos
   devoluciones). La tarjeta «Cobrado» lo muestra; `cobrado` (cobros + anticipos aplicados) sigue
   para la barra y «Por cobrar».
+- `copyPendingProjectLinesAction(invoiceId)`: fuente = `quotation_items` de las cotizaciones
+  APPROVED del proyecto (misma moneda; copia tax/discount/subtotal proporcional a la cantidad
+  pendiente) + `project_items` sin `source_quotation_id` (impuesto predeterminado). Pendiente =
+  cantidad − lo ya facturado en facturas no canceladas del proyecto (clave descripción + precio).
