@@ -73,7 +73,9 @@ export async function listQuotationAdvances(quotationId: string): Promise<Advanc
 }
 
 /** Lista de Cobros y pagos → pestaña Anticipos (10 por página). */
-export async function listAdvancesPage(filters: { search?: string; page?: number; onlyAvailable?: boolean } = {}) {
+export async function listAdvancesPage(
+  filters: { search?: string; page?: number; onlyAvailable?: boolean; clientId?: string } = {},
+) {
   const supabase = await createClient();
   const [from, to] = pageRange(filters.page ?? 1);
   let query = supabase
@@ -82,6 +84,7 @@ export async function listAdvancesPage(filters: { search?: string; page?: number
     .order("created_at", { ascending: false })
     .range(from, to);
   if (filters.onlyAvailable) query = query.gt("available_amount", 0);
+  if (filters.clientId) query = query.eq("client_id", filters.clientId);
   if (filters.search) {
     const ids = await idsByName(supabase, "clients", filters.search);
     query = query.or(searchOr(filters.search, ["number", "reference"], { column: "client_id", ids }));
@@ -92,12 +95,14 @@ export async function listAdvancesPage(filters: { search?: string; page?: number
 }
 
 /** Total sin aplicar (en pesos, con la tasa del día del anticipo) y cuántos anticipos. */
-export async function getAdvanceTotals() {
+export async function getAdvanceTotals(clientId?: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("customer_advances")
     .select("currency, exchange_rate, available_amount, receipt_date")
     .gt("available_amount", 0);
+  if (clientId) query = query.eq("client_id", clientId);
+  const { data, error } = await query;
   if (error) throw new Error(error.message);
   const rows = data ?? [];
   return {
@@ -106,9 +111,11 @@ export async function getAdvanceTotals() {
   };
 }
 
-export async function countAdvances() {
+export async function countAdvances(clientId?: string) {
   const supabase = await createClient();
-  const { count } = await supabase.from("customer_advances").select("id", { count: "exact", head: true });
+  let query = supabase.from("customer_advances").select("id", { count: "exact", head: true });
+  if (clientId) query = query.eq("client_id", clientId);
+  const { count } = await query;
   return count ?? 0;
 }
 

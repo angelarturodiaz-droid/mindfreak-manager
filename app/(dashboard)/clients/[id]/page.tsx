@@ -8,6 +8,7 @@ import {
   FileText,
   FolderKanban,
   FolderOpen,
+  HandCoins,
   Hash,
   LayoutDashboard,
   Mail,
@@ -66,6 +67,11 @@ import { ConfirmButton } from "@/components/ui/confirm-button";
 import { ActionButton } from "@/components/ui/action-button";
 import { ActionBlock } from "@/components/ui/action-block";
 import { DataTable, type Column } from "@/components/ui/data-table";
+import { Pagination } from "@/components/ui/pagination";
+import { InfoHint } from "@/components/ui/info-hint";
+import { parsePage } from "@/lib/utils/pagination";
+import { AdvanceTable } from "@/components/advances/advance-table";
+import { countAdvances, getAdvanceTotals, listAdvancesPage } from "@/features/advances/queries";
 
 const QUOTATION_STATUS_LABELS: Record<string, string> = {
   DRAFT: "Borrador",
@@ -92,6 +98,7 @@ const TABS = [
   { key: "cotizaciones", label: "Cotizaciones", icon: FileText },
   { key: "facturas", label: "Facturas", icon: Receipt },
   { key: "proyectos", label: "Proyectos", icon: FolderKanban },
+  { key: "anticipos", label: "Anticipos", icon: HandCoins },
   { key: "entregas", label: "Entregas", icon: PackageCheck },
   { key: "documentos", label: "Documentos", icon: FolderOpen },
 ] as const;
@@ -130,17 +137,22 @@ function MetricCard({
   value,
   hint,
   tone,
+  info,
 }: {
   label: string;
   value: string;
   hint?: React.ReactNode;
   tone?: "warning" | "danger";
+  info?: string;
 }) {
   const color =
     tone === "danger" ? "text-brand-danger" : tone === "warning" ? "text-brand-warning" : "text-brand-text";
   return (
     <Card className="@container flex min-w-0 flex-col gap-1.5">
-      <p className="text-sm font-medium text-brand-muted">{label}</p>
+      <p className="flex items-center gap-1 text-sm font-medium text-brand-muted">
+        {label}
+        {info && <InfoHint text={info} />}
+      </p>
       <p className={`whitespace-nowrap text-base @[12rem]:text-lg @[15rem]:text-xl font-semibold tracking-tight tabular-nums ${color}`}>{value}</p>
       {hint && <p className="text-xs text-brand-muted">{hint}</p>}
     </Card>
@@ -158,10 +170,11 @@ export default async function ClientDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; return_to?: string }>;
+  searchParams: Promise<{ tab?: string; return_to?: string; page?: string }>;
 }) {
   const { id } = await params;
-  const { tab, return_to } = await searchParams;
+  const { tab, return_to, page: pageParam } = await searchParams;
+  const page = parsePage(pageParam);
   // Si se abrió desde un proyecto, "volver" regresa ahí (y las pestañas lo conservan).
   const returnTo = safeReturnTo(return_to);
   const activeTab = TABS.some((t) => t.key === tab) ? (tab as string) : "resumen";
@@ -187,10 +200,18 @@ export default async function ClientDetailPage({
   // Historial de entregas (acuses de recibo) del cliente.
   const deliveries = canViewDeliveries ? await listDeliveriesForClient(id).catch(() => []) : [];
   const { totals } = activity;
+  // Anticipos del cliente: saldo a su favor (lo que adelantó y aún no se descuenta de una factura).
+  const [advanceTotals, advanceCount, advanceList, canRegisterAdvance] = await Promise.all([
+    getAdvanceTotals(id).catch(() => ({ sinAplicar: 0, sinAplicarCount: 0 })),
+    countAdvances(id).catch(() => 0),
+    activeTab === "anticipos" ? listAdvancesPage({ clientId: id, page }).catch(() => null) : null,
+    hasPermission("payments.create"),
+  ]);
   const tabCounts: Record<string, number | undefined> = {
     cotizaciones: activity.quotations.length,
     facturas: activity.invoices.length,
     proyectos: activity.projects.length,
+    anticipos: advanceCount,
     entregas: deliveries.length,
   };
 
@@ -504,7 +525,7 @@ export default async function ClientDetailPage({
       </Card>
 
       {/* Relación comercial en números */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <MetricCard
           label="Cotizado aprobado"
           value={formatMoney(totals.cotizadoAprobado)}
@@ -521,6 +542,21 @@ export default async function ClientDetailPage({
           label="Proyectos activos"
           value={String(totals.proyectosActivos)}
           hint={`${activity.projects.length} ${activity.projects.length === 1 ? "proyecto" : "proyectos"} en total`}
+        />
+        <MetricCard
+          label="Saldo a favor"
+          info="Dinero que el cliente adelantó (anticipos) y todavía no se ha descontado de una factura ni se le ha devuelto. Se descuenta en su próxima factura con «Aplicar anticipos»."
+          value={formatMoney(advanceTotals.sinAplicar)}
+          tone={advanceTotals.sinAplicar > 0.005 ? "warning" : undefined}
+          hint={
+            advanceTotals.sinAplicarCount > 0 ? (
+              <Link href={withReturnTo(`/clients/${id}?tab=anticipos`, returnTo)} className="text-brand-accent hover:underline">
+                {advanceTotals.sinAplicarCount} {advanceTotals.sinAplicarCount === 1 ? "anticipo" : "anticipos"} sin aplicar · ver
+              </Link>
+            ) : (
+              "Sin anticipos pendientes"
+            )
+          }
         />
       </section>
 
@@ -689,6 +725,42 @@ export default async function ClientDetailPage({
             emptyMessage="Este cliente no tiene proyectos todavía."
             maxWidth="max-w-none"
           />
+        </section>
+      ) : activeTab === "anticipos" ? (
+        <section className="flex flex-col gap-4">
+          <SectionHeader
+            title="Anticipos"
+            count={advanceCount}
+            description="Dinero que el cliente adelantó antes de la factura. Lo último registrado primero. «Disponible» es su saldo a favor: se descuenta en la factura con «Aplicar anticipos», o se le devuelve. Haz clic en el número para ver el recibo, devolverlo o pasarlo a otro proyecto."
+            action={
+              canRegisterAdvance ? (
+                <Link href={withReturnTo(`/advances/new?client=${client.id}`, `/clients/${client.id}?tab=anticipos`)}>
+                  <Button variant="outline" size="sm" icon={<Plus size={14} />}>
+                    Registrar anticipo
+                  </Button>
+                </Link>
+              ) : undefined
+            }
+          />
+          {advanceTotals.sinAplicar > 0.005 && (
+            <p className="max-w-3xl rounded-[var(--radius-md)] border border-brand-warning/30 bg-brand-warning-bg px-3 py-2 text-sm text-brand-text">
+              Este cliente tiene <strong>{formatMoney(advanceTotals.sinAplicar)}</strong> a su favor. Cuando le emitas una
+              factura en la misma moneda, ábrela y pulsa <strong>Aplicar anticipos</strong> para descontarlo.
+            </p>
+          )}
+          <AdvanceTable
+            rows={advanceList?.rows ?? []}
+            emptyMessage="Este cliente no tiene anticipos registrados."
+          />
+          {advanceList && (
+            <Pagination
+              basePath={`/clients/${client.id}`}
+              page={page}
+              pageSize={advanceList.pageSize}
+              total={advanceList.total}
+              params={{ tab: "anticipos", return_to: returnTo ?? undefined }}
+            />
+          )}
         </section>
       ) : activeTab === "entregas" ? (
         <section>

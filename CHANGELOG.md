@@ -2,6 +2,9 @@
 
 ## Ajustes durante la prueba BX (2026-10-29)
 
+- **Ficha del cliente → Anticipos** (30-oct): tarjeta **Saldo a favor** (anticipos sin aplicar del
+  cliente, con ⓘ) y pestaña **Anticipos** paginada con *Registrar anticipo* (cliente ya elegido). Antes, un
+  anticipo «solo del cliente» no se veía en ningún lugar fuera de Cobros y pagos.
 - **Número de proyecto estandarizado en PROY-** (decisión 29-oct): la Ayuda ya no menciona PROJ-. Los
   proyectos nuevos salen PROY- desde el 20-oct; los PROJ- que quedan son de prueba y se borran en la limpieza A1.
 - **Lo último registrado sale primero** en las listas de Proyectos (antes por fecha del evento:
