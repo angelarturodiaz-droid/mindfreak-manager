@@ -9,6 +9,10 @@
   (Planificación) o **Marcar en curso** (Confirmado); en En curso, qué falta para completarlo.
 - **Anticipo nuevo** en un proyecto en Planificación: pregunta «¿Pasamos el proyecto a
   Confirmado?» (Sí, confirmar / Ahora no).
+- **Tarjeta «Cobrado» del proyecto** (arriba y en Finanzas): ahora muestra todo el dinero que el
+  cliente ya entregó (anticipos + cobros de facturas); debajo «Anticipos RD$… (esperando la
+  factura)» y «Por cobrar…» (antes de facturar: «se sabe al facturar»). Antes decía RD$0 con
+  anticipos recibidos. La barra y «Por cobrar» siguen contra lo facturado.
 - **Bloques plegables**: el botón del bloque (Registrar anticipo, Nueva factura…) se ve aunque
   el bloque esté cerrado.
 

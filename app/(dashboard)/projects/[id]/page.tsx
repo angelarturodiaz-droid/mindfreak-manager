@@ -478,6 +478,21 @@ export default async function ProjectDetailPage({
   const estimatedMargin = linesBase > 0 ? ((linesBase - estimatedCostTotal) / linesBase) * 100 : null;
   // Por cobrar es dinero: se compara con lo facturado CON ITBIS.
   const porCobrar = Math.max(0, profitability.facturadoConItbis - profitability.cobrado);
+  // Tarjeta «Cobrado»: todo lo que el cliente entregó (anticipos + cobros) y, debajo, de dónde viene.
+  const cobradoHint = [
+    profitability.anticiposSinAplicar > 0
+      ? `Anticipos ${formatMoney(profitability.anticiposSinAplicar)} (esperando la factura)`
+      : null,
+    profitability.facturadoConItbis <= 0
+      ? profitability.recibidoCliente > 0
+        ? "Por cobrar: se sabe al facturar"
+        : "Nada facturado todavía"
+      : porCobrar > 0
+        ? `Por cobrar ${formatMoney(porCobrar)}`
+        : "Nada pendiente por cobrar",
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   const itemColumns: Column<ProjectItemRow>[] = [
     { header: "Descripción", accessor: (i) => <span className="text-brand-text">{i.description}</span> },
@@ -943,12 +958,10 @@ export default async function ProjectDetailPage({
         />
         <MetricCard
           label="Cobrado"
-          info="Dinero que el cliente ya pagó de las facturas de este proyecto (incluye los anticipos ya aplicados a una factura). La barra es la parte de lo facturado que ya se cobró. Los anticipos que esperan la factura salen aparte, debajo."
-          value={formatMoney(profitability.cobrado)}
+          info="Todo el dinero que el cliente ya pagó por este proyecto: anticipos y cobros de facturas (con ITBIS). Los anticipos todavía no son venta: cuentan como venta cuando se descuentan de la factura. La barra es la parte de lo facturado que ya está cubierta."
+          value={formatMoney(profitability.recibidoCliente)}
           pct={profitability.facturadoConItbis > 0 ? (profitability.cobrado / profitability.facturadoConItbis) * 100 : null}
-          hint={`${porCobrar > 0 ? `Por cobrar ${formatMoney(porCobrar)}` : "Nada pendiente por cobrar"}${
-            profitability.anticiposSinAplicar > 0 ? ` · + Anticipos sin aplicar ${formatMoney(profitability.anticiposSinAplicar)}` : ""
-          }`}
+          hint={cobradoHint}
         />
         <MetricCard
           label="Utilidad real"
@@ -1157,15 +1170,15 @@ export default async function ProjectDetailPage({
               />
               <KpiCard
                 label="Cobrado"
-                value={formatMoney(profitability.cobrado)}
-                hint={profitability.anticiposSinAplicar > 0 ? `+ Anticipos sin aplicar ${formatMoney(profitability.anticiposSinAplicar)}` : undefined}
-                info="Dinero que ya entró por las facturas de este proyecto (con ITBIS), incluidos los anticipos ya aplicados a una factura. Los anticipos que esperan la factura final no son venta todavía: salen aparte."
+                value={formatMoney(profitability.recibidoCliente)}
+                hint={profitability.anticiposSinAplicar > 0 ? `Incluye anticipos ${formatMoney(profitability.anticiposSinAplicar)} esperando la factura` : undefined}
+                info="Todo el dinero que el cliente ya pagó por este proyecto: anticipos y cobros de facturas (con ITBIS). Los anticipos todavía no son venta: cuentan como venta cuando se descuentan de la factura. La barra es la parte de lo facturado que ya está cubierta."
               />
               <KpiCard
                 label="Por cobrar"
                 value={formatMoney(porCobrar)}
                 danger={porCobrar > 0}
-                info="Lo que el cliente todavía debe de las facturas de este proyecto (facturado − cobrado)."
+                info="Lo que el cliente todavía debe de las facturas de este proyecto: lo facturado menos lo cobrado y menos los anticipos ya descontados. Los anticipos que esperan la factura se descuentan cuando la emitas."
               />
             </div>
           </FoldableSection>
@@ -1425,7 +1438,7 @@ export default async function ProjectDetailPage({
             icon={<Wallet size={16} />}
             count={customerPayments.length}
             info="El dinero que el cliente ya pagó por este proyecto, con la fecha y la cuenta donde entró."
-            summary={<span className="text-xs text-brand-muted">Cobrado {formatMoney(profitability.cobrado)}</span>}
+            summary={<span className="text-xs text-brand-muted">Cobrado de facturas {formatMoney(profitability.cobrado - profitability.anticiposAplicados)}</span>}
           >
             <DataTable columns={paymentColumns} rows={customerPayments} keyFor={(p) => p.id} emptyMessage="Sin cobros todavía." maxWidth="max-w-none" />
           </FoldableSection>

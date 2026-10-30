@@ -342,6 +342,8 @@ export async function getProjectProfitability(projectId: string) {
     /** Anticipos (V1-3): aplicados a facturas (ya dentro de «cobrado») y los que esperan la factura. */
     anticiposAplicados: anticipos.aplicado,
     anticiposSinAplicar: anticipos.sinAplicar,
+    /** Todo el dinero que el cliente ya entregó: cobros de facturas + anticipos (menos devoluciones). */
+    recibidoCliente: cobradoFacturas + anticipos.recibido,
     costoEstimado,
     /** Gastos sin ITBIS (costo para la rentabilidad). */
     costoReal: gastos.net,

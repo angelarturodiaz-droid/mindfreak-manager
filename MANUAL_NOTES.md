@@ -1191,3 +1191,6 @@ pulsa el botón.
 - `components/advances/confirm-project-prompt.tsx` en `/advances/[id]?nuevo=1` si el proyecto
   está en PLANNING y el usuario tiene `projects.update` (`getAdvance` trae `projects.status`).
 - `FoldableSection`: `action` siempre visible.
+- `getProjectProfitability.recibidoCliente` = cobros de facturas + anticipos recibidos (menos
+  devoluciones). La tarjeta «Cobrado» lo muestra; `cobrado` (cobros + anticipos aplicados) sigue
+  para la barra y «Por cobrar».
