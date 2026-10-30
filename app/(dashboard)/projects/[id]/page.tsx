@@ -430,25 +430,7 @@ export default async function ProjectDetailPage({
   const eventTime = formatEventTime(project.event_time);
   const isCancelled = project.status === "CANCELLED";
   const currentStep = PROJECT_FLOW.indexOf(project.status as (typeof PROJECT_FLOW)[number]);
-  // «Siguiente paso» del proyecto (como en las facturas): qué hacer ahora y, si aplica, el botón.
-  const projectNextStep: { text: string; to?: string; button?: string } | null =
-    project.status === "PLANNING"
-      ? {
-          text: "cuando el cliente confirme el evento (por ejemplo, al pagar el anticipo), márcalo como Confirmado. Puedes registrar anticipos desde ya, en Ventas y cobros.",
-          to: "CONFIRMED",
-          button: "Marcar como confirmado",
-        }
-      : project.status === "CONFIRMED"
-        ? {
-            text: "registra los anticipos que pague el cliente (Ventas y cobros) y reserva los proveedores. Cuando empiece el montaje o el evento, márcalo En curso.",
-            to: "IN_PROGRESS",
-            button: "Marcar en curso",
-          }
-        : project.status === "IN_PROGRESS"
-          ? {
-              text: "emite la factura final y aplica los anticipos (Ventas y cobros). Cuando termine el evento, pulsa «Completado» en el Avance del proyecto (ahí se ofrece enviar la encuesta).",
-            }
-          : null;
+
 
   // Cierre del proyecto: datos para "¿Deseas enviar la encuesta de satisfacción?"
   const showCloseDialog = canUpdate && !isCancelled && project.status !== "COMPLETED";
@@ -493,6 +475,45 @@ export default async function ProjectDetailPage({
   ]
     .filter(Boolean)
     .join(" · ");
+
+  // «Siguiente paso» del proyecto (como en las facturas): mira lo que realmente falta.
+  const eventDateText = project.event_date ? formatDate(project.event_date) : null;
+  const projectNextStep: { text: string; to?: string; button?: string; complete?: boolean } | null =
+    project.status === "PLANNING"
+      ? {
+          text: `cuando el cliente confirme el evento (por ejemplo, al pagar el anticipo), márcalo como Confirmado. Puedes registrar anticipos desde ya, en Ventas y cobros.${
+            eventDateText ? "" : " Ponle fecha al evento (abajo, en Detalles del evento)."
+          }`,
+          to: "CONFIRMED",
+          button: "Marcar como confirmado",
+        }
+      : project.status === "CONFIRMED"
+        ? {
+            text: `registra los anticipos y reserva los proveedores. ${
+              eventDateText
+                ? `El ${eventDateText} (día del evento) pasará solo a En curso; si empieza antes, márcalo tú.`
+                : "Ponle fecha al evento para que pase solo a En curso ese día, o márcalo tú cuando empiece."
+            }`,
+            to: "IN_PROGRESS",
+            button: "Marcar en curso",
+          }
+        : project.status === "IN_PROGRESS"
+          ? billing.state === "pending"
+            ? {
+                text: `emite la factura de lo que falta por facturar (${formatMoney(billing.restante)})${
+                  profitability.anticiposSinAplicar > 0 ? " y aplica los anticipos" : ""
+                } en Ventas y cobros.`,
+              }
+            : profitability.anticiposSinAplicar > 0
+              ? { text: `aplica los anticipos (${formatMoney(profitability.anticiposSinAplicar)}) en la factura: ábrela y pulsa «Aplicar anticipos».` }
+              : porCobrar > 0
+                ? { text: `cobra lo pendiente (${formatMoney(porCobrar)}): abre la factura y usa «Registrar cobro».` }
+                : {
+                    text: "todo facturado y cobrado ✓. Cuando termine el evento, márcalo Completado (se ofrece enviar la encuesta).",
+                    complete: true,
+                    button: "Marcar como completado",
+                  }
+          : null;
 
   const itemColumns: Column<ProjectItemRow>[] = [
     { header: "Descripción", accessor: (i) => <span className="text-brand-text">{i.description}</span> },
@@ -911,6 +932,25 @@ export default async function ProjectDetailPage({
                 <div className="flex-1">
                   <NextStepBar>{projectNextStep.text}</NextStepBar>
                 </div>
+                {canUpdate && projectNextStep.complete && (
+                  <CompleteProjectStep
+                    projectId={project.id}
+                    title="Marcar como completado"
+                    className="inline-flex shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-brand-primary px-3 py-1.5 text-sm font-medium text-white hover:opacity-90"
+                    canSend={canSendSurvey}
+                    sendByDefault={surveySettings?.send_by_default ?? true}
+                    recipientName={surveyRecipient?.name ?? null}
+                    recipientEmail={surveyRecipient?.email ?? null}
+                    recipientPhone={surveyRecipient?.phone ?? null}
+                    existing={
+                      activeSurvey
+                        ? { status: activeSurvey.status, date: activeSurvey.responded_at ?? activeSurvey.sent_at }
+                        : null
+                    }
+                  >
+                    Marcar como completado
+                  </CompleteProjectStep>
+                )}
                 {canUpdate && projectNextStep.to && (
                   <ActionButton
                     label={projectNextStep.button!}

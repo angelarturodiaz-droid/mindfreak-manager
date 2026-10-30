@@ -22,6 +22,11 @@
 - **Registrar cobro**: si el saldo de la factura cambia (al aplicar o quitar un anticipo), el
   monto vuelve a empezar con el saldo nuevo; si el monto pasa del saldo sale en rojo «Es más de lo
   que falta por cobrar…» (antes el botón solo se desactivaba sin explicar).
+- **Proyecto pasa solo a En curso** el día del evento (migración **092**, tarea diaria de las
+  4:00 a. m.): aviso al responsable y Auditoría «automático». Sin fecha no se mueve.
+- **Factura de un proyecto en Confirmado**: pregunta «¿El evento ya empezó? ¿Pasamos a En curso?».
+- **«Siguiente paso» del proyecto** según lo que falta (facturar, aplicar anticipos, cobrar); todo
+  listo → «todo facturado y cobrado ✓» con **Marcar como completado**. Aviso si falta la fecha.
 - **Bloques plegables**: el botón del bloque (Registrar anticipo, Nueva factura…) se ve aunque
   el bloque esté cerrado.
 

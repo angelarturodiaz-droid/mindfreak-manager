@@ -56,6 +56,8 @@ import { NewInvoiceItemForm } from "./new-item-form";
 import { InvoiceHeaderForm } from "./invoice-header-form";
 import { RegisterPaymentForm } from "./register-payment-form";
 import { ApplyAdvancesForm } from "./apply-advances-form";
+import { ConfirmProjectPrompt } from "@/components/advances/confirm-project-prompt";
+import { getProjectStatus } from "@/features/projects/queries";
 import { CopyProjectLinesButton } from "./copy-project-lines-button";
 import { listApplicableAdvances, listInvoiceAdvanceApplications, advanceTargetOf } from "@/features/advances/queries";
 import { VoidApplicationButton } from "@/components/advances/void-application-button";
@@ -169,6 +171,13 @@ export default async function InvoiceDetailPage({
     ]);
   // Anular retenciones del cliente (migración 083).
   const canVoid = await hasPermission("payments.void");
+  // Proyecto en Confirmado con factura emitida: preguntar si ya está En curso (29-oct).
+  const [canUpdateProject, projectStatus] = invoice.project_id
+    ? await Promise.all([
+        hasPermission("projects.update"),
+        getProjectStatus(invoice.project_id).catch(() => null),
+      ])
+    : [false, null];
   // Anticipos (V1-3): los que se pueden aplicar a esta factura y los ya aplicados.
   const invoiceOpen = ["ISSUED", "PARTIALLY_PAID", "OVERDUE"].includes(invoice.status) && invoice.balance > 0;
   const [applicableAdvances, advanceApplications] = await Promise.all([
@@ -724,6 +733,10 @@ export default async function InvoiceDetailPage({
 
       {projectBilling && (
         <BillingNotice progress={projectBilling} context="invoice" projectLabel={project?.number} />
+      )}
+
+      {projectStatus === "CONFIRMED" && invoice.status !== "DRAFT" && invoice.status !== "CANCELLED" && canUpdateProject && invoice.project_id && (
+        <ConfirmProjectPrompt projectId={invoice.project_id} projectNumber={project?.number ?? "el proyecto"} to="IN_PROGRESS" />
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

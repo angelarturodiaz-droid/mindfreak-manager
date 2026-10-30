@@ -502,3 +502,10 @@ export async function listProjectIncentives(projectId: string) {
   if (error) throw new Error(error.message);
   return data ?? [];
 }
+
+/** Solo el estado del proyecto (ej. para preguntar en la factura si ya está En curso). */
+export async function getProjectStatus(projectId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("projects").select("status").eq("id", projectId).maybeSingle();
+  return (data?.status as string | undefined) ?? null;
+}

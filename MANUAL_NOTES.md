@@ -1201,3 +1201,9 @@ pulsa el botón.
 - Migración **091** (`alter function … set timezone = 'America/Santo_Domingo'`): apply/refund/
   transfer_customer_advance, release_advances_on_invoice_cancel, generate_due_date_alerts y
   reminders_*. Numeración: respaldo A0 = **092**, limpieza A1 = **093**.
+- Migración **092**: `start_projects_on_event_date()` (CONFIRMED con `event_date <= hoy` → IN_PROGRESS,
+  notificación `project_started` al `manager_id`, audit `STATUS_IN_PROGRESS` con `automatico`).
+  La tarea cron `generate-due-date-alerts-daily` (08:00 UTC) ahora la llama también.
+  Numeración: respaldo A0 = **093**, limpieza A1 = **094**.
+- `ConfirmProjectPrompt` acepta `to` (CONFIRMED / IN_PROGRESS); en la factura sale si el proyecto
+  está en CONFIRMED y la factura ya se emitió (`getProjectStatus`).
