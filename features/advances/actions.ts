@@ -6,6 +6,7 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { bankRuleState, overdraftConfirmed, type MoneyActionState } from "@/lib/utils/bank-errors";
 import { formatMoney } from "@/lib/utils/money";
+import { todayISO } from "@/lib/utils/dates";
 import { foreignPaymentErrorState, foreignPaymentRpcParams, parseForeignPayment } from "@/features/payments/schema";
 import type { AdvanceReceiptPdfData } from "@/lib/pdf/advance-receipt-document";
 import { advanceErrorMessage, advanceReceiptSummary, advanceSchema, parseTarget } from "./schema";
@@ -103,7 +104,8 @@ export async function applyAdvancesAction(
   if (items.length === 0) return { error: "Marca al menos un anticipo y escribe cuánto aplicar." };
 
   const supabase = await createSupabaseClient();
-  const date = String(formData.get("apply_date") ?? "") || null;
+  // Fecha de hoy en República Dominicana (la base de datos usa UTC: de noche saldría el día siguiente).
+  const date = String(formData.get("apply_date") ?? "") || todayISO();
   let total = 0;
   for (const it of items) {
     const { error } = await supabase.rpc("apply_customer_advance", {
@@ -179,7 +181,7 @@ export async function refundAdvanceAction(
   const { error } = await supabase.rpc("refund_customer_advance", {
     p_advance_id: advanceId,
     p_amount: amount,
-    p_date: date || null,
+    p_date: date || todayISO(),
     p_bank_account_id: accountId,
     p_reason: reason,
     p_account_amount: accountAmountRaw ? Number(accountAmountRaw) : null,
