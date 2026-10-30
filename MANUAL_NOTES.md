@@ -1163,6 +1163,8 @@ pulsa el botón.
   EXPENSE «Devolución a cliente»; si la cuenta es de otra moneda pide lo que salió.
 - `transfer_customer_advance` (`payments.void`): solo sin nada aplicado; mismo cliente,
   cotización aprobada en la misma moneda, proyecto no cancelado, o «solo el cliente».
+- Formulario de anticipo (30-oct): destino «lleno» (`received >= totalQuoted`) deshabilitado; con una sola
+  opción elegible se usa sola (`effectiveTarget`); `return_to` define el texto de volver.
 - Ficha del cliente (30-oct): tarjeta «Saldo a favor» = `getAdvanceTotals(clientId)` (disponible ×
   tasa del anticipo, en pesos); pestaña `?tab=anticipos` con `listAdvancesPage({ clientId })`.
 - Triggers: factura → CANCELLED anula sus aplicaciones (vuelven al anticipo); cotización con

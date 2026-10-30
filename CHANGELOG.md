@@ -2,6 +2,9 @@
 
 ## Ajustes durante la prueba BX (2026-10-29)
 
+- **Registrar anticipo** (30-oct): los proyectos/cotizaciones ya pagados completos salen en gris y no se
+  pueden elegir; si solo queda «Sin cotización ni proyecto», se marca sola; desde la ficha del cliente el
+  enlace dice «Volver al cliente» (y se corrigió «Volver a el proyecto» → «al proyecto») y regresa a su pestaña Anticipos.
 - **Ficha del cliente → Anticipos** (30-oct): tarjeta **Saldo a favor** (anticipos sin aplicar del
   cliente, con ⓘ) y pestaña **Anticipos** paginada con *Registrar anticipo* (cliente ya elegido). Antes, un
   anticipo «solo del cliente» no se veía en ningún lugar fuera de Cobros y pagos.

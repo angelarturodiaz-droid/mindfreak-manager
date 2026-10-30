@@ -26,7 +26,18 @@ export default async function NewAdvancePage({
   const returnTo = safeReturnTo(sp.return_to);
   const backHref =
     returnTo ?? (sp.project ? `/projects/${sp.project}?tab=ventas` : sp.quotation ? `/quotations/${sp.quotation}` : "/payments?tab=anticipos");
-  const backLabel = sp.project ? "el proyecto" : sp.quotation ? "la cotización" : "Cobros y pagos";
+  // «Volver a …»: si se llegó desde otra ficha (ej. el cliente), regresa ahí y lo dice.
+  const backLabel = returnTo
+    ? returnTo.startsWith("/clients/")
+      ? "al cliente"
+      : returnTo.startsWith("/projects/")
+        ? "al proyecto"
+        : "al proveedor"
+    : sp.project
+      ? "al proyecto"
+      : sp.quotation
+        ? "a la cotización"
+        : "a Cobros y pagos";
 
   const [clients, targets, bankAccounts, funds, fxContext] = await Promise.all([
     listActiveClients(),
@@ -44,7 +55,7 @@ export default async function NewAdvancePage({
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
       <Link href={backHref} className="inline-flex w-fit items-center gap-1 text-sm text-brand-muted hover:text-brand-text">
-        <ArrowLeft size={14} /> Volver a {backLabel}
+        <ArrowLeft size={14} /> Volver {backLabel}
       </Link>
       <div>
         <h1 className="text-xl font-semibold text-brand-primary">Registrar anticipo</h1>

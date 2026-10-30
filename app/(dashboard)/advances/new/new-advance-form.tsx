@@ -89,7 +89,13 @@ export function NewAdvanceForm({
         },
       ]
     : [];
-  const chosen = options.find((o) => o.value === target) ?? null;
+  // Un proyecto o cotización ya pagado completo no admite más anticipo: sale en gris.
+  const isFull = (o: AdvanceTargetOption) => o.totalQuoted !== null && o.received >= o.totalQuoted - 0.005;
+  const selectable = options.filter((o) => !isFull(o));
+  const pickedValid = target && selectable.some((o) => o.value === target) ? target : "";
+  // Si solo queda una opción posible (ej. «Sin cotización ni proyecto»), se marca sola.
+  const effectiveTarget = pickedValid || (selectable.length === 1 ? selectable[0].value : "");
+  const chosen = options.find((o) => o.value === effectiveTarget) ?? null;
   const currency = chosen?.currency ?? freeCurrency;
   const account = bankAccounts.find((b) => b.id === accountId);
   const foreign = Boolean(account && account.currency !== currency);
@@ -116,7 +122,7 @@ export function NewAdvanceForm({
   return (
     <form action={formAction} className="space-y-6">
       <input type="hidden" name="client_id" value={clientId} />
-      <input type="hidden" name="target" value={target} />
+      <input type="hidden" name="target" value={effectiveTarget} />
       <input type="hidden" name="currency" value={currency} />
       <input type="hidden" name="before_cutoff" value={isBeforeCutoff ? "1" : "0"} />
 
@@ -142,12 +148,18 @@ export function NewAdvanceForm({
             </p>
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
               {options.map((o) => {
-                const active = o.value === target;
+                const active = o.value === effectiveTarget;
+                const full = isFull(o);
                 return (
                   <label
                     key={o.value}
-                    className={`flex cursor-pointer items-start gap-3 rounded-[var(--radius-md)] border px-3 py-2.5 text-sm transition-colors ${
-                      active ? "border-brand-accent bg-brand-accent-light" : "border-brand-border hover:bg-brand-surface-hover"
+                    title={full ? "Ya está pagado completo: no admite más anticipo." : undefined}
+                    className={`flex items-start gap-3 rounded-[var(--radius-md)] border px-3 py-2.5 text-sm transition-colors ${
+                      full
+                        ? "cursor-not-allowed border-brand-border bg-brand-surface-hover opacity-60"
+                        : active
+                          ? "cursor-pointer border-brand-accent bg-brand-accent-light"
+                          : "cursor-pointer border-brand-border hover:bg-brand-surface-hover"
                     }`}
                   >
                     <input
@@ -155,6 +167,7 @@ export function NewAdvanceForm({
                       name="target_pick"
                       className="mt-1"
                       checked={active}
+                      disabled={full}
                       onChange={() => setTarget(o.value)}
                     />
                     <span className="mt-0.5 text-brand-accent">{KIND_ICON[o.kind]}</span>
@@ -167,11 +180,22 @@ export function NewAdvanceForm({
                           {o.received > 0 ? ` · ya pagado (anticipos y cobros) ${formatMoney(o.received, o.currency)}` : ""}
                         </span>
                       )}
+                      {full && (
+                        <span className="mt-0.5 block text-xs font-medium text-brand-text">
+                          Ya está pagado completo: no admite más anticipo.
+                        </span>
+                      )}
                     </span>
                   </label>
                 );
               })}
             </div>
+            {clientTargets.length > 0 && selectable.length === 1 && (
+              <p className="mt-2 text-xs text-brand-muted">
+                Sus proyectos y cotizaciones ya están pagados completos, así que el anticipo queda como «Sin cotización
+                ni proyecto» (a favor del cliente). Luego lo puedes pasar a un evento nuevo.
+              </p>
+            )}
             {clientTargets.length === 0 && (
               <p className="mt-2 text-xs text-brand-muted">
                 Este cliente no tiene proyectos ni cotizaciones aprobadas. Puedes registrar el anticipo «sin cotización ni
@@ -367,7 +391,7 @@ export function NewAdvanceForm({
           href={backHref}
           className="inline-flex items-center rounded-[var(--radius-md)] px-3 py-2 text-sm text-brand-muted hover:bg-brand-surface-hover hover:text-brand-text"
         >
-          Cancelar y volver a {backLabel}
+          Cancelar y volver {backLabel}
         </Link>
         <Button type="submit" loading={pending} disabled={!chosen || amount <= 0 || exceeds}>
           Registrar anticipo
