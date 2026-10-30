@@ -64,6 +64,7 @@ import { DocumentList } from "@/components/documents/document-list";
 import { UploadDocumentForm } from "@/components/documents/upload-document-form";
 import { listDocuments } from "@/features/documents/queries";
 import { listTasks } from "@/features/tasks/queries";
+import { NextStepBar } from "@/components/documents/doc-layout";
 import { listProjectAdvances } from "@/features/advances/queries";
 import { AdvanceTable } from "@/components/advances/advance-table";
 import { NewTaskForm } from "@/components/tasks/new-task-form";
@@ -429,6 +430,25 @@ export default async function ProjectDetailPage({
   const eventTime = formatEventTime(project.event_time);
   const isCancelled = project.status === "CANCELLED";
   const currentStep = PROJECT_FLOW.indexOf(project.status as (typeof PROJECT_FLOW)[number]);
+  // «Siguiente paso» del proyecto (como en las facturas): qué hacer ahora y, si aplica, el botón.
+  const projectNextStep: { text: string; to?: string; button?: string } | null =
+    project.status === "PLANNING"
+      ? {
+          text: "cuando el cliente confirme el evento (por ejemplo, al pagar el anticipo), márcalo como Confirmado. Puedes registrar anticipos desde ya, en Ventas y cobros.",
+          to: "CONFIRMED",
+          button: "Marcar como confirmado",
+        }
+      : project.status === "CONFIRMED"
+        ? {
+            text: "registra los anticipos que pague el cliente (Ventas y cobros) y reserva los proveedores. Cuando empiece el montaje o el evento, márcalo En curso.",
+            to: "IN_PROGRESS",
+            button: "Marcar en curso",
+          }
+        : project.status === "IN_PROGRESS"
+          ? {
+              text: "emite la factura final y aplica los anticipos (Ventas y cobros). Cuando termine el evento, pulsa «Completado» en el Avance del proyecto (ahí se ofrece enviar la encuesta).",
+            }
+          : null;
 
   // Cierre del proyecto: datos para "¿Deseas enviar la encuesta de satisfacción?"
   const showCloseDialog = canUpdate && !isCancelled && project.status !== "COMPLETED";
@@ -871,6 +891,22 @@ export default async function ProjectDetailPage({
                 );
               })}
             </ol>
+            {projectNextStep && (
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="flex-1">
+                  <NextStepBar>{projectNextStep.text}</NextStepBar>
+                </div>
+                {canUpdate && projectNextStep.to && (
+                  <ActionButton
+                    label={projectNextStep.button!}
+                    variant="primary"
+                    onAction={updateProjectStatusAction.bind(null, project.id, projectNextStep.to)}
+                    successMessage={`Proyecto marcado como ${PROJECT_STATUS_LABELS[projectNextStep.to]}.`}
+                    hint="Cambia el estado del proyecto (lo mismo que pulsar el paso en el Avance del proyecto)."
+                  />
+                )}
+              </div>
+            )}
           </div>
         )}
       </Card>

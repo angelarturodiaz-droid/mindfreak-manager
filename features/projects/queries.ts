@@ -23,9 +23,8 @@ export async function listProjects(filters: ProjectListFilters = {}) {
       "id, number, name, status, event_date, event_time, location_name, budget, client_id, clients(name)",
       { count: "exact" },
     )
-    // Más reciente primero (fecha del evento), igual que el resto de listas.
-    .order("event_date", { ascending: false, nullsFirst: false })
-    .order("number", { ascending: false })
+    // Lo último que se registró sale primero (mismo criterio en todas las listas).
+    .order("created_at", { ascending: false })
     .range(from, to);
 
   if (filters.status) query = query.eq("status", filters.status);
@@ -234,8 +233,8 @@ export async function listConvertibleQuotations(page = 1): Promise<{
     .select("id, number, total, currency, clients(name)", { count: "exact" })
     .eq("status", "APPROVED")
     .is("project_id", null)
-    .order("issue_date", { ascending: false })
-    .order("number", { ascending: false })
+    // Lo último que se registró sale primero (mismo criterio en todas las listas).
+    .order("created_at", { ascending: false })
     .range(from, from + CONVERTIBLE_PAGE_SIZE - 1);
   if (invoicedIds.length) query = query.not("id", "in", `(${invoicedIds.join(",")})`);
   const { data, error, count } = await query;

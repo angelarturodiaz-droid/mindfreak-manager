@@ -21,8 +21,8 @@ export async function listQuotations(filters: QuotationListFilters = {}) {
     .select("id, number, status, total, currency, issue_date, valid_until, duplicated_from_id, project_id, project:projects!project_id(number, name), clients(name)", {
       count: "exact",
     })
-    .order("issue_date", { ascending: false })
-    .order("number", { ascending: false })
+    // Lo último que se registró sale primero (mismo criterio en todas las listas).
+    .order("created_at", { ascending: false })
     .range(from, to);
 
   // "Expirada" se calcula por la validez (ver expired.ts). Enviada, Vista y En

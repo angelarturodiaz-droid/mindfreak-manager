@@ -24,7 +24,7 @@ export async function listExpenses(filters: ExpenseListFilters = {}) {
       "id, expense_date, description, subtotal, tax, total, balance, status, currency, fiscal_status, total_withheld, expense_categories(name), suppliers(name), projects(number, name)",
       { count: "exact" },
     )
-    .order("expense_date", { ascending: false })
+    // Lo último que se registró sale primero (mismo criterio en todas las listas).
     .order("created_at", { ascending: false })
     .range(from, to);
 

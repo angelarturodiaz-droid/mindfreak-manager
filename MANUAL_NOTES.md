@@ -1182,3 +1182,12 @@ pulsa el botón.
   destacado arriba (`components/ui/dismissible-tip.tsx`, localStorage `mf.tip.gasto.pago-por-partes`).
 - `register-supplier-payment-form.tsx`: en «Datos del pago», línea con ⓘ; si `amount < balance`,
   recuadro «Pago parcial» con lo que faltará (y, con retenciones, que los pagos van contra el neto).
+
+## 2026-10-29 — Ajustes durante la prueba BX
+
+- Orden de listas: `.order("created_at", desc)` en projects, quotations, invoices, expenses,
+  customer/supplier payments, advances, suppliers, deliveries y cotizaciones por convertir.
+- Proyecto: `projectNextStep` según estado + `ActionButton` → `updateProjectStatusAction`.
+- `components/advances/confirm-project-prompt.tsx` en `/advances/[id]?nuevo=1` si el proyecto
+  está en PLANNING y el usuario tiene `projects.update` (`getAdvance` trae `projects.status`).
+- `FoldableSection`: `action` siempre visible.

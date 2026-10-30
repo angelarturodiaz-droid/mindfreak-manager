@@ -18,7 +18,8 @@ export async function listSuppliers(filters: SupplierListFilters = {}) {
     .select("id, name, tax_id, category, service_type, email, phone, bank_name, is_active, created_at", {
       count: "exact",
     })
-    .order("name", { ascending: true })
+    // Lo último que se registró sale primero (mismo criterio en todas las listas).
+    .order("created_at", { ascending: false })
     .range(from, to);
 
   // Con o sin tildes.

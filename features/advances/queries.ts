@@ -9,7 +9,7 @@ import { relationRow } from "@/lib/utils/relation";
  */
 
 const ADVANCE_SELECT =
-  "id, number, client_id, project_id, quotation_id, receipt_date, created_at, currency, exchange_rate, amount, applied_amount, refunded_amount, available_amount, before_cutoff, method, reference, notes, bank_account_id, account_currency, account_amount, bank_fee_amount, clients(name), projects(number, name), quotations(number), bank_accounts(name, bank_name)";
+  "id, number, client_id, project_id, quotation_id, receipt_date, created_at, currency, exchange_rate, amount, applied_amount, refunded_amount, available_amount, before_cutoff, method, reference, notes, bank_account_id, account_currency, account_amount, bank_fee_amount, clients(name), projects(number, name, status), quotations(number), bank_accounts(name, bank_name)";
 
 export type AdvanceRow = {
   id: string;
@@ -79,7 +79,6 @@ export async function listAdvancesPage(filters: { search?: string; page?: number
   let query = supabase
     .from("customer_advances")
     .select(ADVANCE_SELECT, { count: "exact" })
-    .order("receipt_date", { ascending: false })
     .order("created_at", { ascending: false })
     .range(from, to);
   if (filters.onlyAvailable) query = query.gt("available_amount", 0);

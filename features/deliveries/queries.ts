@@ -28,8 +28,8 @@ export async function listDeliveries(filters: DeliveryListFilters = {}) {
       "id, number, status, delivery_type, delivery_date, reference, recipient_name, signed_at, client_id, clients(name), projects(number, name), delivery_receipt_items(quantity)",
       { count: "exact" },
     )
-    .order("delivery_date", { ascending: false })
-    .order("number", { ascending: false });
+    // Lo último que se registró sale primero.
+    .order("created_at", { ascending: false });
 
   if (filters.status) query = query.eq("status", filters.status);
   if (filters.clientId) query = query.eq("client_id", filters.clientId);
@@ -93,8 +93,8 @@ export async function listDeliveriesForClient(clientId: string) {
     .from("delivery_receipts")
     .select("id, number, status, delivery_type, delivery_date, reference, signed_at, received_by_name, delivery_receipt_items(quantity)")
     .eq("client_id", clientId)
-    .order("delivery_date", { ascending: false })
-    .order("number", { ascending: false });
+    // Lo último que se registró sale primero.
+    .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return data ?? [];
 }

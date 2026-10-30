@@ -97,7 +97,7 @@ export function FoldableSection({
         </div>
         <div className="flex flex-wrap items-center gap-3 text-sm">
           {summary}
-          {open ? action : null}
+          {action}
           {!open && (
             <button type="button" onClick={toggle} className="text-xs text-brand-accent hover:underline">
               Ver

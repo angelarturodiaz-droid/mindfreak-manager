@@ -22,8 +22,7 @@ export async function listInvoices(filters: InvoiceListFilters = {}) {
       "id, number, status, total, paid_amount, balance, currency, issue_date, due_date, duplicated_from_id, sent_to_client_at, project_id, quotation_id, project:projects!project_id(number, name), origin_quotation:quotations!quotation_id(number), clients(name)",
       { count: "exact" },
     )
-    .order("issue_date", { ascending: false })
-    // Mismo día: la más reciente primero (no por texto: «INV-» quedaría antes que «FAC-»).
+    // Lo último que se registró sale primero (mismo criterio en todas las listas).
     .order("created_at", { ascending: false })
     .range(from, to);
 

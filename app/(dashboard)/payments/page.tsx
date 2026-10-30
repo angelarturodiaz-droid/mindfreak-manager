@@ -303,7 +303,7 @@ export default async function PaymentsPage({
               title={onlyAvailable ? "Anticipos con saldo disponible" : "Todos los anticipos"}
               description={
                 <>
-                  Del más reciente al más antiguo ·{" "}
+                  Lo último registrado primero ·{" "}
                   <Link
                     href={`/payments?tab=anticipos${onlyAvailable ? "&ver=todos" : ""}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
                     className="text-brand-accent hover:underline"
@@ -339,7 +339,7 @@ export default async function PaymentsPage({
         <section>
           <SectionHeader
             title="Cobros de clientes"
-            description="Del más reciente al más antiguo."
+            description="Lo último registrado primero."
           />
           <DataTable
             columns={paymentColumns}
@@ -356,7 +356,7 @@ export default async function PaymentsPage({
         <section>
           <SectionHeader
             title="Pagos a proveedores"
-            description="Del más reciente al más antiguo."
+            description="Lo último registrado primero."
           />
           <DataTable
             columns={supplierPaymentColumns}

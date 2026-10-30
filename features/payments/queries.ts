@@ -42,7 +42,7 @@ export async function listCustomerPaymentsPage(filters: { search?: string; page?
       "id, invoice_id, payment_date, created_at, amount, withholding_total, method, invoices(number, currency), clients(name), bank_accounts(name, bank_name)",
       { count: "exact" },
     )
-    .order("payment_date", { ascending: false })
+    // Lo último que se registró sale primero.
     .order("created_at", { ascending: false })
     .range(from, to);
   if (filters.search) {
@@ -67,7 +67,7 @@ export async function listSupplierPaymentsPage(filters: { search?: string; page?
       "id, expense_id, payment_date, created_at, amount, method, expenses(description), suppliers(name), bank_accounts(name, bank_name)",
       { count: "exact" },
     )
-    .order("payment_date", { ascending: false })
+    // Lo último que se registró sale primero.
     .order("created_at", { ascending: false })
     .range(from, to);
   if (filters.search) {

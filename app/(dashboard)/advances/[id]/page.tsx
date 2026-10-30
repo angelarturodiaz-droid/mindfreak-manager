@@ -32,6 +32,7 @@ import { AdvanceReceiptButton } from "@/components/advances/advance-receipt-butt
 import { VoidApplicationButton } from "@/components/advances/void-application-button";
 import { RefundAdvanceForm } from "@/components/advances/refund-advance-form";
 import { TransferAdvanceForm } from "@/components/advances/transfer-advance-form";
+import { ConfirmProjectPrompt } from "@/components/advances/confirm-project-prompt";
 
 /** Detalle de un anticipo: recibo, cuánto queda, historial y acciones. */
 export default async function AdvanceDetailPage({
@@ -46,12 +47,14 @@ export default async function AdvanceDetailPage({
   const advance = await getAdvance(id).catch(() => null);
   if (!advance) notFound();
 
-  const [movements, invoices, canVoid, canPay] = await Promise.all([
+  const [movements, invoices, canVoid, canPay, canUpdateProject] = await Promise.all([
     listAdvanceMovements(id),
     listInvoicesForAdvance(advance),
     hasPermission("payments.void"),
     hasPermission("payments.create"),
+    hasPermission("projects.update"),
   ]);
+  const projectRow = relationRow<{ number: string; status: string }>(advance.projects);
   const available = Number(advance.available_amount);
   const canAct = canVoid && available > 0.005;
   const canTransfer = canAct && Number(advance.applied_amount) <= 0.005;
@@ -157,7 +160,12 @@ export default async function AdvanceDetailPage({
           title={`Anticipo ${advance.number} registrado`}
           description="Descarga el recibo y envíaselo al cliente. Cuando emitas la factura final, ábrela y pulsa «Aplicar anticipos» para descontarlo."
         >
-          <AdvanceReceiptButton advanceId={advance.id} variant="button" label="Descargar recibo de anticipo" />
+          <div className="flex flex-col gap-3">
+            <AdvanceReceiptButton advanceId={advance.id} variant="button" label="Descargar recibo de anticipo" />
+            {advance.project_id && projectRow?.status === "PLANNING" && canUpdateProject && (
+              <ConfirmProjectPrompt projectId={advance.project_id} projectNumber={projectRow.number} />
+            )}
+          </div>
         </Callout>
       )}
 

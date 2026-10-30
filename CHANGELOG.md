@@ -1,5 +1,17 @@
 # CHANGELOG — Mindfreak Manager
 
+## Ajustes durante la prueba BX (2026-10-29)
+
+- **Lo último registrado sale primero** en las listas de Proyectos (antes por fecha del evento:
+  los proyectos sin fecha quedaban al final), Cotizaciones, Facturas, Gastos, Cobros y pagos,
+  Anticipos, Proveedores (antes por nombre), Entregas y las cotizaciones por convertir.
+- **Proyecto → «Siguiente paso»** debajo del Avance, con botón **Marcar como confirmado**
+  (Planificación) o **Marcar en curso** (Confirmado); en En curso, qué falta para completarlo.
+- **Anticipo nuevo** en un proyecto en Planificación: pregunta «¿Pasamos el proyecto a
+  Confirmado?» (Sí, confirmar / Ahora no).
+- **Bloques plegables**: el botón del bloque (Registrar anticipo, Nueva factura…) se ve aunque
+  el bloque esté cerrado.
+
 ## Anticipos a proveedores: cómo registrarlos hoy (2026-10-27)
 
 - **Nuevo gasto**: arriba del formulario, consejo azul destacado «¿Le vas a pagar al proveedor por
