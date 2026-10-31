@@ -228,6 +228,15 @@ export default async function ClientDetailPage({
         ? convertClientToClientAction.bind(null, client.id)
         : null;
 
+  // Vínculos para «Viene de» (facturas) y «Se convirtió en» (cotizaciones).
+  const projectById = new Map(activity.projects.map((p) => [p.id, p]));
+  const quotationById = new Map(activity.quotations.map((q) => [q.id, q]));
+  const docLink = (href: string, label: string, title: string) => (
+    <Link key={href} href={href} title={title} className="whitespace-nowrap text-brand-accent hover:underline">
+      {label}
+    </Link>
+  );
+
   const quotationColumns: Column<QuotationRow>[] = [
     {
       header: "Número",
@@ -239,6 +248,27 @@ export default async function ClientDetailPage({
     },
     { header: "Fecha", accessor: (q) => <span className="text-brand-muted">{q.issue_date}</span> },
     { header: "Estado", accessor: (q) => <Badge status={q.status}>{QUOTATION_STATUS_LABELS[q.status] ?? q.status}</Badge> },
+    {
+      header: "Se convirtió en",
+      info: "El proyecto y las facturas que salieron de esta cotización. «Sin facturar» = aprobada pero todavía sin factura.",
+      accessor: (q) => {
+        const project = q.project_id ? projectById.get(q.project_id) : null;
+        const invoices = activity.invoices.filter(
+          (inv) =>
+            inv.status !== "CANCELLED" &&
+            (inv.quotation_id === q.id || (q.project_id && inv.project_id === q.project_id)),
+        );
+        const links = [
+          ...(project ? [docLink(`/projects/${project.id}`, project.number, `Proyecto: ${project.name}`)] : []),
+          ...invoices.map((inv) => docLink(`/invoices/${inv.id}`, inv.number, "Factura")),
+        ];
+        if (links.length > 0)
+          return <span className="flex flex-wrap items-center gap-x-1.5 text-sm">{links.flatMap((l, i) => (i ? [<span key={`s${i}`} className="text-brand-muted">·</span>, l] : [l]))}</span>;
+        return (
+          <span className="text-xs text-brand-muted">{q.status === "APPROVED" ? "Sin facturar" : "—"}</span>
+        );
+      },
+    },
     {
       header: "Total",
       className: "text-right",
@@ -257,6 +287,20 @@ export default async function ClientDetailPage({
     },
     { header: "Emitida", accessor: (inv) => <span className="text-brand-muted">{inv.issue_date}</span> },
     { header: "Vence", accessor: (inv) => <span className="text-brand-muted">{inv.due_date ?? "—"}</span> },
+    {
+      header: "Viene de",
+      info: "La cotización y/o el proyecto de donde salió esta factura. «—» = factura hecha directa, sin cotización.",
+      accessor: (inv) => {
+        const quotation = inv.quotation_id ? quotationById.get(inv.quotation_id) : null;
+        const project = inv.project_id ? projectById.get(inv.project_id) : null;
+        const links = [
+          ...(quotation ? [docLink(`/quotations/${quotation.id}`, quotation.number, "Cotización")] : []),
+          ...(project ? [docLink(`/projects/${project.id}`, project.number, `Proyecto: ${project.name}`)] : []),
+        ];
+        if (links.length === 0) return <span className="text-brand-muted">—</span>;
+        return <span className="flex flex-wrap items-center gap-x-1.5 text-sm">{links.flatMap((l, i) => (i ? [<span key={`s${i}`} className="text-brand-muted">·</span>, l] : [l]))}</span>;
+      },
+    },
     {
       header: "Estado",
       accessor: (inv) => {

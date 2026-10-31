@@ -2,6 +2,8 @@
 
 ## Ajustes durante la prueba BX (2026-10-29)
 
+- **Ficha del cliente** (30-oct): pestaña Facturas con columna **Viene de** (cotización/proyecto) y
+  pestaña Cotizaciones con **Se convirtió en** (proyecto y facturas, o «Sin facturar»), con enlaces.
 - **Cotización → Anticipos → «Pasar aquí»** (30-oct): si el cliente tiene anticipos «solo del cliente», la
   cotización aprobada lo avisa y permite ligarlos ahí con un motivo (sin mover dinero). En el historial del
   anticipo, «Pasado a otro proyecto» ahora dice «Pasado a otro proyecto o cotización».

@@ -1167,6 +1167,8 @@ pulsa el botón.
   opción elegible se usa sola (`effectiveTarget`); `return_to` define el texto de volver.
 - «Pasar aquí» (30-oct): `listFreeClientAdvances(clientId, currency)` (sin proyecto ni cotización, con
   saldo, nada aplicado) + `PullAdvanceHere` → `transferAdvanceAction` con `quotation:<id>` (`payments.void`).
+- Ficha del cliente, vínculos (30-oct): `getClientActivity` trae `project_id`/`quotation_id`; las columnas
+  se arman con mapas en memoria (sin consultas extra). Facturas canceladas no cuentan en «Se convirtió en».
 - Ficha del cliente (30-oct): tarjeta «Saldo a favor» = `getAdvanceTotals(clientId)` (disponible ×
   tasa del anticipo, en pesos); pestaña `?tab=anticipos` con `listAdvancesPage({ clientId })`.
 - Triggers: factura → CANCELLED anula sus aplicaciones (vuelven al anticipo); cotización con

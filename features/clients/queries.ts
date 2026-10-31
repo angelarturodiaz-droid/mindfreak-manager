@@ -121,12 +121,12 @@ export async function getClientActivity(clientId: string) {
   const [quotations, invoices, projects] = await Promise.all([
     supabase
       .from("quotations")
-      .select("id, number, status, total, currency, exchange_rate, issue_date")
+      .select("id, number, status, total, currency, exchange_rate, issue_date, project_id")
       .eq("client_id", clientId)
       .order("issue_date", { ascending: false }),
     supabase
       .from("invoices")
-      .select("id, number, status, total, balance, currency, exchange_rate, issue_date, due_date")
+      .select("id, number, status, total, balance, currency, exchange_rate, issue_date, due_date, project_id, quotation_id")
       .eq("client_id", clientId)
       .order("issue_date", { ascending: false }),
     supabase
