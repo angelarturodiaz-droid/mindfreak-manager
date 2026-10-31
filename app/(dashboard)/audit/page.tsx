@@ -44,7 +44,13 @@ const ACTION_LABELS: Record<string, string> = {
   APPLY: "Aplicó a factura",
   VOID_APPLY: "Quitó de factura",
   REFUND: "Devolvió",
-  TRANSFER: "Pasó a otro proyecto",
+  TRANSFER: "Pasó a otro proyecto o cotización",
+  VOID: "Anuló",
+  CORRECTION_REQUEST: "Pidió corrección",
+  CORRECTION_APPROVE: "Aprobó corrección",
+  CORRECTION_REJECT: "Rechazó corrección",
+  CORRECTION_WITHDRAW: "Retiró corrección",
+  STATUS_IN_PROGRESS: "Pasó a En curso",
 };
 
 const ACTION_TONES: Record<string, BadgeTone> = {
@@ -61,6 +67,11 @@ const ACTION_TONES: Record<string, BadgeTone> = {
   VOID_APPLY: "neutral",
   REFUND: "danger",
   TRANSFER: "info",
+  VOID: "danger",
+  CORRECTION_REQUEST: "warning",
+  CORRECTION_APPROVE: "success",
+  CORRECTION_REJECT: "danger",
+  CORRECTION_WITHDRAW: "neutral",
 };
 
 type LogRow = Awaited<ReturnType<typeof listAuditLogs>>["rows"][number];

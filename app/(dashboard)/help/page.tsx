@@ -858,6 +858,61 @@ const SECTIONS: Section[] = [
     ),
   },
   {
+    id: "correcciones",
+    label: "Corregir o anular cobros y pagos",
+    icon: ShieldCheck,
+    tone: "green",
+    summary: "Si algo se registró mal: se pide la corrección y otra persona la aprueba.",
+    content: (
+      <>
+        <p className="text-sm text-brand-text">
+          A veces un <strong>cobro</strong>, un <strong>pago a proveedor</strong> o un <strong>movimiento manual de
+          banco</strong> se registra mal: un cero de más, la cuenta equivocada, la fecha mal o se registró dos veces.
+          Para que nadie cambie el dinero solo, la corrección necesita <strong>dos personas</strong>: una la pide y otra
+          de Administración o Finanzas la aprueba. <strong>Nada se borra</strong>: lo anulado queda tachado y todo queda
+          en la Auditoría.
+        </p>
+        <p className="text-sm font-medium text-brand-text">Cómo se hace, en 3 pasos</p>
+        <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-sm text-brand-text">
+          <li>
+            En el registro que está mal pulsa <strong>Corregir</strong>: en la factura (lista de <em>Cobros</em>), en el
+            gasto (lista de <em>Pagos</em>) o en <em>Bancos</em> (movimientos «Manual»). Elige <strong>«Un dato está
+            mal»</strong> (escribes el dato correcto; al lado ves el de hoy) o <strong>«No debió registrarse»</strong>{" "}
+            (se anula completo), escribe el <strong>motivo</strong> y pulsa <em>Enviar para aprobación</em>. El recuadro{" "}
+            <em>Qué va a pasar</em> lo explica antes de enviar.
+          </li>
+          <li>
+            A Administración y Finanzas les llega un aviso en la campanita. En <strong>Cobros y pagos → Correcciones</strong>{" "}
+            ven el <strong>antes y el después</strong> y pulsan <strong>Aprobar</strong> o <strong>Rechazar</strong> (con
+            una nota). <strong>Quien pidió no puede aprobar lo suyo.</strong> Mientras está pendiente, el registro dice
+            «Corrección pendiente» y <strong>no cambia nada</strong>.
+          </li>
+          <li>
+            Al aprobarse <strong>se aplica sola</strong> y quien la pidió recibe un aviso. Si fue un rechazo, recibe la
+            nota de por qué.
+          </li>
+        </ol>
+        <p className="text-sm text-brand-text">
+          <strong>Ejemplo:</strong> se registró un cobro de RD$38,000 en Popular, pero el cliente pagó RD$3,800. Se pide
+          «Monto correcto: 3,800». Al aprobarse: el cobro de 38,000 queda tachado como <em>Anulado</em>, en Popular sale
+          un <em>Reverso</em> de 38,000, entra el cobro correcto de 3,800 y la factura vuelve a deber lo que falta.
+        </p>
+        <Bullets
+          items={[
+            <><strong>Qué pasa con el dinero</strong>: si cambias el <strong>monto</strong> o la <strong>cuenta</strong>, el registro original se anula con un <em>Reverso</em> en el banco (mismo monto, sentido contrario, fecha de hoy) y se crea uno nuevo con los datos correctos. Si cambias solo la <strong>fecha</strong>, la <strong>referencia</strong> o la <strong>descripción</strong>, se cambia en el mismo registro y el dinero no se mueve.</>,
+            <><strong>Si está conciliado</strong>: primero quítale la marca de conciliado en Bancos; un movimiento conciliado no se puede corregir.</>,
+            <><strong>Cobros con retenciones o en otra moneda</strong>: el monto y la cuenta no se cambian; elige «No debió registrarse» y regístralo de nuevo bien. La fecha y la referencia sí se corrigen.</>,
+            <><strong>Recibos</strong>: el recibo o comprobante de un registro anulado sale con un letrero rojo <strong>ANULADO</strong> y el motivo.</>,
+            <><strong>Retenciones de proveedores</strong>: no se recalculan; siguen en el gasto. Anular un pago solo hace que el gasto vuelva a deber.</>,
+            <><strong>Retirar</strong>: si te equivocaste al pedir, en <em>Correcciones</em> pulsa <em>Retirar</em> mientras siga pendiente.</>,
+            <><strong>Quién puede</strong>: pedir, quien registra cobros y pagos (Administración, Finanzas, Gerente); aprobar o rechazar, Administración o Finanzas, siempre otra persona. Todo queda en <em>Auditoría</em> («Pidió corrección», «Aprobó corrección», «Anuló»…).</>,
+            <>Los anticipos tienen sus propias acciones (<em>Quitar</em>, <em>Devolver</em>, <em>Pasar</em>) y las transferencias entre cuentas se corrigen en una próxima versión.</>,
+          ]}
+        />
+      </>
+    ),
+  },
+  {
     id: "gastos",
     label: "Gastos",
     icon: CreditCard,

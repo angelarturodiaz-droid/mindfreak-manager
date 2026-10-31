@@ -1,5 +1,20 @@
 # CHANGELOG — Mindfreak Manager
 
+## V1-4 Correcciones con doble aprobación (2026-10-30)
+
+- **Corregir o anular** cobros, pagos a proveedor (también con tarjeta) y movimientos manuales de banco con
+  el botón **Corregir** en la factura, el gasto y Bancos. Ventana guiada: «Un dato está mal» (monto, fecha,
+  cuenta, referencia, descripción, con el valor de hoy al lado) o «No debió registrarse», motivo obligatorio y
+  recuadro «Qué va a pasar».
+- **Doble aprobación**: quien pide no aprueba; aprueba Administración o Finanzas en **Cobros y pagos →
+  Correcciones** (antes/después, Aprobar / Rechazar con nota, Retirar). Avisos en la campanita a ambos lados.
+- **Nada se borra**: lo anulado queda tachado («Anulado» con el motivo); el banco lleva un **Reverso** (mismo
+  monto, sentido contrario). Cambiar monto o cuenta = anular + registrar de nuevo; fecha/referencia/descripción
+  se cambian en el mismo registro. Conciliados bloqueados. Recibos anulados con letrero **ANULADO**.
+- Totales (proyectos, dashboard, reportes, comparaciones, proveedores, anticipos) ignoran lo anulado; el reporte
+  de flujo por categoría excluye el original y su reverso.
+- Migración **093** (respaldo A0 → 094, limpieza A1 → 095). Auditoría: Pidió/Aprobó/Rechazó/Retiró corrección, Anuló.
+
 ## Ajustes durante la prueba BX (2026-10-29)
 
 - **Ayuda → sección nueva «Anticipos de clientes»** (30-oct): explicación general en 4 pasos, ejemplo y

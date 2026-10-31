@@ -51,6 +51,7 @@ export async function getSupplierStats() {
     supabase
       .from("supplier_payments")
       .select("amount, exchange_rate")
+      .eq("status", "ACTIVE")
       .gte("payment_date", monthStart),
   ]);
   for (const r of [suppliers, expenses, payments]) if (r.error) throw new Error(r.error.message);
@@ -107,6 +108,7 @@ export async function getSupplierActivity(supplierId: string) {
     supabase
       .from("supplier_payments")
       .select("id, expense_id, payment_date, amount, method, currency, exchange_rate, bank_accounts(name, bank_name), expenses(description)")
+      .eq("status", "ACTIVE")
       .eq("supplier_id", supplierId)
       .order("payment_date", { ascending: false }),
   ]);

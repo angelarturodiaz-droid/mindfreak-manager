@@ -75,6 +75,8 @@ import { Chip, SectionHeader } from "@/components/ui/page-kit";
 import { relationName, relationRow } from "@/lib/utils/relation";
 import { dueLabel, formatDate, formatDateTime } from "@/lib/utils/dates";
 import { DownloadReceiptButton } from "@/components/payments/download-receipt-button";
+import { CorrectionStateBadge, RequestCorrectionButton } from "@/components/corrections/request-correction-button";
+import { pendingTargetIds } from "@/features/corrections/queries";
 import { WithholdingList, type WithholdingItem } from "@/components/payments/withholding-list";
 
 const COLLECTION_ACTION_LABELS: Record<string, string> = {
@@ -171,6 +173,8 @@ export default async function InvoiceDetailPage({
     ]);
   // Anular retenciones del cliente (migración 083).
   const canVoid = await hasPermission("payments.void");
+  // V1-4: cobros con una corrección esperando aprobación.
+  const pendingCorrection = await pendingTargetIds("customer_payment", payments.map((p) => p.id)).catch(() => new Set<string>());
   // Proyecto en Confirmado con factura emitida: preguntar si ya está En curso (29-oct).
   const [canUpdateProject, projectStatus] = invoice.project_id
     ? await Promise.all([
@@ -293,13 +297,23 @@ export default async function InvoiceDetailPage({
     (p) => (p.account_currency && p.account_currency !== invoice.currency) || Number(p.bank_fee_amount ?? 0) > 0,
   );
   const paymentColumns: Column<PaymentRow>[] = [
-    { header: "Fecha", accessor: (p) => <RegisteredDate date={p.payment_date} createdAt={p.created_at} className="text-brand-text" /> },
+    {
+      header: "Fecha",
+      accessor: (p) => (
+        <span className={`flex flex-col gap-1 ${p.status === "VOIDED" ? "opacity-60" : ""}`}>
+          <RegisteredDate date={p.payment_date} createdAt={p.created_at} className="text-brand-text" />
+          <CorrectionStateBadge voided={p.status === "VOIDED"} voidReason={p.void_reason} pending={pendingCorrection.has(p.id)} />
+        </span>
+      ),
+    },
     {
       // Con retenciones: lo que entró al banco (moneda de la factura).
       header: hasWithholdings ? (anyBankDetail ? "Recibido" : "Recibido en banco") : "Monto",
       className: "text-right",
       accessor: (p) =>
-        Number(p.amount) > 0 ? (
+        p.status === "VOIDED" ? (
+          <span className="tabular-nums text-brand-muted line-through">{formatMoney(p.amount, invoice.currency)}</span>
+        ) : Number(p.amount) > 0 ? (
           <span className="font-medium tabular-nums text-brand-success">{formatMoney(p.amount, invoice.currency)}</span>
         ) : (
           <span className="text-xs text-brand-muted">Solo retención</span>
@@ -387,9 +401,41 @@ export default async function InvoiceDetailPage({
     {
       header: "",
       className: "text-right",
-      accessor: (p) => (
-        <DownloadReceiptButton paymentId={p.id} label="Recibo" kind="customer" />
-      ),
+      accessor: (p) => {
+        const acc = relationRow<{ name: string; bank_name: string | null }>(p.bank_accounts);
+        const foreign = Boolean(p.account_currency && p.account_currency !== invoice.currency);
+        const hasW = Number(p.withholding_total ?? 0) > 0;
+        return (
+          <span className="inline-flex items-center gap-1">
+            <DownloadReceiptButton paymentId={p.id} label="Recibo" kind="customer" />
+            {canPay && p.status !== "VOIDED" && !pendingCorrection.has(p.id) && invoice.status !== "CANCELLED" && (
+              <RequestCorrectionButton
+                targetType="customer_payment"
+                targetId={p.id}
+                label={`cobro de ${formatMoney(Number(p.amount), invoice.currency)} del ${formatDate(p.payment_date)}`}
+                current={{
+                  amount: Number(p.amount),
+                  currency: invoice.currency,
+                  date: p.payment_date,
+                  accountId: p.bank_account_id ?? null,
+                  accountName: acc?.name ?? null,
+                  accountCurrency: p.account_currency ?? invoice.currency,
+                  reference: p.reference ?? null,
+                }}
+                accounts={bankAccounts.map((b) => ({ id: b.id, name: b.name, currency: b.currency }))}
+                allowMoneyChange={!foreign && !hasW && Number(p.amount) > 0}
+                moneyChangeBlockedReason={
+                  hasW
+                    ? "Este cobro tiene retenciones del cliente: para cambiar el monto, elige «No debió registrarse» y regístralo de nuevo."
+                    : foreign
+                      ? "Este cobro entró en una cuenta de otra moneda: para cambiar el monto o la cuenta, elige «No debió registrarse» y regístralo de nuevo."
+                      : undefined
+                }
+              />
+            )}
+          </span>
+        );
+      },
     },
   ];
 
@@ -441,6 +487,7 @@ export default async function InvoiceDetailPage({
   const paidInAccounts = [
     ...new Set(
       payments
+        .filter((p) => p.status !== "VOIDED")
         .map((p) => relationRow<{ name: string; bank_name: string | null }>(p.bank_accounts)?.name)
         .filter((n): n is string => Boolean(n)),
     ),

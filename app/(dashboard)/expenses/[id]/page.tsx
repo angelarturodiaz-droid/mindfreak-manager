@@ -29,10 +29,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Callout, MetricCard, SectionHeader } from "@/components/ui/page-kit";
 import { formatDate } from "@/lib/utils/dates";
+import { relationRow } from "@/lib/utils/relation";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { RegisteredDate } from "@/components/ui/registered-date";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { DownloadReceiptButton } from "@/components/payments/download-receipt-button";
+import { CorrectionStateBadge, RequestCorrectionButton } from "@/components/corrections/request-correction-button";
+import { pendingTargetIds } from "@/features/corrections/queries";
 import { listServiceTypeOptions } from "@/features/supplier-service-types/queries";
 import { ExpenseFiscalCard, type ExpenseFiscalRow } from "@/components/fiscal/expense-fiscal-card";
 import { FiscalStatusBadge } from "@/components/fiscal/fiscal-status-badge";
@@ -94,11 +97,14 @@ export default async function ExpenseDetailPage({
       listActiveAccountsForSelect(),
     ]);
 
+  // V1-4: pagos con una corrección esperando aprobación.
+  const pendingCorrection = await pendingTargetIds("supplier_payment", payments.map((p) => p.id)).catch(() => new Set<string>());
+  const activePayments = payments.filter((p) => p.status !== "VOIDED");
   // Cómo se pagó de verdad: métodos y cuentas de los pagos registrados.
-  const paidMethods = [...new Set(payments.map((p) => p.method).filter(Boolean))] as string[];
+  const paidMethods = [...new Set(activePayments.map((p) => p.method).filter(Boolean))] as string[];
   const paidAccounts = [
     ...new Set(
-      payments
+      activePayments
         .map((p) => {
           const a = p.bank_accounts as { name: string } | { name: string }[] | null;
           return (Array.isArray(a) ? a[0] : a)?.name;
@@ -118,11 +124,24 @@ export default async function ExpenseDetailPage({
   const isEditable = canEdit && !isIncentive && expense.status === "PENDING" && expense.paid_amount === 0;
 
   const paymentColumns: Column<PaymentRow>[] = [
-    { header: "Fecha", accessor: (p) => <RegisteredDate date={p.payment_date} createdAt={p.created_at} className="text-brand-text" /> },
+    {
+      header: "Fecha",
+      accessor: (p) => (
+        <span className={`flex flex-col gap-1 ${p.status === "VOIDED" ? "opacity-60" : ""}`}>
+          <RegisteredDate date={p.payment_date} createdAt={p.created_at} className="text-brand-text" />
+          <CorrectionStateBadge voided={p.status === "VOIDED"} voidReason={p.void_reason} pending={pendingCorrection.has(p.id)} />
+        </span>
+      ),
+    },
     {
       header: "Monto",
       className: "text-right",
-      accessor: (p) => <span className="font-medium tabular-nums">{formatMoney(p.amount, expense.currency)}</span>,
+      accessor: (p) =>
+        p.status === "VOIDED" ? (
+          <span className="tabular-nums text-brand-muted line-through">{formatMoney(p.amount, expense.currency)}</span>
+        ) : (
+          <span className="font-medium tabular-nums">{formatMoney(p.amount, expense.currency)}</span>
+        ),
     },
     {
       // Multimoneda V5: pago desde una cuenta en otra moneda (o con comisión).
@@ -176,9 +195,34 @@ export default async function ExpenseDetailPage({
     {
       header: "",
       className: "text-right",
-      accessor: (p) => (
-        <DownloadReceiptButton paymentId={p.id} label="Comprobante" kind="supplier" />
-      ),
+      accessor: (p) => {
+        const acc = relationRow<{ name: string; bank_name: string | null }>(p.bank_accounts);
+        const foreign = Boolean(p.account_currency && p.account_currency !== expense.currency);
+        return (
+          <span className="inline-flex items-center gap-1">
+            <DownloadReceiptButton paymentId={p.id} label="Comprobante" kind="supplier" />
+            {canPay && p.status !== "VOIDED" && !pendingCorrection.has(p.id) && expense.status !== "CANCELLED" && (
+              <RequestCorrectionButton
+                targetType="supplier_payment"
+                targetId={p.id}
+                label={`pago de ${formatMoney(Number(p.amount), expense.currency)} del ${formatDate(p.payment_date)}`}
+                current={{
+                  amount: Number(p.amount),
+                  currency: expense.currency,
+                  date: p.payment_date,
+                  accountId: p.bank_account_id ?? null,
+                  accountName: acc?.name ?? null,
+                  accountCurrency: p.account_currency ?? expense.currency,
+                  reference: p.reference ?? null,
+                }}
+                accounts={paymentAccounts.map((b) => ({ id: b.id, name: b.name, currency: b.currency, type: b.type }))}
+                allowMoneyChange={!foreign}
+                moneyChangeBlockedReason="Este pago salió de una cuenta en otra moneda: para cambiar el monto o la cuenta, elige «No debió registrarse» y regístralo de nuevo."
+              />
+            )}
+          </span>
+        );
+      },
     },
   ];
 

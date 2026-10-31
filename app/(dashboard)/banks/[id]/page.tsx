@@ -22,6 +22,8 @@ import {
 import { cardPosition } from "@/features/banks/display";
 import { toggleBankAccountActiveAction, toggleReconciledAction } from "@/features/banks/actions";
 import { hasPermission } from "@/lib/auth/permissions";
+import { CorrectionStateBadge, RequestCorrectionButton } from "@/components/corrections/request-correction-button";
+import { pendingTargetIds } from "@/features/corrections/queries";
 import { ManualTransactionForm } from "./manual-transaction-form";
 import { TransferForm } from "./transfer-form";
 import { getFxContext } from "@/features/currencies/queries";
@@ -126,7 +128,31 @@ function TransactionOrigin({ t }: { t: TransactionRow }) {
       <span className="text-brand-muted">Transferencia</span>
     );
   }
+  if (t.reverses_transaction_id) {
+    return (
+      <span
+        className="whitespace-nowrap text-brand-muted"
+        title="Movimiento automático que deshace otro anulado por una corrección aprobada (mismo monto, sentido contrario)."
+      >
+        Reverso
+      </span>
+    );
+  }
   return <span className="text-brand-muted">Manual</span>;
+}
+
+/** Movimiento cargado a mano (no viene de cobro, pago, transferencia ni anticipo). */
+function isManual(t: TransactionRow): boolean {
+  return (
+    !t.customer_payment_id &&
+    !t.supplier_payment_id &&
+    !t.expense_id &&
+    !t.transfer_group_id &&
+    !t.customer_advance_id &&
+    !t.related_source_id &&
+    !t.reverses_transaction_id &&
+    !t.system_concept
+  );
 }
 
 export default async function BankAccountDetailPage({
@@ -158,6 +184,16 @@ export default async function BankAccountDetailPage({
     getCompany(),
     getFxContext(),
   ]);
+
+  // V1-4: correcciones de movimientos manuales.
+  const [canRequestCorrection, pendingCorrection] = await Promise.all([
+    hasPermission("payments.create"),
+    pendingTargetIds("bank_transaction", transactions.map((t) => t.id)).catch(() => new Set<string>()),
+  ]);
+  const correctionAccounts = [
+    { id: account.id, name: account.name, currency: account.currency, type: account.type },
+    ...otherAccounts.map((a) => ({ id: a.id, name: a.name, currency: a.currency, type: a.type })),
+  ];
 
   const isCard = account.type === "CREDIT_CARD";
   const { debt, favor, available, usage } = cardPosition(
@@ -285,9 +321,17 @@ export default async function BankAccountDetailPage({
               <Icon size={15} />
             </span>
             <span className="min-w-0">
-              <span className="line-clamp-2 break-words text-brand-text" title={t.description ?? undefined}>
+              <span
+                className={`line-clamp-2 break-words ${t.voided_at ? "text-brand-muted line-through" : "text-brand-text"}`}
+                title={t.description ?? undefined}
+              >
                 {t.description ?? "—"}
               </span>
+              {(t.voided_at || pendingCorrection.has(t.id)) && (
+                <span className="my-0.5 block">
+                  <CorrectionStateBadge voided={Boolean(t.voided_at)} voidReason={t.void_reason} pending={pendingCorrection.has(t.id)} />
+                </span>
+              )}
               <span className="text-xs text-brand-muted">
                 {TYPE_LABELS[t.type] ?? t.type}
                 {t.reference ? ` · Ref. ${t.reference}` : ""}
@@ -304,7 +348,32 @@ export default async function BankAccountDetailPage({
       header: "Origen",
       accessor: (t) => {
         const fee = feeOrigin(t);
-        if (!fee) return <TransactionOrigin t={t} />;
+        if (!fee) {
+          const manual = isManual(t);
+          return (
+            <span className="flex flex-col items-start gap-1">
+              <TransactionOrigin t={t} />
+              {manual && canRequestCorrection && !t.voided_at && !pendingCorrection.has(t.id) && (
+                <RequestCorrectionButton
+                  targetType="bank_transaction"
+                  targetId={t.id}
+                  label={`movimiento de ${formatMoney(Number(t.amount), account.currency)} del ${formatDate(t.transaction_date)}`}
+                  current={{
+                    amount: Number(t.amount),
+                    currency: account.currency,
+                    date: t.transaction_date,
+                    accountId: account.id,
+                    accountName: account.name,
+                    accountCurrency: account.currency,
+                    reference: t.reference ?? null,
+                    description: t.description ?? null,
+                  }}
+                  accounts={correctionAccounts}
+                />
+              )}
+            </span>
+          );
+        }
         const text = `Comisión de: ${fee.label.split(" · ")[0]}`;
         return (
           <span className="flex max-w-[13rem] flex-col">
@@ -324,7 +393,9 @@ export default async function BankAccountDetailPage({
       header: "Monto",
       className: "text-right",
       accessor: (t) => (
-        <span className={`whitespace-nowrap font-medium tabular-nums ${t.effect >= 0 ? "text-brand-success" : "text-brand-danger"}`}>
+        <span
+          className={`whitespace-nowrap font-medium tabular-nums ${t.voided_at ? "line-through opacity-60" : ""} ${t.effect >= 0 ? "text-brand-success" : "text-brand-danger"}`}
+        >
           {t.effect >= 0 ? "+" : "−"}
           {formatMoney(Math.abs(t.effect), account.currency)}
         </span>

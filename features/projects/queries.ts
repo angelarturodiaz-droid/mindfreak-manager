@@ -293,6 +293,7 @@ export async function getProjectProfitability(projectId: string) {
       supabase
         .from("customer_payments")
         .select("amount, exchange_rate")
+        .eq("status", "ACTIVE")
         .eq("project_id", projectId),
       supabase
         .from("project_items")
@@ -393,6 +394,7 @@ export async function listProjectCustomerPayments(projectId: string) {
   const { data, error } = await supabase
     .from("customer_payments")
     .select("id, payment_date, amount, currency, method, invoice_id, invoices(number)")
+    .eq("status", "ACTIVE")
     .eq("project_id", projectId)
     .order("payment_date", { ascending: false });
   if (error) throw new Error(error.message);
@@ -442,6 +444,7 @@ export async function listProjectSupplierPayments(projectId: string) {
   const { data, error } = await supabase
     .from("supplier_payments")
     .select("id, payment_date, amount, currency, method, expense_id, suppliers(name)")
+    .eq("status", "ACTIVE")
     .eq("project_id", projectId)
     .order("payment_date", { ascending: false });
   if (error) throw new Error(error.message);
@@ -456,6 +459,9 @@ export async function listProjectBankTransactions(projectId: string) {
       "id, type, amount, currency, transaction_date, description, bank_accounts!bank_transactions_bank_account_id_fkey(name), expense_categories(name)",
     )
     .eq("project_id", projectId)
+    // Sin lo anulado por una corrección (original y reverso).
+    .is("voided_at", null)
+    .is("reverses_transaction_id", null)
     .order("transaction_date", { ascending: false });
   if (error) throw new Error(error.message);
   return data;

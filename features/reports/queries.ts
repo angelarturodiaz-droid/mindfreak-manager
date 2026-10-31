@@ -113,7 +113,7 @@ export async function getProjectsProfitabilityReport(filters: ProfitabilityFilte
       .in("project_id", projectIds)
       // Facturado = facturas emitidas (sin borradores ni canceladas).
       .not("status", "in", "(CANCELLED,DRAFT)"),
-    supabase.from("customer_payments").select("project_id, amount, exchange_rate").in("project_id", projectIds),
+    supabase.from("customer_payments").select("project_id, amount, exchange_rate").eq("status", "ACTIVE").in("project_id", projectIds),
     supabase.from("project_items").select("project_id, estimated_cost").in("project_id", projectIds),
     supabase
       .from("expenses")
@@ -657,7 +657,10 @@ export async function getCashflowByCategoryReport(filters: CashflowByCategoryFil
   const supabase = await createClient();
   let query = supabase
     .from("bank_transactions")
-    .select("type, amount, exchange_rate, transaction_date, category_id, expense_categories(name)");
+    .select("type, amount, exchange_rate, transaction_date, category_id, expense_categories(name)")
+    // Lo anulado por una corrección (V1-4) no cuenta: ni el original ni su reverso.
+    .is("voided_at", null)
+    .is("reverses_transaction_id", null);
 
   // Elegir "Transferencias" como origen las incluye aunque la casilla esté apagada.
   const includeTransfers = filters.includeTransfers || filters.origin === "transferencias";
@@ -788,7 +791,7 @@ export async function getPaymentsByCurrencyReport(filters: PaymentsByCurrencyFil
   const fetchCobros = async () => {
     if (!wantCobros) return { data: [] as unknown[], error: null };
     // Solo cobros con dinero (un cobro solo de retención no movió el banco).
-    let q = supabase.from("customer_payments").select(`${FX_COLUMNS}, invoice_id, invoices(number), clients(name)`).gt("amount", 0);
+    let q = supabase.from("customer_payments").select(`${FX_COLUMNS}, invoice_id, invoices(number), clients(name)`).eq("status", "ACTIVE").gt("amount", 0);
     if (filters.from) q = q.gte("payment_date", filters.from);
     if (filters.to) q = q.lte("payment_date", filters.to);
     if (filters.bankAccountId) q = q.eq("bank_account_id", filters.bankAccountId);
@@ -799,7 +802,7 @@ export async function getPaymentsByCurrencyReport(filters: PaymentsByCurrencyFil
   };
   const fetchPagos = async () => {
     if (!wantPagos) return { data: [] as unknown[], error: null };
-    let q = supabase.from("supplier_payments").select(`${FX_COLUMNS}, expense_id, expenses(description), suppliers(name)`);
+    let q = supabase.from("supplier_payments").select(`${FX_COLUMNS}, expense_id, expenses(description), suppliers(name)`).eq("status", "ACTIVE");
     if (filters.from) q = q.gte("payment_date", filters.from);
     if (filters.to) q = q.lte("payment_date", filters.to);
     if (filters.bankAccountId) q = q.eq("bank_account_id", filters.bankAccountId);
@@ -888,7 +891,7 @@ export async function getCustomerWithholdingsReport(filters: {
   }));
 
   // Recibido en banco vs aplicado en el mismo período (fecha del cobro).
-  let pq = supabase.from("customer_payments").select("currency, amount, withholding_total");
+  let pq = supabase.from("customer_payments").select("currency, amount, withholding_total").eq("status", "ACTIVE");
   if (filters.from) pq = pq.gte("payment_date", filters.from);
   if (filters.to) pq = pq.lte("payment_date", filters.to);
   if (filters.clientId) pq = pq.eq("client_id", filters.clientId);

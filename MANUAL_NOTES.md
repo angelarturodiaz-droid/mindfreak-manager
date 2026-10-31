@@ -1215,3 +1215,25 @@ pulsa el botón.
   Numeración: respaldo A0 = **093**, limpieza A1 = **094**.
 - `ConfirmProjectPrompt` acepta `to` (CONFIRMED / IN_PROGRESS); en la factura sale si el proyecto
   está en CONFIRMED y la factura ya se emitió (`getProjectStatus`).
+
+
+## V1-4 Correcciones con doble aprobación (migración 093, 30-oct-2026)
+- Tabla `payment_correction_requests` (target_type customer_payment/supplier_payment/bank_transaction, action
+  CHANGE/VOID, old/new jsonb, reason, status PENDING/APPROVED/REJECTED/WITHDRAWN, requested_by, decided_by,
+  link_type/link_id). Un solo PENDING por registro (índice único parcial). RLS: solo lectura; escritura por funciones.
+- Columnas: `status`/`voided_at`/`voided_by`/`void_reason`/`replaces_payment_id` en cobros y pagos;
+  `reverses_transaction_id`/`voided_at`/`void_reason` en `bank_transactions`.
+- Funciones: `request_payment_correction` (payments.create; valida conciliado, pendiente, monto ≤ saldo+original,
+  sin retenciones ni otra moneda para cambiar monto/cuenta), `approve_payment_correction` (payments.void,
+  requested_by ≠ auth.uid(); VOID → `mf_void_*` + `mf_reverse_bank_transaction`; monto/cuenta → anular +
+  `register_customer_payment`/`register_supplier_payment` con los datos nuevos; fecha/ref → update en sitio),
+  `reject_payment_correction` (nota ≥ 5), `withdraw_payment_correction` (solo quien pidió).
+- Reverso: tipo contrario, misma cuenta/categoría/tasa, fecha de hoy (RD), `overdraft_confirmed = true`; el original
+  queda con `voided_at`. Trigger `guard_reconciled_bank_transaction` impide cambiar monto/tipo/cuenta/fecha de un
+  conciliado.
+- Lecturas: sumas con `.eq("status","ACTIVE")`; flujo por categoría y movimientos del proyecto excluyen
+  `voided_at` y `reverses_transaction_id`. Listas de factura/gasto/Bancos muestran lo anulado tachado.
+- Probado con rollback (30-oct): cobro 38,000→3,800 (factura Pago parcial, balance 34,200, banco −34,200), anular
+  pago a proveedor (gasto vuelve a Pago parcial), cambio de fecha/descr. de un manual, auto-aprobación bloqueada,
+  «sin cambios» bloqueado, 6 avisos.
+- **Para aprobar hace falta 2FA**: `has_permission` exige un factor verificado (Julissa debe activarlo).

@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { ArrowDownLeft, ArrowUpRight, HandCoins, Plus, Scale, TrendingUp } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, HandCoins, Plus, Scale, ShieldCheck, TrendingUp } from "lucide-react";
+import { countPendingCorrections, listCorrectionHistory, listPendingCorrections } from "@/features/corrections/queries";
+import { CorrectionCard } from "@/components/corrections/correction-card";
+import { getCurrentUser } from "@/lib/auth/permissions";
 import { countAdvances, getAdvanceTotals, listAdvancesPage } from "@/features/advances/queries";
 import { AdvanceTable } from "@/components/advances/advance-table";
 import { Callout } from "@/components/ui/page-kit";
@@ -53,6 +56,7 @@ const TABS = [
   { key: "cobros", label: "Cobros de clientes", icon: ArrowDownLeft },
   { key: "pagos", label: "Pagos a proveedores", icon: ArrowUpRight },
   { key: "anticipos", label: "Anticipos de clientes", icon: HandCoins },
+  { key: "correcciones", label: "Correcciones", icon: ShieldCheck },
 ] as const;
 
 export default async function PaymentsPage({
@@ -61,7 +65,14 @@ export default async function PaymentsPage({
   searchParams: Promise<{ tab?: string; q?: string; page?: string; ver?: string }>;
 }) {
   const params = await searchParams;
-  const activeTab = params.tab === "pagos" ? "pagos" : params.tab === "anticipos" ? "anticipos" : "cobros";
+  const activeTab =
+    params.tab === "pagos"
+      ? "pagos"
+      : params.tab === "anticipos"
+        ? "anticipos"
+        : params.tab === "correcciones"
+          ? "correcciones"
+          : "cobros";
   const onlyAvailable = params.ver !== "todos";
   const q = cleanSearch(params.q);
   const page = parsePage(params.page);
@@ -71,7 +82,9 @@ export default async function PaymentsPage({
       ? listCustomerPaymentsPage({ search: q, page })
       : activeTab === "pagos"
         ? listSupplierPaymentsPage({ search: q, page })
-        : listAdvancesPage({ search: q, page, onlyAvailable }),
+        : activeTab === "correcciones"
+          ? listCorrectionHistory(page)
+          : listAdvancesPage({ search: q, page, onlyAvailable }),
     countPaymentsByKind(),
     getPaymentStats(),
     getBankBrands(),
@@ -79,6 +92,15 @@ export default async function PaymentsPage({
     getAdvanceTotals().catch(() => ({ sinAplicar: 0, sinAplicarCount: 0 })),
     hasPermission("payments.create"),
   ]);
+  // V1-4: correcciones con doble aprobación.
+  const [pendingCorrections, pendingCount, canApproveCorrections, me] = await Promise.all([
+    activeTab === "correcciones" ? listPendingCorrections().catch(() => []) : Promise.resolve([]),
+    countPendingCorrections().catch(() => 0),
+    hasPermission("payments.void"),
+    getCurrentUser(),
+  ]);
+  const correctionHistory =
+    activeTab === "correcciones" ? (list.rows as Awaited<ReturnType<typeof listCorrectionHistory>>["rows"]) : [];
   const advances = activeTab === "anticipos" ? (list.rows as Awaited<ReturnType<typeof listAdvancesPage>>["rows"]) : [];
   const payments = activeTab === "cobros" ? (list.rows as PaymentRow[]) : [];
   const supplierPayments = activeTab === "pagos" ? (list.rows as SupplierPaymentRow[]) : [];
@@ -121,7 +143,14 @@ export default async function PaymentsPage({
       info: "El dinero que pagó el cliente en ese cobro, en la moneda de la factura. «Solo retención» = no pagó dinero, solo se aplicó una retención (recibido 0).",
       className: "text-right",
       accessor: (p) =>
-        Number(p.amount) > 0 ? (
+        p.status === "VOIDED" ? (
+          <span className="flex flex-col items-end gap-0.5">
+            <span className="whitespace-nowrap tabular-nums text-brand-muted line-through">
+              {formatMoney(Number(p.amount), invoiceCurrency(p))}
+            </span>
+            <span className="rounded-full bg-brand-danger-bg px-2 py-0.5 text-xs font-medium text-brand-danger">Anulado</span>
+          </span>
+        ) : Number(p.amount) > 0 ? (
           <span className="whitespace-nowrap font-medium tabular-nums text-brand-success">
             +{formatMoney(Number(p.amount), invoiceCurrency(p))}
           </span>
@@ -184,9 +213,15 @@ export default async function PaymentsPage({
     {
       header: "Monto",
       className: "text-right",
-      accessor: (p) => (
-        <span className="whitespace-nowrap font-medium tabular-nums text-brand-text">−{formatMoney(p.amount)}</span>
-      ),
+      accessor: (p) =>
+        p.status === "VOIDED" ? (
+          <span className="flex flex-col items-end gap-0.5">
+            <span className="whitespace-nowrap tabular-nums text-brand-muted line-through">{formatMoney(p.amount)}</span>
+            <span className="rounded-full bg-brand-danger-bg px-2 py-0.5 text-xs font-medium text-brand-danger">Anulado</span>
+          </span>
+        ) : (
+          <span className="whitespace-nowrap font-medium tabular-nums text-brand-text">−{formatMoney(p.amount)}</span>
+        ),
     },
   ];
 
@@ -238,7 +273,14 @@ export default async function PaymentsPage({
         {TABS.map((t) => {
           const Icon = t.icon;
           const active = activeTab === t.key;
-          const count = t.key === "cobros" ? counts.cobros : t.key === "pagos" ? counts.pagos : advanceCount;
+          const count =
+            t.key === "cobros"
+              ? counts.cobros
+              : t.key === "pagos"
+                ? counts.pagos
+                : t.key === "correcciones"
+                  ? pendingCount
+                  : advanceCount;
           return (
             <Link
               key={t.key}
@@ -251,7 +293,14 @@ export default async function PaymentsPage({
             >
               <Icon size={15} aria-hidden />
               {t.label}
-              <span className="rounded-full bg-brand-surface-hover px-1.5 text-xs tabular-nums text-brand-muted">
+              <span
+                title={t.key === "correcciones" ? "Correcciones esperando aprobación" : undefined}
+                className={`rounded-full px-1.5 text-xs tabular-nums ${
+                  t.key === "correcciones" && count > 0
+                    ? "bg-brand-warning-bg font-semibold text-brand-warning"
+                    : "bg-brand-surface-hover text-brand-muted"
+                }`}
+              >
                 {count}
               </span>
             </Link>
@@ -259,6 +308,7 @@ export default async function PaymentsPage({
         })}
       </nav>
 
+      {activeTab !== "correcciones" && (
       <form action="/payments" method="get" className="flex flex-wrap items-center gap-2">
         <input type="hidden" name="tab" value={activeTab} />
         <LiveSearchInput
@@ -278,8 +328,56 @@ export default async function PaymentsPage({
           </span>
         )}
       </form>
+      )}
 
-      {activeTab === "anticipos" ? (
+      {activeTab === "correcciones" ? (
+        <section className="flex flex-col gap-4">
+          <Callout
+            icon={<ShieldCheck size={18} />}
+            title="Correcciones con doble aprobación"
+            description="Si un cobro, un pago a proveedor o un movimiento manual de banco se registró mal, se pide la corrección desde el mismo registro con el botón «Corregir». Otra persona de Administración o Finanzas la aprueba aquí (nunca quien la pidió). Mientras está pendiente no cambia nada; al aprobarse se aplica sola y nada se borra: lo anulado queda tachado y el banco lleva un «Reverso»."
+          />
+          <div>
+            <SectionHeader
+              title="Por aprobar"
+              count={pendingCorrections.length}
+              description={
+                canApproveCorrections
+                  ? "Revisa el antes y el después de cada una y pulsa Aprobar o Rechazar."
+                  : "Las aprueba Administración o Finanzas. Tú puedes retirar las que pediste."
+              }
+            />
+            {pendingCorrections.length === 0 ? (
+              <p className="rounded-[var(--radius-lg)] border border-dashed border-brand-border p-6 text-center text-sm text-brand-muted">
+                No hay correcciones esperando aprobación. 👍
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+                {pendingCorrections.map((r) => (
+                  <CorrectionCard key={r.id} row={r} currentUserId={me?.id ?? ""} canApprove={canApproveCorrections} />
+                ))}
+              </div>
+            )}
+          </div>
+          <div>
+            <SectionHeader title="Historial" description="Ya decididas o retiradas. Lo último primero." />
+            {correctionHistory.length === 0 ? (
+              <p className="rounded-[var(--radius-lg)] border border-dashed border-brand-border p-6 text-center text-sm text-brand-muted">
+                Todavía no hay correcciones en el historial.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+                {correctionHistory.map((r) => (
+                  <CorrectionCard key={r.id} row={r} currentUserId={me?.id ?? ""} canApprove={false} />
+                ))}
+              </div>
+            )}
+            <div className="mt-4">
+              <Pagination basePath="/payments" page={page} pageSize={list.pageSize} total={list.total} params={{ tab: "correcciones" }} />
+            </div>
+          </div>
+        </section>
+      ) : activeTab === "anticipos" ? (
         <section className="flex flex-col gap-4">
           <Callout
             icon={<HandCoins size={18} />}

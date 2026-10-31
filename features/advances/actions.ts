@@ -277,6 +277,7 @@ export async function getAdvanceReceiptDataAction(
     const { data: cobros } = await supabase
       .from("customer_payments")
       .select("amount, amount_applied, currency, invoices!inner(project_id, quotation_id, status)")
+      .eq("status", "ACTIVE")
       .eq("currency", a.currency)
       .eq(a.project_id ? "invoices.project_id" : "invoices.quotation_id", (a.project_id ?? a.quotation_id) as string)
       .neq("invoices.status", "CANCELLED");

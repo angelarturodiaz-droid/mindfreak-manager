@@ -341,7 +341,7 @@ export async function getPaymentReceiptDataAction(
     supabase
       .from("customer_payments")
       .select(
-        "id, invoice_id, payment_date, amount, withholding_total, amount_applied, method, reference, currency, invoices(number, balance), clients(name, tax_id, email, phone), bank_accounts(name, bank_name), customer_payment_withholdings(withholding_type, amount, currency, certificate_amount, certificate_currency, certificate_number, status, voided_at, void_reason)",
+        "id, status, void_reason, invoice_id, payment_date, amount, withholding_total, amount_applied, method, reference, currency, invoices(number, balance), clients(name, tax_id, email, phone), bank_accounts(name, bank_name), customer_payment_withholdings(withholding_type, amount, currency, certificate_amount, certificate_currency, certificate_number, status, voided_at, void_reason)",
       )
       .eq("id", paymentId)
       .single(),
@@ -361,7 +361,8 @@ export async function getPaymentReceiptDataAction(
     supabase
       .from("customer_payments")
       .select("id, amount, amount_applied, payment_date, created_at")
-      .eq("invoice_id", payment.invoice_id),
+      .eq("invoice_id", payment.invoice_id)
+      .eq("status", "ACTIVE"),
     // Anticipos aplicados (V1-3) también rebajan el saldo: cuentan si se aplicaron después de este cobro.
     supabase
       .from("customer_advance_movements")
@@ -458,7 +459,7 @@ export async function getSupplierPaymentReceiptDataAction(
     supabase
       .from("supplier_payments")
       .select(
-        "id, expense_id, payment_date, amount, method, reference, currency, payee_bank_name, expenses(description, balance, total, ncf, isr_withheld, itbis_withheld, total_withheld, net_payable, incentive_recipient), suppliers(name, tax_id, email, phone), bank_accounts(name, bank_name)",
+        "id, status, void_reason, expense_id, payment_date, amount, method, reference, currency, payee_bank_name, expenses(description, balance, total, ncf, isr_withheld, itbis_withheld, total_withheld, net_payable, incentive_recipient), suppliers(name, tax_id, email, phone), bank_accounts(name, bank_name)",
       )
       .eq("id", paymentId)
       .single(),
@@ -488,7 +489,8 @@ export async function getSupplierPaymentReceiptDataAction(
   const { data: expensePayments } = await supabase
     .from("supplier_payments")
     .select("id, amount, payment_date, created_at")
-    .eq("expense_id", payment.expense_id);
+    .eq("expense_id", payment.expense_id)
+    .eq("status", "ACTIVE");
   // Retenciones del gasto (migración 074): el comprobante muestra cómo se
   // llegó al neto que se le paga al proveedor.
   const expense = rawExpense

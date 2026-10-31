@@ -237,6 +237,7 @@ export async function getSalesByClientComparison(period: Period) {
     const { data, error } = await supabase
       .from("customer_payments")
       .select("client_id, amount, exchange_rate")
+      .eq("status", "ACTIVE")
       .gte("payment_date", from)
       .lte("payment_date", to);
     if (error) throw new Error(error.message);

@@ -8,11 +8,14 @@ export function Modal({
   onClose,
   title,
   children,
+  size = "md",
 }: {
   open: boolean;
   onClose: () => void;
   title?: string;
   children: ReactNode;
+  /** «lg» para formularios guiados más largos. */
+  size?: "md" | "lg";
 }) {
   useEffect(() => {
     if (!open) return;
@@ -36,7 +39,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative w-full max-w-md rounded-[var(--radius-lg)] bg-brand-surface p-6 shadow-[var(--shadow-lg)]"
+        className={`relative w-full ${size === "lg" ? "max-w-2xl" : "max-w-md"} rounded-[var(--radius-lg)] bg-brand-surface p-6 text-left font-normal shadow-[var(--shadow-lg)]`}
       >
         {title && (
           <h2 className="mb-4 text-base font-semibold text-brand-text">{title}</h2>

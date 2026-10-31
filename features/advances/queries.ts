@@ -347,6 +347,7 @@ export async function listAdvanceTargets(clientId?: string): Promise<AdvanceTarg
   let cq = supabase
     .from("customer_payments")
     .select("amount_applied, amount, currency, invoices!inner(project_id, quotation_id, status)")
+    .eq("status", "ACTIVE")
     .neq("invoices.status", "CANCELLED");
   if (clientId) {
     pq = pq.eq("client_id", clientId);

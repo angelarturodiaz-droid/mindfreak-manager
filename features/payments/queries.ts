@@ -7,7 +7,7 @@ export async function listPaymentsForInvoice(invoiceId: string) {
   const { data, error } = await supabase
     .from("customer_payments")
     .select(
-      "id, payment_date, created_at, amount, withholding_total, amount_applied, method, reference, notes, account_currency, account_amount, bank_fee_amount, effective_rate, effective_rate_currency, reference_rate, reference_rate_document, rate_manual_override, rounding_difference, informative_difference, functional_currency, bank_accounts(name, bank_name), customer_payment_withholdings(id, withholding_type, amount, currency, certificate_amount, certificate_currency, certificate_number, withholding_date, notes, status, voided_at, void_reason, documents(id, file_name, storage_path))",
+      "id, status, voided_at, void_reason, replaces_payment_id, bank_account_id, payment_date, created_at, amount, withholding_total, amount_applied, method, reference, notes, account_currency, account_amount, bank_fee_amount, effective_rate, effective_rate_currency, reference_rate, reference_rate_document, rate_manual_override, rounding_difference, informative_difference, functional_currency, bank_accounts(name, bank_name), customer_payment_withholdings(id, withholding_type, amount, currency, certificate_amount, certificate_currency, certificate_number, withholding_date, notes, status, voided_at, void_reason, documents(id, file_name, storage_path))",
     )
     .eq("invoice_id", invoiceId)
     .order("payment_date", { ascending: false });
@@ -39,7 +39,7 @@ export async function listCustomerPaymentsPage(filters: { search?: string; page?
   let query = supabase
     .from("customer_payments")
     .select(
-      "id, invoice_id, payment_date, created_at, amount, withholding_total, method, invoices(number, currency), clients(name), bank_accounts(name, bank_name)",
+      "id, status, invoice_id, payment_date, created_at, amount, withholding_total, method, invoices(number, currency), clients(name), bank_accounts(name, bank_name)",
       { count: "exact" },
     )
     // Lo último que se registró sale primero.
@@ -64,7 +64,7 @@ export async function listSupplierPaymentsPage(filters: { search?: string; page?
   let query = supabase
     .from("supplier_payments")
     .select(
-      "id, expense_id, payment_date, created_at, amount, method, expenses(description), suppliers(name), bank_accounts(name, bank_name)",
+      "id, status, expense_id, payment_date, created_at, amount, method, expenses(description), suppliers(name), bank_accounts(name, bank_name)",
       { count: "exact" },
     )
     // Lo último que se registró sale primero.
@@ -106,7 +106,7 @@ export async function listPaymentsForExpense(expenseId: string) {
   const { data, error } = await supabase
     .from("supplier_payments")
     .select(
-      "id, payment_date, created_at, amount, method, reference, notes, payee_bank_name, account_currency, account_amount, bank_fee_amount, effective_rate, effective_rate_currency, reference_rate, reference_rate_document, rate_manual_override, rounding_difference, informative_difference, functional_currency, bank_accounts(name, bank_name)",
+      "id, status, voided_at, void_reason, replaces_payment_id, bank_account_id, payment_date, created_at, amount, method, reference, notes, payee_bank_name, account_currency, account_amount, bank_fee_amount, effective_rate, effective_rate_currency, reference_rate, reference_rate_document, rate_manual_override, rounding_difference, informative_difference, functional_currency, bank_accounts(name, bank_name)",
     )
     .eq("expense_id", expenseId)
     .order("payment_date", { ascending: false });
@@ -143,10 +143,12 @@ export async function getPaymentStats() {
     supabase
       .from("customer_payments")
       .select("amount, exchange_rate, payment_date")
+      .eq("status", "ACTIVE")
       .gte("payment_date", yearStart),
     supabase
       .from("supplier_payments")
       .select("amount, exchange_rate, payment_date")
+      .eq("status", "ACTIVE")
       .gte("payment_date", monthStart),
   ]);
   if (customer.error) throw new Error(customer.error.message);

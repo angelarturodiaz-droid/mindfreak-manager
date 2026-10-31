@@ -59,6 +59,7 @@ export async function getDashboardKPIs() {
     supabase
       .from("customer_payments")
       .select("amount, exchange_rate")
+      .eq("status", "ACTIVE")
       .gte("payment_date", start)
       .lt("payment_date", end),
     supabase
@@ -70,6 +71,7 @@ export async function getDashboardKPIs() {
     supabase
       .from("supplier_payments")
       .select("amount, exchange_rate")
+      .eq("status", "ACTIVE")
       .gte("payment_date", start)
       .lt("payment_date", end),
     supabase
@@ -152,11 +154,13 @@ export async function getFinancialFlowSeries(months = 6) {
         supabase
           .from("customer_payments")
           .select("amount, exchange_rate")
+          .eq("status", "ACTIVE")
           .gte("payment_date", r.start)
           .lt("payment_date", r.end),
         supabase
           .from("supplier_payments")
           .select("amount, exchange_rate")
+          .eq("status", "ACTIVE")
           .gte("payment_date", r.start)
           .lt("payment_date", r.end),
       ]);

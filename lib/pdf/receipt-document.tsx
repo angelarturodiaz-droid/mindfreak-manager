@@ -41,6 +41,9 @@ export type ReceiptPdfData = {
     method: string;
     reference: string | null;
     currency: string;
+    /** V1-4: ANULADO por una corrección aprobada. */
+    status?: string;
+    void_reason?: string | null;
     /** Retenciones del cliente (migración 083). */
     withholding_total?: number | null;
     amount_applied?: number | null;
@@ -215,6 +218,14 @@ export function ReceiptPdfDocument({
             </View>
           </View>
         </View>
+        {payment.status === "VOIDED" && (
+          <View style={{ marginTop: 10, padding: 8, borderWidth: 1.5, borderColor: "#c0392b", borderRadius: 4, backgroundColor: "#fdecea" }}>
+            <Text style={{ color: "#c0392b", fontSize: 13, fontWeight: 700 }}>ANULADO — este documento ya no es válido</Text>
+            {payment.void_reason ? (
+              <Text style={{ color: "#c0392b", fontSize: 9, marginTop: 2 }}>Motivo: {payment.void_reason}</Text>
+            ) : null}
+          </View>
+        )}
 
         <View style={styles.body}>
           <View style={styles.twoCol}>

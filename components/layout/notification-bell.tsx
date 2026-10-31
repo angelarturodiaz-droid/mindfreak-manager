@@ -25,6 +25,7 @@ const ENTITY_LINKS: Record<string, (id: string) => string> = {
   expense: (id) => `/expenses/${id}`,
   project: (id) => `/projects/${id}`,
   task: () => `/tasks`,
+  payment_correction: () => `/payments?tab=correcciones`,
 };
 
 function timeAgo(dateStr: string) {
