@@ -2,6 +2,9 @@
 
 ## Ajustes durante la prueba BX (2026-10-29)
 
+- **Cotización → Anticipos → «Pasar aquí»** (30-oct): si el cliente tiene anticipos «solo del cliente», la
+  cotización aprobada lo avisa y permite ligarlos ahí con un motivo (sin mover dinero). En el historial del
+  anticipo, «Pasado a otro proyecto» ahora dice «Pasado a otro proyecto o cotización».
 - **Registrar anticipo** (30-oct): los proyectos/cotizaciones ya pagados completos salen en gris y no se
   pueden elegir; si solo queda «Sin cotización ni proyecto», se marca sola; desde la ficha del cliente el
   enlace dice «Volver al cliente» (y se corrigió «Volver a el proyecto» → «al proyecto») y regresa a su pestaña Anticipos.

@@ -26,8 +26,11 @@ async function companyId(): Promise<string> {
   return ids[0];
 }
 
-function revalidateAll(a?: { project_id: string | null; quotation_id: string | null; id?: string } | null) {
+function revalidateAll(
+  a?: { project_id: string | null; quotation_id: string | null; id?: string; client_id?: string } | null,
+) {
   revalidatePath("/payments");
+  if (a?.client_id) revalidatePath(`/clients/${a.client_id}`);
   if (a?.project_id) revalidatePath(`/projects/${a.project_id}`);
   if (a?.quotation_id) revalidatePath(`/quotations/${a.quotation_id}`);
   if (a?.id) revalidatePath(`/advances/${a.id}`);

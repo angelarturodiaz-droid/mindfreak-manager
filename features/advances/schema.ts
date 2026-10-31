@@ -61,7 +61,7 @@ export const ADVANCE_STATUS_INFO: Record<AdvanceStatus, string> = {
 export const MOVEMENT_KIND_LABELS: Record<string, string> = {
   APPLY: "Aplicado a factura",
   REFUND: "Devolución",
-  TRANSFER: "Pasado a otro proyecto",
+  TRANSFER: "Pasado a otro proyecto o cotización",
 };
 
 /** Fecha de corte del Go-Live (igual que public.mf_cutoff_date()). */

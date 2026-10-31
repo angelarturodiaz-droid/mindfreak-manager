@@ -72,6 +72,23 @@ export async function listQuotationAdvances(quotationId: string): Promise<Advanc
   return (data ?? []) as AdvanceRow[];
 }
 
+/** Anticipos del cliente «sin cotización ni proyecto» con saldo, en una moneda (para «Pasar aquí»). */
+export async function listFreeClientAdvances(clientId: string, currency: string): Promise<AdvanceRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("customer_advances")
+    .select(ADVANCE_SELECT)
+    .eq("client_id", clientId)
+    .eq("currency", currency)
+    .is("project_id", null)
+    .is("quotation_id", null)
+    .gt("available_amount", 0)
+    .eq("applied_amount", 0)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as AdvanceRow[];
+}
+
 /** Lista de Cobros y pagos → pestaña Anticipos (10 por página). */
 export async function listAdvancesPage(
   filters: { search?: string; page?: number; onlyAvailable?: boolean; clientId?: string } = {},

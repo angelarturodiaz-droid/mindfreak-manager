@@ -1165,6 +1165,8 @@ pulsa el botón.
   cotización aprobada en la misma moneda, proyecto no cancelado, o «solo el cliente».
 - Formulario de anticipo (30-oct): destino «lleno» (`received >= totalQuoted`) deshabilitado; con una sola
   opción elegible se usa sola (`effectiveTarget`); `return_to` define el texto de volver.
+- «Pasar aquí» (30-oct): `listFreeClientAdvances(clientId, currency)` (sin proyecto ni cotización, con
+  saldo, nada aplicado) + `PullAdvanceHere` → `transferAdvanceAction` con `quotation:<id>` (`payments.void`).
 - Ficha del cliente (30-oct): tarjeta «Saldo a favor» = `getAdvanceTotals(clientId)` (disponible ×
   tasa del anticipo, en pesos); pestaña `?tab=anticipos` con `listAdvancesPage({ clientId })`.
 - Triggers: factura → CANCELLED anula sus aplicaciones (vuelven al anticipo); cotización con

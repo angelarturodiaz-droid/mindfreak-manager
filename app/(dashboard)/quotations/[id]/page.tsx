@@ -23,7 +23,8 @@ import {
 } from "lucide-react";
 import { FoldableSection } from "@/components/ui/foldable-section";
 import { AdvanceTable } from "@/components/advances/advance-table";
-import { listQuotationAdvances } from "@/features/advances/queries";
+import { listFreeClientAdvances, listQuotationAdvances } from "@/features/advances/queries";
+import { PullAdvanceHere } from "@/components/advances/pull-advance-here";
 import {
   getQuotation,
   listQuotationItems,
@@ -156,9 +157,15 @@ export default async function QuotationDetailPage({
   ]);
   // Anticipos (V1-3): solo en una cotización aprobada.
   const isApproved = quotation.status === "APPROVED";
-  const [quotationAdvances, canPay] = isApproved
-    ? await Promise.all([listQuotationAdvances(id).catch(() => []), hasPermission("payments.create")])
-    : [[], false];
+  const [quotationAdvances, canPay, freeAdvances, canTransferAdvance] = isApproved
+    ? await Promise.all([
+        listQuotationAdvances(id).catch(() => []),
+        hasPermission("payments.create"),
+        // Anticipos «solo del cliente» (a su favor) que se pueden pasar a esta cotización.
+        listFreeClientAdvances(quotation.client_id, quotation.currency).catch(() => []),
+        hasPermission("payments.void"),
+      ])
+    : [[], false, [], false];
   const advancesAvailable = quotationAdvances.reduce((acc, a) => acc + Number(a.available_amount), 0);
   const advanceHref = quotation.project_id ? `/advances/new?project=${quotation.project_id}` : `/advances/new?quotation=${id}`;
   // Para "Cambiar cliente" (solo en Borrador).
@@ -591,6 +598,19 @@ export default async function QuotationDetailPage({
             ) : undefined
           }
         >
+          {freeAdvances.length > 0 && (
+            <PullAdvanceHere
+              target={`quotation:${id}`}
+              targetLabel={`esta cotización (${quotation.number})`}
+              canTransfer={canTransferAdvance}
+              advances={freeAdvances.map((a) => ({
+                id: a.id,
+                number: a.number,
+                available: Number(a.available_amount),
+                currency: a.currency,
+              }))}
+            />
+          )}
           <AdvanceTable
             rows={quotationAdvances}
             emptyMessage="Sin anticipos. Si el cliente paga algo para separar la fecha, regístralo con «Registrar anticipo»."
