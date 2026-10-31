@@ -22,6 +22,7 @@ import {
   Package,
   Receipt,
   Wallet,
+  HandCoins,
   CreditCard,
   Landmark,
   BarChart3,
@@ -798,6 +799,59 @@ const SECTIONS: Section[] = [
             <><strong>Pagos a proveedores</strong>: no tienen campo de categoría porque toman la <strong>categoría del gasto</strong>. Elígela en el gasto antes de pagar (o cámbiala luego en Bancos).</>,
             <><strong>Anticipo a un proveedor (pagarle por partes)</strong>: al abrir <em>Nuevo gasto</em> sale arriba un consejo azul con estos pasos (se oculta con «Entendido, no mostrar de nuevo» y se vuelve a ver con «Ver consejo»). Si le adelantas dinero a un proveedor antes de que termine o te dé su factura, registra el <strong>gasto por el total acordado</strong> (con su ITBIS) y déjalo en «Aún no» (pendiente). Después, en el gasto, usa <em>Registrar pago</em> solo por lo que le adelantas: el gasto queda en <strong>Pago parcial</strong> y el recuadro azul dice cuánto falta. Cuando le pagues el resto, registras otro pago y queda <strong>Pagado</strong>. Su factura (NCF) la adjuntas en <em>Recibos y comprobantes</em> cuando llegue. Si el gasto tiene retenciones, se calcularon sobre el total y cada pago va contra el neto. Ejemplo: sonido por RD$100,000 + ITBIS, adelanto RD$40,000 → gasto de RD$118,000, pago de RD$40,000, falta RD$78,000. Los anticipos a proveedores con su propio documento quedan para la versión 2.</>,
             <><strong>Pago a proveedor con retenciones</strong>: se paga el <strong>neto</strong> (factura − ISR − ITBIS retenidos), no el total. El formulario lo explica paso a paso; ver <strong>Retenciones al pagar a un proveedor</strong>.</>,
+          ]}
+        />
+      </>
+    ),
+  },
+  {
+    id: "anticipos",
+    label: "Anticipos de clientes",
+    icon: HandCoins,
+    tone: "green",
+    summary: "Dinero que el cliente adelanta antes de la factura (ej. el 50 % para separar la fecha).",
+    content: (
+      <>
+        <p className="text-sm text-brand-text">
+          Un <strong>anticipo</strong> es dinero que el cliente entrega <strong>antes</strong> de que exista la
+          factura, casi siempre para separar la fecha del evento. Se guarda a su nombre con un recibo
+          (<strong>ANT-0001</strong>, «Recibo de anticipo»), y cuando se emite la factura final se{" "}
+          <strong>descuenta</strong> de lo que el cliente debe. Si la factura ya existe, lo que pague el cliente no es
+          anticipo: es un <strong>cobro</strong> (se registra en la factura).
+        </p>
+        <p className="text-sm font-medium text-brand-text">El camino normal, en 4 pasos</p>
+        <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-sm text-brand-text">
+          <li>
+            <strong>Registrar anticipo</strong> desde el proyecto, la cotización aprobada, la ficha del cliente o{" "}
+            <em>Cobros y pagos → Anticipos de clientes</em>. El dinero entra al banco.
+          </li>
+          <li>
+            <strong>Entregar el recibo</strong> (<em>Descargar recibo de anticipo</em>): dice cuánto se recibió, el total
+            cotizado y cuánto resta. No es factura ni lleva ITBIS.
+          </li>
+          <li>
+            Cuando se <strong>emite la factura final</strong>, ábrela y pulsa <strong>Aplicar anticipos</strong>: baja lo
+            que debe el cliente. El banco no se mueve (el dinero ya había entrado).
+          </li>
+          <li>
+            El cliente paga <strong>lo que falta</strong> con <em>Registrar cobro</em>, como siempre.
+          </li>
+        </ol>
+        <p className="text-sm text-brand-text">
+          <strong>Ejemplo:</strong> boda cotizada en RD$118,000. El cliente adelanta RD$50,000 (ANT-0001) y luego
+          RD$30,000 (ANT-0002). Se emite la factura por RD$118,000, se aplican los dos anticipos y queda debiendo
+          RD$38,000, que paga al final.
+        </p>
+        <Bullets
+          items={[
+            <><strong>No es venta todavía</strong>: hasta que se aplica a la factura, la ganancia del proyecto no cambia. En el proyecto, la tarjeta <em>Cobrado</em> sí muestra todo el dinero recibido.</>,
+            <><strong>¿Para qué evento?</strong> Se liga a un <strong>proyecto</strong>, a una <strong>cotización aprobada</strong>, o queda <strong>«solo del cliente»</strong> (a su favor) si aún no hay evento. No se puede recibir más de lo que resta por pagar de lo cotizado.</>,
+            <><strong>Saldo a favor</strong>: en la ficha del cliente, la tarjeta <em>Saldo a favor</em> y la pestaña <em>Anticipos</em> muestran lo que tiene adelantado sin usar.</>,
+            <><strong>Si el evento se cancela</strong>: <em>Devolver al cliente</em> (todo o una parte; sale del banco con su motivo).</>,
+            <><strong>Si el evento cambia</strong>: <em>Pasar a otro proyecto o cotización</em> del mismo cliente (no mueve dinero), o desde la cotización nueva con <strong>Pasar aquí</strong>.</>,
+            <><strong>Moneda</strong>: va en la moneda de la cotización y solo se descuenta de facturas en esa moneda.</>,
+            <><strong>Quién puede</strong>: registrar y aplicar, quien registra cobros; devolver, pasar o quitar de una factura, solo Administración o Finanzas. Todo queda en <em>Auditoría</em>.</>,
+            <>Los detalles de cada pantalla están en <strong>Cobros y pagos</strong>.</>,
           ]}
         />
       </>

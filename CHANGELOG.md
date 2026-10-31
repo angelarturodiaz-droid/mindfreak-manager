@@ -2,6 +2,8 @@
 
 ## Ajustes durante la prueba BX (2026-10-29)
 
+- **Ayuda → sección nueva «Anticipos de clientes»** (30-oct): explicación general en 4 pasos, ejemplo y
+  reglas básicas (devolver, pasar, saldo a favor, moneda, permisos).
 - **Ficha del cliente** (30-oct): pestaña Facturas con columna **Viene de** (cotización/proyecto) y
   pestaña Cotizaciones con **Se convirtió en** (proyecto y facturas, o «Sin facturar»), con enlaces.
 - **Cotización → Anticipos → «Pasar aquí»** (30-oct): si el cliente tiene anticipos «solo del cliente», la
