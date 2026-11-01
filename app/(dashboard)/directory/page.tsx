@@ -37,7 +37,7 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
       categoryId: sp.categoria,
       minRating,
       page,
-      pageSize: view === "lista" ? PAGE_SIZE : 24,
+      pageSize: view === "lista" ? PAGE_SIZE : 12,
     }),
     countDirectoryByStatus(),
     listZones(),
@@ -192,7 +192,7 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
           description={
             view === "lista"
               ? "Lo último registrado primero, de 10 en 10, como las demás listas. Haz clic en el nombre para ver su ficha."
-              : "Lo último registrado primero, de 24 en 24. Pasa el mouse para ver categoría, precio y etiquetas; haz clic para abrir la ficha."
+              : "Lo último registrado primero, de 12 en 12 (dos filas). Pasa el mouse para ver categoría, precio y etiquetas; haz clic para abrir la ficha."
           }
           action={<DirectoryViewToggle current={view} />}
         />

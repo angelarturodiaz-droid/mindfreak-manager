@@ -3,7 +3,7 @@
 ## Directorio: vista compacta (2026-11-01)
 
 - Tarjetas más pequeñas (hasta 6 por fila) con solo foto, nombre, estado, estrellas y zona; categoría, precio y
-  etiquetas al pasar el mouse. **24 por página**.
+  etiquetas al pasar el mouse. **12 por página** (dos filas de 6, cabe en una pantalla).
 - Botón **Tarjetas / Lista**: la lista es una tabla compacta de 10 en 10 (como las demás listas) (foto, nombre, estado, categoría, zona,
   calificación, precio, etiquetas). La vista elegida se recuerda en esa computadora.
 

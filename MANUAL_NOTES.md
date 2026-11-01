@@ -1266,5 +1266,5 @@ pulsa el botón.
 - `listSuppliers` y estadísticas de Proveedores filtran PROVEEDOR/INACTIVO; `listActiveSuppliers` trae
   `directory_status` y el selector del gasto agrupa «Del directorio». Fotos = `documents` image/* de la entidad supplier.
 - Permisos: los mismos de Proveedores (suppliers.*). Probado con rollback (1-nov).
-- Vista compacta: `?vista=tarjetas|lista`; `listDirectory({pageSize})` 24 en tarjetas, `PAGE_SIZE` (10) en lista. `DirectoryViewToggle` guarda la
+- Vista compacta: `?vista=tarjetas|lista`; `listDirectory({pageSize})` 12 en tarjetas, `PAGE_SIZE` (10) en lista. `DirectoryViewToggle` guarda la
   preferencia en localStorage `mf.directory.view` y, si la URL no trae `vista`, redirige a la guardada.

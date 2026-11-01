@@ -48,7 +48,7 @@ export function DirectoryViewToggle({ current }: { current: "tarjetas" | "lista"
       <Link
         href={hrefFor("tarjetas")}
         onClick={() => remember("tarjetas")}
-        title="Tarjetas con foto (24 por página)"
+        title="Tarjetas con foto (12 por página)"
         className={`${base} ${current === "tarjetas" ? "bg-brand-accent-light font-medium text-brand-accent" : "text-brand-muted hover:bg-brand-surface-hover"}`}
       >
         <LayoutGrid size={14} aria-hidden /> Tarjetas
