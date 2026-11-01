@@ -4,6 +4,7 @@ import { countDirectoryByStatus, listDirectory, listTags, listZones } from "@/fe
 import { DIRECTORY_STATUS_INFO, DIRECTORY_STATUS_LABELS, DIRECTORY_STATUSES, type DirectoryStatus } from "@/features/directory/schema";
 import { listCategoryOptions } from "@/features/expense-categories/queries";
 import { DirectoryCard, directoryHref } from "@/components/directory/directory-card";
+import { PAGE_SIZE } from "@/lib/utils/pagination";
 import { DirectoryViewToggle } from "@/components/directory/view-toggle";
 import { Stars } from "@/components/directory/stars";
 import { DataTable, type Column } from "@/components/ui/data-table";
@@ -36,7 +37,7 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
       categoryId: sp.categoria,
       minRating,
       page,
-      pageSize: view === "lista" ? 20 : 24,
+      pageSize: view === "lista" ? PAGE_SIZE : 24,
     }),
     countDirectoryByStatus(),
     listZones(),
@@ -190,7 +191,7 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
           count={list.total}
           description={
             view === "lista"
-              ? "Lo último registrado primero, de 20 en 20. Haz clic en el nombre para ver su ficha."
+              ? "Lo último registrado primero, de 10 en 10, como las demás listas. Haz clic en el nombre para ver su ficha."
               : "Lo último registrado primero, de 24 en 24. Pasa el mouse para ver categoría, precio y etiquetas; haz clic para abrir la ficha."
           }
           action={<DirectoryViewToggle current={view} />}

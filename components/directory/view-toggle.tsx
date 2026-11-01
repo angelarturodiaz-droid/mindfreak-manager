@@ -56,7 +56,7 @@ export function DirectoryViewToggle({ current }: { current: "tarjetas" | "lista"
       <Link
         href={hrefFor("lista")}
         onClick={() => remember("lista")}
-        title="Lista compacta para comparar (20 por página)"
+        title="Lista compacta para comparar (10 por página)"
         className={`${base} border-l border-brand-border ${current === "lista" ? "bg-brand-accent-light font-medium text-brand-accent" : "text-brand-muted hover:bg-brand-surface-hover"}`}
       >
         <List size={14} aria-hidden /> Lista

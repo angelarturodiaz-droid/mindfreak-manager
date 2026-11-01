@@ -828,7 +828,7 @@ const SECTIONS: Section[] = [
         </ol>
         <Bullets
           items={[
-            <><strong>Tarjetas o lista</strong>: en <em>Directorio</em> se ven como tarjetas pequeñas (foto, nombre, estado, estrellas y zona; pasa el mouse para ver categoría, precio y etiquetas), 24 por página. Con el botón <em>Tarjetas / Lista</em> cambias a una tabla compacta de 20 en 20 para comparar; la vista que elijas se recuerda. Hay pestañas por estado y filtros por categoría, zona, etiqueta y calificación.</>,
+            <><strong>Tarjetas o lista</strong>: en <em>Directorio</em> se ven como tarjetas pequeñas (foto, nombre, estado, estrellas y zona; pasa el mouse para ver categoría, precio y etiquetas), 24 por página. Con el botón <em>Tarjetas / Lista</em> cambias a una tabla compacta de 10 en 10 (como las demás listas) para comparar; la vista que elijas se recuerda. Hay pestañas por estado y filtros por categoría, zona, etiqueta y calificación.</>,
             <><strong>Fotos</strong>: se suben en la pestaña Directorio de la ficha; la primera (o la que marques <em>Usar de portada</em>) sale en la tarjeta.</>,
             <><strong>Historial protegido</strong>: si ya tiene gastos o pagos, no vuelve a Prospecto, Evaluado ni Aprobado (solo Proveedor o Inactivo). El estado no cambia reportes ni cuentas por pagar.</>,
             <><strong>Proveedores</strong> muestra solo a los que ya son Proveedor (e Inactivos). Las listas de <strong>zonas</strong> y <strong>etiquetas</strong> se cambian en <em>Configuración → Directorio</em>.</>,
