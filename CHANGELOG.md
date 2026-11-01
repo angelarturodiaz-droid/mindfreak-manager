@@ -2,6 +2,9 @@
 
 ## V1-4 Correcciones con doble aprobación (2026-10-30)
 
+- **Ajustes de la prueba BZ (1-nov):** el motivo de un registro «Anulado» se ve debajo de la etiqueta y al pasar
+  el mouse; la pestaña Correcciones muestra «Por aprobar» de 4 en 4 y el **Historial** como lista compacta
+  paginada (fecha, registro, qué se pidió, motivo, estado con su nota, quién); ícono profesional en «sin pendientes».
 - **Corregir o anular** cobros, pagos a proveedor (también con tarjeta) y movimientos manuales de banco con
   el botón **Corregir** en la factura, el gasto y Bancos. Ventana guiada: «Un dato está mal» (monto, fecha,
   cuenta, referencia, descripción, con el valor de hoy al lado) o «No debió registrarse», motivo obligatorio y

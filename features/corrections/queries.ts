@@ -41,16 +41,23 @@ async function withNames(rows: Omit<CorrectionRow, "requesterName" | "deciderNam
   }));
 }
 
-/** Solicitudes pendientes (todas: suelen ser pocas), lo último primero. */
-export async function listPendingCorrections(): Promise<CorrectionRow[]> {
+/** Solicitudes pendientes, lo último primero, de 4 en 4 (tarjetas con acciones). */
+export const PENDING_PAGE_SIZE = 4;
+export async function listPendingCorrections(page = 1) {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const from = (Math.max(1, page) - 1) * PENDING_PAGE_SIZE;
+  const { data, error, count } = await supabase
     .from("payment_correction_requests")
-    .select(SELECT)
+    .select(SELECT, { count: "exact" })
     .eq("status", "PENDING")
-    .order("requested_at", { ascending: false });
+    .order("requested_at", { ascending: false })
+    .range(from, from + PENDING_PAGE_SIZE - 1);
   if (error) throw new Error(error.message);
-  return withNames((data ?? []) as Omit<CorrectionRow, "requesterName" | "deciderName">[]);
+  return {
+    rows: await withNames((data ?? []) as Omit<CorrectionRow, "requesterName" | "deciderName">[]),
+    total: count ?? 0,
+    pageSize: PENDING_PAGE_SIZE,
+  };
 }
 
 /** Historial (ya decididas o retiradas), paginado, lo último primero. */

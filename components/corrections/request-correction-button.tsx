@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import { ResultDialog } from "@/components/ui/result-dialog";
+import { Tooltip } from "@/components/ui/tooltip";
 import { requestCorrectionAction } from "@/features/corrections/actions";
 import {
   CORRECTION_INFO,
@@ -311,24 +312,32 @@ export function CorrectionStateBadge({
   voidReason?: string | null;
   pending?: boolean;
 }) {
-  if (voided)
+  if (voided) {
+    const reason = (voidReason ?? "").replace(/^Corrección aprobada:\s*/i, "");
     return (
-      <span
-        title={voidReason ? `Motivo: ${voidReason}` : "Anulado por una corrección aprobada."}
-        className="inline-flex items-center gap-1 rounded-full bg-brand-danger-bg px-2 py-0.5 text-xs font-medium text-brand-danger"
-      >
-        <Ban size={11} aria-hidden /> Anulado
+      <span className="flex max-w-[16rem] flex-col items-start gap-0.5">
+        <Tooltip text={reason ? `Anulado por una corrección aprobada. Motivo: ${reason}` : "Anulado por una corrección aprobada."}>
+          <span
+            tabIndex={0}
+            className="inline-flex cursor-help items-center gap-1 rounded-full bg-brand-danger-bg px-2 py-0.5 text-xs font-medium text-brand-danger"
+          >
+            <Ban size={11} aria-hidden /> Anulado
+          </span>
+        </Tooltip>
+        {reason && <span className="line-clamp-2 text-[11px] leading-snug text-brand-muted">Motivo: {reason}</span>}
       </span>
     );
+  }
   if (pending)
     return (
-      <a
-        href="/payments?tab=correcciones"
-        title="Hay una corrección esperando aprobación. Mientras tanto no cambia nada."
-        className="inline-flex items-center gap-1 rounded-full bg-brand-warning-bg px-2 py-0.5 text-xs font-medium text-brand-warning hover:underline"
-      >
-        <PencilLine size={11} aria-hidden /> Corrección pendiente
-      </a>
+      <Tooltip text="Hay una corrección esperando aprobación. Mientras tanto no cambia nada.">
+        <a
+          href="/payments?tab=correcciones"
+          className="inline-flex items-center gap-1 rounded-full bg-brand-warning-bg px-2 py-0.5 text-xs font-medium text-brand-warning hover:underline"
+        >
+          <PencilLine size={11} aria-hidden /> Corrección pendiente
+        </a>
+      </Tooltip>
     );
   return null;
 }

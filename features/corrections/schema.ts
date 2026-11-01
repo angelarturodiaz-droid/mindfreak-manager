@@ -1,3 +1,6 @@
+import { formatMoney } from "@/lib/utils/money";
+import { formatDate } from "@/lib/utils/dates";
+
 /**
  * V1-4 — Correcciones de cobros, pagos y movimientos manuales con doble
  * aprobación. Textos en lenguaje sencillo (para personas no financieras).
@@ -105,4 +108,28 @@ export function correctionErrorMessage(message: string): string {
   for (const [code, text] of known) if (message.includes(code)) return text;
   const i = message.indexOf(": ");
   return i > 0 ? message.slice(i + 2) : message;
+}
+
+/** Resumen en una línea de lo que se pidió (para listas compactas). */
+export function describeRequest(row: {
+  action: CorrectionAction;
+  old_values: Record<string, unknown>;
+  new_values: Record<string, unknown>;
+}): string {
+  const old = row.old_values;
+  const cur = String(old.currency ?? "DOP");
+  if (row.action === "VOID") {
+    return `Anular ${formatMoney(Number(old.amount ?? 0), cur)}`;
+  }
+  const show = (f: string, v: unknown, vals: Record<string, unknown>) => {
+    if (v === null || v === undefined || v === "") return "—";
+    if (f === "amount") return formatMoney(Number(v), cur);
+    if (f === "date") return formatDate(String(v));
+    if (f === "bank_account_id") return String(vals.bank_account_name ?? "otra cuenta");
+    return String(v);
+  };
+  return Object.keys(row.new_values)
+    .filter((k) => k !== "bank_account_name")
+    .map((f) => `${FIELD_LABELS[f] ?? f}: ${show(f, old[f], old)} → ${show(f, row.new_values[f], { ...old, ...row.new_values })}`)
+    .join(" · ");
 }

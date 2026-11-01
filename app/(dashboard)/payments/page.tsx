@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { ArrowDownLeft, ArrowUpRight, HandCoins, Plus, Scale, ShieldCheck, TrendingUp } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, CircleCheck, HandCoins, Plus, Scale, ShieldCheck, TrendingUp } from "lucide-react";
+import { describeRequest, STATUS_INFO, STATUS_LABELS, TARGET_LABELS } from "@/features/corrections/schema";
+import type { CorrectionRow } from "@/features/corrections/queries";
+import { InfoHint } from "@/components/ui/info-hint";
+import { formatDateTime } from "@/lib/utils/dates";
 import { countPendingCorrections, listCorrectionHistory, listPendingCorrections } from "@/features/corrections/queries";
 import { CorrectionCard } from "@/components/corrections/correction-card";
 import { getCurrentUser } from "@/lib/auth/permissions";
@@ -62,7 +66,7 @@ const TABS = [
 export default async function PaymentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; q?: string; page?: string; ver?: string }>;
+  searchParams: Promise<{ tab?: string; q?: string; page?: string; ver?: string; pp?: string }>;
 }) {
   const params = await searchParams;
   const activeTab =
@@ -94,13 +98,97 @@ export default async function PaymentsPage({
   ]);
   // V1-4: correcciones con doble aprobación.
   const [pendingCorrections, pendingCount, canApproveCorrections, me] = await Promise.all([
-    activeTab === "correcciones" ? listPendingCorrections().catch(() => []) : Promise.resolve([]),
+    activeTab === "correcciones"
+      ? listPendingCorrections(parsePage(params.pp)).catch(() => ({ rows: [], total: 0, pageSize: 4 }))
+      : Promise.resolve({ rows: [], total: 0, pageSize: 4 }),
     countPendingCorrections().catch(() => 0),
     hasPermission("payments.void"),
     getCurrentUser(),
   ]);
   const correctionHistory =
     activeTab === "correcciones" ? (list.rows as Awaited<ReturnType<typeof listCorrectionHistory>>["rows"]) : [];
+  const CORR_TONES: Record<string, string> = {
+    APPROVED: "bg-brand-success-bg text-brand-success",
+    REJECTED: "bg-brand-danger-bg text-brand-danger",
+    WITHDRAWN: "bg-brand-surface-hover text-brand-muted",
+    PENDING: "bg-brand-warning-bg text-brand-warning",
+  };
+  const corrLink = (r: CorrectionRow) =>
+    r.link_type === "invoice"
+      ? `/invoices/${r.link_id}`
+      : r.link_type === "expense"
+        ? `/expenses/${r.link_id}`
+        : r.link_type === "bank_account"
+          ? `/banks/${r.link_id}`
+          : null;
+  const correctionColumns: Column<CorrectionRow>[] = [
+    {
+      header: "Pedida",
+      accessor: (r) => <span className="whitespace-nowrap text-xs text-brand-muted">{formatDateTime(r.requested_at)}</span>,
+    },
+    {
+      header: "Registro",
+      accessor: (r) => {
+        const href = corrLink(r);
+        return (
+          <span className="flex max-w-[16rem] flex-col">
+            <span className="text-xs text-brand-muted">{TARGET_LABELS[r.target_type]}</span>
+            {href ? (
+              <Link href={href} className="line-clamp-2 text-brand-accent hover:underline">
+                {r.target_label}
+              </Link>
+            ) : (
+              <span className="line-clamp-2 text-brand-text">{r.target_label}</span>
+            )}
+          </span>
+        );
+      },
+    },
+    {
+      header: "Qué se pidió",
+      info: "El cambio que se pidió (antes → después) o la anulación completa.",
+      accessor: (r) => (
+        <span className={`block max-w-[18rem] text-sm ${r.action === "VOID" ? "text-brand-danger" : "text-brand-text"}`}>
+          {describeRequest(r)}
+        </span>
+      ),
+    },
+    {
+      header: "Motivo",
+      accessor: (r) => (
+        <span className="line-clamp-2 block max-w-[14rem] text-xs text-brand-muted" title={r.reason}>
+          {r.reason}
+        </span>
+      ),
+    },
+    {
+      header: "Estado",
+      accessor: (r) => (
+        <span className="flex flex-col items-start gap-0.5">
+          <span className="flex items-center gap-1">
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${CORR_TONES[r.status]}`}>{STATUS_LABELS[r.status]}</span>
+            <InfoHint text={r.decision_note ? `${STATUS_INFO[r.status]} Nota: ${r.decision_note}` : STATUS_INFO[r.status]} />
+          </span>
+        </span>
+      ),
+    },
+    {
+      header: "Quién",
+      accessor: (r) => (
+        <span className="flex flex-col text-xs text-brand-muted">
+          <span>
+            Pidió <strong className="font-medium text-brand-text">{r.requesterName}</strong>
+          </span>
+          {r.status !== "WITHDRAWN" && r.deciderName && (
+            <span>
+              {r.status === "APPROVED" ? "Aprobó" : "Rechazó"}{" "}
+              <strong className="font-medium text-brand-text">{r.deciderName}</strong>
+            </span>
+          )}
+        </span>
+      ),
+    },
+  ];
   const advances = activeTab === "anticipos" ? (list.rows as Awaited<ReturnType<typeof listAdvancesPage>>["rows"]) : [];
   const payments = activeTab === "cobros" ? (list.rows as PaymentRow[]) : [];
   const supplierPayments = activeTab === "pagos" ? (list.rows as SupplierPaymentRow[]) : [];
@@ -340,40 +428,52 @@ export default async function PaymentsPage({
           <div>
             <SectionHeader
               title="Por aprobar"
-              count={pendingCorrections.length}
+              count={pendingCorrections.total}
               description={
                 canApproveCorrections
-                  ? "Revisa el antes y el después de cada una y pulsa Aprobar o Rechazar."
+                  ? "Revisa el antes y el después de cada una y pulsa Aprobar o Rechazar. Las que pediste tú las aprueba otra persona."
                   : "Las aprueba Administración o Finanzas. Tú puedes retirar las que pediste."
               }
             />
-            {pendingCorrections.length === 0 ? (
-              <p className="rounded-[var(--radius-lg)] border border-dashed border-brand-border p-6 text-center text-sm text-brand-muted">
-                No hay correcciones esperando aprobación. 👍
+            {pendingCorrections.rows.length === 0 ? (
+              <p className="flex items-center justify-center gap-2 rounded-[var(--radius-lg)] border border-dashed border-brand-border p-6 text-center text-sm text-brand-muted">
+                <CircleCheck size={16} className="text-brand-success" aria-hidden /> No hay correcciones esperando aprobación.
               </p>
             ) : (
               <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-                {pendingCorrections.map((r) => (
+                {pendingCorrections.rows.map((r) => (
                   <CorrectionCard key={r.id} row={r} currentUserId={me?.id ?? ""} canApprove={canApproveCorrections} />
                 ))}
               </div>
             )}
+            <div className="mt-3">
+              <Pagination
+                basePath="/payments"
+                page={parsePage(params.pp)}
+                pageSize={pendingCorrections.pageSize}
+                total={pendingCorrections.total}
+                pageParam="pp"
+                params={{ tab: "correcciones", page: params.page }}
+              />
+            </div>
           </div>
           <div>
-            <SectionHeader title="Historial" description="Ya decididas o retiradas. Lo último primero." />
-            {correctionHistory.length === 0 ? (
-              <p className="rounded-[var(--radius-lg)] border border-dashed border-brand-border p-6 text-center text-sm text-brand-muted">
-                Todavía no hay correcciones en el historial.
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-                {correctionHistory.map((r) => (
-                  <CorrectionCard key={r.id} row={r} currentUserId={me?.id ?? ""} canApprove={false} />
-                ))}
-              </div>
-            )}
+            <SectionHeader title="Historial" count={list.total} description="Ya decididas o retiradas. Lo último primero, de 10 en 10." />
+            <DataTable
+              columns={correctionColumns}
+              rows={correctionHistory}
+              keyFor={(r) => r.id}
+              maxWidth="max-w-none"
+              emptyMessage="Todavía no hay correcciones en el historial."
+            />
             <div className="mt-4">
-              <Pagination basePath="/payments" page={page} pageSize={list.pageSize} total={list.total} params={{ tab: "correcciones" }} />
+              <Pagination
+                basePath="/payments"
+                page={page}
+                pageSize={list.pageSize}
+                total={list.total}
+                params={{ tab: "correcciones", pp: params.pp }}
+              />
             </div>
           </div>
         </section>
