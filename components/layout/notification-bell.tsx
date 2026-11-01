@@ -85,6 +85,9 @@ export function NotificationBell({
         if (first) {
           toast(fresh.length > 1 ? `Tienes ${fresh.length} avisos nuevos` : `Tienes un aviso nuevo: ${first.title}`, {
             description: fresh.length > 1 ? "Ábrelos en la campanita." : (first.message ?? undefined),
+            // Se queda hasta que la persona lo cierre (para poder leerlo con calma).
+            duration: Infinity,
+            closeButton: true,
             action:
               first.entity_type && first.entity_id && ENTITY_LINKS[first.entity_type]
                 ? { label: "Ver", onClick: () => router.push(ENTITY_LINKS[first.entity_type!](first.entity_id!)) }

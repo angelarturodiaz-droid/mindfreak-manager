@@ -300,7 +300,7 @@ const SECTIONS: Section[] = [
         </p>
         <Bullets
           items={[
-            <><strong>Avisos (campanita 🔔)</strong>: se revisa sola cada 30 segundos mientras la pestaña está abierta, y también al volver a ella; no hace falta refrescar. Si llega uno nuevo, el número rojo sube y sale un aviso pequeño arriba a la derecha con el botón <em>Ver</em>.</>,
+            <><strong>Avisos (campanita 🔔)</strong>: se revisa sola cada 30 segundos mientras la pestaña está abierta, y también al volver a ella; no hace falta refrescar. Si llega uno nuevo, el número rojo sube y sale un aviso arriba a la derecha con el botón <em>Ver</em>; se queda hasta que lo cierres con la <strong>×</strong>.</>,
             <><strong>Tarjetas de resumen</strong> arriba de cada listado: los números clave del módulo (por ejemplo, por cobrar, vencido, en seguimiento).</>,
             <><strong>Filtros por estado</strong> como botones con su cantidad (ej. <em>Borrador 3</em>). Haz clic en uno para ver solo esos; <em>Todos</em> quita el filtro.</>,
             <><strong>Filtro por cliente</strong> (Cotizaciones, Facturas y Proyectos): se aplica al elegirlo, sin botón adicional. <em>Limpiar filtros</em> vuelve a la vista completa.</>,
