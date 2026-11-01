@@ -1239,3 +1239,18 @@ pulsa el botón.
 - **Para aprobar hace falta 2FA**: `has_permission` exige un factor verificado (Julissa debe activarlo).
 
 - Campanita (1-nov): `NotificationBell` consulta `getMyNotificationsAction` cada 30 s solo con `document.visibilityState === "visible"` y en `visibilitychange`/`focus`; toast de sonner con los ids no vistos. Tiempo real (Supabase Realtime sobre `notifications` con RLS) → V2.
+
+
+## 4b Carta de retención a proveedores (migración 094, 1-nov-2026)
+- `retention_letter_settings` (una fila por compañía: addressee_name/title, legal_text, signer_name/title; escribe
+  solo `settings.manage`). `expenses.retention_letter_number` (CR-0001, único por compañía) y `retention_letter_at`.
+- `assign_retention_letter_number(expense)` (payments.create): exige ISR+ITBIS retenido > 0 y un pago ACTIVE;
+  devuelve el número existente o asigna el siguiente con `pg_advisory_xact_lock`; audita `RETENTION_LETTER`.
+- `getRetentionLetterDataAction` arma `RetentionLetterData` (porcentajes = ITBIS retenido ÷ ITBIS facturado; ISR
+  retenido ÷ subtotal; fecha de retención = primer pago activo; total pagado = suma de pagos activos). PDF en el
+  navegador (`lib/pdf/retention-letter-document.tsx`), se sube a `documents/{company}/expense/{id}/carta-retencion-CR-xxxx.pdf`
+  y se registra una vez en `documents` (entity expense).
+- Investigación DGII (1-nov): no hay modelo único; la constancia se entrega al retenido (CT art. 309, Reglamento
+  139-98 art. 77). Norma General 02-2026 (16-sep-2026) excluye retenciones de ITBIS de la NG 02-05 a personas
+  jurídicas emisoras e-CF → pendiente con el contador (P1); no se cambiaron reglas.
+- Nota react-pdf: `lineHeight` y `textAlign: justify` en párrafos largos dan espaciado irregular; se dejó sin ellos.

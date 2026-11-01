@@ -29,6 +29,8 @@ const ENTITY_LABELS: Record<string, string> = {
   report: "Reporte",
   bank_catalog: "Catálogo de bancos",
   role_permission: "Permisos de rol",
+  retention_letter_settings: "Textos de la carta de retención",
+  payment_correction: "Corrección",
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -51,6 +53,7 @@ const ACTION_LABELS: Record<string, string> = {
   CORRECTION_REJECT: "Rechazó corrección",
   CORRECTION_WITHDRAW: "Retiró corrección",
   STATUS_IN_PROGRESS: "Pasó a En curso",
+  RETENTION_LETTER: "Emitió carta de retención",
 };
 
 const ACTION_TONES: Record<string, BadgeTone> = {

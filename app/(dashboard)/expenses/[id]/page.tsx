@@ -36,6 +36,9 @@ import { DataTable, type Column } from "@/components/ui/data-table";
 import { DownloadReceiptButton } from "@/components/payments/download-receipt-button";
 import { CorrectionStateBadge, RequestCorrectionButton } from "@/components/corrections/request-correction-button";
 import { pendingTargetIds } from "@/features/corrections/queries";
+import { RetentionLetterButton } from "@/components/retention-letters/retention-letter-button";
+import { getRetentionLetterSettings } from "@/features/retention-letters/actions";
+import { retentionPercents } from "@/features/retention-letters/schema";
 import { listServiceTypeOptions } from "@/features/supplier-service-types/queries";
 import { ExpenseFiscalCard, type ExpenseFiscalRow } from "@/components/fiscal/expense-fiscal-card";
 import { FiscalStatusBadge } from "@/components/fiscal/fiscal-status-badge";
@@ -100,6 +103,10 @@ export default async function ExpenseDetailPage({
   // V1-4: pagos con una corrección esperando aprobación.
   const pendingCorrection = await pendingTargetIds("supplier_payment", payments.map((p) => p.id)).catch(() => new Set<string>());
   const activePayments = payments.filter((p) => p.status !== "VOIDED");
+  // 4b: carta de retención (solo si se le retuvo algo al proveedor y ya hay un pago).
+  const hasWithholding = Number(expense.isr_withheld ?? 0) + Number(expense.itbis_withheld ?? 0) > 0;
+  const letterSettings = hasWithholding && canPay ? await getRetentionLetterSettings().catch(() => null) : null;
+  const letterSupplier = relationRow<{ name: string; tax_id: string | null }>(expense.suppliers);
   // Cómo se pagó de verdad: métodos y cuentas de los pagos registrados.
   const paidMethods = [...new Set(activePayments.map((p) => p.method).filter(Boolean))] as string[];
   const paidAccounts = [
@@ -392,6 +399,27 @@ export default async function ExpenseDetailPage({
               title="Pagos"
               count={payments.length}
               description="Cada pago registrado de este gasto: cuándo, cuánto y desde qué cuenta salió el dinero."
+              action={
+                hasWithholding && canPay && activePayments.length > 0 ? (
+                  <RetentionLetterButton
+                    expenseId={expense.id}
+                    existingNumber={(expense as { retention_letter_number?: string | null }).retention_letter_number ?? null}
+                    supplier={{ name: letterSupplier?.name ?? expense.incentive_recipient ?? "Proveedor", tax_id: letterSupplier?.tax_id ?? null }}
+                    {...retentionPercents({
+                      subtotal: Number(expense.subtotal ?? 0),
+                      tax: Number(expense.tax ?? 0),
+                      isrWithheld: Number(expense.isr_withheld ?? 0),
+                      itbisWithheld: Number(expense.itbis_withheld ?? 0),
+                    })}
+                    defaultSigner={{ name: letterSettings?.signer_name ?? null, title: letterSettings?.signer_title ?? null }}
+                    addresseeName={letterSettings?.addressee_name ?? ""}
+                  />
+                ) : hasWithholding && canPay ? (
+                  <span className="text-xs text-brand-muted" title="La retención se hace al pagar.">
+                    La carta de retención sale después del primer pago.
+                  </span>
+                ) : undefined
+              }
             />
             <DataTable
               columns={paymentColumns}

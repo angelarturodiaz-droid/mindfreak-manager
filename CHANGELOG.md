@@ -1,5 +1,16 @@
 # CHANGELOG — Mindfreak Manager
 
+## 4b Carta de retención a proveedores (2026-11-01)
+
+- En el **gasto con retenciones** (después del primer pago), botón **Carta de retención (PDF)**: ventana con fecha,
+  destinatario (Director General de la DGII / al proveedor / «A quien pueda interesar»), quién firma y vista previa
+  del texto. PDF con logo y colores de Mindfreak, número consecutivo **CR-0001** (se mantiene si se regenera), tabla
+  como la carta de siempre (fecha de factura, NCF, monto, ITBIS facturado, fecha de retención = fecha del pago, ITBIS
+  e ISR retenidos, total pagado), porcentajes calculados solos («100 % del ITBIS facturado»), párrafo legal, firma y
+  sello. Se guarda en **Documentos** del gasto.
+- **Configuración → Documentos**: nombre y cargo del Director(a) de la DGII, párrafo legal y firmante por defecto.
+- Solo lee el gasto: no cambia reglas ni cálculos fiscales. Migración **094** (respaldo A0 → 095, limpieza A1 → 096).
+
 ## V1-4 Correcciones con doble aprobación (2026-10-30)
 
 - **Campanita automática (1-nov):** se revisa sola cada 30 s con la pestaña visible (y al volver a ella); si

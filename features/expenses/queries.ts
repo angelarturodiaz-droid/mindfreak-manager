@@ -86,7 +86,7 @@ export async function getExpense(id: string) {
   const { data, error } = await supabase
     .from("expenses")
     .select(
-      "*, expense_categories(name), suppliers(name), projects(number, name), bank_accounts(name, bank_name)",
+      "*, expense_categories(name), suppliers(name, tax_id), projects(number, name), bank_accounts(name, bank_name)",
     )
     .eq("id", id)
     .single();
