@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import {
   ArrowLeft,
   ArrowUpRight,
+  BookUser,
   FolderOpen,
   Hash,
   Landmark,
@@ -40,6 +41,9 @@ import { Button } from "@/components/ui/button";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { InitialsAvatar, MetricCard, SectionHeader } from "@/components/ui/page-kit";
 import { relationRow } from "@/lib/utils/relation";
+import { getDirectoryInfo, listTags, listZones, supplierHasHistory } from "@/features/directory/queries";
+import { DIRECTORY_STATUS_INFO, DIRECTORY_STATUS_LABELS, DIRECTORY_STATUS_TONES } from "@/features/directory/schema";
+import { DirectoryInfoForm, DirectoryStatusBar, PhotoGallery } from "@/components/directory/directory-panel";
 import { formatDate } from "@/lib/utils/dates";
 
 const EXPENSE_STATUS_LABELS: Record<string, string> = {
@@ -51,6 +55,7 @@ const EXPENSE_STATUS_LABELS: Record<string, string> = {
 
 const TABS = [
   { key: "resumen", label: "Resumen", icon: LayoutDashboard },
+  { key: "directorio", label: "Directorio", icon: BookUser },
   { key: "gastos", label: "Gastos", icon: Receipt },
   { key: "pagos", label: "Pagos", icon: ArrowUpRight },
   { key: "documentos", label: "Documentos", icon: FolderOpen },
@@ -69,14 +74,12 @@ export default async function SupplierDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; return_to?: string }>;
+  searchParams: Promise<{ tab?: string; return_to?: string; nuevo?: string }>;
 }) {
   const { id } = await params;
-  const { tab, return_to } = await searchParams;
+  const { tab, return_to, nuevo } = await searchParams;
   // Si se abrió desde un proyecto, "volver" regresa ahí (y las pestañas lo conservan).
   const returnTo = safeReturnTo(return_to);
-  const activeTab = TABS.some((t) => t.key === tab) ? (tab as string) : "resumen";
-
   let supplier;
   try {
     supplier = await getSupplier(id);
@@ -84,6 +87,10 @@ export default async function SupplierDetailPage({
     notFound();
   }
   if (!supplier) notFound();
+  // Directorio (5): quien todavía no es proveedor abre en su pestaña Directorio.
+  const directoryStatus = ((supplier as { directory_status?: string }).directory_status ?? "PROVEEDOR") as keyof typeof DIRECTORY_STATUS_LABELS;
+  const isDirectoryOnly = ["PROSPECTO", "EVALUADO", "APROBADO"].includes(directoryStatus);
+  const activeTab = TABS.some((t) => t.key === tab) ? (tab as string) : isDirectoryOnly ? "directorio" : "resumen";
 
   const [contacts, documents, canManageDocs, bankCatalog, activity, categories, serviceTypes] = await Promise.all([
     listSupplierContacts(id),
@@ -93,6 +100,13 @@ export default async function SupplierDetailPage({
     getSupplierActivity(id),
     listCategoryOptions(),
     listServiceTypeOptions(),
+  ]);
+  const [directoryInfo, zones, dirTags, hasHistory, canEditSupplier] = await Promise.all([
+    activeTab === "directorio" ? getDirectoryInfo(id) : null,
+    activeTab === "directorio" ? listZones() : [],
+    activeTab === "directorio" ? listTags() : [],
+    activeTab === "directorio" ? supplierHasHistory(id) : false,
+    hasPermission("suppliers.update"),
   ]);
   const { totals } = activity;
   const tabCounts: Record<string, number> = {
@@ -187,6 +201,14 @@ export default async function SupplierDetailPage({
               {supplier.category && <Badge tone="info">{supplier.category}</Badge>}
               {supplier.service_type && <Badge tone="neutral">{supplier.service_type}</Badge>}
               {!supplier.is_active && <Badge tone="danger">Inactivo</Badge>}
+              {isDirectoryOnly && (
+                <span
+                  title={DIRECTORY_STATUS_INFO[directoryStatus]}
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${DIRECTORY_STATUS_TONES[directoryStatus]}`}
+                >
+                  Directorio · {DIRECTORY_STATUS_LABELS[directoryStatus]}
+                </span>
+              )}
             </div>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               {fiscalSummary(supplier).length > 0 ? (
@@ -294,7 +316,37 @@ export default async function SupplierDetailPage({
         })}
       </nav>
 
-      {activeTab === "resumen" ? (
+      {activeTab === "directorio" && directoryInfo ? (
+        <div className="flex flex-col gap-4">
+          {nuevo && (
+            <p className="rounded-[var(--radius-md)] border border-brand-success/30 bg-brand-success-bg px-3 py-2 text-sm text-brand-text">
+              ✓ Guardado en el directorio. Ahora sube sus <strong>fotos</strong>, ponle <strong>etiquetas</strong>, enlaces y
+              calificación cuando lo evalúes.
+            </p>
+          )}
+          <DirectoryStatusBar
+            supplierId={supplier.id}
+            status={directoryInfo.status}
+            hasHistory={hasHistory}
+            canEdit={canEditSupplier}
+            missingFiscal={!supplier.tax_id || !supplier.supplier_kind}
+          />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <PhotoGallery
+              supplierId={supplier.id}
+              photos={directoryInfo.photos}
+              coverId={directoryInfo.coverId}
+              canEdit={canEditSupplier}
+              uploadSlot={
+                canManageDocs ? (
+                  <UploadDocumentForm entityType="supplier" entityId={supplier.id} revalidatePathValue={`/suppliers/${supplier.id}`} />
+                ) : undefined
+              }
+            />
+            <DirectoryInfoForm supplierId={supplier.id} canEdit={canEditSupplier} zones={zones} tags={dirTags} info={directoryInfo} />
+          </div>
+        </div>
+      ) : activeTab === "resumen" ? (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <section className="flex flex-col gap-4 lg:col-span-2">
             <SectionHeader title="Contactos" count={contacts.length} description="Personas con las que tratas en este proveedor." />

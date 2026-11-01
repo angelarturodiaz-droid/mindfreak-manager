@@ -15,6 +15,7 @@ const TABS = [
   { href: "/settings/system", label: "Sistema" },
   { href: "/settings/reminders", label: "Recordatorios" },
   { href: "/settings/documents", label: "Documentos" },
+  { href: "/settings/directory", label: "Directorio" },
   { href: "/settings/messages", label: "Mensajes al cliente" },
   { href: "/settings/security", label: "Seguridad" },
   { href: "/settings/users", label: "Usuarios" },

@@ -6,6 +6,7 @@ export function safeReturnTo(value: string | null | undefined): string | null {
   if (!value) return null;
   const path = String(value);
   if (!path.startsWith("/") || path.startsWith("//") || path.includes("\\")) return null;
+  if (path === "/directory") return path;
   if (!/^\/(projects|suppliers|clients)\/[0-9a-f-]{36}(\?tab=[a-z-]+)?$/i.test(path)) return null;
   return path;
 }
@@ -14,6 +15,7 @@ export function safeReturnTo(value: string | null | undefined): string | null {
 export function returnToLabel(path: string): string {
   if (path.startsWith("/projects/")) return "Volver al proyecto";
   if (path.startsWith("/clients/")) return "Volver al cliente";
+  if (path === "/directory") return "Volver al directorio";
   return "Volver al proveedor";
 }
 

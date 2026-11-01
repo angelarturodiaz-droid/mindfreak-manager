@@ -54,6 +54,8 @@ const ACTION_LABELS: Record<string, string> = {
   CORRECTION_WITHDRAW: "Retiró corrección",
   STATUS_IN_PROGRESS: "Pasó a En curso",
   RETENTION_LETTER: "Emitió carta de retención",
+  CONVERT_SUPPLIER: "Convirtió en proveedor",
+  STATUS_CHANGE: "Cambió de estado",
 };
 
 const ACTION_TONES: Record<string, BadgeTone> = {

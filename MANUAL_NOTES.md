@@ -1254,3 +1254,15 @@ pulsa el botón.
   139-98 art. 77). Norma General 02-2026 (16-sep-2026) excluye retenciones de ITBIS de la NG 02-05 a personas
   jurídicas emisoras e-CF → pendiente con el contador (P1); no se cambiaron reglas.
 - Nota react-pdf: `lineHeight` y `textAlign: justify` en párrafos largos dan espaciado irregular; se dejó sin ellos.
+
+
+## 5 Directorio de Recursos y Aliados (migración 095, 1-nov-2026)
+- `suppliers.directory_status` (PROSPECTO/EVALUADO/APROBADO/PROVEEDOR/INACTIVO), `zone_id`, `links` jsonb,
+  `reference_price`, `directory_notes`, `rating` 1–5, `cover_document_id`. Tablas `directory_zones`, `directory_tags`,
+  `supplier_tags` (RLS: listas con settings.manage; etiquetas del proveedor con suppliers.create/update).
+- Trigger `guard_supplier_directory_status`: INACTIVO ⇔ `is_active=false` (desactivar/reactivar de siempre sincroniza;
+  reactivar sin historial → APROBADO); con gastos o pagos no vuelve a PROSPECTO/EVALUADO/APROBADO (`has_history`).
+- Trigger `promote_supplier_on_expense`: un gasto a alguien del directorio lo pasa a PROVEEDOR.
+- `listSuppliers` y estadísticas de Proveedores filtran PROVEEDOR/INACTIVO; `listActiveSuppliers` trae
+  `directory_status` y el selector del gasto agrupa «Del directorio». Fotos = `documents` image/* de la entidad supplier.
+- Permisos: los mismos de Proveedores (suppliers.*). Probado con rollback (1-nov).

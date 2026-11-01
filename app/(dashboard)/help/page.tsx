@@ -23,6 +23,7 @@ import {
   Receipt,
   Wallet,
   HandCoins,
+  BookUser,
   CreditCard,
   Landmark,
   BarChart3,
@@ -800,6 +801,37 @@ const SECTIONS: Section[] = [
             <><strong>Pagos a proveedores</strong>: no tienen campo de categoría porque toman la <strong>categoría del gasto</strong>. Elígela en el gasto antes de pagar (o cámbiala luego en Bancos).</>,
             <><strong>Anticipo a un proveedor (pagarle por partes)</strong>: al abrir <em>Nuevo gasto</em> sale arriba un consejo azul con estos pasos (se oculta con «Entendido, no mostrar de nuevo» y se vuelve a ver con «Ver consejo»). Si le adelantas dinero a un proveedor antes de que termine o te dé su factura, registra el <strong>gasto por el total acordado</strong> (con su ITBIS) y déjalo en «Aún no» (pendiente). Después, en el gasto, usa <em>Registrar pago</em> solo por lo que le adelantas: el gasto queda en <strong>Pago parcial</strong> y el recuadro azul dice cuánto falta. Cuando le pagues el resto, registras otro pago y queda <strong>Pagado</strong>. Su factura (NCF) la adjuntas en <em>Recibos y comprobantes</em> cuando llegue. Si el gasto tiene retenciones, se calcularon sobre el total y cada pago va contra el neto. Ejemplo: sonido por RD$100,000 + ITBIS, adelanto RD$40,000 → gasto de RD$118,000, pago de RD$40,000, falta RD$78,000. Los anticipos a proveedores con su propio documento quedan para la versión 2.</>,
             <><strong>Pago a proveedor con retenciones</strong>: se paga el <strong>neto</strong> (factura − ISR − ITBIS retenidos), no el total. El formulario lo explica paso a paso; ver <strong>Retenciones al pagar a un proveedor</strong>.</>,
+          ]}
+        />
+      </>
+    ),
+  },
+  {
+    id: "directorio",
+    label: "Directorio de Recursos y Aliados",
+    icon: BookUser,
+    tone: "violet",
+    summary: "Talentos, lugares y aliados con los que podemos trabajar, antes de que sean proveedores.",
+    content: (
+      <>
+        <p className="text-sm text-brand-text">
+          El <strong>Directorio</strong> guarda a quienes <strong>todavía no son proveedores</strong>: un mago que vimos en
+          otra boda, un salón que nos recomendaron, una banda que nos escribió. Es el <strong>mismo registro</strong> de
+          Proveedores: cuando le pagas por primera vez se convierte en Proveedor, sin duplicarlo.
+        </p>
+        <p className="text-sm font-medium text-brand-text">El camino, en 4 pasos</p>
+        <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-sm text-brand-text">
+          <li><strong>Prospecto</strong>: lo agregas con <em>Directorio → Nuevo en el directorio</em> (solo el nombre es obligatorio).</li>
+          <li><strong>Evaluado</strong>: en su ficha (pestaña <em>Directorio</em>) le subes fotos, pones precio de referencia, calificación de 1 a 5 ★, etiquetas, zona, enlaces y notas.</li>
+          <li><strong>Aprobado</strong>: nos sirve; lo tenemos a mano cuando haga falta.</li>
+          <li><strong>Proveedor</strong>: con <em>Convertir en proveedor</em>, o solo al registrarle un gasto (en el gasto sale en el grupo «Del directorio»). Antes de pagarle, completa su RNC/cédula y tipo fiscal.</li>
+        </ol>
+        <Bullets
+          items={[
+            <><strong>Tarjetas y filtros</strong>: en <em>Directorio</em> se ven con su foto de portada, estado, zona, etiquetas, precio y estrellas; hay pestañas por estado y filtros por categoría, zona, etiqueta y calificación.</>,
+            <><strong>Fotos</strong>: se suben en la pestaña Directorio de la ficha; la primera (o la que marques <em>Usar de portada</em>) sale en la tarjeta.</>,
+            <><strong>Historial protegido</strong>: si ya tiene gastos o pagos, no vuelve a Prospecto, Evaluado ni Aprobado (solo Proveedor o Inactivo). El estado no cambia reportes ni cuentas por pagar.</>,
+            <><strong>Proveedores</strong> muestra solo a los que ya son Proveedor (e Inactivos). Las listas de <strong>zonas</strong> y <strong>etiquetas</strong> se cambian en <em>Configuración → Directorio</em>.</>,
           ]}
         />
       </>

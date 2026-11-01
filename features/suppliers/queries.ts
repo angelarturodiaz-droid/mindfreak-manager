@@ -20,7 +20,9 @@ export async function listSuppliers(filters: SupplierListFilters = {}) {
     })
     // Lo último que se registró sale primero (mismo criterio en todas las listas).
     .order("created_at", { ascending: false })
-    .range(from, to);
+    .range(from, to)
+    // Los del Directorio que aún no son proveedores se ven en /directory.
+    .in("directory_status", ["PROVEEDOR", "INACTIVO"]);
 
   // Con o sin tildes.
   if (filters.search) query = query.filter("name", "imatch", accentPattern(filters.search));
@@ -42,7 +44,7 @@ export async function getSupplierStats() {
   );
   const monthStart = `${today.slice(0, 7)}-01`;
   const [suppliers, expenses, payments] = await Promise.all([
-    supabase.from("suppliers").select("is_active"),
+    supabase.from("suppliers").select("is_active").in("directory_status", ["PROVEEDOR", "INACTIVO"]),
     supabase
       .from("expenses")
       .select("balance, exchange_rate")

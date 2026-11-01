@@ -110,7 +110,7 @@ export async function listActiveSuppliers() {
     .from("suppliers")
     // category_id / service_type_id: para sugerir la categoría y el tipo de
     // servicio del gasto al elegir el proveedor (tratamiento fiscal).
-    .select("id, name, category_id, service_type_id")
+    .select("id, name, category_id, service_type_id, directory_status")
     .eq("is_active", true)
     .order("name");
   if (error) throw new Error(error.message);

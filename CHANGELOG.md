@@ -1,5 +1,15 @@
 # CHANGELOG — Mindfreak Manager
 
+## 5 Directorio de Recursos y Aliados (2026-11-01)
+
+- Menú **Directorio**: tarjetas con foto de portada, estado, categoría, zona, etiquetas, precio de referencia y
+  estrellas; pestañas por estado (Prospecto, Evaluado, Aprobado, Proveedor, Inactivo); filtros y paginación (12).
+- **Nuevo en el directorio** (solo el nombre es obligatorio). La ficha del proveedor tiene la pestaña **Directorio**:
+  avance con «Siguiente paso», galería de fotos (portada), zona, enlaces, precio, notas, calificación y etiquetas.
+- **Convertir en proveedor** o, al registrar un gasto, el grupo «Del directorio» que pasa solo a Proveedor al guardar.
+- Historial protegido (con gastos o pagos solo Proveedor o Inactivo). **Proveedores** muestra solo Proveedor/Inactivo.
+- **Configuración → Directorio**: zonas y etiquetas. Migración **095** (respaldo A0 → 096, limpieza A1 → 097).
+
 ## 4b Carta de retención a proveedores (2026-11-01)
 
 - En el **gasto con retenciones** (después del primer pago), botón **Carta de retención (PDF)**: ventana con fecha,

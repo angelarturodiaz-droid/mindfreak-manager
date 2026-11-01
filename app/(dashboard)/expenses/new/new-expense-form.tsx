@@ -118,7 +118,22 @@ export function NewExpenseForm({
         defaultValue={defaultSupplierId}
         emptyLabel="Sin proveedor (gasto general)"
         placeholder="Escribe el nombre del proveedor…"
-        options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
+        options={[...suppliers]
+          .sort(
+            (a, b) =>
+              Number(((a as { directory_status?: string }).directory_status ?? "PROVEEDOR") !== "PROVEEDOR") -
+              Number(((b as { directory_status?: string }).directory_status ?? "PROVEEDOR") !== "PROVEEDOR"),
+          )
+          .map((s) => {
+          // Directorio (5): quien aún no es proveedor sale aparte; al guardar el gasto pasa solo a Proveedor.
+          const fromDirectory = (s as { directory_status?: string }).directory_status !== undefined && (s as { directory_status?: string }).directory_status !== "PROVEEDOR";
+          return {
+            value: s.id,
+            label: s.name,
+            group: fromDirectory ? "Del directorio (pasa a Proveedor al guardar)" : "Proveedores",
+            detail: fromDirectory ? "Aún no es proveedor: al guardar el gasto se convierte solo" : undefined,
+          };
+        })}
         onChange={(v) => {
           const supplier = suppliers.find((s) => s.id === v);
           if (!categoryTouched && supplier?.category_id) {

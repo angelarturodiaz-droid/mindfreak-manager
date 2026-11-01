@@ -11,6 +11,7 @@ import {
   Package,
   PackageCheck,
   Truck,
+  BookUser,
   CheckSquare,
   Receipt,
   Wallet,
@@ -35,6 +36,7 @@ const NAV_PERMISSION: Record<string, string> = {
   "/quotations": "quotations.view",
   "/projects": "projects.view",
   "/suppliers": "suppliers.view",
+  "/directory": "suppliers.view",
   "/invoices": "invoices.view",
   "/payments": "payments.view",
   "/expenses": "expenses.view",
@@ -63,6 +65,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/services", label: "Productos y Servicios", icon: Package },
       { href: "/suppliers", label: "Proveedores", icon: Truck },
+      { href: "/directory", label: "Directorio", icon: BookUser },
       { href: "/tasks", label: "Tareas", icon: CheckSquare },
     ],
   },

@@ -142,7 +142,12 @@ export default async function SuppliersPage({
         <div>
           <h1 className="text-xl font-semibold text-brand-primary">Proveedores</h1>
           <p className="text-sm text-brand-muted">
-            Empresas y personas que le proveen servicios a Mindfreak Events.
+            Empresas y personas que le proveen servicios a Mindfreak Events. Los que todavía no son proveedores
+            (prospectos, evaluados, aprobados) están en el{" "}
+            <Link href="/directory" className="text-brand-accent hover:underline">
+              Directorio
+            </Link>
+            .
           </p>
         </div>
         <div className="flex gap-2">
