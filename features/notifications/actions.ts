@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { countUnreadNotifications, listMyNotifications } from "./queries";
 
 export async function markNotificationReadAction(id: string): Promise<void> {
   const supabase = await createClient();
@@ -36,4 +37,18 @@ export async function markAllNotificationsReadAction(): Promise<void> {
     .eq("is_read", false);
   if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
+}
+
+/**
+ * La campanita se revisa sola (cada 30 s con la pestaña visible): devuelve
+ * los últimos avisos y cuántos faltan por leer. Solo lectura.
+ */
+export async function getMyNotificationsAction() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { notifications: [], unreadCount: 0 };
+  const [notifications, unreadCount] = await Promise.all([listMyNotifications(), countUnreadNotifications()]);
+  return { notifications: notifications ?? [], unreadCount };
 }

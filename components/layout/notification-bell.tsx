@@ -6,7 +6,9 @@ import { Bell } from "lucide-react";
 import {
   markNotificationReadAction,
   markAllNotificationsReadAction,
+  getMyNotificationsAction,
 } from "@/features/notifications/actions";
+import { toast } from "@/components/ui/toaster";
 
 type Notification = {
   id: string;
@@ -39,16 +41,75 @@ function timeAgo(dateStr: string) {
   return `hace ${days} d`;
 }
 
+/** Cada cuánto se revisa la campanita sola (solo con la pestaña visible). */
+const POLL_MS = 30_000;
+
 export function NotificationBell({
-  notifications,
-  unreadCount,
+  notifications: initialNotifications,
+  unreadCount: initialUnread,
 }: {
   notifications: Notification[];
   unreadCount: number;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const [notifications, setNotifications] = useState(initialNotifications);
+  const [unreadCount, setUnreadCount] = useState(initialUnread);
+  const seen = useRef(new Set(initialNotifications.map((n) => n.id)));
+
+  // Al cambiar de página el servidor trae los avisos nuevos: se toman esos
+  // (patrón «ajustar el estado cuando cambian las props», sin efecto).
+  const [prevInitial, setPrevInitial] = useState(initialNotifications);
+  if (prevInitial !== initialNotifications) {
+    setPrevInitial(initialNotifications);
+    setNotifications(initialNotifications);
+    setUnreadCount(initialUnread);
+  }
+  useEffect(() => {
+    for (const n of initialNotifications) seen.current.add(n.id);
+  }, [initialNotifications]);
+
+  // Revisión automática: cada 30 s con la pestaña visible y al volver a ella.
+  useEffect(() => {
+    let alive = true;
+    async function refresh() {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const res = await getMyNotificationsAction();
+        if (!alive) return;
+        const fresh = res.notifications.filter((n) => !n.is_read && !seen.current.has(n.id));
+        for (const n of res.notifications) seen.current.add(n.id);
+        setNotifications(res.notifications);
+        setUnreadCount(res.unreadCount);
+        const first = fresh[0];
+        if (first) {
+          toast(fresh.length > 1 ? `Tienes ${fresh.length} avisos nuevos` : `Tienes un aviso nuevo: ${first.title}`, {
+            description: fresh.length > 1 ? "Ábrelos en la campanita." : (first.message ?? undefined),
+            action:
+              first.entity_type && first.entity_id && ENTITY_LINKS[first.entity_type]
+                ? { label: "Ver", onClick: () => router.push(ENTITY_LINKS[first.entity_type!](first.entity_id!)) }
+                : undefined,
+          });
+        }
+      } catch {
+        /* sin conexión: se intenta en la próxima vuelta */
+      }
+    }
+    const timer = setInterval(refresh, POLL_MS);
+    function onVisible() {
+      if (document.visibilityState === "visible") void refresh();
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- router es estable
+  }, []);
+  const ref = useRef<HTMLDivElement>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -61,6 +122,8 @@ export function NotificationBell({
 
   function handleClickNotification(n: Notification) {
     if (!n.is_read) {
+      setNotifications((list) => list.map((x) => (x.id === n.id ? { ...x, is_read: true } : x)));
+      setUnreadCount((c) => Math.max(0, c - 1));
       startTransition(() => markNotificationReadAction(n.id));
     }
     setOpen(false);
@@ -93,7 +156,11 @@ export function NotificationBell({
               <button
                 type="button"
                 disabled={isPending}
-                onClick={() => startTransition(() => markAllNotificationsReadAction())}
+                onClick={() => {
+                  setNotifications((list) => list.map((x) => ({ ...x, is_read: true })));
+                  setUnreadCount(0);
+                  startTransition(() => markAllNotificationsReadAction());
+                }}
                 className="text-xs text-brand-accent hover:underline disabled:opacity-50"
               >
                 Marcar todas como leídas

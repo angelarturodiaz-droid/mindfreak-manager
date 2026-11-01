@@ -1237,3 +1237,5 @@ pulsa el botón.
   pago a proveedor (gasto vuelve a Pago parcial), cambio de fecha/descr. de un manual, auto-aprobación bloqueada,
   «sin cambios» bloqueado, 6 avisos.
 - **Para aprobar hace falta 2FA**: `has_permission` exige un factor verificado (Julissa debe activarlo).
+
+- Campanita (1-nov): `NotificationBell` consulta `getMyNotificationsAction` cada 30 s solo con `document.visibilityState === "visible"` y en `visibilitychange`/`focus`; toast de sonner con los ids no vistos. Tiempo real (Supabase Realtime sobre `notifications` con RLS) → V2.
