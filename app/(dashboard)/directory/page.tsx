@@ -3,7 +3,12 @@ import { BookUser, Plus } from "lucide-react";
 import { countDirectoryByStatus, listDirectory, listTags, listZones } from "@/features/directory/queries";
 import { DIRECTORY_STATUS_INFO, DIRECTORY_STATUS_LABELS, DIRECTORY_STATUSES, type DirectoryStatus } from "@/features/directory/schema";
 import { listCategoryOptions } from "@/features/expense-categories/queries";
-import { DirectoryCard } from "@/components/directory/directory-card";
+import { DirectoryCard, directoryHref } from "@/components/directory/directory-card";
+import { DirectoryViewToggle } from "@/components/directory/view-toggle";
+import { Stars } from "@/components/directory/stars";
+import { DataTable, type Column } from "@/components/ui/data-table";
+import type { DirectoryCard as CardRow } from "@/features/directory/queries";
+import { DIRECTORY_STATUS_TONES } from "@/features/directory/schema";
 import { Callout, SectionHeader } from "@/components/ui/page-kit";
 import { Button } from "@/components/ui/button";
 import { LiveSearchInput } from "@/components/ui/live-search-input";
@@ -13,7 +18,7 @@ import { hasPermission } from "@/lib/auth/permissions";
 import { parsePage } from "@/lib/utils/pagination";
 import { cleanSearch } from "@/lib/utils/search";
 
-type Params = { estado?: string; q?: string; zona?: string; etiqueta?: string; categoria?: string; estrellas?: string; page?: string };
+type Params = { estado?: string; q?: string; zona?: string; etiqueta?: string; categoria?: string; estrellas?: string; page?: string; vista?: string };
 
 export default async function DirectoryPage({ searchParams }: { searchParams: Promise<Params> }) {
   const sp = await searchParams;
@@ -21,8 +26,18 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
   const q = cleanSearch(sp.q);
   const page = parsePage(sp.page);
   const minRating = Number(sp.estrellas) || undefined;
+  const view = sp.vista === "lista" ? "lista" : "tarjetas";
   const [list, counts, zones, tags, categories, canCreate] = await Promise.all([
-    listDirectory({ status, search: q, zoneId: sp.zona, tagId: sp.etiqueta, categoryId: sp.categoria, minRating, page }),
+    listDirectory({
+      status,
+      search: q,
+      zoneId: sp.zona,
+      tagId: sp.etiqueta,
+      categoryId: sp.categoria,
+      minRating,
+      page,
+      pageSize: view === "lista" ? 20 : 24,
+    }),
     countDirectoryByStatus(),
     listZones(),
     listTags(),
@@ -31,12 +46,58 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
   ]);
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   const filtersOn = Boolean(q || sp.zona || sp.etiqueta || sp.categoria || sp.estrellas);
-  const keep = { estado: status === "TODOS" ? undefined : status, q, zona: sp.zona, etiqueta: sp.etiqueta, categoria: sp.categoria, estrellas: sp.estrellas };
+  const keep = {
+    estado: status === "TODOS" ? undefined : status,
+    q,
+    zona: sp.zona,
+    etiqueta: sp.etiqueta,
+    categoria: sp.categoria,
+    estrellas: sp.estrellas,
+    vista: view === "lista" ? "lista" : undefined,
+  };
   const tabHref = (s: string) => {
     const p = new URLSearchParams();
     if (s !== "TODOS") p.set("estado", s);
+    if (view === "lista") p.set("vista", "lista");
     return `/directory${p.toString() ? `?${p}` : ""}`;
   };
+
+  const listColumns: Column<CardRow>[] = [
+    {
+      header: "",
+      accessor: (r) =>
+        r.coverUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- URL firmada de Storage
+          <img src={r.coverUrl} alt="" className="h-9 w-12 rounded object-cover" />
+        ) : (
+          <span className="block h-9 w-12 rounded bg-brand-surface-hover" />
+        ),
+    },
+    {
+      header: "Nombre",
+      accessor: (r) => (
+        <Link href={directoryHref(r.id)} className="font-medium text-brand-text hover:text-brand-accent">
+          {r.name}
+        </Link>
+      ),
+    },
+    {
+      header: "Estado",
+      accessor: (r) => (
+        <span title={DIRECTORY_STATUS_INFO[r.directory_status]} className={`rounded-full px-2 py-0.5 text-xs font-medium ${DIRECTORY_STATUS_TONES[r.directory_status]}`}>
+          {DIRECTORY_STATUS_LABELS[r.directory_status]}
+        </span>
+      ),
+    },
+    { header: "Categoría", accessor: (r) => <span className="text-xs text-brand-muted">{[r.category, r.service_type].filter(Boolean).join(" · ") || "—"}</span> },
+    { header: "Zona", accessor: (r) => <span className="text-xs text-brand-muted">{r.zoneName ?? "—"}</span> },
+    { header: "Calificación", accessor: (r) => <Stars value={r.rating} size={11} /> },
+    { header: "Precio", accessor: (r) => <span className="text-xs text-brand-text">{r.reference_price ?? "—"}</span> },
+    {
+      header: "Etiquetas",
+      accessor: (r) => <span className="line-clamp-1 max-w-[12rem] text-xs text-brand-muted">{r.tags.join(", ") || "—"}</span>,
+    },
+  ];
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
@@ -84,6 +145,7 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
 
       <form action="/directory" method="get" className="flex flex-wrap items-end gap-2">
         {status !== "TODOS" && <input type="hidden" name="estado" value={status} />}
+        {view === "lista" && <input type="hidden" name="vista" value="lista" />}
         <LiveSearchInput defaultValue={q ?? ""} placeholder="Buscar por nombre…" ariaLabel="Buscar en el directorio" className="w-64" />
         <AutoSubmitSelect name="categoria" defaultValue={sp.categoria ?? ""} aria-label="Categoría" className="w-48">
           <option value="">Todas las categorías</option>
@@ -126,14 +188,27 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
         <SectionHeader
           title={status === "TODOS" ? "Todos" : DIRECTORY_STATUS_LABELS[status]}
           count={list.total}
-          description="Lo último registrado primero. Haz clic en una tarjeta para ver su ficha, fotos y notas."
+          description={
+            view === "lista"
+              ? "Lo último registrado primero, de 20 en 20. Haz clic en el nombre para ver su ficha."
+              : "Lo último registrado primero, de 24 en 24. Pasa el mouse para ver categoría, precio y etiquetas; haz clic para abrir la ficha."
+          }
+          action={<DirectoryViewToggle current={view} />}
         />
-        {list.rows.length === 0 ? (
+        {view === "lista" ? (
+          <DataTable
+            columns={listColumns}
+            rows={list.rows}
+            keyFor={(r) => r.id}
+            maxWidth="max-w-none"
+            emptyMessage={filtersOn ? "Nada coincide con los filtros." : "Todavía no hay nadie aquí. Pulsa «Nuevo en el directorio»."}
+          />
+        ) : list.rows.length === 0 ? (
           <p className="rounded-[var(--radius-lg)] border border-dashed border-brand-border p-8 text-center text-sm text-brand-muted">
             {filtersOn ? "Nada coincide con los filtros." : "Todavía no hay nadie aquí. Pulsa «Nuevo en el directorio»."}
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
             {list.rows.map((c) => (
               <DirectoryCard key={c.id} card={c} />
             ))}

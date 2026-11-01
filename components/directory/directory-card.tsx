@@ -1,62 +1,52 @@
 import Link from "next/link";
-import { ImageOff, MapPin, Phone, Tag } from "lucide-react";
+import { ImageOff, MapPin } from "lucide-react";
 import type { DirectoryCard as Card } from "@/features/directory/queries";
 import { DIRECTORY_STATUS_INFO, DIRECTORY_STATUS_LABELS, DIRECTORY_STATUS_TONES } from "@/features/directory/schema";
 import { Stars } from "./stars";
 
-/** Tarjeta del Directorio: foto, nombre, categoría, estado, zona, etiquetas, precio y estrellas. */
+export function directoryHref(id: string) {
+  return `/suppliers/${id}?tab=directorio&return_to=${encodeURIComponent("/directory")}`;
+}
+
+/** Tarjeta compacta: foto, nombre, estado, estrellas y zona. El resto, al pasar el mouse o en la ficha. */
 export function DirectoryCard({ card }: { card: Card }) {
+  const more = [
+    [card.category, card.service_type].filter(Boolean).join(" · "),
+    card.reference_price,
+    card.tags.length ? `Etiquetas: ${card.tags.join(", ")}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
   return (
     <Link
-      href={`/suppliers/${card.id}?tab=directorio&return_to=${encodeURIComponent("/directory")}`}
-      className="group flex flex-col overflow-hidden rounded-[var(--radius-lg)] border border-brand-border bg-brand-surface transition-shadow hover:shadow-[var(--shadow-lg)]"
+      href={directoryHref(card.id)}
+      title={more || card.name}
+      className="group flex flex-col overflow-hidden rounded-[var(--radius-md)] border border-brand-border bg-brand-surface transition-shadow hover:shadow-[var(--shadow-lg)]"
     >
-      <div className="relative aspect-[4/3] w-full bg-brand-surface-hover">
+      <div className="relative aspect-[3/2] w-full bg-brand-surface-hover">
         {card.coverUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- URL firmada de Storage (cambia cada hora)
-          <img src={card.coverUrl} alt={card.name} className="h-full w-full object-cover transition-transform group-hover:scale-[1.02]" />
+          <img src={card.coverUrl} alt={card.name} className="h-full w-full object-cover" />
         ) : (
-          <span className="flex h-full w-full flex-col items-center justify-center gap-1 text-xs text-brand-muted">
-            <ImageOff size={22} aria-hidden /> Sin foto todavía
+          <span className="flex h-full w-full items-center justify-center text-brand-muted">
+            <ImageOff size={18} aria-label="Sin foto" />
           </span>
         )}
         <span
           title={DIRECTORY_STATUS_INFO[card.directory_status]}
-          className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-xs font-medium shadow-sm ${DIRECTORY_STATUS_TONES[card.directory_status]}`}
+          className={`absolute left-1.5 top-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-medium shadow-sm ${DIRECTORY_STATUS_TONES[card.directory_status]}`}
         >
           {DIRECTORY_STATUS_LABELS[card.directory_status]}
         </span>
       </div>
-      <div className="flex flex-1 flex-col gap-1.5 p-3">
-        <p className="line-clamp-1 font-semibold text-brand-text group-hover:text-brand-accent">{card.name}</p>
-        <p className="line-clamp-1 text-xs text-brand-muted">
-          {[card.category, card.service_type].filter(Boolean).join(" · ") || "Sin categoría"}
-        </p>
-        <Stars value={card.rating} />
-        {card.reference_price && <p className="line-clamp-1 text-sm font-medium text-brand-text">{card.reference_price}</p>}
-        <div className="mt-auto flex flex-col gap-1 pt-1 text-xs text-brand-muted">
-          {card.zoneName && (
-            <span className="inline-flex items-center gap-1">
-              <MapPin size={12} aria-hidden /> {card.zoneName}
-            </span>
-          )}
-          {card.phone && (
-            <span className="inline-flex items-center gap-1">
-              <Phone size={12} aria-hidden /> {card.phone}
-            </span>
-          )}
-          {card.tags.length > 0 && (
-            <span className="flex flex-wrap items-center gap-1">
-              <Tag size={12} aria-hidden />
-              {card.tags.slice(0, 4).map((t) => (
-                <span key={t} className="rounded-full bg-brand-surface-hover px-1.5 py-0.5 text-[11px] text-brand-text">
-                  {t}
-                </span>
-              ))}
-              {card.tags.length > 4 && <span>+{card.tags.length - 4}</span>}
-            </span>
-          )}
-        </div>
+      <div className="flex flex-col gap-0.5 px-2 py-1.5">
+        <p className="line-clamp-1 text-sm font-semibold text-brand-text group-hover:text-brand-accent">{card.name}</p>
+        <Stars value={card.rating} size={11} />
+        {card.zoneName && (
+          <span className="inline-flex items-center gap-1 truncate text-[11px] text-brand-muted">
+            <MapPin size={10} aria-hidden /> {card.zoneName}
+          </span>
+        )}
       </div>
     </Link>
   );

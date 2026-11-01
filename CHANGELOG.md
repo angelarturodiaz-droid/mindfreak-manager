@@ -1,5 +1,12 @@
 # CHANGELOG — Mindfreak Manager
 
+## Directorio: vista compacta (2026-11-01)
+
+- Tarjetas más pequeñas (hasta 6 por fila) con solo foto, nombre, estado, estrellas y zona; categoría, precio y
+  etiquetas al pasar el mouse. **24 por página**.
+- Botón **Tarjetas / Lista**: la lista es una tabla compacta de 20 en 20 (foto, nombre, estado, categoría, zona,
+  calificación, precio, etiquetas). La vista elegida se recuerda en esa computadora.
+
 ## 5 Directorio de Recursos y Aliados (2026-11-01)
 
 - Menú **Directorio**: tarjetas con foto de portada, estado, categoría, zona, etiquetas, precio de referencia y

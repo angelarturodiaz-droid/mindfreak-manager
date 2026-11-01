@@ -57,16 +57,18 @@ export async function listDirectory(filters: {
   categoryId?: string;
   minRating?: number;
   page?: number;
+  pageSize?: number;
 }) {
   const supabase = await createClient();
   const page = Math.max(1, filters.page ?? 1);
-  const from = (page - 1) * DIRECTORY_PAGE_SIZE;
+  const size = filters.pageSize ?? DIRECTORY_PAGE_SIZE;
+  const from = (page - 1) * size;
 
   let ids: string[] | null = null;
   if (filters.tagId) {
     const { data } = await supabase.from("supplier_tags").select("supplier_id").eq("tag_id", filters.tagId);
     ids = (data ?? []).map((r) => r.supplier_id as string);
-    if (!ids.length) return { rows: [] as DirectoryCard[], total: 0, pageSize: DIRECTORY_PAGE_SIZE };
+    if (!ids.length) return { rows: [] as DirectoryCard[], total: 0, pageSize: size };
   }
 
   let q = supabase
@@ -75,7 +77,7 @@ export async function listDirectory(filters: {
       count: "exact",
     })
     .order("created_at", { ascending: false })
-    .range(from, from + DIRECTORY_PAGE_SIZE - 1);
+    .range(from, from + size - 1);
   if (filters.status && filters.status !== "TODOS") q = q.eq("directory_status", filters.status);
   if (filters.search) q = q.filter("name", "imatch", accentPattern(filters.search));
   if (filters.zoneId) q = q.eq("zone_id", filters.zoneId);
@@ -134,7 +136,7 @@ export async function listDirectory(filters: {
       coverUrl: path ? (urls.get(path) ?? null) : null,
     };
   });
-  return { rows: cards, total: count ?? 0, pageSize: DIRECTORY_PAGE_SIZE };
+  return { rows: cards, total: count ?? 0, pageSize: size };
 }
 
 /** Datos del Directorio de un proveedor (para su ficha). */
