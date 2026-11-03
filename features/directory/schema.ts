@@ -58,25 +58,60 @@ export function directoryNextStep(status: DirectoryStatus): { text: string; to: 
 }
 
 export const LINK_FIELDS = [
-  { key: "web", label: "Página web", placeholder: "https://…" },
-  { key: "instagram", label: "Instagram", placeholder: "https://instagram.com/…" },
-  { key: "video", label: "Video", placeholder: "https://youtube.com/…" },
-  { key: "map", label: "Mapa", placeholder: "https://maps.google.com/…" },
+  { key: "web", label: "Página web", placeholder: "https://…", example: "www.sunegocio.com" },
+  { key: "instagram", label: "Instagram", placeholder: "https://instagram.com/…", example: "instagram.com/sunegocio" },
+  { key: "video", label: "Video", placeholder: "https://youtube.com/…", example: "youtube.com/watch?v=…" },
+  { key: "map", label: "Mapa", placeholder: "https://maps.google.com/…", example: "maps.app.goo.gl/…" },
 ] as const;
 
 export type DirectoryLinks = Partial<Record<(typeof LINK_FIELDS)[number]["key"], string>>;
 
-/** Solo enlaces http(s) (evita «javascript:» y similares). */
+/** Solo enlaces http(s) con un dominio real (evita «javascript:», «hola mundo», «https://hola/»). */
 export function cleanLink(value: string): string | null {
   const v = value.trim();
   if (!v) return null;
+  if (/\s/.test(v)) return null;
   const withProto = /^https?:\/\//i.test(v) ? v : `https://${v}`;
   try {
     const u = new URL(withProto);
-    return u.protocol === "http:" || u.protocol === "https:" ? u.toString() : null;
+    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+    // Debe tener un dominio con punto (ej. youtube.com), no una palabra suelta.
+    const parts = u.hostname.split(".");
+    if (parts.length < 2 || parts.some((p) => !p) || parts[parts.length - 1].length < 2) return null;
+    return u.toString();
   } catch {
     return null;
   }
+}
+
+/** Mensaje para un enlace que no es una dirección web. */
+export function invalidLinkMessage(label: string, example: string): string {
+  return `El enlace de «${label}» no es una dirección web. Escríbelo completo, por ejemplo: ${example}`;
+}
+
+const MONEY_FMT = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/**
+ * Precio de referencia (texto libre) con comas y punto: «15000» → «RD$15,000.00»;
+ * «desde RD$15000 por hora» → «desde RD$15,000.00 por hora». Los números chicos sin moneda
+ * («3 horas», «100 personas») y los años («2026») quedan igual.
+ */
+export function formatPriceText(value: string | null | undefined): string {
+  const t = (value ?? "").trim().replace(/\s+/g, " ");
+  if (!t) return "";
+  if (/^\d[\d,]*(\.\d+)?$/.test(t)) {
+    const n = Number(t.replace(/,/g, ""));
+    return Number.isFinite(n) ? `RD$${MONEY_FMT.format(n)}` : t;
+  }
+  return t.replace(/(RD\$|US\$|\$)?\s?(\d[\d,]*(?:\.\d+)?)/g, (match, cur: string | undefined, num: string) => {
+    const digits = num.replace(/,/g, "");
+    const n = Number(digits);
+    if (!Number.isFinite(n)) return match;
+    const intPart = digits.split(".")[0];
+    if (!cur && (intPart.length < 4 || (intPart.length === 4 && /^(19|20)\d\d$/.test(intPart) && !digits.includes(".")))) return match;
+    const lead = match.startsWith(" ") ? " " : "";
+    return `${lead}${cur ?? ""}${MONEY_FMT.format(n)}`;
+  });
 }
 
 export function directoryErrorMessage(message: string): string {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ImageOff, MapPin } from "lucide-react";
 import type { DirectoryCard as Card } from "@/features/directory/queries";
-import { DIRECTORY_STATUS_INFO, DIRECTORY_STATUS_LABELS, DIRECTORY_STATUS_TONES } from "@/features/directory/schema";
+import { DIRECTORY_STATUS_INFO, DIRECTORY_STATUS_LABELS, DIRECTORY_STATUS_TONES, formatPriceText } from "@/features/directory/schema";
 import { Stars } from "./stars";
 
 export function directoryHref(id: string) {
@@ -12,7 +12,7 @@ export function directoryHref(id: string) {
 export function DirectoryCard({ card }: { card: Card }) {
   const more = [
     [card.category, card.service_type].filter(Boolean).join(" · "),
-    card.reference_price,
+    card.reference_price ? `Precio: ${formatPriceText(card.reference_price)}` : "",
     card.tags.length ? `Etiquetas: ${card.tags.join(", ")}` : "",
   ]
     .filter(Boolean)

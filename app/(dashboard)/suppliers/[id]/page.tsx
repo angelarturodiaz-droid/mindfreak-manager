@@ -331,19 +331,25 @@ export default async function SupplierDetailPage({
             canEdit={canEditSupplier}
             missingFiscal={!supplier.tax_id || !supplier.supplier_kind}
           />
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <PhotoGallery
-              supplierId={supplier.id}
-              photos={directoryInfo.photos}
-              coverId={directoryInfo.coverId}
-              canEdit={canEditSupplier}
-              uploadSlot={
-                canManageDocs ? (
-                  <UploadDocumentForm entityType="supplier" entityId={supplier.id} revalidatePathValue={`/suppliers/${supplier.id}`} />
-                ) : undefined
-              }
-            />
-            <DirectoryInfoForm supplierId={supplier.id} canEdit={canEditSupplier} zones={zones} tags={dirTags} info={directoryInfo} />
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-5">
+            <div className="lg:col-span-3">
+              <DirectoryInfoForm
+                supplierId={supplier.id}
+                canEdit={canEditSupplier}
+                zones={zones}
+                tags={dirTags}
+                info={directoryInfo}
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <PhotoGallery
+                supplierId={supplier.id}
+                photos={directoryInfo.photos}
+                coverId={directoryInfo.coverId}
+                canEdit={canEditSupplier}
+                canUpload={canManageDocs}
+              />
+            </div>
           </div>
         </div>
       ) : activeTab === "resumen" ? (

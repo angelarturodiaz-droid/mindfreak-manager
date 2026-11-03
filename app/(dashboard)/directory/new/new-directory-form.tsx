@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { createDirectoryEntryAction, type DirectoryState } from "@/features/directory/actions";
-import { DIRECTORY_STATUS_INFO, DIRECTORY_STATUS_LABELS } from "@/features/directory/schema";
+import { DIRECTORY_STATUS_INFO, DIRECTORY_STATUS_LABELS, formatPriceText } from "@/features/directory/schema";
 import { Input, Select, Textarea } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -91,7 +91,10 @@ export function NewDirectoryEntryForm({
             label="Precio de referencia (opcional)"
             name="reference_price"
             placeholder="Ej. desde RD$15,000 por hora"
-            info="Texto libre: lo que nos dijeron que cobra. No crea ningún gasto."
+            info="Lo que nos dijeron que cobra. Al salir del campo los números se ponen con comas y punto (15000 → RD$15,000.00). No crea ningún gasto."
+            onBlur={(e) => {
+              e.currentTarget.value = formatPriceText(e.currentTarget.value);
+            }}
           />
         </div>
         <Textarea label="Notas (opcional)" name="directory_notes" rows={3} placeholder="Ej. Lo vimos en la boda de…; muy puntual; trae su propio sonido." />

@@ -1268,3 +1268,8 @@ pulsa el botón.
 - Permisos: los mismos de Proveedores (suppliers.*). Probado con rollback (1-nov).
 - Vista compacta: `?vista=tarjetas|lista`; `listDirectory({pageSize})` 12 en tarjetas, `PAGE_SIZE` (10) en lista. `DirectoryViewToggle` guarda la
   preferencia en localStorage `mf.directory.view` y, si la URL no trae `vista`, redirige a la guardada.
+- (2-nov) `formatPriceText` (schema) formatea el precio de referencia (cliente onBlur + servidor + vista). `cleanLink` exige
+  dominio con punto y sin espacios. `DirectoryInfoForm` envía con `onSubmit` + `startTransition(formAction)` para evitar el
+  `form.reset()` de React 19 (borraba las etiquetas); etiquetas como `<input type=hidden name=tag_ids>` desde el estado.
+  Errores con `errorId`/`field` → ResultDialog + campo en rojo. Fotos: `PhotoUploader` sube varias con `uploadDocumentAction`.
+  Zonas/etiquetas extra: `supabase/data/2026-11-02_directorio_zonas_etiquetas.sql` (insert … on conflict do nothing).

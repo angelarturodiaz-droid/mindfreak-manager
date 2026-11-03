@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookUser, Plus } from "lucide-react";
+import { BookUser, Plus, X } from "lucide-react";
 import { countDirectoryByStatus, listDirectory, listTags, listZones } from "@/features/directory/queries";
 import { DIRECTORY_STATUS_INFO, DIRECTORY_STATUS_LABELS, DIRECTORY_STATUSES, type DirectoryStatus } from "@/features/directory/schema";
 import { listCategoryOptions } from "@/features/expense-categories/queries";
@@ -9,7 +9,7 @@ import { DirectoryViewToggle } from "@/components/directory/view-toggle";
 import { Stars } from "@/components/directory/stars";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import type { DirectoryCard as CardRow } from "@/features/directory/queries";
-import { DIRECTORY_STATUS_TONES } from "@/features/directory/schema";
+import { DIRECTORY_STATUS_TONES, formatPriceText } from "@/features/directory/schema";
 import { Callout, SectionHeader } from "@/components/ui/page-kit";
 import { Button } from "@/components/ui/button";
 import { LiveSearchInput } from "@/components/ui/live-search-input";
@@ -93,7 +93,7 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
     { header: "Categoría", accessor: (r) => <span className="text-xs text-brand-muted">{[r.category, r.service_type].filter(Boolean).join(" · ") || "—"}</span> },
     { header: "Zona", accessor: (r) => <span className="text-xs text-brand-muted">{r.zoneName ?? "—"}</span> },
     { header: "Calificación", accessor: (r) => <Stars value={r.rating} size={11} /> },
-    { header: "Precio", accessor: (r) => <span className="text-xs text-brand-text">{r.reference_price ?? "—"}</span> },
+    { header: "Precio", accessor: (r) => <span className="text-xs text-brand-text">{r.reference_price ? formatPriceText(r.reference_price) : "—"}</span> },
     {
       header: "Etiquetas",
       accessor: (r) => <span className="line-clamp-1 max-w-[12rem] text-xs text-brand-muted">{r.tags.join(", ") || "—"}</span>,
@@ -178,10 +178,21 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
           <option value="4">4 ★ o más</option>
           <option value="5">5 ★</option>
         </AutoSubmitSelect>
-        {filtersOn && (
-          <Link href={tabHref(status)} className="pb-2 text-sm text-brand-accent hover:underline">
-            Limpiar filtros
+        {filtersOn ? (
+          <Link
+            href={tabHref(status)}
+            title="Quita la búsqueda y todos los filtros (se queda en la pestaña y la vista que tienes)"
+            className="inline-flex h-[42px] items-center gap-1.5 rounded-[var(--radius-md)] border border-brand-accent/40 bg-brand-accent-light px-3 text-sm font-medium text-brand-accent hover:bg-brand-accent/10"
+          >
+            <X size={14} aria-hidden /> Limpiar filtros
           </Link>
+        ) : (
+          <span
+            title="Cuando uses la búsqueda o un filtro, aquí podrás quitarlos todos de una vez"
+            className="inline-flex h-[42px] cursor-default items-center gap-1.5 rounded-[var(--radius-md)] border border-brand-border px-3 text-sm text-brand-disabled"
+          >
+            <X size={14} aria-hidden /> Limpiar filtros
+          </span>
         )}
       </form>
 

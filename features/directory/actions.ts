@@ -12,10 +12,12 @@ import {
   LINK_FIELDS,
   cleanLink,
   directoryErrorMessage,
+  formatPriceText,
+  invalidLinkMessage,
   type DirectoryStatus,
 } from "./schema";
 
-export type DirectoryState = { error: string | null; success?: string; successId?: number };
+export type DirectoryState = { error: string | null; success?: string; successId?: number; field?: string; errorId?: number };
 
 async function companyId(): Promise<string> {
   const ids = await getCurrentUserCompanyIds();
@@ -57,7 +59,7 @@ export async function createDirectoryEntryAction(_prev: DirectoryState, formData
       phone: String(formData.get("phone") ?? "").trim() || null,
       email: String(formData.get("email") ?? "").trim() || null,
       zone_id: String(formData.get("zone_id") ?? "") || null,
-      reference_price: String(formData.get("reference_price") ?? "").trim() || null,
+      reference_price: formatPriceText(String(formData.get("reference_price") ?? "")) || null,
       directory_notes: String(formData.get("directory_notes") ?? "").trim() || null,
       directory_status: status,
       created_by: user?.id ?? null,
@@ -78,7 +80,7 @@ export async function updateDirectoryInfoAction(supplierId: string, _prev: Direc
     const raw = String(formData.get(`link_${f.key}`) ?? "");
     if (raw.trim()) {
       const clean = cleanLink(raw);
-      if (!clean) return { error: `El enlace de «${f.label}» no es válido (debe ser una dirección web).` };
+      if (!clean) return { error: invalidLinkMessage(f.label, f.example), field: `link_${f.key}`, errorId: Date.now() };
       links[f.key] = clean;
     }
   }
@@ -87,7 +89,7 @@ export async function updateDirectoryInfoAction(supplierId: string, _prev: Direc
   const tagIds = formData.getAll("tag_ids").map(String).filter(Boolean);
   const values = {
     zone_id: String(formData.get("zone_id") ?? "") || null,
-    reference_price: String(formData.get("reference_price") ?? "").trim() || null,
+    reference_price: formatPriceText(String(formData.get("reference_price") ?? "")) || null,
     directory_notes: String(formData.get("directory_notes") ?? "").trim() || null,
     rating,
     links,
@@ -95,14 +97,14 @@ export async function updateDirectoryInfoAction(supplierId: string, _prev: Direc
   const supabase = await createClient();
   const cid = await companyId();
   const { error } = await supabase.from("suppliers").update(values).eq("id", supplierId);
-  if (error) return { error: directoryErrorMessage(error.message) };
+  if (error) return { error: directoryErrorMessage(error.message), errorId: Date.now() };
   // Etiquetas: se reemplazan por las marcadas.
   await supabase.from("supplier_tags").delete().eq("supplier_id", supplierId);
   if (tagIds.length) {
     const { error: tErr } = await supabase
       .from("supplier_tags")
       .insert(tagIds.map((t) => ({ supplier_id: supplierId, tag_id: t, company_id: cid })));
-    if (tErr) return { error: directoryErrorMessage(tErr.message) };
+    if (tErr) return { error: directoryErrorMessage(tErr.message), errorId: Date.now() };
   }
   await logAudit({ companyId: cid, action: "UPDATE", entityType: "supplier", entityId: supplierId, newValues: { ...values, tags: tagIds.length } });
   revalidateSupplier(supplierId);

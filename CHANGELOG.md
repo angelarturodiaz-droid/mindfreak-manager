@@ -1,5 +1,19 @@
 # CHANGELOG — Mindfreak Manager
 
+## Directorio: ajustes de la prueba CB (2026-11-02)
+
+- **Precio de referencia** con comas y punto al salir del campo (15000 → RD$15,000.00); también en tarjetas y lista.
+- **Enlaces**: se rechaza lo que no es una dirección web real («hola mundo», «hola»): campo en rojo + ventana con ejemplo.
+  Antes «hola» se guardaba como `https://hola/`.
+- **Etiquetas**: corregido que al guardar por segunda vez se borraban (el formulario se reiniciaba solo).
+- **Ficha más compacta**: datos a la izquierda (zona, precio, estrellas, etiquetas, enlaces plegados, notas) y fotos a la
+  derecha; explicación visible de qué fotos subir; subir varias a la vez o arrastrarlas (sin «Choose File»).
+- **Avance**: Proveedor queda en verde (paso final cumplido); candado en Prospecto/Evaluado/Aprobado si tiene gastos o
+  pagos, con la explicación debajo.
+- **Limpiar filtros** siempre visible al lado de los filtros (gris si no hay filtros).
+- Listas: todas las provincias de RD (+ Boca Chica, Las Terrenas, Cabarete / Sosúa, Fuera del país) y 27 etiquetas del
+  negocio (datos `supabase/data/2026-11-02_directorio_zonas_etiquetas.sql`, ya aplicados).
+
 ## Directorio: vista compacta (2026-11-01)
 
 - Tarjetas más pequeñas (hasta 6 por fila) con solo foto, nombre, estado, estrellas y zona; categoría, precio y
