@@ -1273,3 +1273,6 @@ pulsa el botón.
   `form.reset()` de React 19 (borraba las etiquetas); etiquetas como `<input type=hidden name=tag_ids>` desde el estado.
   Errores con `errorId`/`field` → ResultDialog + campo en rojo. Fotos: `PhotoUploader` sube varias con `uploadDocumentAction`.
   Zonas/etiquetas extra: `supabase/data/2026-11-02_directorio_zonas_etiquetas.sql` (insert … on conflict do nothing).
+- (2-nov) Moneda del precio: `PriceField` (select `price_currency` DOP/USD + input). Se guarda dentro del mismo texto
+  (`RD$…` / `US$…`, sin columna nueva); `detectPriceCurrency` la lee al mostrar. `reference_price` no lo usa ninguna
+  función, vista, reporte ni cálculo (verificado 2-nov en código y en `pg_proc`/`pg_views`).

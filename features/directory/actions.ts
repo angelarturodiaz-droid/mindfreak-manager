@@ -14,6 +14,7 @@ import {
   directoryErrorMessage,
   formatPriceText,
   invalidLinkMessage,
+  type PriceCurrency,
   type DirectoryStatus,
 } from "./schema";
 
@@ -32,6 +33,11 @@ function revalidateSupplier(id: string) {
 }
 
 /** Nuevo en el directorio: solo el nombre es obligatorio; entra como Prospecto (o el estado elegido). */
+function priceFromForm(formData: FormData): string | null {
+  const currency: PriceCurrency = formData.get("price_currency") === "USD" ? "USD" : "DOP";
+  return formatPriceText(String(formData.get("reference_price") ?? ""), currency) || null;
+}
+
 export async function createDirectoryEntryAction(_prev: DirectoryState, formData: FormData): Promise<DirectoryState> {
   if (!(await hasPermission("suppliers.create"))) return { error: "No tienes permiso para agregar al directorio." };
   const name = String(formData.get("name") ?? "").trim();
@@ -59,7 +65,7 @@ export async function createDirectoryEntryAction(_prev: DirectoryState, formData
       phone: String(formData.get("phone") ?? "").trim() || null,
       email: String(formData.get("email") ?? "").trim() || null,
       zone_id: String(formData.get("zone_id") ?? "") || null,
-      reference_price: formatPriceText(String(formData.get("reference_price") ?? "")) || null,
+      reference_price: priceFromForm(formData),
       directory_notes: String(formData.get("directory_notes") ?? "").trim() || null,
       directory_status: status,
       created_by: user?.id ?? null,
@@ -89,7 +95,7 @@ export async function updateDirectoryInfoAction(supplierId: string, _prev: Direc
   const tagIds = formData.getAll("tag_ids").map(String).filter(Boolean);
   const values = {
     zone_id: String(formData.get("zone_id") ?? "") || null,
-    reference_price: formatPriceText(String(formData.get("reference_price") ?? "")) || null,
+    reference_price: priceFromForm(formData),
     directory_notes: String(formData.get("directory_notes") ?? "").trim() || null,
     rating,
     links,

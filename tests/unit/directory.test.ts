@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleanLink, directoryNextStep, formatPriceText } from "@/features/directory/schema";
+import { cleanLink, detectPriceCurrency, directoryNextStep, formatPriceText } from "@/features/directory/schema";
 
 describe("directorio (5)", () => {
   it("acepta enlaces web y les pone https si falta", () => {
@@ -17,10 +17,18 @@ describe("directorio (5)", () => {
     expect(formatPriceText("15000")).toBe("RD$15,000.00");
     expect(formatPriceText("15,000.5")).toBe("RD$15,000.50");
     expect(formatPriceText("desde RD$15000 por hora")).toBe("desde RD$15,000.00 por hora");
-    expect(formatPriceText("desde 15000 por show")).toBe("desde 15,000.00 por show");
+    expect(formatPriceText("desde 15000 por show")).toBe("desde RD$15,000.00 por show");
     expect(formatPriceText("US$ 800 por día")).toBe("US$800.00 por día");
     expect(formatPriceText("3 horas para 100 personas")).toBe("3 horas para 100 personas");
-    expect(formatPriceText("tarifa 2026: 25000")).toBe("tarifa 2026: 25,000.00");
+    expect(formatPriceText("tarifa 2026: 25000")).toBe("tarifa 2026: RD$25,000.00");
+  });
+  it("precio de referencia en dólares", () => {
+    expect(formatPriceText("1500", "USD")).toBe("US$1,500.00");
+    expect(formatPriceText("desde RD$15000 por hora", "USD")).toBe("desde US$15,000.00 por hora");
+    expect(formatPriceText("US$1,500.00", "DOP")).toBe("RD$1,500.00");
+    expect(detectPriceCurrency("US$1,500.00")).toBe("USD");
+    expect(detectPriceCurrency("RD$1,500.00")).toBe("DOP");
+    expect(detectPriceCurrency(null)).toBe("DOP");
     expect(formatPriceText("")).toBe("");
   });
   it("siguiente paso guía Prospecto → Evaluado → Aprobado → Proveedor", () => {

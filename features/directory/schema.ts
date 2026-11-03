@@ -91,17 +91,28 @@ export function invalidLinkMessage(label: string, example: string): string {
 
 const MONEY_FMT = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+/** Moneda del precio de referencia (solo para mostrarlo; no crea gastos ni cambia saldos). */
+export type PriceCurrency = "DOP" | "USD";
+export const PRICE_CURRENCY_SYMBOL: Record<PriceCurrency, string> = { DOP: "RD$", USD: "US$" };
+
+/** ¿En qué moneda está escrito? US$ / USD / dólares → USD; lo demás → pesos. */
+export function detectPriceCurrency(value: string | null | undefined): PriceCurrency {
+  return /US\$|\bUSD\b|d[oó]lar/i.test(value ?? "") ? "USD" : "DOP";
+}
+
 /**
- * Precio de referencia (texto libre) con comas y punto: «15000» → «RD$15,000.00»;
- * «desde RD$15000 por hora» → «desde RD$15,000.00 por hora». Los números chicos sin moneda
- * («3 horas», «100 personas») y los años («2026») quedan igual.
+ * Precio de referencia (texto libre) con comas, punto y la moneda elegida:
+ * «15000» → «RD$15,000.00» (o «US$15,000.00»); «desde 15000 por show» → «desde RD$15,000.00 por show».
+ * Si cambia la moneda, RD$ ↔ US$ se reemplaza. Los números chicos sin moneda («3 horas», «100 personas»)
+ * y los años («2026») quedan igual.
  */
-export function formatPriceText(value: string | null | undefined): string {
+export function formatPriceText(value: string | null | undefined, currency: PriceCurrency = detectPriceCurrency(value)): string {
+  const sym = PRICE_CURRENCY_SYMBOL[currency];
   const t = (value ?? "").trim().replace(/\s+/g, " ");
   if (!t) return "";
   if (/^\d[\d,]*(\.\d+)?$/.test(t)) {
     const n = Number(t.replace(/,/g, ""));
-    return Number.isFinite(n) ? `RD$${MONEY_FMT.format(n)}` : t;
+    return Number.isFinite(n) ? `${sym}${MONEY_FMT.format(n)}` : t;
   }
   return t.replace(/(RD\$|US\$|\$)?\s?(\d[\d,]*(?:\.\d+)?)/g, (match, cur: string | undefined, num: string) => {
     const digits = num.replace(/,/g, "");
@@ -110,7 +121,7 @@ export function formatPriceText(value: string | null | undefined): string {
     const intPart = digits.split(".")[0];
     if (!cur && (intPart.length < 4 || (intPart.length === 4 && /^(19|20)\d\d$/.test(intPart) && !digits.includes(".")))) return match;
     const lead = match.startsWith(" ") ? " " : "";
-    return `${lead}${cur ?? ""}${MONEY_FMT.format(n)}`;
+    return `${lead}${sym}${MONEY_FMT.format(n)}`;
   });
 }
 

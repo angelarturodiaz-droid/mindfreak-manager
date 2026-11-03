@@ -3,6 +3,8 @@
 ## Directorio: ajustes de la prueba CB (2026-11-02)
 
 - **Precio de referencia** con comas y punto al salir del campo (15000 → RD$15,000.00); también en tarjetas y lista.
+- **Moneda del precio de referencia**: selector RD$ / US$ al lado del precio (ficha y «Nuevo en el directorio»). Solo
+  informativo: no crea gastos, no cambia saldos ni reportes (verificado: ningún cálculo ni función de la base lo usa).
 - **Enlaces**: se rechaza lo que no es una dirección web real («hola mundo», «hola»): campo en rojo + ventana con ejemplo.
   Antes «hola» se guardaba como `https://hola/`.
 - **Etiquetas**: corregido que al guardar por segunda vez se borraban (el formulario se reiniciaba solo).

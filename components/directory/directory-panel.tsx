@@ -11,6 +11,7 @@ import { ResultDialog } from "@/components/ui/result-dialog";
 import { toast } from "@/components/ui/toaster";
 import { useSuccessToast } from "@/components/ui/use-success-toast";
 import { uploadDocumentAction } from "@/features/documents/actions";
+import { PriceField } from "./price-field";
 import {
   setCoverPhotoAction,
   setDirectoryStatusAction,
@@ -212,7 +213,8 @@ export function DirectoryInfoForm({
       return;
     }
     const price = form.elements.namedItem("reference_price") as HTMLInputElement | null;
-    if (price) price.value = formatPriceText(price.value);
+    const cur = (form.elements.namedItem("price_currency") as HTMLSelectElement | null)?.value === "USD" ? "USD" : "DOP";
+    if (price) price.value = formatPriceText(price.value, cur);
     const fd = new FormData(form);
     startTransition(() => formAction(fd));
   }
@@ -234,17 +236,7 @@ export function DirectoryInfoForm({
               </option>
             ))}
           </Select>
-          <Input
-            label="Precio de referencia"
-            name="reference_price"
-            defaultValue={formatPriceText(info.referencePrice)}
-            disabled={!canEdit}
-            placeholder="Ej. desde RD$15,000 por hora"
-            info="Lo que nos dijeron que cobra. Al salir del campo los números se ponen con comas y punto (15000 → RD$15,000.00). No crea ningún gasto."
-            onBlur={(e) => {
-              e.currentTarget.value = formatPriceText(e.currentTarget.value);
-            }}
-          />
+          <PriceField defaultValue={info.referencePrice} disabled={!canEdit} />
         </div>
 
         <div>
