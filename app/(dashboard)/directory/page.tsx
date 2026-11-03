@@ -144,11 +144,15 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
         })}
       </nav>
 
-      <form action="/directory" method="get" className="flex flex-wrap items-end gap-2">
+      <form
+        action="/directory"
+        method="get"
+        className="grid grid-cols-1 items-end gap-2 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr_1fr_auto] [&>*]:min-w-0"
+      >
         {status !== "TODOS" && <input type="hidden" name="estado" value={status} />}
         {view === "lista" && <input type="hidden" name="vista" value="lista" />}
-        <LiveSearchInput defaultValue={q ?? ""} placeholder="Buscar por nombre…" ariaLabel="Buscar en el directorio" className="w-64" />
-        <AutoSubmitSelect name="categoria" defaultValue={sp.categoria ?? ""} aria-label="Categoría" className="w-48">
+        <LiveSearchInput defaultValue={q ?? ""} placeholder="Buscar por nombre…" ariaLabel="Buscar en el directorio" className="w-full" />
+        <AutoSubmitSelect name="categoria" defaultValue={sp.categoria ?? ""} aria-label="Categoría" className="w-full truncate">
           <option value="">Todas las categorías</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
@@ -156,7 +160,7 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
             </option>
           ))}
         </AutoSubmitSelect>
-        <AutoSubmitSelect name="zona" defaultValue={sp.zona ?? ""} aria-label="Zona" className="w-44">
+        <AutoSubmitSelect name="zona" defaultValue={sp.zona ?? ""} aria-label="Zona" className="w-full truncate">
           <option value="">Todas las zonas</option>
           {zones.map((z) => (
             <option key={z.id} value={z.id}>
@@ -164,7 +168,7 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
             </option>
           ))}
         </AutoSubmitSelect>
-        <AutoSubmitSelect name="etiqueta" defaultValue={sp.etiqueta ?? ""} aria-label="Etiqueta" className="w-40">
+        <AutoSubmitSelect name="etiqueta" defaultValue={sp.etiqueta ?? ""} aria-label="Etiqueta" className="w-full truncate">
           <option value="">Todas las etiquetas</option>
           {tags.map((t) => (
             <option key={t.id} value={t.id}>
@@ -172,7 +176,7 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
             </option>
           ))}
         </AutoSubmitSelect>
-        <AutoSubmitSelect name="estrellas" defaultValue={sp.estrellas ?? ""} aria-label="Calificación" className="w-40">
+        <AutoSubmitSelect name="estrellas" defaultValue={sp.estrellas ?? ""} aria-label="Calificación" className="w-full truncate">
           <option value="">Cualquier calificación</option>
           <option value="3">3 ★ o más</option>
           <option value="4">4 ★ o más</option>
