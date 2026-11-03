@@ -12,6 +12,7 @@ import { parsePage } from "@/lib/utils/pagination";
 const ENTITY_LABELS: Record<string, string> = {
   client: "Cliente",
   supplier: "Proveedor",
+  asset: "Activo",
   service: "Producto/Servicio",
   quotation: "Cotización",
   project: "Proyecto",

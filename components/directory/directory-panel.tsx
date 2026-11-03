@@ -13,7 +13,6 @@ import { useSuccessToast } from "@/components/ui/use-success-toast";
 import { uploadDocumentAction } from "@/features/documents/actions";
 import { PriceField } from "./price-field";
 import {
-  setCoverPhotoAction,
   setDirectoryStatusAction,
   updateDirectoryInfoAction,
   type DirectoryState,
@@ -365,7 +364,7 @@ const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_PHOTO = 15 * 1024 * 1024;
 
 /** Elegir o arrastrar varias fotos a la vez (solo imágenes). */
-function PhotoUploader({ supplierId }: { supplierId: string }) {
+function PhotoUploader({ entityType, entityId, pathToRefresh }: { entityType: "supplier" | "asset"; entityId: string; pathToRefresh: string }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
@@ -389,7 +388,7 @@ function PhotoUploader({ supplierId }: { supplierId: string }) {
         }
         const fd = new FormData();
         fd.append("file", f);
-        const r = await uploadDocumentAction("supplier", supplierId, `/suppliers/${supplierId}`, { error: null }, fd);
+        const r = await uploadDocumentAction(entityType, entityId, pathToRefresh, { error: null }, fd);
         if (r.error) problems.push(`«${f.name}»: ${r.error}`);
         else ok += 1;
       }
@@ -446,20 +445,29 @@ function PhotoUploader({ supplierId }: { supplierId: string }) {
 
 /** Galería de fotos: la primera (o la elegida) es la portada de la tarjeta. */
 export function PhotoGallery({
-  supplierId,
+  entityType = "supplier",
+  entityId,
   photos,
   coverId,
   canEdit,
   canUpload,
+  setCover,
+  help,
 }: {
-  supplierId: string;
+  entityType?: "supplier" | "asset";
+  entityId: string;
   photos: { id: string; name: string; url: string | null }[];
   coverId: string | null;
   canEdit: boolean;
   canUpload: boolean;
+  /** Acción del servidor (ya con el id) que marca la portada. */
+  setCover: (documentId: string) => Promise<void>;
+  /** Texto visible arriba de las fotos. */
+  help?: React.ReactNode;
 }) {
   const [pending, startTransition] = useTransition();
   const effectiveCover = coverId ?? photos[0]?.id ?? null;
+  const pathToRefresh = entityType === "asset" ? `/assets/${entityId}` : `/suppliers/${entityId}`;
   return (
     <Card className="flex flex-col gap-3">
       <div>
@@ -467,9 +475,13 @@ export function PhotoGallery({
           Fotos <span className="text-xs font-normal text-brand-muted">({photos.length})</span>
         </p>
         <p className="mt-0.5 text-xs text-brand-muted">
-          Fotos de <strong>su trabajo</strong> para recordarlo y compararlo: montajes, eventos donde lo vimos, su equipo, su local o
-          su menú. La que dice <strong>Portada</strong> es la que sale en la tarjeta del Directorio; para cambiarla pasa el mouse sobre
-          otra y pulsa <em>Usar de portada</em>. Haz clic en una foto para verla en grande.
+          {help ?? (
+            <>
+              Fotos de <strong>su trabajo</strong> para recordarlo y compararlo: montajes, eventos donde lo vimos, su equipo, su local o
+              su menú. La que dice <strong>Portada</strong> es la que sale en la tarjeta del Directorio; para cambiarla pasa el mouse sobre
+              otra y pulsa <em>Usar de portada</em>. Haz clic en una foto para verla en grande.
+            </>
+          )}
         </p>
       </div>
       {photos.length === 0 ? (
@@ -495,7 +507,7 @@ export function PhotoGallery({
                   <button
                     type="button"
                     disabled={pending}
-                    onClick={() => startTransition(() => setCoverPhotoAction(supplierId, p.id))}
+                    onClick={() => startTransition(() => setCover(p.id))}
                     className="absolute inset-x-1 bottom-1 rounded-full bg-white/90 px-1.5 py-0.5 text-[10px] font-medium text-brand-text opacity-0 shadow transition-opacity group-hover:opacity-100"
                   >
                     Usar de portada
@@ -506,7 +518,7 @@ export function PhotoGallery({
           ))}
         </div>
       )}
-      {canUpload && <PhotoUploader supplierId={supplierId} />}
+      {canUpload && <PhotoUploader entityType={entityType} entityId={entityId} pathToRefresh={pathToRefresh} />}
     </Card>
   );
 }

@@ -1,5 +1,18 @@
 # CHANGELOG — Mindfreak Manager
 
+## 5c Activos de la empresa (2026-11-03)
+
+- Menú **Activos** (Operaciones): lista con foto, código **ACT-0001**, tipo, cantidad, responsable, ubicación, valor y
+  estado; tarjetas (activos, valor de compra en RD$ y US$ por separado, en reparación, dados de baja); buscador, filtros
+  (tipo, ubicación, estado, ¿se consume?), Limpiar filtros y paginación de 10.
+- **Nuevo activo** y **ficha**: datos editables, galería de fotos (varias a la vez o arrastrando), «Cómo se compró»
+  (gasto y forma de pago) e **Historial** automático de responsable, ubicación, estado, cantidad y valor.
+- Estados En uso / En reparación / Dado de baja (no se borran); casilla **¿Se consume?** para suministros.
+- En el gasto: bloque **Activos de este gasto** con **Registrar como activo** (llena descripción, valor y fecha).
+- **Configuración → Activos**: tipos y ubicaciones. Permisos nuevos `assets.view` (todos) y `assets.manage`
+  (Administración y Gerente). Migración **096** (respaldo A0 → 097, limpieza A1 → 098).
+- Carga inicial de los 15 activos de la hoja «Control de Activos» (ACT-0001 a ACT-0015), directo en la base.
+
 ## Directorio: ajustes de la prueba CB (2026-11-02)
 
 - **Precio de referencia** con comas y punto al salir del campo (15000 → RD$15,000.00); también en tarjetas y lista.

@@ -14,6 +14,7 @@ import {
   type ReactNode,
 } from "react";
 import {
+  Boxes,
   LayoutDashboard,
   Users,
   Truck,
@@ -835,6 +836,39 @@ const SECTIONS: Section[] = [
             <><strong>Avance en verde</strong>: verde = paso cumplido; azul = donde está ahora. Cuando llega a <em>Proveedor</em>, los 4 pasos quedan en verde.</>,
             <><strong>Historial protegido</strong>: si ya tiene gastos o pagos, los pasos Prospecto, Evaluado y Aprobado muestran un <strong>candado</strong> y debajo lo explica: no vuelve a esos pasos (solo Proveedor o Inactivo). El estado no cambia reportes ni cuentas por pagar.</>,
             <><strong>Proveedores</strong> muestra solo a los que ya son Proveedor (e Inactivos). Las listas de <strong>zonas</strong> y <strong>etiquetas</strong> se cambian en <em>Configuración → Directorio</em>. Ya vienen todas las provincias del país (más Boca Chica, Las Terrenas, Cabarete / Sosúa y «Fuera del país») y etiquetas por tipo de evento (Graduaciones, Activaciones de marca, Galas y premiaciones…), por lugar (Hoteles y resorts, Gran capacidad) y por cómo trabaja (Emite factura con NCF, Montaje incluido, Último minuto…).</>,
+          ]}
+        />
+      </>
+    ),
+  },
+  {
+    id: "activos",
+    label: "Activos de la empresa",
+    icon: Boxes,
+    tone: "teal",
+    summary: "Lo que la empresa compró para usar: mobiliario, decoración, equipos y suministros, con código, foto y quién lo tiene.",
+    content: (
+      <>
+        <p className="text-sm text-brand-text">
+          En <strong>Activos</strong> (menú Operaciones) se lleva lo que la empresa tiene: una mesa, una bocina, unos jarrones, una
+          impresora. Cada uno recibe un <strong>código</strong> (ACT-0001, ACT-0002…) y guarda su foto, cantidad, responsable, ubicación,
+          valor de compra y estado. Es solo para control: <strong>no cambia gastos, pagos, bancos ni reportes</strong>.
+        </p>
+        <p className="text-sm font-medium text-brand-text">Cómo se usa</p>
+        <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-sm text-brand-text">
+          <li><strong>Registrarlo</strong>: si lo compraste con un gasto, abre el gasto y pulsa <em>Registrar como activo</em> (ya trae la descripción, el valor y la fecha). Si no, <em>Activos → Nuevo activo</em>. Si son varios iguales (por ejemplo 15 jarrones), regístralos una sola vez con su cantidad.</li>
+          <li><strong>Foto</strong>: en su ficha, a la derecha, <em>Elegir fotos o arrastrarlas aquí</em>. La portada sale en la lista.</li>
+          <li><strong>Mantenerlo al día</strong>: cuando cambie de manos, de lugar o se dañe, cambia el responsable, la ubicación o el estado y pulsa <em>Guardar cambios</em>. Cada cambio queda en su <strong>Historial</strong> (quién y cuándo).</li>
+        </ol>
+        <Bullets
+          items={[
+            <><strong>Estados</strong>: <em>En uso</em> (se puede usar), <em>En reparación</em> (no contar con él por ahora) y <em>Dado de baja</em> (ya no se usa). Los activos no se borran: se dan de baja y quedan para el historial.</>,
+            <><strong>¿Se consume?</strong>: márcalo para lo que se gasta o se regala en los eventos (gorras, polos, lanyards, soportes de gafetes). No son activos fijos; se llevan para saber cuántos quedan. Hay un filtro para verlos aparte.</>,
+            <><strong>Valor de compra</strong>: lo que costó en total (todas las unidades), en RD$ o US$. Si no lo sabes, se deja vacío. La tarjeta de arriba suma los pesos y los dólares por separado, sin los dados de baja.</>,
+            <><strong>Cómo se compró</strong>: si se registró desde un gasto, la ficha muestra ese gasto y cómo se pagó (tarjeta o banco). El gasto no cambia.</>,
+            <><strong>Responsable</strong>: escribe el nombre o elígelo de la lista (usuarios del sistema y responsables ya usados).</>,
+            <><strong>Listas</strong>: los <strong>tipos</strong> (Mobiliario, Decoraciones, Equipo de evento, Suministro, Tecnología, Vestuario) y las <strong>ubicaciones</strong> se cambian en <em>Configuración → Activos</em>.</>,
+            <><strong>Quién puede</strong>: todos los roles ven los activos; Administración y Gerente los registran y editan (se cambia en <em>Configuración → Roles y permisos → Activos</em>).</>,
           ]}
         />
       </>

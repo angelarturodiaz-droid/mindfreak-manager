@@ -29,6 +29,7 @@ const MODULES: { key: string; label: string }[] = [
   { key: "surveys", label: "Encuestas" },
   { key: "expenses", label: "Gastos" },
   { key: "suppliers", label: "Proveedores" },
+  { key: "assets", label: "Activos" },
   { key: "banks", label: "Bancos" },
   { key: "documents", label: "Documentos" },
   { key: "reports", label: "Reportes" },

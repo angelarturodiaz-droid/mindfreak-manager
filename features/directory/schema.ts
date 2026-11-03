@@ -127,7 +127,7 @@ export function formatPriceText(value: string | null | undefined, currency: Pric
 
 export function directoryErrorMessage(message: string): string {
   if (message.includes("has_history")) return "Ya tiene gastos o pagos registrados: solo puede quedar como Proveedor o Inactivo.";
-  if (message.includes("duplicate") || message.includes("uq_directory")) return "Ese nombre ya existe en la lista.";
+  if (message.includes("duplicate") || message.includes("uq_directory") || message.includes("uq_asset")) return "Ese nombre ya existe en la lista.";
   if (message.includes("row-level security")) return "No tienes permiso para este cambio.";
   return message;
 }

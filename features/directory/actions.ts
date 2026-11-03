@@ -155,25 +155,39 @@ export async function setCoverPhotoAction(supplierId: string, documentId: string
 }
 
 // ---------------------------------------------------------------------------
-// Configuración → Directorio: zonas y etiquetas
+// Configuración → Directorio (zonas y etiquetas) y → Activos (tipos y ubicaciones)
 // ---------------------------------------------------------------------------
-type ListTable = "directory_zones" | "directory_tags";
+export type ListTable = "directory_zones" | "directory_tags" | "asset_types" | "asset_locations";
+
+async function canEditList(table: ListTable): Promise<boolean> {
+  if (await hasPermission("settings.manage")) return true;
+  return table.startsWith("asset_") ? hasPermission("assets.manage") : false;
+}
+
+function revalidateList(table: ListTable) {
+  if (table.startsWith("asset_")) {
+    revalidatePath("/settings/assets");
+    revalidatePath("/assets");
+  } else {
+    revalidatePath("/settings/directory");
+  }
+}
 
 export async function addListItemAction(table: ListTable, _prev: DirectoryState, formData: FormData): Promise<DirectoryState> {
-  if (!(await hasPermission("settings.manage"))) return { error: "Solo Administración puede cambiar estas listas." };
+  if (!(await canEditList(table))) return { error: "No tienes permiso para cambiar esta lista." };
   const name = String(formData.get("name") ?? "").trim();
   if (name.length < 2) return { error: "Escribe el nombre." };
   const supabase = await createClient();
   const { error } = await supabase.from(table).insert({ company_id: await companyId(), name });
   if (error) return { error: directoryErrorMessage(error.message) };
-  revalidatePath("/settings/directory");
+  revalidateList(table);
   return { error: null, success: `«${name}» agregada.`, successId: Date.now() };
 }
 
 export async function deleteListItemAction(table: ListTable, id: string): Promise<void> {
-  if (!(await hasPermission("settings.manage"))) throw new Error("Solo Administración puede cambiar estas listas.");
+  if (!(await canEditList(table))) throw new Error("No tienes permiso para cambiar esta lista.");
   const supabase = await createClient();
   const { error } = await supabase.from(table).delete().eq("id", id);
   if (error) throw new Error(directoryErrorMessage(error.message));
-  revalidatePath("/settings/directory");
+  revalidateList(table);
 }

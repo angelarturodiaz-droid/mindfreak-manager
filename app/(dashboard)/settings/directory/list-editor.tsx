@@ -2,7 +2,7 @@
 
 import { useActionState, useTransition, type ReactNode } from "react";
 import { X } from "lucide-react";
-import { addListItemAction, deleteListItemAction, type DirectoryState } from "@/features/directory/actions";
+import { addListItemAction, deleteListItemAction, type DirectoryState, type ListTable } from "@/features/directory/actions";
 import { Input } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 
@@ -15,7 +15,7 @@ export function ListEditor({
   items,
   canEdit,
 }: {
-  table: "directory_zones" | "directory_tags";
+  table: ListTable;
   title: string;
   icon: ReactNode;
   description: string;

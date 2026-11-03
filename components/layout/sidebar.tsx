@@ -23,6 +23,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   X,
+  Boxes,
 } from "lucide-react";
 import { useSidebar } from "./sidebar-context";
 import { IconBadge, type IconBadgeTone } from "../ui/icon-badge";
@@ -37,6 +38,7 @@ const NAV_PERMISSION: Record<string, string> = {
   "/projects": "projects.view",
   "/suppliers": "suppliers.view",
   "/directory": "suppliers.view",
+  "/assets": "assets.view",
   "/invoices": "invoices.view",
   "/payments": "payments.view",
   "/expenses": "expenses.view",
@@ -66,6 +68,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/services", label: "Productos y Servicios", icon: Package },
       { href: "/suppliers", label: "Proveedores", icon: Truck },
       { href: "/directory", label: "Directorio", icon: BookUser },
+      { href: "/assets", label: "Activos", icon: Boxes },
       { href: "/tasks", label: "Tareas", icon: CheckSquare },
     ],
   },

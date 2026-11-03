@@ -44,6 +44,7 @@ import { relationRow } from "@/lib/utils/relation";
 import { getDirectoryInfo, listTags, listZones, supplierHasHistory } from "@/features/directory/queries";
 import { DIRECTORY_STATUS_INFO, DIRECTORY_STATUS_LABELS, DIRECTORY_STATUS_TONES } from "@/features/directory/schema";
 import { DirectoryInfoForm, DirectoryStatusBar, PhotoGallery } from "@/components/directory/directory-panel";
+import { setCoverPhotoAction } from "@/features/directory/actions";
 import { formatDate } from "@/lib/utils/dates";
 
 const EXPENSE_STATUS_LABELS: Record<string, string> = {
@@ -343,7 +344,8 @@ export default async function SupplierDetailPage({
             </div>
             <div className="lg:col-span-2">
               <PhotoGallery
-                supplierId={supplier.id}
+                entityId={supplier.id}
+                setCover={setCoverPhotoAction.bind(null, supplier.id)}
                 photos={directoryInfo.photos}
                 coverId={directoryInfo.coverId}
                 canEdit={canEditSupplier}

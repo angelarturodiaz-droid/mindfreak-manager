@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { safeReturnTo, returnToLabel } from "@/lib/utils/return-to";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarDays, FolderKanban, Tag, Truck, Gift, Lock, Pencil } from "lucide-react";
+import { ArrowLeft, Boxes, CalendarDays, FolderKanban, Tag, Truck, Gift, Lock, Pencil, Plus } from "lucide-react";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { InfoHint } from "@/components/ui/info-hint";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ import { DownloadReceiptButton } from "@/components/payments/download-receipt-bu
 import { CorrectionStateBadge, RequestCorrectionButton } from "@/components/corrections/request-correction-button";
 import { pendingTargetIds } from "@/features/corrections/queries";
 import { RetentionLetterButton } from "@/components/retention-letters/retention-letter-button";
+import { listAssetsForExpense } from "@/features/assets/queries";
 import { getRetentionLetterSettings } from "@/features/retention-letters/actions";
 import { retentionPercents } from "@/features/retention-letters/schema";
 import { listServiceTypeOptions } from "@/features/supplier-service-types/queries";
@@ -99,6 +100,10 @@ export default async function ExpenseDetailPage({
       // también se puede pagar después con tarjeta (migración 081).
       listActiveAccountsForSelect(),
     ]);
+
+  // 5c: activos registrados con este gasto (y permiso para registrar otro).
+  const [canManageAssets, canViewAssets] = await Promise.all([hasPermission("assets.manage"), hasPermission("assets.view")]);
+  const linkedAssets = canViewAssets ? await listAssetsForExpense(id).catch(() => []) : [];
 
   // V1-4: pagos con una corrección esperando aprobación.
   const pendingCorrection = await pendingTargetIds("supplier_payment", payments.map((p) => p.id)).catch(() => new Set<string>());
@@ -309,6 +314,32 @@ export default async function ExpenseDetailPage({
           )}
         </div>
       </Card>
+
+      {!isIncentive && expense.status !== "CANCELLED" && (canManageAssets || linkedAssets.length > 0) && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-md)] border border-brand-border bg-brand-surface px-4 py-2.5 text-sm">
+          <span className="flex flex-wrap items-center gap-1.5 text-brand-text">
+            <Boxes size={15} className="text-brand-muted" aria-hidden />
+            <strong>Activos de este gasto:</strong>
+            {linkedAssets.length ? (
+              linkedAssets.map((a) => (
+                <Link key={a.id} href={`/assets/${a.id}`} className="rounded-full bg-brand-accent-light px-2 py-0.5 text-xs font-medium text-brand-accent hover:underline">
+                  {a.code} · {a.description}
+                </Link>
+              ))
+            ) : (
+              <span className="text-brand-muted">ninguno.</span>
+            )}
+            <InfoHint text="Si con este gasto se compró algo que la empresa va a usar (una mesa, una bocina, una impresora), regístralo como activo: queda con código, foto, responsable y ubicación, ligado a este gasto. El gasto no cambia." />
+          </span>
+          {canManageAssets && (
+            <Link href={`/assets/new?gasto=${expense.id}`}>
+              <Button size="sm" variant="secondary" icon={<Plus size={14} />} hint="Abre «Nuevo activo» con la descripción, el valor y la fecha de este gasto ya puestos.">
+                Registrar como activo
+              </Button>
+            </Link>
+          )}
+        </div>
+      )}
 
       {isIncentive && (
         <Callout tone="blue" icon={<Gift size={18} />} title="Incentivo por proyecto">

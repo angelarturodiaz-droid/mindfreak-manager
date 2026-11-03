@@ -1276,3 +1276,21 @@ pulsa el botón.
 - (2-nov) Moneda del precio: `PriceField` (select `price_currency` DOP/USD + input). Se guarda dentro del mismo texto
   (`RD$…` / `US$…`, sin columna nueva); `detectPriceCurrency` la lee al mostrar. `reference_price` no lo usa ninguna
   función, vista, reporte ni cálculo (verificado 2-nov en código y en `pg_proc`/`pg_views`).
+
+## 5c Activos (migración 096, 3-nov-2026)
+
+- Tablas `assets`, `asset_types`, `asset_locations`, `asset_events`. Código `ACT-0001` por compañía en el trigger
+  `assets_before_write` (advisory lock; el código no cambia al editar). Valida que tipo, ubicación, gasto y portada sean de la
+  misma compañía. Sin política DELETE: un activo se da de baja (`status = DADO_DE_BAJA`), no se borra.
+- Historial: trigger `assets_log_events` (security definer) inserta en `asset_events` los cambios de responsable,
+  ubicación, estado, cantidad y valor/moneda (más `CREATED`). Lo ve quien tiene `assets.view` (la Auditoría solo la ve
+  Administración). Además, las acciones registran CREATE/UPDATE en `audit_logs` (entidad «Activo»).
+- Permisos: `assets.view` → ADMIN, MANAGER, FINANCE, OPERATIONS, SALES; `assets.manage` → ADMIN, MANAGER. Listas:
+  escriben `settings.manage` o `assets.manage` (Configuración → Activos solo la abre `settings.manage`).
+- Fotos: `documents.entity_type = 'asset'` (constraint ampliado). `PhotoGallery` ahora es genérica (`entityType`,
+  `setCover` = acción ligada al id, `help`).
+- «Registrar como activo»: `/assets/new?gasto=<id>` → `getExpenseSummary` llena descripción, total, moneda y fecha; el activo
+  guarda `expense_id` (solo lectura del gasto). La ficha muestra métodos y cuentas de los pagos ACTIVOS del gasto.
+- Carga inicial (3-nov): 15 activos de la hoja del usuario aplicados con `execute_sql` (datos de la empresa: **no** van a
+  Git). Prendas, soportes y lanyards marcados «se consume»; t-shirts y polos van como *Vestuario*.
+- La limpieza Go-Live (A1) **conserva** activos, tipos y ubicaciones (son datos reales).
