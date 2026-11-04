@@ -76,15 +76,23 @@ export async function getCurrentUserCompanyIds(): Promise<string[]> {
  * solo el menú y los botones que puede usar; la seguridad real sigue en el
  * servidor (requirePermission) y en la base (RLS).
  */
-export const getMyPermissions = cache(async (): Promise<Set<string>> => {
+const getMyPermissionsResult = cache(async (): Promise<{ perms: Set<string>; failed: boolean }> => {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("my_permissions");
   if (error) {
     console.error("Error leyendo permisos:", error.message);
-    return new Set();
+    return { perms: new Set(), failed: isTransientNetworkError(error.message) };
   }
-  return new Set((data as string[] | null) ?? []);
+  return { perms: new Set((data as string[] | null) ?? []), failed: false };
 });
+
+export async function getMyPermissions(): Promise<Set<string>> {
+  return (await getMyPermissionsResult()).perms;
+}
+
+/** Mensaje cuando no se pudo hablar con la base (no es falta de permiso). */
+export const CONNECTION_ERROR_MESSAGE =
+  "No se pudo conectar con la base de datos (parece un corte de internet). Revisa la conexión y pulsa «Reintentar».";
 
 /**
  * Para pantallas: si no tiene el permiso, lo manda al inicio con un aviso
@@ -92,7 +100,9 @@ export const getMyPermissions = cache(async (): Promise<Set<string>> => {
  * vacía o botones que fallan.
  */
 export async function requirePageAccess(permissionCode: string, label: string): Promise<void> {
-  const perms = await getMyPermissions();
+  const { perms, failed } = await getMyPermissionsResult();
+  // Si no se pudo preguntar (corte de conexión), no decir «no tienes permiso»: mostrar el error de conexión.
+  if (failed) throw new Error(CONNECTION_ERROR_MESSAGE);
   if (!perms.has(permissionCode)) {
     redirect(`/dashboard?sin_permiso=${encodeURIComponent(label)}`);
   }

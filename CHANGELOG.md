@@ -5,8 +5,11 @@
 - **Editar sin entrar**: en la lista, el lápiz ✎ de cada fila abre una ventana con el formulario (Guardar cambios / Cancelar).
 - **Ficha en modo lectura**: «Datos del activo» se muestra como ficha; botones **Editar activo** (arriba) y **Editar**
   abren el formulario con **Cancelar** (descarta lo escrito) y **Guardar cambios**.
-- **Permisos con reintento**: si la conexión con Supabase falla un momento («fetch failed»), se reintenta 2 veces antes
-  de tratarlo como «sin permiso»; además cada permiso se consulta una sola vez por pantalla.
+- **Conexión más estable**: toda lectura a Supabase (consultas y permisos) se reintenta 2 veces si la conexión se corta
+  un momento («fetch failed»); los guardados **nunca** se reintentan (no se duplica nada). Cada permiso se consulta una sola
+  vez por pantalla.
+- **Ya no sale «No tienes permiso» por un corte**: si no se pudo preguntar a la base, sale la pantalla «Se cortó la
+  conexión» con **Reintentar** e **Ir al inicio** (antes te sacaba al Dashboard como si no tuvieras permiso).
 - Las ventanas largas ahora se desplazan dentro de la pantalla (no se cortan).
 
 ## 5c Activos de la empresa (2026-11-03)

@@ -1299,3 +1299,8 @@ pulsa el botón.
   `onSaved` (en un efecto) y `bare`. `hasPermission` ahora es `cache()` de React y reintenta 2 veces ante errores de red
   pasajeros (`fetch failed`, `ECONNRESET`, …); otros errores siguen respondiendo «no» de inmediato. `Modal` con `max-h-[90vh]`
   y desplazamiento interno.
+- (4-nov) Conexión: `lib/supabase/server.ts` → `resilientFetch` (global fetch del cliente del servidor) reintenta 2 veces con
+  espera (300/600 ms) ante `TypeError` de red, **solo** en GET/HEAD y en las RPC de solo lectura `has_permission` y
+  `my_permissions`; POST/PATCH/DELETE y las demás RPC nunca se repiten. `requirePageAccess` distingue «falló la conexión»
+  (lanza `CONNECTION_ERROR_MESSAGE` → `app/(dashboard)/error.tsx`, pantalla «Se cortó la conexión» con Reintentar) de «no tiene
+  el permiso» (redirige con `sin_permiso`). Prueba: `tests/unit/resilient-fetch.test.ts`.
