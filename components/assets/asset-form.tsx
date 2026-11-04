@@ -278,7 +278,7 @@ export function AssetForm({
         {canEdit && (
           <div className="flex items-center justify-end gap-2 border-t border-brand-border pt-3">
             {onCancel ? (
-              <Button type="button" variant="secondary" onClick={onCancel} disabled={pending} hint="Descarta lo que cambiaste y deja el activo como estaba.">
+              <Button type="button" variant="outline" onClick={onCancel} disabled={pending} hint="Descarta lo que cambiaste y deja el activo como estaba.">
                 Cancelar
               </Button>
             ) : (

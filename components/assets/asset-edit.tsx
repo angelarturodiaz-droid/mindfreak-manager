@@ -77,7 +77,7 @@ export function AssetDetailsPanel({
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold text-brand-text">Datos del activo</p>
         {canEdit && (
-          <Button size="sm" variant="secondary" icon={<Pencil size={14} />} onClick={() => setEditing(true)} hint="Cambiar responsable, ubicación, estado, cantidad, valor o el nombre.">
+          <Button size="sm" variant="outline" icon={<Pencil size={14} />} onClick={() => setEditing(true)} hint="Cambiar responsable, ubicación, estado, cantidad, valor o el nombre.">
             Editar
           </Button>
         )}
