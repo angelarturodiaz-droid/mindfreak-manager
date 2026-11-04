@@ -1,5 +1,13 @@
 # CHANGELOG — Mindfreak Manager
 
+## Activos: anular un activo registrado por error (2026-11-04)
+
+- En la ficha, **Anular (fue un error)**: ventana que explica qué pasa, motivo obligatorio (mínimo 10 letras) y
+  «Sí, anular». El activo queda **Anulado**: sale de la lista y de las tarjetas, **se suelta del gasto** (el gasto no
+  cambia), ya no se edita y su código no se reutiliza. No se borra: queda en el historial (motivo y gasto soltado) y en la
+  Auditoría («Anuló»). Filtro «Anulados» en Estado. Distinto de «Dado de baja» (lo tuvimos y ya no se usa).
+- Migración **098** (respaldo A0 → 099, limpieza A1 → 100). Permiso: el mismo de editar activos.
+
 ## Activos: ficha rediseñada, volver al activo y listas sin repetidos por acentos (2026-11-04)
 
 - **Ficha del activo rediseñada**: encabezado con la foto de portada, código, estado y «Editar activo»; 4 datos clave con

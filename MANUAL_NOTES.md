@@ -1309,3 +1309,7 @@ pulsa el botón.
   `?return_to=/assets/<id>`; `safeReturnTo` acepta `/assets/<uuid>` («Volver al activo»).
 - Migración 097: índices únicos `(company_id, catalog_key(name))` en `asset_locations`, `asset_types`, `directory_zones` y
   `directory_tags` (antes `lower(name)` dejaba pasar «Almacen» si existía «Almacén»). Verificado sin repetidos antes de aplicar.
+- (4-nov) Migración 098: estado `ANULADO` + `void_reason`, `voided_at`, `voided_by`. RPC `void_asset(p_asset_id, p_reason)` (security
+  invoker, exige `assets.manage`, motivo ≥ 10, pone `expense_id = null`). Trigger `assets_guard_void`: un ANULADO no se edita y no
+  se puede poner ANULADO sin motivo. `assets_log_events` ahora anota `void_reason` y `expense` (gasto soltado/ligado).
+  `listAssets` excluye ANULADO salvo con `estado=ANULADO`; `getAssetStats` no lo cuenta. UI: `VoidAssetButton`.

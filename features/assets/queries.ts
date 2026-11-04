@@ -53,7 +53,7 @@ export async function getAssetStats() {
   const supabase = await createClient();
   const { data } = await supabase.from("assets").select("status, quantity, value, currency, is_consumable");
   const rows = data ?? [];
-  const active = rows.filter((r) => r.status !== "DADO_DE_BAJA");
+  const active = rows.filter((r) => r.status !== "DADO_DE_BAJA" && r.status !== "ANULADO");
   const sum = (cur: string) =>
     active.filter((r) => r.currency === cur).reduce((a, r) => a + Number(r.value ?? 0), 0);
   return {
@@ -64,6 +64,7 @@ export async function getAssetStats() {
     withoutValue: active.filter((r) => r.value === null || Number(r.value) === 0).length,
     inRepair: rows.filter((r) => r.status === "EN_REPARACION").length,
     retired: rows.filter((r) => r.status === "DADO_DE_BAJA").length,
+    voided: rows.filter((r) => r.status === "ANULADO").length,
   };
 }
 
@@ -94,7 +95,9 @@ export async function listAssets(filters: {
   }
   if (filters.typeId) q = q.eq("type_id", filters.typeId);
   if (filters.locationId) q = q.eq("location_id", filters.locationId);
+  // Los anulados (registrados por error) solo salen con el filtro «Anulados».
   if (filters.status) q = q.eq("status", filters.status);
+  else q = q.neq("status", "ANULADO");
   if (filters.consumable === "si") q = q.eq("is_consumable", true);
   if (filters.consumable === "no") q = q.eq("is_consumable", false);
   const { data, error, count } = await q;
@@ -194,6 +197,9 @@ export async function getAsset(id: string) {
     expense,
     coverId: (a.cover_document_id as string) ?? null,
     createdAt: a.created_at as string,
+    voidReason: (a.void_reason as string) ?? null,
+    voidedAt: (a.voided_at as string) ?? null,
+    voidedBy: a.voided_by ? (nameOf.get(a.voided_by as string) ?? (await voiderName(a.voided_by as string))) : null,
     photos: (photos ?? []).map((p) => ({ id: p.id as string, name: p.file_name as string, url: urls.get(p.storage_path as string) ?? null })),
     events: (events ?? []).map((e) => ({
       id: e.id as string,
@@ -204,6 +210,12 @@ export async function getAsset(id: string) {
       at: e.changed_at as string,
     })),
   };
+}
+
+async function voiderName(userId: string): Promise<string> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("profiles").select("full_name, email").eq("id", userId).maybeSingle();
+  return (data?.full_name as string) || (data?.email as string) || "Usuario";
 }
 
 /** Lo que se muestra del gasto en la ficha del activo (y para llenar «Registrar como activo»). */

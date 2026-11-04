@@ -96,3 +96,27 @@ export async function setAssetCoverAction(assetId: string, documentId: string): 
   revalidatePath(`/assets/${assetId}`);
   revalidatePath("/assets");
 }
+
+/** Anular un activo registrado por error: motivo obligatorio, se suelta del gasto, nada se borra. */
+export async function voidAssetAction(assetId: string, reason: string): Promise<AssetState> {
+  if (!(await hasPermission("assets.manage"))) return fail("No tienes permiso para anular activos.");
+  const text = reason.trim();
+  if (text.length < 10) return fail("Escribe el motivo de la anulación (mínimo 10 letras).", "reason");
+  const supabase = await createClient();
+  const cid = await companyId();
+  const { data: before } = await supabase.from("assets").select("code, status, expense_id").eq("id", assetId).maybeSingle();
+  const { error } = await supabase.rpc("void_asset", { p_asset_id: assetId, p_reason: text });
+  if (error) return fail(assetErrorMessage(error.message));
+  await logAudit({
+    companyId: cid,
+    action: "VOID",
+    entityType: "asset",
+    entityId: assetId,
+    oldValues: before ?? null,
+    newValues: { status: "ANULADO", void_reason: text, expense_id: null },
+  });
+  revalidatePath("/assets");
+  revalidatePath(`/assets/${assetId}`);
+  if (before?.expense_id) revalidatePath(`/expenses/${before.expense_id}`);
+  return { error: null, success: `Activo ${before?.code ?? ""} anulado. Ya no sale en la lista y se soltó del gasto.`, successId: Date.now() };
+}

@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Archive,
+  Ban,
   Boxes,
   CalendarDays,
   CircleDollarSign,
@@ -25,6 +26,7 @@ import {
   formatQuantity,
 } from "@/features/assets/schema";
 import { AssetDetailsPanel } from "@/components/assets/asset-edit";
+import { VoidAssetButton } from "@/components/assets/void-asset-button";
 import { PhotoGallery } from "@/components/directory/directory-panel";
 import { Card } from "@/components/ui/card";
 import { InfoHint } from "@/components/ui/info-hint";
@@ -73,6 +75,8 @@ const EVENT_ICONS: Record<string, React.ReactNode> = {
   status: <Archive size={12} aria-hidden />,
   quantity: <Boxes size={12} aria-hidden />,
   value: <CircleDollarSign size={12} aria-hidden />,
+  expense: <Receipt size={12} aria-hidden />,
+  void_reason: <Ban size={12} aria-hidden />,
 };
 
 export default async function AssetDetailPage({
@@ -99,6 +103,8 @@ export default async function AssetDetailPage({
 
   const cover = asset.photos.find((p) => p.id === asset.coverId) ?? asset.photos[0] ?? null;
   const retired = asset.status === "DADO_DE_BAJA";
+  const voided = asset.status === "ANULADO";
+  const editable = canManage && !voided;
   const returnHere = encodeURIComponent(`/assets/${asset.id}`);
 
   return (
@@ -111,6 +117,21 @@ export default async function AssetDetailPage({
         <p className="rounded-[var(--radius-md)] border border-brand-success/30 bg-brand-success-bg px-3 py-2 text-sm text-brand-text">
           ✓ Activo <strong>{asset.code}</strong> registrado. Ahora súbele una <strong>foto</strong> (a la derecha) para reconocerlo rápido en la lista.
         </p>
+      )}
+      {voided && (
+        <div className="flex items-start gap-2 rounded-[var(--radius-md)] border border-brand-danger/30 bg-brand-danger-bg px-3 py-2.5 text-sm text-brand-text">
+          <Ban size={16} className="mt-0.5 shrink-0 text-brand-danger" aria-hidden />
+          <div>
+            <p>
+              <strong className="text-brand-danger">Anulado: se registró por error.</strong> No sale en la lista ni en las tarjetas, se soltó del gasto y ya
+              no se puede editar. Se conserva solo como registro.
+            </p>
+            <p className="mt-1 text-brand-muted">
+              Motivo: «{asset.voidReason}»{asset.voidedAt ? ` · ${when(asset.voidedAt)}` : ""}
+              {asset.voidedBy ? ` · ${asset.voidedBy}` : ""}
+            </p>
+          </div>
+        </div>
       )}
       {retired && (
         <p className="flex items-start gap-2 rounded-[var(--radius-md)] border border-brand-border bg-brand-surface-hover px-3 py-2 text-sm text-brand-text">
@@ -128,7 +149,7 @@ export default async function AssetDetailPage({
           <div className="h-24 w-24 shrink-0 overflow-hidden rounded-[var(--radius-md)] border border-brand-border bg-brand-surface-hover">
             {cover?.url ? (
               // eslint-disable-next-line @next/next/no-img-element -- URL firmada de Storage
-              <img src={cover.url} alt={asset.description} className={`h-full w-full object-cover ${retired ? "grayscale" : ""}`} />
+              <img src={cover.url} alt={asset.description} className={`h-full w-full object-cover ${retired || voided ? "grayscale" : ""}`} />
             ) : (
               <span className="flex h-full w-full flex-col items-center justify-center gap-1 text-[11px] text-brand-muted">
                 <Boxes size={22} aria-hidden /> Sin foto
@@ -147,19 +168,22 @@ export default async function AssetDetailPage({
                 </span>
               )}
             </div>
-            <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-brand-primary">{asset.description}</h1>
+            <h1 className={`mt-1.5 text-2xl font-semibold tracking-tight ${voided ? "text-brand-muted line-through" : "text-brand-primary"}`}>{asset.description}</h1>
             <p className="mt-0.5 text-sm text-brand-muted">
               {asset.typeName ?? "Sin tipo"} · registrado el {formatDate(asset.createdAt.slice(0, 10))}
             </p>
           </div>
-          {canManage && !editar && (
-            <Link
-              href={`/assets/${asset.id}?editar=1#datos`}
-              title="Cambiar responsable, ubicación, estado, cantidad, valor o el nombre"
-              className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-[var(--radius-md)] bg-brand-primary px-3.5 py-2 text-sm font-medium text-white shadow-[var(--shadow-sm)] hover:bg-brand-primary-hover"
-            >
-              <Pencil size={14} aria-hidden /> Editar activo
-            </Link>
+          {editable && !editar && (
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <Link
+                href={`/assets/${asset.id}?editar=1#datos`}
+                title="Cambiar responsable, ubicación, estado, cantidad, valor o el nombre"
+                className="inline-flex w-fit items-center gap-1.5 rounded-[var(--radius-md)] bg-brand-primary px-3.5 py-2 text-sm font-medium text-white shadow-[var(--shadow-sm)] hover:bg-brand-primary-hover"
+              >
+                <Pencil size={14} aria-hidden /> Editar activo
+              </Link>
+              <VoidAssetButton assetId={asset.id} code={asset.code} expenseDescription={asset.expense?.description ?? null} />
+            </div>
           )}
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
@@ -188,7 +212,7 @@ export default async function AssetDetailPage({
           <AssetDetailsPanel
             key={editar ? "editar" : "ver"}
             assetId={asset.id}
-            canEdit={canManage}
+            canEdit={editable}
             startEditing={Boolean(editar)}
             types={types}
             locations={locations}
@@ -282,8 +306,8 @@ export default async function AssetDetailPage({
             entityId={asset.id}
             photos={asset.photos}
             coverId={asset.coverId}
-            canEdit={canManage}
-            canUpload={canManage && canUpload}
+            canEdit={editable}
+            canUpload={editable && canUpload}
             setCover={setAssetCoverAction.bind(null, asset.id)}
             help={
               <>

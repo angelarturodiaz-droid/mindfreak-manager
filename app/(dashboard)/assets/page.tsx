@@ -21,7 +21,7 @@ export default async function AssetsPage({ searchParams }: { searchParams: Promi
   const sp = await searchParams;
   const q = cleanSearch(sp.q);
   const page = parsePage(sp.page);
-  const status = (ASSET_STATUSES as readonly string[]).includes(sp.estado ?? "") ? sp.estado : undefined;
+  const status = [...ASSET_STATUSES, "ANULADO"].includes(sp.estado ?? "") ? sp.estado : undefined;
   const consumable = sp.consumo === "si" || sp.consumo === "no" ? sp.consumo : undefined;
   const [list, stats, types, locations, canManage, canEditLists] = await Promise.all([
     listAssets({ search: q, typeId: sp.tipo, locationId: sp.ubicacion, status, consumable, page }),
@@ -97,7 +97,8 @@ export default async function AssetsPage({ searchParams }: { searchParams: Promi
           {
             header: "",
             className: "text-right",
-            accessor: (r: AssetRow) => (
+            accessor: (r: AssetRow) =>
+              r.status === "ANULADO" ? null : (
               <EditAssetButton
                 assetId={r.id}
                 code={r.code}
@@ -119,7 +120,7 @@ export default async function AssetsPage({ searchParams }: { searchParams: Promi
                   isConsumable: r.is_consumable,
                 }}
               />
-            ),
+              ),
           } as Column<AssetRow>,
         ]
       : []),
@@ -210,6 +211,7 @@ export default async function AssetsPage({ searchParams }: { searchParams: Promi
               {ASSET_STATUS_LABELS[s]}
             </option>
           ))}
+          {(stats.voided > 0 || status === "ANULADO") && <option value="ANULADO">Anulados (registrados por error) · {stats.voided}</option>}
         </AutoSubmitSelect>
         <AutoSubmitSelect name="consumo" defaultValue={consumable ?? ""} aria-label="¿Se consume?" className="w-full truncate">
           <option value="">Fijos y que se consumen</option>
