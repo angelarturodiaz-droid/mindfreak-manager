@@ -156,15 +156,23 @@ export default async function AssetsPage({ searchParams }: { searchParams: Promi
           icon={<Boxes size={18} />}
           tone="blue"
           info="Cuántos registros hay (sin contar los dados de baja). Un registro puede tener varias unidades (ej. 15 jarrones)."
-          hint={stats.consumables ? `${stats.consumables} se consumen` : "Ninguno marcado «se consume»"}
+          hint={[stats.consumables ? `${stats.consumables} se consumen` : "", stats.retired ? `sin contar ${stats.retired} dado${stats.retired === 1 ? "" : "s"} de baja` : ""].filter(Boolean).join(" · ") || undefined}
         />
         <StatCard
           label="Valor de compra"
           value={formatMoney(stats.valueDop, "DOP")}
           icon={<CircleDollarSign size={18} />}
           tone="green"
-          info="Suma de lo que costaron (sin los dados de baja). Los de dólares van aparte, sin convertir. Es lo que se pagó, no lo que valen hoy."
-          hint={[stats.valueUsd ? `+ ${formatMoney(stats.valueUsd, "USD")}` : "", stats.withoutValue ? `${stats.withoutValue} sin valor anotado` : ""].filter(Boolean).join(" · ") || undefined}
+          info="Suma de lo que costaron los activos que se usan. NO suma los dados de baja (ya no los tenemos). Los de dólares van aparte, sin convertir. Es lo que se pagó, no lo que valen hoy."
+          hint={
+            [
+              stats.valueUsd ? `+ ${formatMoney(stats.valueUsd, "USD")}` : "",
+              stats.withoutValue ? `${stats.withoutValue} sin valor anotado` : "",
+              stats.retired ? `no suma los dados de baja` : "",
+            ]
+              .filter(Boolean)
+              .join(" · ") || undefined
+          }
         />
         <StatCard
           label="En reparación"

@@ -862,10 +862,11 @@ const SECTIONS: Section[] = [
         </ol>
         <Bullets
           items={[
-            <><strong>Estados</strong>: <em>En uso</em> (se puede usar), <em>En reparación</em> (no contar con él por ahora) y <em>Dado de baja</em> (ya no se usa). Los activos no se borran: se dan de baja y quedan para el historial.</>,
+            <><strong>Estados</strong>: <em>En uso</em> (se puede usar), <em>En reparación</em> (no contar con él por ahora) y <em>Dado de baja</em> (ya no se usa). Los activos no se borran: se dan de baja y quedan para el historial. En las listas no se repiten nombres aunque cambie un acento («Almacen» = «Almacén»).</>,
             <><strong>¿Se consume?</strong>: márcalo para lo que se gasta o se regala en los eventos (gorras, polos, lanyards, soportes de gafetes). No son activos fijos; se llevan para saber cuántos quedan. Hay un filtro para verlos aparte.</>,
             <><strong>Valor de compra</strong>: lo que costó en total (todas las unidades), en RD$ o US$. Si no lo sabes, se deja vacío. La tarjeta de arriba suma los pesos y los dólares por separado, sin los dados de baja.</>,
-            <><strong>Cómo se compró</strong>: si se registró desde un gasto, la ficha muestra ese gasto y cómo se pagó (tarjeta o banco). El gasto no cambia.</>,
+            <><strong>Cómo se compró</strong>: si se registró desde un gasto, la ficha muestra ese gasto, su total y cómo se pagó (tarjeta o banco). Al abrir el gasto desde ahí, arriba sale <em>Volver al activo</em>. El gasto no cambia.</>,
+            <><strong>Dado de baja</strong>: sale un aviso gris en su ficha y ya no cuenta en las tarjetas de arriba de Activos (ni en la cantidad ni en el valor de compra).</>,
             <><strong>Responsable</strong>: escribe el nombre o elígelo de la lista (usuarios del sistema y responsables ya usados).</>,
             <><strong>Listas</strong>: los <strong>tipos</strong> (Mobiliario, Decoraciones, Equipo de evento, Suministro, Tecnología, Vestuario) y las <strong>ubicaciones</strong> se cambian en <em>Configuración → Activos</em>.</>,
             <><strong>Quién puede</strong>: todos los roles ven los activos; Administración y Gerente los registran y editan (se cambia en <em>Configuración → Roles y permisos → Activos</em>).</>,

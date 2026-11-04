@@ -1304,3 +1304,8 @@ pulsa el botón.
   `my_permissions`; POST/PATCH/DELETE y las demás RPC nunca se repiten. `requirePageAccess` distingue «falló la conexión»
   (lanza `CONNECTION_ERROR_MESSAGE` → `app/(dashboard)/error.tsx`, pantalla «Se cortó la conexión» con Reintentar) de «no tiene
   el permiso» (redirige con `sin_permiso`). Prueba: `tests/unit/resilient-fetch.test.ts`.
+- (4-nov) Ficha rediseñada (`app/(dashboard)/assets/[id]/page.tsx`): `KeyFact`, `Val` (vacío → «Sin asignar»), historial en
+  línea de tiempo; `AssetDetailsPanel` recibe la vista de lectura como `children`. El enlace al gasto lleva
+  `?return_to=/assets/<id>`; `safeReturnTo` acepta `/assets/<uuid>` («Volver al activo»).
+- Migración 097: índices únicos `(company_id, catalog_key(name))` en `asset_locations`, `asset_types`, `directory_zones` y
+  `directory_tags` (antes `lower(name)` dejaba pasar «Almacen» si existía «Almacén»). Verificado sin repetidos antes de aplicar.

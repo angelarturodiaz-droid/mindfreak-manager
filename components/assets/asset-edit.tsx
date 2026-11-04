@@ -6,9 +6,6 @@ import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
-import { formatMoney } from "@/lib/utils/money";
-import { formatDate } from "@/lib/utils/dates";
-import { ASSET_STATUS_INFO, ASSET_STATUS_LABELS, ASSET_STATUS_TONES, formatQuantity } from "@/features/assets/schema";
 import { AssetForm, type AssetFormValues } from "./asset-form";
 
 type Lists = {
@@ -18,14 +15,15 @@ type Lists = {
   canEditLists: boolean;
 };
 
-/** Ficha: «Datos del activo» en modo lectura, con «Editar» → formulario con Cancelar y Guardar cambios. */
+/** Ficha: «Información» en modo lectura (la arma la página) y «Editar» → formulario con Cancelar y Guardar cambios. */
 export function AssetDetailsPanel({
   assetId,
   values,
   canEdit,
   startEditing = false,
+  children,
   ...lists
-}: Lists & { assetId: string; values: AssetFormValues; canEdit: boolean; startEditing?: boolean }) {
+}: Lists & { assetId: string; values: AssetFormValues; canEdit: boolean; startEditing?: boolean; children: React.ReactNode }) {
   const [editing, setEditing] = useState(startEditing && canEdit);
   const router = useRouter();
   const pathname = usePathname();
@@ -38,7 +36,7 @@ export function AssetDetailsPanel({
 
   if (editing) {
     return (
-      <div id="datos">
+      <div id="datos" className="scroll-mt-4">
         <AssetForm
           assetId={assetId}
           initial={values}
@@ -54,47 +52,19 @@ export function AssetDetailsPanel({
     );
   }
 
-  const typeName = lists.types.find((t) => t.id === values.typeId)?.name ?? null;
-  const locationName = lists.locations.find((l) => l.id === values.locationId)?.name ?? null;
-  const rows: [string, React.ReactNode][] = [
-    ["Tipo", typeName ?? "—"],
-    ["Cantidad", formatQuantity(values.quantity)],
-    [
-      "Estado",
-      <span key="st" title={ASSET_STATUS_INFO[values.status]} className={`rounded-full px-2 py-0.5 text-xs font-medium ${ASSET_STATUS_TONES[values.status]}`}>
-        {ASSET_STATUS_LABELS[values.status]}
-      </span>,
-    ],
-    ["¿Se consume?", values.isConsumable ? "Sí (se gasta o se regala en los eventos)" : "No (activo fijo)"],
-    ["Responsable", values.responsibleName ?? "—"],
-    ["Ubicación", locationName ?? "—"],
-    ["Valor de compra", values.value ? formatMoney(values.value, values.currency) : "—"],
-    ["Fecha de compra", values.purchaseDate ? formatDate(values.purchaseDate) : "—"],
-  ];
-
   return (
-    <Card className="flex flex-col gap-3" id="datos">
+    <Card className="flex flex-col gap-4" id="datos">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-brand-text">Datos del activo</p>
-        {canEdit && (
+        <h2 className="text-sm font-semibold text-brand-text">Información</h2>
+        {canEdit ? (
           <Button size="sm" variant="outline" icon={<Pencil size={14} />} onClick={() => setEditing(true)} hint="Cambiar responsable, ubicación, estado, cantidad, valor o el nombre.">
             Editar
           </Button>
+        ) : (
+          <span className="text-xs text-brand-muted">Solo Administración y Gerente pueden editar.</span>
         )}
       </div>
-      <dl className="grid grid-cols-1 gap-x-6 gap-y-2.5 text-sm sm:grid-cols-2">
-        {rows.map(([label, value]) => (
-          <div key={label} className="flex flex-col">
-            <dt className="text-xs text-brand-muted">{label}</dt>
-            <dd className="text-brand-text">{value}</dd>
-          </div>
-        ))}
-      </dl>
-      <div className="flex flex-col border-t border-brand-border pt-2.5 text-sm">
-        <span className="text-xs text-brand-muted">Detalle</span>
-        <span className="text-brand-text">{values.detail ?? "—"}</span>
-      </div>
-      {!canEdit && <p className="text-xs text-brand-muted">Solo Administración y Gerente pueden editar los activos.</p>}
+      {children}
     </Card>
   );
 }

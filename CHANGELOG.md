@@ -1,5 +1,16 @@
 # CHANGELOG — Mindfreak Manager
 
+## Activos: ficha rediseñada, volver al activo y listas sin repetidos por acentos (2026-11-04)
+
+- **Ficha del activo rediseñada**: encabezado con la foto de portada, código, estado y «Editar activo»; 4 datos clave con
+  ícono (responsable, ubicación, cantidad, valor + fecha); «Información» (tipo, estado explicado, ¿se consume?, fecha,
+  detalle) con «Editar»; historial como línea de tiempo; «Cómo se compró» como mini-tarjeta (total, fecha, proveedor y
+  forma de pago). Los datos vacíos dicen «Sin asignar». Si está dado de baja, aviso gris arriba y foto en gris.
+- **Volver al activo**: el gasto abierto desde «Cómo se compró» muestra «← Volver al activo».
+- **Tarjetas de Activos**: «Valor de compra» y «Activos» dicen que no cuentan los dados de baja.
+- **Listas sin repetidos aunque cambie un acento** («Almacen» = «Almacén», «Higuey» = «Higüey»): ubicaciones y tipos de
+  Activos, zonas y etiquetas del Directorio. Migración **097** (respaldo A0 → 098, limpieza A1 → 099).
+
 ## Activos: editar más fácil y conexión más estable (2026-11-04)
 
 - **Editar sin entrar**: en la lista, el lápiz ✎ de cada fila abre una ventana con el formulario (Guardar cambios / Cancelar).
