@@ -39,7 +39,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`relative w-full ${size === "lg" ? "max-w-2xl" : "max-w-md"} rounded-[var(--radius-lg)] bg-brand-surface p-6 text-left font-normal shadow-[var(--shadow-lg)]`}
+        className={`relative max-h-[90vh] w-full overflow-y-auto ${size === "lg" ? "max-w-2xl" : "max-w-md"} rounded-[var(--radius-lg)] bg-brand-surface p-6 text-left font-normal shadow-[var(--shadow-lg)]`}
       >
         {title && (
           <h2 className="mb-4 text-base font-semibold text-brand-text">{title}</h2>

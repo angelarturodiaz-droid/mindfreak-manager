@@ -18,18 +18,31 @@ export async function getCurrentUser() {
   return user;
 }
 
-/** ¿El usuario actual tiene el permiso indicado? (ej. "clients.view") */
-export async function hasPermission(permissionCode: string): Promise<boolean> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("has_permission", {
-    permission_code: permissionCode,
-  });
-  if (error) {
-    console.error("Error verificando permiso:", permissionCode, error.message);
-    return false;
-  }
-  return Boolean(data);
+/** Fallas de red pasajeras (internet que se cae un momento, la Mac que despierta): vale la pena reintentar. */
+function isTransientNetworkError(message: string): boolean {
+  return /fetch failed|network|ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket|terminated/i.test(message);
 }
+
+/**
+ * ¿El usuario actual tiene el permiso indicado? (ej. "clients.view")
+ * - Se guarda durante la misma petición (React cache): la misma pantalla no pregunta dos veces lo mismo.
+ * - Si falla la conexión con Supabase, reintenta 2 veces antes de responder «no».
+ */
+export const hasPermission = cache(async (permissionCode: string): Promise<boolean> => {
+  const supabase = await createClient();
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const { data, error } = await supabase.rpc("has_permission", {
+      permission_code: permissionCode,
+    });
+    if (!error) return Boolean(data);
+    if (attempt === 3 || !isTransientNetworkError(error.message)) {
+      console.error("Error verificando permiso:", permissionCode, error.message);
+      return false;
+    }
+    await new Promise((r) => setTimeout(r, 250 * attempt));
+  }
+  return false;
+});
 
 /**
  * Exige el permiso indicado; lanza un error legible si no lo tiene.

@@ -1,5 +1,14 @@
 # CHANGELOG — Mindfreak Manager
 
+## Activos: editar más fácil y conexión más estable (2026-11-04)
+
+- **Editar sin entrar**: en la lista, el lápiz ✎ de cada fila abre una ventana con el formulario (Guardar cambios / Cancelar).
+- **Ficha en modo lectura**: «Datos del activo» se muestra como ficha; botones **Editar activo** (arriba) y **Editar**
+  abren el formulario con **Cancelar** (descarta lo escrito) y **Guardar cambios**.
+- **Permisos con reintento**: si la conexión con Supabase falla un momento («fetch failed»), se reintenta 2 veces antes
+  de tratarlo como «sin permiso»; además cada permiso se consulta una sola vez por pantalla.
+- Las ventanas largas ahora se desplazan dentro de la pantalla (no se cortan).
+
 ## 5c Activos de la empresa (2026-11-03)
 
 - Menú **Activos** (Operaciones): lista con foto, código **ACT-0001**, tipo, cantidad, responsable, ubicación, valor y

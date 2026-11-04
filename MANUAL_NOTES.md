@@ -1294,3 +1294,8 @@ pulsa el botón.
 - Carga inicial (3-nov): 15 activos de la hoja del usuario aplicados con `execute_sql` (datos de la empresa: **no** van a
   Git). Prendas, soportes y lanyards marcados «se consume»; t-shirts y polos van como *Vestuario*.
 - La limpieza Go-Live (A1) **conserva** activos, tipos y ubicaciones (son datos reales).
+- (4-nov) Editar: `components/assets/asset-edit.tsx` → `AssetDetailsPanel` (lectura ↔ formulario; `?editar=1` abre en edición y al
+  terminar se quita con `router.replace`) y `EditAssetButton` (Modal con `AssetForm bare`). `AssetForm` acepta `onCancel`,
+  `onSaved` (en un efecto) y `bare`. `hasPermission` ahora es `cache()` de React y reintenta 2 veces ante errores de red
+  pasajeros (`fetch failed`, `ECONNRESET`, …); otros errores siguen respondiendo «no» de inmediato. `Modal` con `max-h-[90vh]`
+  y desplazamiento interno.

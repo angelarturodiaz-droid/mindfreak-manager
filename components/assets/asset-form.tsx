@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useTransition, type FormEvent } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition, type FormEvent } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -55,6 +55,9 @@ export function AssetForm({
   expenseId,
   canEdit = true,
   canEditLists = false,
+  onCancel,
+  onSaved,
+  bare = false,
 }: {
   assetId?: string;
   initial?: Partial<AssetFormValues>;
@@ -65,6 +68,12 @@ export function AssetForm({
   canEdit?: boolean;
   /** Puede entrar a Configuración → Activos (Administración). */
   canEditLists?: boolean;
+  /** Editar: botón «Cancelar» (descarta lo escrito y cierra la edición). */
+  onCancel?: () => void;
+  /** Editar: se llama al guardar bien (para cerrar la edición o la ventana). */
+  onSaved?: () => void;
+  /** Sin la tarjeta de fondo (dentro de una ventana). */
+  bare?: boolean;
 }) {
   const v = { ...EMPTY, ...initial };
   const action = assetId ? updateAssetAction.bind(null, assetId) : createAssetAction;
@@ -76,6 +85,15 @@ export function AssetForm({
   const [fieldError, setFieldError] = useState<{ field?: string; msg?: string }>({});
   const [seen, setSeen] = useState<number | undefined>(undefined);
   useSuccessToast(state);
+
+  // Guardado bien → cerrar la edición o la ventana.
+  const savedRef = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (state.successId && state.successId !== savedRef.current) {
+      savedRef.current = state.successId;
+      onSaved?.();
+    }
+  }, [state.successId, onSaved]);
 
   // Error del servidor → ventana + campo en rojo (estado derivado, sin efecto).
   if (state.error && state.errorId && state.errorId !== seen) {
@@ -103,7 +121,7 @@ export function AssetForm({
   const listId = `responsables-${assetId ?? "nuevo"}`;
 
   return (
-    <Card>
+    <Wrapper bare={bare}>
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
         {expenseId && <input type="hidden" name="expense_id" value={expenseId} />}
         <div className="flex items-center justify-between gap-2">
@@ -259,10 +277,16 @@ export function AssetForm({
 
         {canEdit && (
           <div className="flex items-center justify-end gap-2 border-t border-brand-border pt-3">
-            {!assetId && (
-              <Link href="/assets" className="px-3 text-sm text-brand-muted hover:text-brand-text">
+            {onCancel ? (
+              <Button type="button" variant="secondary" onClick={onCancel} disabled={pending} hint="Descarta lo que cambiaste y deja el activo como estaba.">
                 Cancelar
-              </Link>
+              </Button>
+            ) : (
+              !assetId && (
+                <Link href="/assets" className="px-3 text-sm text-brand-muted hover:text-brand-text">
+                  Cancelar
+                </Link>
+              )
             )}
             <Button type="submit" loading={pending}>
               {assetId ? "Guardar cambios" : "Registrar activo"}
@@ -273,6 +297,10 @@ export function AssetForm({
       <ResultDialog open={popup !== null} tone="danger" title="Revisa este dato" onClose={() => setPopup(null)}>
         <p className="text-brand-text">{popup}</p>
       </ResultDialog>
-    </Card>
+    </Wrapper>
   );
+}
+
+function Wrapper({ bare, children }: { bare: boolean; children: React.ReactNode }) {
+  return bare ? <div>{children}</div> : <Card>{children}</Card>;
 }

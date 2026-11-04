@@ -858,7 +858,7 @@ const SECTIONS: Section[] = [
         <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-sm text-brand-text">
           <li><strong>Registrarlo</strong>: si lo compraste con un gasto, abre el gasto y pulsa <em>Registrar como activo</em> (ya trae la descripción, el valor y la fecha). Si no, <em>Activos → Nuevo activo</em>. Si son varios iguales (por ejemplo 15 jarrones), regístralos una sola vez con su cantidad.</li>
           <li><strong>Foto</strong>: en su ficha, a la derecha, <em>Elegir fotos o arrastrarlas aquí</em>. La portada sale en la lista.</li>
-          <li><strong>Mantenerlo al día</strong>: cuando cambie de manos, de lugar o se dañe, cambia el responsable, la ubicación o el estado y pulsa <em>Guardar cambios</em>. Cada cambio queda en su <strong>Historial</strong> (quién y cuándo).</li>
+          <li><strong>Mantenerlo al día</strong>: cuando cambie de manos, de lugar o se dañe, edítalo. Hay dos formas: en la lista, el <strong>lápiz ✎</strong> de su fila abre una ventana para editarlo ahí mismo; o en su ficha, el botón <em>Editar activo</em> (arriba) o <em>Editar</em> (en «Datos del activo»). Cambia lo que haga falta y pulsa <em>Guardar cambios</em>, o <em>Cancelar</em> para dejarlo como estaba. Cada cambio queda en su <strong>Historial</strong> (quién y cuándo).</li>
         </ol>
         <Bullets
           items={[

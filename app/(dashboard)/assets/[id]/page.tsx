@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Boxes, History, MapPin, Receipt, User } from "lucide-react";
+import { ArrowLeft, Boxes, History, MapPin, Pencil, Receipt, User } from "lucide-react";
 import { getAsset, listAssetLocations, listAssetTypes, listResponsibleSuggestions } from "@/features/assets/queries";
 import { setAssetCoverAction } from "@/features/assets/actions";
 import {
@@ -11,7 +11,7 @@ import {
   describeAssetEventValue,
   formatQuantity,
 } from "@/features/assets/schema";
-import { AssetForm } from "@/components/assets/asset-form";
+import { AssetDetailsPanel } from "@/components/assets/asset-edit";
 import { PhotoGallery } from "@/components/directory/directory-panel";
 import { Card } from "@/components/ui/card";
 import { InfoHint } from "@/components/ui/info-hint";
@@ -36,10 +36,10 @@ export default async function AssetDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ nuevo?: string }>;
+  searchParams: Promise<{ nuevo?: string; editar?: string }>;
 }) {
   const { id } = await params;
-  const { nuevo } = await searchParams;
+  const { nuevo, editar } = await searchParams;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const [asset, canManage, canUpload, canSeeExpenses, types, locations, suggestions, canEditLists] = await Promise.all([
     getAsset(id),
@@ -75,6 +75,15 @@ export default async function AssetDetailPage({
           <span title={ASSET_STATUS_INFO[asset.status]} className={`rounded-full px-2 py-0.5 text-xs font-medium ${ASSET_STATUS_TONES[asset.status]}`}>
             {ASSET_STATUS_LABELS[asset.status]}
           </span>
+          {canManage && !editar && (
+            <Link
+              href={`/assets/${asset.id}?editar=1#datos`}
+              title="Cambiar responsable, ubicación, estado, cantidad, valor o el nombre"
+              className="ml-auto inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-brand-border px-3 py-1.5 text-sm font-medium text-brand-text hover:border-brand-accent hover:text-brand-accent"
+            >
+              <Pencil size={14} aria-hidden /> Editar activo
+            </Link>
+          )}
           {asset.isConsumable && (
             <span title="Se consume o se regala en los eventos (no es activo fijo)" className="rounded-full bg-brand-info-bg px-2 py-0.5 text-xs font-medium text-brand-info">
               Se consume
@@ -109,15 +118,16 @@ export default async function AssetDetailPage({
 
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-5">
         <div className="lg:col-span-3">
-          <AssetForm
-            key={asset.id}
+          <AssetDetailsPanel
+            key={editar ? "editar" : "ver"}
             assetId={asset.id}
             canEdit={canManage}
+            startEditing={Boolean(editar)}
             types={types}
-            canEditLists={canEditLists}
             locations={locations}
             responsibleSuggestions={suggestions}
-            initial={{
+            canEditLists={canEditLists}
+            values={{
               description: asset.description,
               detail: asset.detail,
               typeId: asset.typeId,

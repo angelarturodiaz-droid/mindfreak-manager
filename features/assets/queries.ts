@@ -8,9 +8,11 @@ export type AssetRow = {
   code: string;
   description: string;
   detail: string | null;
+  typeId: string | null;
   typeName: string | null;
   quantity: number;
   responsible_name: string | null;
+  locationId: string | null;
   locationName: string | null;
   value: number | null;
   currency: AssetCurrency;
@@ -80,7 +82,7 @@ export async function listAssets(filters: {
   let q = supabase
     .from("assets")
     .select(
-      "id, code, description, detail, quantity, responsible_name, value, currency, purchase_date, status, is_consumable, cover_document_id, asset_types(name), asset_locations(name)",
+      "id, code, description, detail, type_id, location_id, quantity, responsible_name, value, currency, purchase_date, status, is_consumable, cover_document_id, asset_types(name), asset_locations(name)",
       { count: "exact" },
     )
     .order("created_at", { ascending: false })
@@ -125,9 +127,11 @@ export async function listAssets(filters: {
       code: r.code as string,
       description: r.description as string,
       detail: (r.detail as string) ?? null,
+      typeId: (r.type_id as string) ?? null,
       typeName: relName(r.asset_types),
       quantity: Number(r.quantity),
       responsible_name: (r.responsible_name as string) ?? null,
+      locationId: (r.location_id as string) ?? null,
       locationName: relName(r.asset_locations),
       value: r.value === null ? null : Number(r.value),
       currency: (r.currency as AssetCurrency) ?? "DOP",

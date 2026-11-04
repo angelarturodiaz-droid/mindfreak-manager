@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Boxes, CircleDollarSign, Plus, Trash2, Wrench, X } from "lucide-react";
-import { getAssetStats, listAssetLocations, listAssets, listAssetTypes, type AssetRow } from "@/features/assets/queries";
+import { getAssetStats, listAssetLocations, listAssets, listAssetTypes, listResponsibleSuggestions, type AssetRow } from "@/features/assets/queries";
+import { EditAssetButton } from "@/components/assets/asset-edit";
 import { ASSET_STATUS_INFO, ASSET_STATUS_LABELS, ASSET_STATUS_TONES, ASSET_STATUSES, formatQuantity } from "@/features/assets/schema";
 import { Callout, SectionHeader, StatCard, StatGrid } from "@/components/ui/page-kit";
 import { Button } from "@/components/ui/button";
@@ -22,13 +23,15 @@ export default async function AssetsPage({ searchParams }: { searchParams: Promi
   const page = parsePage(sp.page);
   const status = (ASSET_STATUSES as readonly string[]).includes(sp.estado ?? "") ? sp.estado : undefined;
   const consumable = sp.consumo === "si" || sp.consumo === "no" ? sp.consumo : undefined;
-  const [list, stats, types, locations, canManage] = await Promise.all([
+  const [list, stats, types, locations, canManage, canEditLists] = await Promise.all([
     listAssets({ search: q, typeId: sp.tipo, locationId: sp.ubicacion, status, consumable, page }),
     getAssetStats(),
     listAssetTypes(),
     listAssetLocations(),
     hasPermission("assets.manage"),
+    hasPermission("settings.manage"),
   ]);
+  const suggestions = canManage ? await listResponsibleSuggestions() : [];
   const filtersOn = Boolean(q || sp.tipo || sp.ubicacion || status || consumable);
   const keep = { q, tipo: sp.tipo, ubicacion: sp.ubicacion, estado: status, consumo: consumable };
 
@@ -89,6 +92,37 @@ export default async function AssetsPage({ searchParams }: { searchParams: Promi
         </span>
       ),
     },
+    ...(canManage
+      ? [
+          {
+            header: "",
+            className: "text-right",
+            accessor: (r: AssetRow) => (
+              <EditAssetButton
+                assetId={r.id}
+                code={r.code}
+                types={types}
+                locations={locations}
+                responsibleSuggestions={suggestions}
+                canEditLists={canEditLists}
+                values={{
+                  description: r.description,
+                  detail: r.detail,
+                  typeId: r.typeId,
+                  quantity: r.quantity,
+                  responsibleName: r.responsible_name,
+                  locationId: r.locationId,
+                  value: r.value,
+                  currency: r.currency,
+                  purchaseDate: r.purchase_date,
+                  status: r.status,
+                  isConsumable: r.is_consumable,
+                }}
+              />
+            ),
+          } as Column<AssetRow>,
+        ]
+      : []),
   ];
 
   return (
@@ -196,7 +230,7 @@ export default async function AssetsPage({ searchParams }: { searchParams: Promi
         <SectionHeader
           title="Lista de activos"
           count={list.total}
-          description="Lo último registrado primero, de 10 en 10. Haz clic en uno para ver su ficha, fotos e historial."
+          description={canManage ? "Lo último registrado primero, de 10 en 10. Haz clic en uno para ver su ficha, fotos e historial; el lápiz ✎ lo edita aquí mismo." : "Lo último registrado primero, de 10 en 10. Haz clic en uno para ver su ficha, fotos e historial."}
         />
         <DataTable
           columns={columns}
