@@ -5,8 +5,9 @@
 - El formulario ya no va apretado en la columna derecha: botón **Nuevo producto/servicio** arriba a la derecha que abre
   una ventana con los campos ordenados (nombre; categoría y tipo; descripción; unidad y unidad DGII; costo, precio y
   tratamiento fiscal) y **Cancelar** / **Agregar al catálogo**.
-- Igual con las categorías: botón **Nueva categoría** en la tarjeta Categorías → ventana con nombre y descripción; si el
-  nombre ya existe lo dice en español.
+- **Categorías** también arriba: botón **Categorías (N)** junto a «Nuevo producto/servicio» → ventana con la lista
+  (cuántos productos tiene cada una, buscador, «Ver productos») y, para Administración, **Nueva categoría** (si el nombre ya
+  existe lo dice en español). Se quitó la columna derecha: la lista de productos y servicios usa toda la página.
 
 ## Productos y Servicios: solo Administración edita (sin pantalla de error) (2026-11-04)
 

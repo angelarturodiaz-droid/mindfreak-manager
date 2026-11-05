@@ -2,16 +2,15 @@ import Link from "next/link";
 import { ChevronRight, Layers, Package, Percent, Wrench } from "lucide-react";
 import { listServiceCategories, listServices } from "@/features/services/queries";
 import { listTaxRates } from "@/features/tax-rates/queries";
-import { NewCategoryButton } from "./new-category-form";
+import { CategoriesButton } from "./new-category-form";
 import { NewServiceButton } from "./new-service-form";
 import { hasPermission } from "@/lib/auth/permissions";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { LiveSearchInput } from "@/components/ui/live-search-input";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { stripAccents } from "@/lib/utils/search";
 import { Pagination } from "@/components/ui/pagination";
-import { PAGE_SIZE, paginate, parsePage } from "@/lib/utils/pagination";
+import { PAGE_SIZE, parsePage } from "@/lib/utils/pagination";
 import { AutoSubmitSelect } from "@/components/ui/auto-submit-select";
 import { Chip, FilterPills, StatCard, StatGrid, listHref } from "@/components/ui/page-kit";
 import { relationName, relationRow } from "@/lib/utils/relation";
@@ -145,8 +144,24 @@ export default async function ServicesPage({
             Catálogo que se usa en cotizaciones, proyectos y facturas, con su costo, precio e impuesto por defecto.
           </p>
         </div>
-        {canManage && <NewServiceButton categories={categories} taxRates={taxRates} />}
+        <div className="flex flex-wrap items-center gap-2">
+          <CategoriesButton
+            canManage={canManage}
+            categories={categories.map((c) => ({
+              id: c.id,
+              name: c.name,
+              description: c.description ?? null,
+              count: services.filter((s) => s.category_id === c.id).length,
+            }))}
+          />
+          {canManage && <NewServiceButton categories={categories} taxRates={taxRates} />}
+        </div>
       </div>
+      {!canManage && (
+        <p className="-mt-3 text-xs text-brand-muted">
+          Solo <strong>Administración</strong> puede agregar o cambiar productos, servicios y categorías.
+        </p>
+      )}
 
       <StatGrid>
         <StatCard
@@ -179,8 +194,8 @@ export default async function ServicesPage({
         />
       </StatGrid>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <section className="flex min-w-0 flex-col gap-4 xl:col-span-2">
+      <div className="grid grid-cols-1 gap-6">
+        <section className="flex min-w-0 flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <FilterPills
               label="Filtrar por tipo"
@@ -242,56 +257,6 @@ export default async function ServicesPage({
           />
         </section>
 
-        <aside className="flex flex-col gap-4">
-          {!canManage && (
-            <Card>
-              <p className="text-xs text-brand-muted">
-                Solo <strong>Administración</strong> puede agregar o cambiar productos, servicios y categorías.
-              </p>
-            </Card>
-          )}
-          <Card>
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-brand-text">Categorías</p>
-              {canManage && <NewCategoryButton />}
-            </div>
-            <div className="mb-3 flex flex-wrap gap-2">
-              {categories.length === 0 ? (
-                <p className="text-sm text-brand-muted">Sin categorías todavía.</p>
-              ) : (
-                paginate(categories, parsePage(params.catpage)).map((c) => (
-                  <Link
-                    key={c.id}
-                    href={listHref("/services", { category: c.id })}
-                    className={`rounded-full border px-3 py-1 text-sm transition-colors ${
-                      params.category === c.id
-                        ? "border-brand-accent bg-brand-accent-light text-brand-accent"
-                        : "border-brand-border text-brand-text hover:bg-brand-surface-hover"
-                    }`}
-                  >
-                    {c.name}
-                    <span className="ml-1.5 text-xs text-brand-muted">
-                      {services.filter((s) => s.category_id === c.id).length}
-                    </span>
-                  </Link>
-                ))
-              )}
-            </div>
-            {categories.length > PAGE_SIZE && (
-              <div className="mb-3">
-                <Pagination
-                  basePath="/services"
-                  page={parsePage(params.catpage)}
-                  pageSize={PAGE_SIZE}
-                  total={categories.length}
-                  pageParam="catpage"
-                  compact
-                  params={{ type, category: params.category, q: params.q?.trim() || undefined, page: params.page }}
-                />
-              </div>
-            )}
-          </Card>
-        </aside>
       </div>
     </main>
   );
