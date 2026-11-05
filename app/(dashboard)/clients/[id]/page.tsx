@@ -727,7 +727,7 @@ export default async function ClientDetailPage({
           </section>
 
           <section>
-            <SectionHeader title="Datos del cliente" description="Nombre, RNC y datos de contacto." />
+            <SectionHeader title="Datos del cliente" description="Nombre, RNC, contacto y los datos para la factura electrónica. Se editan aquí mismo: cambia y pulsa Guardar cambios." />
             <Card>
               <ClientEditForm client={client} />
             </Card>

@@ -8,7 +8,7 @@ import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissi
 import { logAudit } from "@/lib/audit/log";
 import { clientSchema, clientContactSchema } from "./schema";
 
-export type ActionState = { error: string | null };
+export type ActionState = { error: string | null; success?: string; successId?: number };
 
 async function getPrimaryCompanyId(): Promise<string> {
   const companyIds = await getCurrentUserCompanyIds();
@@ -144,7 +144,7 @@ export async function updateClientAction(
 
   revalidatePath(`/clients/${clientId}`);
   revalidatePath("/clients");
-  return { error: null };
+  return { error: null, success: "Datos del cliente guardados.", successId: Date.now() };
 }
 
 const STAGE_ORDER = ["LEAD", "PROSPECT", "CLIENT"] as const;

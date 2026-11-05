@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useTransition, type FormEvent } from "react";
+import { useSuccessToast } from "@/components/ui/use-success-toast";
 import { updateClientAction, type ActionState } from "@/features/clients/actions";
 import { Input } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
@@ -25,9 +26,19 @@ export function ClientEditForm({
 }) {
   const updateWithId = updateClientAction.bind(null, client.id);
   const [state, formAction, pending] = useActionState(updateWithId, initialState);
+  const [, startTransition] = useTransition();
+  useSuccessToast(state);
+
+  // Envío sin el reinicio automático del formulario de React 19: así la provincia y el municipio
+  // (listas controladas) siguen mostrando lo guardado.
+  function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    startTransition(() => formAction(fd));
+  }
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4">
       <Input label="Nombre" name="name" defaultValue={client.name} required />
       <Input label="RNC / Cédula" name="tax_id" defaultValue={client.tax_id ?? ""} />
       <Input label="Correo" name="email" type="email" defaultValue={client.email ?? ""} />

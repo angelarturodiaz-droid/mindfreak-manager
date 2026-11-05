@@ -1,5 +1,10 @@
 # CHANGELOG — Mindfreak Manager
 
+## Cliente: la provincia y el municipio ya no se ven vacíos al guardar (2026-11-04)
+
+- En «Datos del cliente», al pulsar **Guardar cambios** la provincia y el municipio se quedan mostrando lo guardado (antes
+  se guardaban bien pero el formulario se veía vacío) y sale el aviso verde «Datos del cliente guardados.».
+
 ## Gasto: tabla de pagos sin cortes (2026-11-04)
 
 - En el detalle del gasto, la tabla de **Pagos** ya no se corta a la derecha: Método y Referencia van en una columna,
