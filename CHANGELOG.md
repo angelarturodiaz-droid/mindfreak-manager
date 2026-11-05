@@ -1,5 +1,13 @@
 # CHANGELOG — Mindfreak Manager
 
+## Categorías de Productos y Servicios: sin repetidos, editar y borrar (2026-11-05)
+
+- Ya no se puede crear ni renombrar una categoría con un nombre que ya existe («Audio» = «audio» = «Áudio»). Migración
+  **101** (respaldo A0 → 102, limpieza A1 → 103).
+- En la ventana **Categorías**: **lápiz** para cambiar nombre y descripción, y **papelera** para borrar una categoría
+  **vacía** (con productos, aunque estén inactivos, no deja y explica que hay que moverlos). Las repetidas que ya había
+  salen con la marca **Repetida**. Auditoría: «Categoría de productos».
+
 ## Productos y Servicios: «Nuevo producto/servicio» en una ventana (2026-11-04)
 
 - El formulario ya no va apretado en la columna derecha: botón **Nuevo producto/servicio** arriba a la derecha que abre

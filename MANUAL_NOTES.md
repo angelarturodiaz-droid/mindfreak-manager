@@ -1336,3 +1336,11 @@ pulsa el botón.
   el XML debe contener el e-NCF; `getEcfShareLinkAction`: PDF más reciente, 7 días). Se usa otro entity_type para no chocar
   con `uploadInvoicePdfAction`, que busca un solo documento 'invoice' por factura. El PDF del ERP de una factura
   electrónica es «copia interna».
+
+## Categorías de productos y servicios (migración 101, 5-nov-2026)
+
+- Trigger `service_categories_guard` en `service_categories`: INSERT/UPDATE OF name rechaza (23505) un nombre con el mismo
+  `catalog_key` en la compañía (no se usó índice único porque ya había repetidos: «Capacitacion» ×2, «Audio» ×2); cambiar
+  solo la descripción o el mismo nombre con otro acento no se bloquea. DELETE rechaza (`category_in_use`) si algún
+  servicio (activo o no) la usa. Acciones `updateServiceCategoryAction` y `deleteServiceCategoryAction` (settings.manage).
+- La limpieza A1 que borre categorías de prueba con servicios debe borrar antes los servicios o quitarles la categoría.

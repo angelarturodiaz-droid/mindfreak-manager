@@ -13,6 +13,7 @@ const ENTITY_LABELS: Record<string, string> = {
   client: "Cliente",
   supplier: "Proveedor",
   asset: "Activo",
+  service_category: "Categoría de productos",
   service: "Producto/Servicio",
   quotation: "Cotización",
   project: "Proyecto",
