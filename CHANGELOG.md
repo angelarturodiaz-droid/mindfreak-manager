@@ -5,6 +5,8 @@
 - Al elegir un producto o servicio en una línea de factura electrónica, **Unidad de medida** y **Bien o servicio** toman
   lo de su ficha (debajo dice «Tomado de la ficha de…»); se pueden cambiar solo para esa línea. Ya no existe la opción
   «Según…»: la línea siempre lleva una unidad y bien/servicio concretos, visibles antes de agregarla.
+- Las unidades se eligen **por el nombre** (Unidad, Hora, Día…): ya no se muestra el número oficial de la DGII (43, 19…),
+  que el sistema guarda por dentro y es el que se envía en el e-CF.
 
 ## Categorías de Productos y Servicios: sin repetidos, editar y borrar (2026-11-05)
 

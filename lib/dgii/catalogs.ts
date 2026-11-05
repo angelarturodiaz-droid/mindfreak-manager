@@ -64,7 +64,8 @@ const UNITS_RAW: [string, string][] = [
 ];
 export const COMMON_UNIT_CODES = ["43", "19", "12", "10", "50", "34", "27", "31", "25"];
 export const DEFAULT_UNIT_CODE = "43";
-export const UNITS: Option[] = UNITS_RAW.map(([value, label]) => ({ value, label: `${label} (${value})` }));
+// En pantalla se elige por nombre; el número oficial (código DGII) va por dentro (value) y es el que se envía en el e-CF.
+export const UNITS: Option[] = UNITS_RAW.map(([value, label]) => ({ value, label }));
 export const UNITS_COMMON: Option[] = COMMON_UNIT_CODES.map((c) => UNITS.find((u) => u.value === c)!);
 export const UNITS_OTHER: Option[] = UNITS.filter((u) => !COMMON_UNIT_CODES.includes(u.value)).sort((a, b) => a.label.localeCompare(b.label, "es"));
 

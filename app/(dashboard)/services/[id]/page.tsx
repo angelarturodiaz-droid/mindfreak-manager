@@ -108,8 +108,8 @@ export default async function ServiceDetailPage({
               <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
                 <dt className="text-brand-muted">Unidad</dt>
                 <dd className="text-brand-text">{service.unit || "—"}</dd>
-                <dt className="text-brand-muted">Unidad (código DGII)</dt>
-                <dd className="text-brand-text">{unitName(service.unit_code)} ({service.unit_code ?? "43"})</dd>
+                <dt className="text-brand-muted">Unidad para factura electrónica</dt>
+                <dd className="text-brand-text">{unitName(service.unit_code)}</dd>
                 <dt className="text-brand-muted">Categoría</dt>
                 <dd className="text-brand-text">{category?.name ?? "Sin categoría"}</dd>
               </dl>
