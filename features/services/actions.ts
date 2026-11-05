@@ -1,6 +1,6 @@
 "use server";
 
-import { DEFAULT_UNIT_CODE, UNITS } from "@/lib/dgii/catalogs";
+import { DEFAULT_UNIT_CODE, UNITS, unitName } from "@/lib/dgii/catalogs";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -127,7 +127,8 @@ export async function createServiceAction(
     category_id: rawCategoryId,
     type: String(formData.get("type") ?? "SERVICIO"),
     description: String(formData.get("description") ?? ""),
-    unit: String(formData.get("unit") ?? ""),
+    // 5-nov: una sola «Unidad» (la de la lista oficial); el texto «por hora» sale de ella.
+    unit: unitName(unitCodeFrom(formData)).toLowerCase(),
     default_price: String(formData.get("default_price") ?? "0"),
     default_cost: String(formData.get("default_cost") ?? "0"),
     default_tax_rate_id: String(formData.get("default_tax_rate_id") ?? ""),
@@ -182,7 +183,8 @@ export async function updateServiceAction(
     category_id: rawCategoryId,
     type: String(formData.get("type") ?? "SERVICIO"),
     description: String(formData.get("description") ?? ""),
-    unit: String(formData.get("unit") ?? ""),
+    // 5-nov: una sola «Unidad» (la de la lista oficial); el texto «por hora» sale de ella.
+    unit: unitName(unitCodeFrom(formData)).toLowerCase(),
     default_price: String(formData.get("default_price") ?? "0"),
     default_cost: String(formData.get("default_cost") ?? "0"),
     default_tax_rate_id: String(formData.get("default_tax_rate_id") ?? ""),

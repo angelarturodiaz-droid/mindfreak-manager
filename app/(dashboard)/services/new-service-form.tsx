@@ -76,10 +76,7 @@ function NewServiceForm({
         </Select>
       </div>
       <Textarea label="Descripción (opcional)" name="description" rows={2} placeholder="Qué incluye" />
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Input label="Unidad" name="unit" placeholder="Ej. hora, unidad" info="Texto libre para tus documentos (ej. hora, unidad)." />
-        <UnitCodeSelect />
-      </div>
+      <UnitCodeSelect />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <MoneyInput label="Costo" name="default_cost" min={0} defaultValue={0} />
         <MoneyInput label="Precio de venta" name="default_price" min={0} defaultValue={0} />

@@ -62,10 +62,7 @@ export function ServiceEditForm({
       </Select>
 
       <Textarea label="Descripción" name="description" defaultValue={service.description ?? ""} rows={3} />
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Input label="Unidad" name="unit" defaultValue={service.unit ?? ""} info="Texto libre para tus documentos (ej. hora, unidad)." />
-        <UnitCodeSelect defaultValue={service.unit_code} />
-      </div>
+      <UnitCodeSelect defaultValue={service.unit_code} />
 
       <div className="grid grid-cols-2 gap-3">
         <MoneyInput label="Costo" name="default_cost" min={0} defaultValue={service.default_cost} />

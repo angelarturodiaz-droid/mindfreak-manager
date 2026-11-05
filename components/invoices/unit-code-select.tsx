@@ -5,10 +5,10 @@ import { DEFAULT_UNIT_CODE, ECF_FIELD_INFO, UNITS_COMMON, UNITS_OTHER } from "@/
 export function UnitCodeSelect({ defaultValue, className }: { defaultValue?: string | null; className?: string }) {
   return (
     <Select
-      label="Unidad para factura electrónica"
+      label="Unidad"
       name="unit_code"
       defaultValue={defaultValue ?? DEFAULT_UNIT_CODE}
-      info={`${ECF_FIELD_INFO.unit} Se usa en las facturas electrónicas; en la factura normal no cambia nada.`}
+      info={`Cómo se cobra este producto o servicio. ${ECF_FIELD_INFO.unit} Se pone sola en cada línea de cotización y factura (y en la factura electrónica con su código oficial de la DGII).`}
       className={className}
     >
       <optgroup label="Las más usadas">

@@ -7,6 +7,8 @@
   «Según…»: la línea siempre lleva una unidad y bien/servicio concretos, visibles antes de agregarla.
 - Las unidades se eligen **por el nombre** (Unidad, Hora, Día…): ya no se muestra el número oficial de la DGII (43, 19…),
   que el sistema guarda por dentro y es el que se envía en el e-CF.
+- Productos y Servicios: **una sola «Unidad»** (antes había dos: un texto libre y «Unidad para factura electrónica»). Se
+  elige de la lista oficial y de ella sale el texto «por hora» de la ficha y de la cantidad.
 
 ## Categorías de Productos y Servicios: sin repetidos, editar y borrar (2026-11-05)
 

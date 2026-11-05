@@ -68,7 +68,7 @@ export default async function ServiceDetailPage({
             </div>
             <p className="mt-1 text-sm text-brand-muted">
               {category?.name ?? "Sin categoría"}
-              {service.unit ? ` · por ${service.unit}` : ""}
+              {service.unit_code ? ` · por ${unitName(service.unit_code).toLowerCase()}` : ""}
             </p>
             {service.description && <p className="mt-2 max-w-2xl text-sm text-brand-text">{service.description}</p>}
           </div>
@@ -107,8 +107,6 @@ export default async function ServiceDetailPage({
             <div className="flex flex-col gap-3 text-sm">
               <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
                 <dt className="text-brand-muted">Unidad</dt>
-                <dd className="text-brand-text">{service.unit || "—"}</dd>
-                <dt className="text-brand-muted">Unidad para factura electrónica</dt>
                 <dd className="text-brand-text">{unitName(service.unit_code)}</dd>
                 <dt className="text-brand-muted">Categoría</dt>
                 <dd className="text-brand-text">{category?.name ?? "Sin categoría"}</dd>
