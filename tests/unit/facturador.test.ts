@@ -63,3 +63,15 @@ describe("Datos para el Facturador DGII (5b)", () => {
     expect(d.totalMatches).toBe(false);
   });
 });
+
+describe("buildFacturadorData · tipo de pago vs condición", () => {
+  it("avisa si dice Contado con condición a crédito", async () => {
+    const { buildFacturadorData } = await import("@/features/invoices/facturador");
+    const d = buildFacturadorData({
+      invoice: { number: "FAC-1", issue_date: "2026-11-04", ncf_type: "31", payment_type_code: "1", income_type: "01", ecf_comments: null, credit_days: 15, payment_terms_name: null, currency: "DOP", total: 0, commission_amount: 0, commission_tax_treatment: "GRAVADO", commission_tax_rate_percent: 0 },
+      client: { name: "X", tax_id: "131234567", foreign_id: null, phone: null, email: null, address: null, province_code: null, municipality_code: null },
+      items: [],
+    });
+    expect(d.checks.some((c) => !c.ok && c.text.includes("Crédito"))).toBe(true);
+  });
+});

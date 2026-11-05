@@ -185,6 +185,13 @@ export function buildFacturadorData(input: FacturadorInput): FacturadorData {
   const checks = [
     { ok: ecfType !== "31" || taxId.length > 0, text: ecfType === "31" ? (taxId ? "Tipo 31 con el RNC/cédula del cliente." : "Tipo 31 necesita el RNC o la cédula del cliente: complétalo en su ficha.") : `Tipo ${ecfType}.` },
     { ok: !(ecfType === "32" && taxId.length === 9), text: ecfType === "32" && taxId.length === 9 ? "El cliente tiene RNC de empresa: ¿no debería ser 31 Crédito fiscal?" : "Tipo de e-CF acorde con el cliente." },
+    {
+      ok: !(paymentCode === "1" && (inv.credit_days ?? 0) > 0),
+      text:
+        paymentCode === "1" && (inv.credit_days ?? 0) > 0
+          ? `El tipo de pago dice Contado, pero la condición de pago es ${inv.credit_days} días: ¿no debería ser 2 · Crédito? Cámbialo en la factura (en Borrador) o en el Facturador.`
+          : "Tipo de pago acorde con la condición de pago.",
+    },
     { ok: !(paymentCode === "3" && total > 0), text: paymentCode === "3" && total > 0 ? "«Gratuito» es para entregas sin pago: esta factura tiene monto." : "Tipo de pago acorde con la factura." },
     { ok: lines.length > 0, text: lines.length ? `${lines.length} línea(s) para pasar.` : "La factura no tiene líneas." },
     { ok: totalMatches, text: totalMatches ? `El total (${show(total)}) cuadra con la factura del ERP.` : `El total calculado (${show(total)}) no cuadra con la factura (${show(inv.total)}): revisa descuentos e impuestos antes de emitir.` },
