@@ -73,14 +73,14 @@ export function ClientEcfFields({
   if (collapsible) {
     return (
       <details className="group rounded-[var(--radius-md)] border border-brand-border">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-sm">
-          <span className="text-brand-text">
-            Para la factura electrónica <span className="text-xs text-brand-muted">(opcional)</span>
+        <summary className="flex cursor-pointer list-none items-start justify-between gap-2 px-3 py-2 text-sm">
+          <span className="min-w-0">
+            <span className="block text-brand-text">
+              Para la factura electrónica <span className="text-xs text-brand-muted">(opcional)</span>
+            </span>
+            <span className="block text-xs text-brand-muted">{summary}</span>
           </span>
-          <span className="flex min-w-0 items-center gap-1 text-xs text-brand-muted">
-            <span className="truncate">{summary}</span>
-            <span className="transition group-open:rotate-180" aria-hidden>▾</span>
-          </span>
+          <span className="mt-0.5 shrink-0 text-xs text-brand-muted transition group-open:rotate-180" aria-hidden>▾</span>
         </summary>
         <div className="border-t border-brand-border p-3">{fields}</div>
       </details>
