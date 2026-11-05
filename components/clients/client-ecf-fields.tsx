@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronDown, FileText } from "lucide-react";
 import { Input, Select } from "@/components/ui/field";
 import { ECF_FIELD_INFO, PROVINCES, placeName, placesOfProvince, provinceName } from "@/lib/dgii/catalogs";
 
@@ -72,17 +73,24 @@ export function ClientEcfFields({
 
   if (collapsible) {
     return (
-      <details className="group rounded-[var(--radius-md)] border border-brand-border">
-        <summary className="flex cursor-pointer list-none items-start justify-between gap-2 px-3 py-2 text-sm">
-          <span className="min-w-0">
-            <span className="block text-brand-text">
-              Para la factura electrónica <span className="text-xs text-brand-muted">(opcional)</span>
+      <details className="group rounded-[var(--radius-md)] border border-brand-accent/40 bg-brand-surface-hover">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-[var(--radius-md)] px-3 py-2 text-sm hover:bg-brand-accent/10">
+          <span className="flex min-w-0 items-start gap-2">
+            <FileText size={15} className="mt-0.5 shrink-0 text-brand-accent" aria-hidden />
+            <span className="min-w-0">
+              <span className="block font-medium text-brand-text">
+                Para la factura electrónica <span className="text-xs font-normal text-brand-muted">(opcional)</span>
+              </span>
+              <span className="block text-xs text-brand-muted">{summary}</span>
             </span>
-            <span className="block text-xs text-brand-muted">{summary}</span>
           </span>
-          <span className="mt-0.5 shrink-0 text-xs text-brand-muted transition group-open:rotate-180" aria-hidden>▾</span>
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-[var(--radius-md)] border border-brand-accent/50 bg-brand-surface px-2 py-1 text-xs font-medium text-brand-accent">
+            <span className="group-open:hidden">Ver / cambiar</span>
+            <span className="hidden group-open:inline">Ocultar</span>
+            <ChevronDown size={13} className="transition group-open:rotate-180" aria-hidden />
+          </span>
         </summary>
-        <div className="border-t border-brand-border p-3">{fields}</div>
+        <div className="border-t border-brand-border bg-brand-surface p-3">{fields}</div>
       </details>
     );
   }
