@@ -38,13 +38,16 @@ export function ClientEditForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-3">
+      {/* 4-nov: más compacto (dos columnas) para que la página no quede larga de este lado. */}
       <Input label="Nombre" name="name" defaultValue={client.name} required />
-      <Input label="RNC / Cédula" name="tax_id" defaultValue={client.tax_id ?? ""} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Input label="RNC / Cédula" name="tax_id" defaultValue={client.tax_id ?? ""} />
+        <Input label="Teléfono" name="phone" defaultValue={client.phone ?? ""} />
+      </div>
       <Input label="Correo" name="email" type="email" defaultValue={client.email ?? ""} />
-      <Input label="Teléfono" name="phone" defaultValue={client.phone ?? ""} />
       <Input label="Dirección" name="address" defaultValue={client.address ?? ""} />
-      <ClientEcfFields defaults={client} />
+      <ClientEcfFields defaults={client} collapsible />
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
 

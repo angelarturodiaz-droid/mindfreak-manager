@@ -2,23 +2,27 @@
 
 import { useState } from "react";
 import { Input, Select } from "@/components/ui/field";
-import { ECF_FIELD_INFO, PROVINCES, placesOfProvince } from "@/lib/dgii/catalogs";
+import { ECF_FIELD_INFO, PROVINCES, placeName, placesOfProvince, provinceName } from "@/lib/dgii/catalogs";
 
 /** 5b — Datos que pide el Facturador DGII (opcionales): ID extranjero, provincia y municipio del cliente. */
 export function ClientEcfFields({
   defaults,
+  collapsible = false,
 }: {
   defaults?: { foreign_id?: string | null; province_code?: string | null; municipality_code?: string | null };
+  /** En la ficha del cliente: plegable, con un resumen de lo guardado (la página queda más corta). */
+  collapsible?: boolean;
 }) {
   const [province, setProvince] = useState(defaults?.province_code ?? "");
   const [place, setPlace] = useState(defaults?.municipality_code ?? "");
   const groups = placesOfProvince(province);
 
-  return (
-    <fieldset className="space-y-3 rounded-[var(--radius-md)] border border-brand-border p-3">
-      <legend className="px-1 text-xs font-medium text-brand-muted">Para la factura electrónica (opcional)</legend>
+  const summary =
+    [placeName(place), provinceName(province)].filter(Boolean).join(", ") || (defaults?.foreign_id ? `ID extranjero ${defaults.foreign_id}` : "sin datos");
+  const fields = (
+    <div className="space-y-3">
       <Input label="ID extranjero" name="foreign_id" defaultValue={defaults?.foreign_id ?? ""} placeholder="Solo clientes del exterior sin RNC" info={ECF_FIELD_INFO.foreignId} />
-      <div className="grid grid-cols-1 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Select
           label="Provincia"
           name="province_code"
@@ -63,6 +67,30 @@ export function ClientEcfFields({
           )}
         </Select>
       </div>
+    </div>
+  );
+
+  if (collapsible) {
+    return (
+      <details className="group rounded-[var(--radius-md)] border border-brand-border">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-sm">
+          <span className="text-brand-text">
+            Para la factura electrónica <span className="text-xs text-brand-muted">(opcional)</span>
+          </span>
+          <span className="flex min-w-0 items-center gap-1 text-xs text-brand-muted">
+            <span className="truncate">{summary}</span>
+            <span className="transition group-open:rotate-180" aria-hidden>▾</span>
+          </span>
+        </summary>
+        <div className="border-t border-brand-border p-3">{fields}</div>
+      </details>
+    );
+  }
+
+  return (
+    <fieldset className="space-y-3 rounded-[var(--radius-md)] border border-brand-border p-3">
+      <legend className="px-1 text-xs font-medium text-brand-muted">Para la factura electrónica (opcional)</legend>
+      {fields}
     </fieldset>
   );
 }
