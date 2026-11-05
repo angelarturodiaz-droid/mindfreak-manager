@@ -187,23 +187,38 @@ export default async function ExpenseDetailPage({
         );
       },
     },
-    { header: "Método", accessor: (p) => <span className="text-brand-muted">{PAYMENT_METHOD_LABELS[p.method] ?? p.method}</span> },
     {
-      header: "Banco (propio)",
+      // 4-nov: Método + referencia en una columna (la tabla ya no se corta a la derecha).
+      header: "Método",
+      accessor: (p) => (
+        <span className="flex flex-col text-brand-muted">
+          <span>{PAYMENT_METHOD_LABELS[p.method] ?? p.method}</span>
+          {p.reference && <span className="max-w-[9rem] truncate text-xs" title={p.reference}>Ref. {p.reference}</span>}
+        </span>
+      ),
+    },
+    {
+      // 4-nov: banco propio y del proveedor juntos («De» / «A»), cortos y con el nombre completo al pasar el mouse.
+      header: "Bancos",
       accessor: (p) => {
         const account = p.bank_accounts as
           | { name: string; bank_name: string | null }
           | { name: string; bank_name: string | null }[]
           | null;
         const a = Array.isArray(account) ? account[0] : account;
-        return <span className="text-brand-muted">{a ? `${a.name}${a.bank_name ? ` (${a.bank_name})` : ""}` : "—"}</span>;
+        const from = a ? `${a.name}${a.bank_name ? ` (${a.bank_name})` : ""}` : null;
+        return (
+          <span className="flex max-w-[13rem] flex-col text-xs text-brand-muted">
+            <span className="truncate" title={from ?? undefined}>
+              <span className="text-brand-text">De:</span> {a?.name ?? "—"}
+            </span>
+            <span className="truncate" title={p.payee_bank_name ?? undefined}>
+              <span className="text-brand-text">A:</span> {p.payee_bank_name ?? "—"}
+            </span>
+          </span>
+        );
       },
     },
-    {
-      header: "Banco del proveedor",
-      accessor: (p) => <span className="text-brand-muted">{p.payee_bank_name ?? "—"}</span>,
-    },
-    { header: "Referencia", accessor: (p) => <span className="text-brand-muted">{p.reference ?? "—"}</span> },
     {
       header: "",
       className: "text-right",
@@ -211,7 +226,7 @@ export default async function ExpenseDetailPage({
         const acc = relationRow<{ name: string; bank_name: string | null }>(p.bank_accounts);
         const foreign = Boolean(p.account_currency && p.account_currency !== expense.currency);
         return (
-          <span className="inline-flex items-center gap-1">
+          <span className="inline-flex flex-col items-end gap-1 whitespace-nowrap">
             <DownloadReceiptButton paymentId={p.id} label="Comprobante" kind="supplier" />
             {canPay && p.status !== "VOIDED" && !pendingCorrection.has(p.id) && expense.status !== "CANCELLED" && (
               <RequestCorrectionButton
