@@ -1,5 +1,11 @@
 # CHANGELOG — Mindfreak Manager
 
+## Factura electrónica: la unidad y bien/servicio se llenan solos con el catálogo (2026-11-05)
+
+- Al elegir un producto o servicio en una línea de factura electrónica, **Unidad de medida** y **Bien o servicio** toman
+  lo de su ficha (debajo dice «Tomado de la ficha de…»); se pueden cambiar solo para esa línea. Ya no existe la opción
+  «Según…»: la línea siempre lleva una unidad y bien/servicio concretos, visibles antes de agregarla.
+
 ## Categorías de Productos y Servicios: sin repetidos, editar y borrar (2026-11-05)
 
 - Ya no se puede crear ni renombrar una categoría con un nombre que ya existe («Audio» = «audio» = «Áudio»). Migración

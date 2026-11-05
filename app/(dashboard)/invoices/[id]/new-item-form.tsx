@@ -13,6 +13,7 @@ import {
   type LineTaxRateRef,
 } from "@/components/documents/line-item-fields";
 import { EcfLineFields } from "@/components/invoices/ecf-line-fields";
+import { DEFAULT_UNIT_CODE } from "@/lib/dgii/catalogs";
 
 const initialState: ActionState = { error: null };
 
@@ -41,6 +42,15 @@ export function NewInvoiceItemForm({
   const addWithId = addInvoiceItemAction.bind(null, invoiceId);
   const [state, formAction, pending] = useActionState(addWithId, initialState);
   const [prefill, setPrefill] = useState<LinePrefill | null>(null);
+  // 5b: unidad y bien/servicio (factura electrónica). Se llenan solos con la ficha del producto o servicio elegido.
+  const [unit, setUnit] = useState(DEFAULT_UNIT_CODE);
+  const [kind, setKind] = useState("SERVICIO");
+  const [fromCatalog, setFromCatalog] = useState<string | null>(null);
+  function onServiceChange(svc: LineService | null) {
+    setFromCatalog(svc?.name ?? null);
+    setUnit(svc?.unit_code || DEFAULT_UNIT_CODE);
+    setKind(svc?.type === "PRODUCTO" ? "BIEN" : "SERVICIO");
+  }
   // Al agregar una línea con éxito, los campos se vuelven a montar en blanco.
   const [resetKey, setResetKey] = useState(0);
   const wasPending = useRef(false);
@@ -48,6 +58,9 @@ export function NewInvoiceItemForm({
     if (wasPending.current && !pending && !state.error) {
       setPrefill(null);
       setResetKey((k) => k + 1);
+      setUnit(DEFAULT_UNIT_CODE);
+      setKind("SERVICIO");
+      setFromCatalog(null);
     }
     wasPending.current = pending;
   }, [pending, state.error]);
@@ -79,8 +92,9 @@ export function NewInvoiceItemForm({
         defaultTaxRate={defaultTaxRate}
         currency={currency}
         prefill={prefill}
+        onServiceChange={electronic ? onServiceChange : undefined}
       />
-      {electronic && <EcfLineFields key={`ecf-${resetKey}`} />}
+      {electronic && <EcfLineFields unit={unit} kind={kind} onUnit={setUnit} onKind={setKind} fromCatalog={fromCatalog} />}
       <div className="flex flex-col gap-2 border-t border-brand-border pt-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-brand-danger">{state.error}</p>
         <Button type="submit" loading={pending} icon={<Plus size={14} />}>

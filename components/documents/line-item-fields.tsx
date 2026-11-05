@@ -17,6 +17,9 @@ export type LineService = {
   default_tax_rate_id: string | null;
   tax_rates: LineTaxRateRef | LineTaxRateRef[] | null;
   service_categories?: { name: string } | { name: string }[] | null;
+  /** 5b: unidad oficial (Tabla IV) y PRODUCTO/SERVICIO, para llenar solos los campos de la factura electrónica. */
+  unit_code?: string | null;
+  type?: string | null;
 };
 export type LineTaxRate = { id: string; name: string; rate: number; is_default?: boolean };
 export type LinePrefill = { description: string; unit_price: number; quantity: number };
