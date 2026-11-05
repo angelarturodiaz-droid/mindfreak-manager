@@ -9,7 +9,7 @@ import { hasPermission, requirePermission, getCurrentUserCompanyIds } from "@/li
 import { logAudit } from "@/lib/audit/log";
 import { serviceCategorySchema, serviceSchema } from "./schema";
 
-export type ActionState = { error: string | null };
+export type ActionState = { error: string | null; success?: string; successId?: number };
 
 async function getPrimaryCompanyId(): Promise<string> {
   const companyIds = await getCurrentUserCompanyIds();
@@ -41,10 +41,13 @@ export async function createServiceCategoryAction(
     description: parsed.data.description || null,
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    if (error.code === "23505") return { error: `Ya existe una categoría llamada «${parsed.data.name}» (no cuentan mayúsculas ni acentos).` };
+    return { error: error.message };
+  }
 
   revalidatePath("/services");
-  return { error: null };
+  return { error: null, success: `Categoría «${parsed.data.name}» agregada.`, successId: Date.now() };
 }
 
 /** 5b — Unidad e-CF (Tabla IV); si no es válida queda la predeterminada (Unidad). */

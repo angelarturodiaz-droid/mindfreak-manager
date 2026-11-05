@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ChevronRight, Layers, Package, Percent, Wrench } from "lucide-react";
 import { listServiceCategories, listServices } from "@/features/services/queries";
 import { listTaxRates } from "@/features/tax-rates/queries";
-import { NewCategoryForm } from "./new-category-form";
+import { NewCategoryButton } from "./new-category-form";
 import { NewServiceButton } from "./new-service-form";
 import { hasPermission } from "@/lib/auth/permissions";
 import { Badge } from "@/components/ui/badge";
@@ -251,7 +251,10 @@ export default async function ServicesPage({
             </Card>
           )}
           <Card>
-            <p className="mb-3 text-sm font-semibold text-brand-text">Categorías</p>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-brand-text">Categorías</p>
+              {canManage && <NewCategoryButton />}
+            </div>
             <div className="mb-3 flex flex-wrap gap-2">
               {categories.length === 0 ? (
                 <p className="text-sm text-brand-muted">Sin categorías todavía.</p>
@@ -287,7 +290,6 @@ export default async function ServicesPage({
                 />
               </div>
             )}
-            {canManage && <NewCategoryForm />}
           </Card>
         </aside>
       </div>
