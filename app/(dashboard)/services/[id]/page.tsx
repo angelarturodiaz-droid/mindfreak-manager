@@ -10,6 +10,8 @@ import { Card } from "@/components/ui/card";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { MetricCard, SectionHeader } from "@/components/ui/page-kit";
+import { hasPermission } from "@/lib/auth/permissions";
+import { unitName } from "@/lib/dgii/catalogs";
 
 function formatMoney(amount: number) {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(amount);
@@ -30,7 +32,8 @@ export default async function ServiceDetailPage({
   }
   if (!service) notFound();
 
-  const [categories, taxRates] = await Promise.all([listServiceCategories(), listTaxRates()]);
+  // Solo Administración cambia el catálogo (settings.manage); los demás lo ven en modo lectura.
+  const [categories, taxRates, canManage] = await Promise.all([listServiceCategories(), listTaxRates(), hasPermission("settings.manage")]);
 
   const category = categories.find((c) => c.id === service.category_id);
   const taxRate = taxRates.find((t) => t.id === service.default_tax_rate_id);
@@ -70,7 +73,7 @@ export default async function ServiceDetailPage({
             {service.description && <p className="mt-2 max-w-2xl text-sm text-brand-text">{service.description}</p>}
           </div>
         </div>
-        {service.is_active && (
+        {service.is_active && canManage && (
           <ConfirmButton
             label="Desactivar"
             confirmTitle={`¿Desactivar "${service.name}"?`}
@@ -96,9 +99,25 @@ export default async function ServiceDetailPage({
       </section>
 
       <section className="max-w-2xl">
-        <SectionHeader title="Editar" description="Estos valores se precargan al agregar la línea en una cotización o factura." />
+        <SectionHeader title={canManage ? "Editar" : "Datos"} description="Estos valores se precargan al agregar la línea en una cotización o factura." />
         <Card>
-          <ServiceEditForm service={service} categories={categories} taxRates={taxRates} />
+          {canManage ? (
+            <ServiceEditForm service={service} categories={categories} taxRates={taxRates} />
+          ) : (
+            <div className="flex flex-col gap-3 text-sm">
+              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
+                <dt className="text-brand-muted">Unidad</dt>
+                <dd className="text-brand-text">{service.unit || "—"}</dd>
+                <dt className="text-brand-muted">Unidad (código DGII)</dt>
+                <dd className="text-brand-text">{unitName(service.unit_code)} ({service.unit_code ?? "43"})</dd>
+                <dt className="text-brand-muted">Categoría</dt>
+                <dd className="text-brand-text">{category?.name ?? "Sin categoría"}</dd>
+              </dl>
+              <p className="rounded-[var(--radius-md)] bg-brand-surface-hover px-3 py-2 text-xs text-brand-muted">
+                Solo <strong>Administración</strong> puede cambiar el catálogo de productos y servicios. Si algo está mal, pídeselo.
+              </p>
+            </div>
+          )}
         </Card>
       </section>
     </main>

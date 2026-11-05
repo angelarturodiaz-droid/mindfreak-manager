@@ -4,6 +4,7 @@ import { listServiceCategories, listServices } from "@/features/services/queries
 import { listTaxRates } from "@/features/tax-rates/queries";
 import { NewCategoryForm } from "./new-category-form";
 import { NewServiceForm } from "./new-service-form";
+import { hasPermission } from "@/lib/auth/permissions";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { LiveSearchInput } from "@/components/ui/live-search-input";
@@ -44,6 +45,7 @@ export default async function ServicesPage({
     listServices(),
     listTaxRates(),
   ]);
+  const canManage = await hasPermission("settings.manage");
 
   // Filtros de presentación sobre el catálogo ya cargado.
   const type = params.type === "PRODUCTO" || params.type === "SERVICIO" ? params.type : undefined;
@@ -238,10 +240,18 @@ export default async function ServicesPage({
         </section>
 
         <aside className="flex flex-col gap-4">
-          <Card>
-            <p className="mb-3 text-sm font-semibold text-brand-text">Nuevo producto/servicio</p>
-            <NewServiceForm categories={categories} taxRates={taxRates} />
-          </Card>
+          {canManage ? (
+            <Card>
+              <p className="mb-3 text-sm font-semibold text-brand-text">Nuevo producto/servicio</p>
+              <NewServiceForm categories={categories} taxRates={taxRates} />
+            </Card>
+          ) : (
+            <Card>
+              <p className="text-xs text-brand-muted">
+                Solo <strong>Administración</strong> puede agregar o cambiar productos, servicios y categorías.
+              </p>
+            </Card>
+          )}
           <Card>
             <p className="mb-3 text-sm font-semibold text-brand-text">Categorías</p>
             <div className="mb-3 flex flex-wrap gap-2">
@@ -279,7 +289,7 @@ export default async function ServicesPage({
                 />
               </div>
             )}
-            <NewCategoryForm />
+            {canManage && <NewCategoryForm />}
           </Card>
         </aside>
       </div>

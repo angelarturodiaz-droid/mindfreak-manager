@@ -1,5 +1,12 @@
 # CHANGELOG — Mindfreak Manager
 
+## Productos y Servicios: solo Administración edita (sin pantalla de error) (2026-11-04)
+
+- Quien no tiene permiso de Configuración (ej. Gerente, Finanzas) ve el producto o servicio en **modo lectura** (unidad,
+  unidad con código DGII y categoría) con la nota «Solo Administración puede cambiar el catálogo». Ya no ve «Guardar
+  cambios», «Desactivar», «Nuevo producto/servicio» ni «Nueva categoría». Antes veía el formulario y al guardar salía la
+  pantalla «No se pudo cargar esta pantalla».
+
 ## Cliente: la provincia y el municipio ya no se ven vacíos al guardar (2026-11-04)
 
 - En «Datos del cliente», al pulsar **Guardar cambios** la provincia y el municipio se quedan mostrando lo guardado (antes

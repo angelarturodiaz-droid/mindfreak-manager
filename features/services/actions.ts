@@ -5,7 +5,7 @@ import { DEFAULT_UNIT_CODE, UNITS } from "@/lib/dgii/catalogs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
-import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
+import { hasPermission, requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
 import { serviceCategorySchema, serviceSchema } from "./schema";
 
@@ -23,7 +23,7 @@ export async function createServiceCategoryAction(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requirePermission("settings.manage");
+  if (!(await hasPermission("settings.manage"))) return { error: "Solo Administración puede cambiar el catálogo de productos y servicios." };
 
   const parsed = serviceCategorySchema.safeParse({
     name: String(formData.get("name") ?? ""),
@@ -57,7 +57,7 @@ export async function createServiceAction(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requirePermission("settings.manage");
+  if (!(await hasPermission("settings.manage"))) return { error: "Solo Administración puede cambiar el catálogo de productos y servicios." };
 
   const rawCategoryId = String(formData.get("category_id") ?? "");
   const parsed = serviceSchema.safeParse({
@@ -112,7 +112,7 @@ export async function updateServiceAction(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requirePermission("settings.manage");
+  if (!(await hasPermission("settings.manage"))) return { error: "Solo Administración puede cambiar el catálogo de productos y servicios." };
 
   const rawCategoryId = String(formData.get("category_id") ?? "");
   const parsed = serviceSchema.safeParse({
