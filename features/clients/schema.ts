@@ -11,6 +11,10 @@ export const clientSchema = z.object({
     .or(z.literal("")),
   phone: z.string().trim().optional().or(z.literal("")),
   address: z.string().trim().optional().or(z.literal("")),
+  // 5b — datos opcionales para la factura electrónica.
+  foreign_id: z.string().trim().max(40, "El ID extranjero es muy largo").optional().or(z.literal("")),
+  province_code: z.string().regex(/^\d{6}$/).optional().or(z.literal("")),
+  municipality_code: z.string().regex(/^\d{6}$/).optional().or(z.literal("")),
   // Etapa del pipeline comercial (Lead -> Prospecto -> Cliente). Independiente
   // del Estado (is_active): un Lead puede estar activo o inactivo sin dejar
   // de ser Lead — nunca se mezclan estos dos campos.

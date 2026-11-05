@@ -78,6 +78,10 @@ import { DownloadReceiptButton } from "@/components/payments/download-receipt-bu
 import { CorrectionStateBadge, RequestCorrectionButton } from "@/components/corrections/request-correction-button";
 import { pendingTargetIds } from "@/features/corrections/queries";
 import { WithholdingList, type WithholdingItem } from "@/components/payments/withholding-list";
+import { buildFacturadorData } from "@/features/invoices/facturador";
+import { FacturadorDialog } from "@/components/invoices/facturador-dialog";
+import { RecordEcfForm } from "@/components/invoices/record-ecf-form";
+import { ECF_TYPES, unitName } from "@/lib/dgii/catalogs";
 
 const COLLECTION_ACTION_LABELS: Record<string, string> = {
   CALL: "Llamada",
@@ -241,12 +245,71 @@ export default async function InvoiceDetailPage({
   const originQuotation = (Array.isArray(quotationData) ? quotationData[0] : quotationData)?.number ?? null;
 
   const isEditable = invoice.status === "DRAFT";
+  // 5b — Factura electrónica: datos en el orden del Facturador Gratuito DGII (solo lectura).
+  const isElectronic = invoice.billing_type === "ELECTRONIC";
+  type EcfClient = { name: string; tax_id: string | null; foreign_id: string | null; phone: string | null; email: string | null; address: string | null; province_code: string | null; municipality_code: string | null };
+  const ecfClient = (Array.isArray(clientData) ? clientData[0] : clientData) as EcfClient | null;
+  const facturadorData = isElectronic
+    ? buildFacturadorData({
+        invoice: {
+          number: invoice.number,
+          issue_date: invoice.issue_date,
+          ncf_type: invoice.ncf_type,
+          payment_type_code: invoice.payment_type_code,
+          income_type: invoice.income_type,
+          ecf_comments: invoice.ecf_comments,
+          credit_days: invoice.credit_days,
+          payment_terms_name: invoice.payment_terms_id ? relationName(invoice.payment_terms) : null,
+          currency: invoice.currency,
+          total: Number(invoice.total),
+          commission_amount: Number(invoice.commission_amount ?? 0),
+          commission_tax_treatment: invoice.commission_tax_treatment,
+          commission_tax_rate_percent: Number(invoice.commission_tax_rate_percent ?? 0),
+        },
+        client: {
+          name: ecfClient?.name ?? clientName ?? "",
+          tax_id: ecfClient?.tax_id ?? null,
+          foreign_id: ecfClient?.foreign_id ?? null,
+          phone: ecfClient?.phone ?? null,
+          email: ecfClient?.email ?? null,
+          address: ecfClient?.address ?? null,
+          province_code: ecfClient?.province_code ?? null,
+          municipality_code: ecfClient?.municipality_code ?? null,
+        },
+        items: items.map((it) => ({
+          description: it.description,
+          unit_code: it.unit_code,
+          item_kind: it.item_kind,
+          quantity: Number(it.quantity),
+          unit_price: Number(it.unit_price),
+          discount: Number(it.discount ?? 0),
+          tax: Number(it.tax ?? 0),
+          tax_treatment: it.tax_treatment,
+          tax_rate_percent: it.tax_rate_percent === null ? null : Number(it.tax_rate_percent),
+        })),
+      })
+    : null;
+  const ecfMissing = isElectronic && invoice.status !== "DRAFT" && invoice.status !== "CANCELLED" && (!invoice.e_ncf || !invoice.security_code || !invoice.digital_signature_at);
+  const ecfTypeLabel = ECF_TYPES.find((t) => t.value === invoice.ncf_type)?.label ?? "31 · Crédito fiscal";
   // "Enviada al cliente": marca informativa, no cambia el estado.
   const canMarkSent = canEdit && invoice.status !== "DRAFT" && invoice.status !== "CANCELLED";
   const sentByName = relationRow<{ full_name: string | null }>(invoice.sent_by)?.full_name ?? null;
 
   const itemColumns: Column<ItemRow>[] = [
-    { header: "Descripción", accessor: (item) => item.description },
+    {
+      header: "Descripción",
+      accessor: (item) =>
+        isElectronic ? (
+          <span>
+            {item.description}
+            <span className="block text-xs text-brand-muted">
+              {unitName(item.unit_code)} · {item.item_kind === "BIEN" ? "Bien" : "Servicio"}
+            </span>
+          </span>
+        ) : (
+          item.description
+        ),
+    },
     { header: "Cant.", className: "text-right", accessor: (item) => <span className="tabular-nums">{item.quantity}</span> },
     { header: "Precio", className: "text-right", accessor: (item) => <span className="tabular-nums">{formatMoney(item.unit_price, invoice.currency)}</span> },
     {
@@ -816,6 +879,7 @@ export default async function InvoiceDetailPage({
                   defaultTaxRate={defaultTaxRate}
                   taxRates={taxRates}
                   currency={invoice.currency}
+                  electronic={isElectronic}
                 />
               </Card>
             )}
@@ -950,6 +1014,49 @@ export default async function InvoiceDetailPage({
               onSave={updateInvoiceBankDetailsAction.bind(null, invoice.id)}
             />
           </SideSection>
+
+          {isElectronic && facturadorData && (
+            <SideSection
+              title="Factura electrónica (e-CF)"
+              info="Esta factura se emite en el Facturador Gratuito de la DGII. Aquí tienes los datos en el mismo orden del Facturador y, después de emitir, anotas el e-NCF que te dio. Los cobros y las retenciones funcionan igual que en cualquier factura."
+              summary={invoice.e_ncf ? `${ecfTypeLabel} · ${invoice.e_ncf}` : `${ecfTypeLabel} · sin e-NCF todavía`}
+              defaultOpen={invoice.status !== "PAID" && invoice.status !== "CANCELLED"}
+            >
+              <div className="flex flex-col gap-3">
+                <FacturadorDialog data={facturadorData} invoiceNumber={invoice.number} />
+                {invoice.status === "DRAFT" ? (
+                  <p className="text-xs text-brand-muted">
+                    Primero emite la factura aquí (queda fija); luego pásala al Facturador y anota el e-NCF que te dé.
+                  </p>
+                ) : (
+                  <>
+                    {(invoice.e_ncf || invoice.security_code || invoice.digital_signature_at) && (
+                      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+                        {invoice.e_ncf && (<><dt className="text-brand-muted">e-NCF</dt><dd className="font-mono text-brand-text">{invoice.e_ncf}</dd></>)}
+                        {invoice.security_code && (<><dt className="text-brand-muted">Código de seguridad</dt><dd className="font-mono text-brand-text">{invoice.security_code}</dd></>)}
+                        {invoice.digital_signature_at && (<><dt className="text-brand-muted">Firmada</dt><dd className="text-brand-text">{formatDateTime(invoice.digital_signature_at)}</dd></>)}
+                        {invoice.e_ncf_valid_until && (<><dt className="text-brand-muted">Válido hasta</dt><dd className="text-brand-text">{formatDate(invoice.e_ncf_valid_until)}</dd></>)}
+                      </dl>
+                    )}
+                    {ecfMissing && canEdit && (
+                      <RecordEcfForm
+                        invoiceId={invoice.id}
+                        current={{
+                          e_ncf: invoice.e_ncf,
+                          security_code: invoice.security_code,
+                          digital_signature_at: invoice.digital_signature_at,
+                          e_ncf_valid_until: invoice.e_ncf_valid_until,
+                        }}
+                      />
+                    )}
+                    {!ecfMissing && invoice.e_ncf && (
+                      <p className="text-xs text-brand-muted">Datos del e-CF anotados: ya no se cambian.</p>
+                    )}
+                  </>
+                )}
+              </div>
+            </SideSection>
+          )}
 
           {isEditable && canEdit && (
             <SideSection

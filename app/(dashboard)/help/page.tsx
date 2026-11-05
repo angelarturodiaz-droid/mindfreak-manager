@@ -745,6 +745,26 @@ const SECTIONS: Section[] = [
             <>En el detalle, los pasos <em>Borrador → Emitida → Pago parcial → Pagada</em> muestran el avance (cada paso completado queda en verde con ✓, el paso en curso en azul y en rojo si está vencida; al terminar de pagar, <em>Pagada</em> también queda en verde). En la columna derecha están el resumen con la barra de lo pagado, NCF/vencimiento (en borrador) y la <strong>Gestión de cobro</strong> con su historial.</>,
           ]}
         />
+        <div className="mt-3 rounded-[var(--radius-md)] border border-brand-border p-3">
+          <p className="text-sm font-semibold text-brand-text">Facturar en el Facturador Gratuito de la DGII — paso a paso</p>
+          <p className="mt-1 text-sm text-brand-text">
+            Solo para las facturas <strong>electrónicas (e-CF)</strong>. La factura normal (NCF) queda igual. Los cobros, las
+            retenciones, el ITBIS y los reportes funcionan <strong>igual</strong> en las dos: lo nuevo solo te ayuda a pasar la
+            factura al Facturador de la DGII sin equivocarte.
+          </p>
+          <Bullets
+            items={[
+              <><strong>1 · Al crearla</strong>: en <em>Nueva factura</em> elige <em>Electrónica</em> y llena <em>Tipo de e-CF</em> (casi siempre 31 Crédito fiscal; 32 Consumo para personas sin RNC), <em>Tipo de pago</em> (Contado, Crédito o Gratuito), <em>Tipo de ingreso</em> (casi siempre 01 Operaciones) y, si quieres, <em>Comentarios</em> (ej. «PROY-0026 · Evento corporativo»). Cada campo tiene su ⓘ.</>,
+              <><strong>2 · Las líneas</strong>: en una factura electrónica cada línea pide además la <em>Unidad de medida</em> (Unidad, Hora, Día, Conjunto, Ración…) y si es <em>Bien o Servicio</em>. Si lo dejas en «Según el producto o servicio», se toma del catálogo (eventos = Servicio, Unidad). La unidad de cada producto se cambia en <em>Productos y Servicios</em>.</>,
+              <><strong>3 · El cliente</strong>: en su ficha (Editar) hay un recuadro <em>Para la factura electrónica</em>: ID extranjero (solo clientes del exterior sin RNC), Provincia y Municipio (o distrito municipal). Son opcionales; el municipio tiene que ser de la provincia elegida. Para el tipo 31 el cliente necesita su RNC o cédula.</>,
+              <><strong>4 · Emite la factura aquí</strong> (queda fija) y en la tarjeta <em>Factura electrónica (e-CF)</em> pulsa <strong>Datos para el Facturador DGII</strong>: sale todo en el mismo orden y número de casilla del Facturador (1 a 39), con un botón <em>Copiar</em> en cada dato, las líneas listas, los totales y una lista de revisión (✓ o ⚠).</>,
+              <><strong>5 · En el Facturador</strong>: copia los datos en orden, revisa que el <strong>Monto total (39)</strong> sea igual al de la factura, genera, firma y guarda el PDF/XML.</>,
+              <><strong>6 · Anota el e-CF</strong>: vuelve a la factura y en la misma tarjeta llena <em>e-NCF</em> (ej. E310000000371), <em>Código de seguridad</em> y <em>Fecha y hora de firma</em> → <strong>Anotar datos del e-CF</strong>. <strong>Se anota una sola vez</strong>: después ya no se cambia (si te equivocaste, se corrige con nota de crédito en la DGII y en el sistema).</>,
+              <><strong>Errores típicos</strong>: usar 32 para una empresa con RNC (debe ser 31); poner el descuento en % en el Facturador (va en <strong>monto</strong>, ej. 5 % de 100,000 = 5,000); confundir <strong>0 % con Exento</strong> (no son lo mismo: no los cambies para cuadrar); activar la <strong>propina legal</strong> (no aplica a eventos); escribir retenciones en un tipo 31 (el Facturador las bloquea: las retenciones que te haga el cliente se registran al cobrar, como siempre); marcar «Gratuito» en una factura con monto.</>,
+              <>La <strong>comisión de agencia</strong> del sistema se pasa como una línea más (servicio) con su ITBIS: ya sale así en la ventana.</>,
+            ]}
+          />
+        </div>
       </>
     ),
   },

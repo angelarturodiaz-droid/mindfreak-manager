@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { UnitCodeSelect } from "@/components/invoices/unit-code-select";
 import { Plus } from "lucide-react";
 import { createServiceAction, type ActionState } from "@/features/services/actions";
 import { SERVICE_TYPES } from "@/features/services/schema";
@@ -49,6 +50,7 @@ export function NewServiceForm({
       </Select>
       <Input label="Descripción" name="description" placeholder="Opcional" />
       <Input label="Unidad" name="unit" placeholder="Ej. hora, unidad" className="w-28" />
+      <UnitCodeSelect className="w-44" />
       <MoneyInput label="Costo" name="default_cost" min={0} defaultValue={0} className="w-24" />
       <MoneyInput
         label="Precio de venta"

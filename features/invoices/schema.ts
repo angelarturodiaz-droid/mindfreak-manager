@@ -33,8 +33,24 @@ export const invoiceHeaderSchema = z.object({
   ncf_type: z.string().trim().optional().or(z.literal("")),
   e_ncf: z.string().trim().optional().or(z.literal("")),
   e_ncf_valid_until: z.string().optional().or(z.literal("")),
-  payment_type_code: z.enum(["1", "2"]).optional().or(z.literal("")),
+  payment_type_code: z.enum(["1", "2", "3"]).optional().or(z.literal("")),
+  income_type: z.enum(["01", "02", "03", "04", "05", "06"]).default("01"),
+  ecf_comments: z.string().trim().max(250, "Los comentarios no pueden pasar de 250 letras.").optional().or(z.literal("")),
 });
+
+/** e-NCF: E + tipo de 2 dígitos + 10 dígitos (ej. E310000000371). */
+export const E_NCF_PATTERN = /^E\d{12}$/;
+
+/** Revisa el e-NCF escrito: formato y que el tipo coincida con el tipo de e-CF elegido. */
+export function eNcfProblem(eNcf: string, ecfType: string | null | undefined): string | null {
+  const v = eNcf.trim().toUpperCase();
+  if (!v) return null;
+  if (!E_NCF_PATTERN.test(v)) return "El e-NCF debe ser una E seguida de 12 números (ej. E310000000371).";
+  if (ecfType && /^\d{2}$/.test(ecfType) && v.slice(1, 3) !== ecfType) {
+    return `El e-NCF empieza con E${v.slice(1, 3)}, pero el tipo de e-CF elegido es ${ecfType}. Revisa cuál es el correcto.`;
+  }
+  return null;
+}
 
 export type InvoiceHeaderInput = z.infer<typeof invoiceHeaderSchema>;
 

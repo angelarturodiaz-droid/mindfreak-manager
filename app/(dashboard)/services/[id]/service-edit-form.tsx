@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { UnitCodeSelect } from "@/components/invoices/unit-code-select";
 import { updateServiceAction, type ActionState } from "@/features/services/actions";
 import { SERVICE_TYPES } from "@/features/services/schema";
 import { Input, Select, Textarea } from "@/components/ui/field";
@@ -28,6 +29,7 @@ export function ServiceEditForm({
     type: string;
     description: string | null;
     unit: string | null;
+    unit_code?: string | null;
     default_price: number;
     default_cost: number;
     default_tax_rate_id: string | null;
@@ -60,7 +62,10 @@ export function ServiceEditForm({
       </Select>
 
       <Textarea label="Descripción" name="description" defaultValue={service.description ?? ""} rows={3} />
-      <Input label="Unidad" name="unit" defaultValue={service.unit ?? ""} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Input label="Unidad" name="unit" defaultValue={service.unit ?? ""} info="Texto libre para tus documentos (ej. hora, unidad)." />
+        <UnitCodeSelect defaultValue={service.unit_code} />
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <MoneyInput label="Costo" name="default_cost" min={0} defaultValue={service.default_cost} />

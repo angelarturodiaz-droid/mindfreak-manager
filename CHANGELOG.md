@@ -1,5 +1,21 @@
 # CHANGELOG — Mindfreak Manager
 
+## Factura electrónica lista para el Facturador Gratuito DGII (2026-11-04)
+
+- Solo en la factura **electrónica (e-CF)**; la factura normal (NCF) no cambia. Cobros, retenciones, ITBIS, `net_payable`
+  y reportes funcionan igual en las dos.
+- **Al crear / editar en Borrador**: Tipo de e-CF (31, 32, 33, 34, 44, 45, 46), Tipo de pago (Contado, Crédito,
+  **Gratuito**), **Tipo de ingreso** (01–06, por defecto 01) y **Comentarios**, cada uno con su ⓘ.
+- **Líneas**: Unidad de medida (Tabla IV, las más usadas primero) y Bien/Servicio; vacío = se toma del catálogo
+  (producto → Bien; lo demás → Servicio; unidad del servicio o «Unidad»). Se ven debajo de la descripción.
+- **Productos y Servicios**: «Unidad para factura electrónica».
+- **Cliente**: ID extranjero, Provincia y Municipio/distrito municipal (lista oficial DGII, agrupada por municipio).
+- **Tarjeta «Factura electrónica (e-CF)»** en el detalle: botón **Datos para el Facturador DGII** (casillas 1–39 en el
+  orden del Facturador, botón Copiar en cada dato, líneas con la comisión como línea extra, totales por tasa y lista de
+  revisión) y, ya emitida, **Anotar datos del e-CF** (e-NCF, código de seguridad, fecha de firma, válido hasta) **una sola
+  vez**.
+- Migración **099** (respaldo A0 → 100, limpieza A1 → 101).
+
 ## Activos: anular un activo registrado por error (2026-11-04)
 
 - En la ficha, **Anular (fue un error)**: ventana que explica qué pasa, motivo obligatorio (mínimo 10 letras) y

@@ -1313,3 +1313,20 @@ pulsa el botón.
   invoker, exige `assets.manage`, motivo ≥ 10, pone `expense_id = null`). Trigger `assets_guard_void`: un ANULADO no se edita y no
   se puede poner ANULADO sin motivo. `assets_log_events` ahora anota `void_reason` y `expense` (gasto soltado/ligado).
   `listAssets` excluye ANULADO salvo con `estado=ANULADO`; `getAssetStats` no lo cuenta. UI: `VoidAssetButton`.
+
+
+## 5b Factura electrónica → Facturador Gratuito DGII (migración 099, 4-nov-2026)
+
+- `invoices.income_type` (01–06, default 01) y `ecf_comments`; `payment_type_code` admite 1/2/3. `clients.foreign_id`,
+  `province_code`, `municipality_code` (check: municipio con el prefijo de la provincia). `invoice_items.unit_code`,
+  `item_kind`; `services.unit_code`. Trigger `invoice_items_ecf_defaults` llena unidad (servicio o '43') y tipo (PRODUCTO →
+  BIEN; si no SERVICIO).
+- `guard_invoice_locked`: el bloqueo incluye `income_type` y `ecf_comments`; `e_ncf`, `security_code`,
+  `digital_signature_at` y `e_ncf_valid_until` se pueden llenar **una vez** (si estaban null) en una factura emitida; luego
+  `ecf_data_locked`.
+- Catálogos en `lib/dgii/catalogs.ts` y `lib/dgii/municipios-data.ts` (provincias y municipios con código e-CF de 6
+  dígitos). `features/invoices/facturador.ts` (`buildFacturadorData`) solo **lee** la factura: los impuestos son los ya
+  calculados; la comisión va como línea extra. No toca `evaluateFiscal`, retenciones, `net_payable` ni `fiscal_snapshot`.
+- Acción `recordEcfDataAction` (solo campos vacíos, auditoría). UI: `EcfFields`, `FacturadorDialog`, `RecordEcfForm`,
+  `EcfLineFields`, `UnitCodeSelect`, `ClientEcfFields`.
+- La plantilla de importación de clientes no cambia (los campos nuevos se llenan en la ficha).

@@ -12,6 +12,7 @@ import {
   type LineTaxRate,
   type LineTaxRateRef,
 } from "@/components/documents/line-item-fields";
+import { EcfLineFields } from "@/components/invoices/ecf-line-fields";
 
 const initialState: ActionState = { error: null };
 
@@ -24,6 +25,7 @@ export function NewInvoiceItemForm({
   defaultTaxRate,
   taxRates,
   currency = "DOP",
+  electronic = false,
 }: {
   invoiceId: string;
   services: LineService[];
@@ -33,6 +35,8 @@ export function NewInvoiceItemForm({
   defaultTaxRate: LineTaxRateRef | null;
   taxRates: LineTaxRate[];
   currency?: string;
+  /** Factura electrónica: pide también unidad y bien/servicio. */
+  electronic?: boolean;
 }) {
   const addWithId = addInvoiceItemAction.bind(null, invoiceId);
   const [state, formAction, pending] = useActionState(addWithId, initialState);
@@ -76,6 +80,7 @@ export function NewInvoiceItemForm({
         currency={currency}
         prefill={prefill}
       />
+      {electronic && <EcfLineFields key={`ecf-${resetKey}`} />}
       <div className="flex flex-col gap-2 border-t border-brand-border pt-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-brand-danger">{state.error}</p>
         <Button type="submit" loading={pending} icon={<Plus size={14} />}>

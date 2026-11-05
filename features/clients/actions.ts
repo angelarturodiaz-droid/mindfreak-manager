@@ -25,7 +25,26 @@ function parseFormFields(formData: FormData) {
     email: String(formData.get("email") ?? ""),
     phone: String(formData.get("phone") ?? ""),
     address: String(formData.get("address") ?? ""),
+    foreign_id: String(formData.get("foreign_id") ?? ""),
+    province_code: String(formData.get("province_code") ?? ""),
+    municipality_code: String(formData.get("municipality_code") ?? ""),
     stage: String(formData.get("stage") ?? "LEAD"),
+  };
+}
+
+/** El municipio tiene que ser de la provincia elegida (sus 2 primeros dígitos). */
+function ecfPlaceProblem(d: { province_code?: string; municipality_code?: string }): string | null {
+  if (d.municipality_code && !d.province_code) return "Elige la provincia del municipio.";
+  if (d.municipality_code && d.province_code && d.municipality_code.slice(0, 2) !== d.province_code.slice(0, 2))
+    return "El municipio no es de la provincia elegida: vuelve a elegirlo.";
+  return null;
+}
+
+function ecfColumns(d: { foreign_id?: string; province_code?: string; municipality_code?: string }) {
+  return {
+    foreign_id: d.foreign_id || null,
+    province_code: d.province_code || null,
+    municipality_code: d.municipality_code || null,
   };
 }
 
@@ -39,6 +58,8 @@ export async function createClientAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
   }
+  const placeErr = ecfPlaceProblem(parsed.data);
+  if (placeErr) return { error: placeErr };
 
   const companyId = await getPrimaryCompanyId();
   const supabase = await createSupabaseClient();
@@ -55,6 +76,7 @@ export async function createClientAction(
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
       address: parsed.data.address || null,
+      ...ecfColumns(parsed.data),
       stage: parsed.data.stage,
       created_by: user?.id,
     })
@@ -86,11 +108,13 @@ export async function updateClientAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
   }
+  const placeErr = ecfPlaceProblem(parsed.data);
+  if (placeErr) return { error: placeErr };
 
   const supabase = await createSupabaseClient();
   const { data: before } = await supabase
     .from("clients")
-    .select("name, tax_id, email, phone, address")
+    .select("name, tax_id, email, phone, address, foreign_id, province_code, municipality_code")
     .eq("id", clientId)
     .single();
 
@@ -102,6 +126,7 @@ export async function updateClientAction(
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
       address: parsed.data.address || null,
+      ...ecfColumns(parsed.data),
     })
     .eq("id", clientId);
 

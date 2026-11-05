@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { updateClientAction, type ActionState } from "@/features/clients/actions";
 import { Input } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
+import { ClientEcfFields } from "@/components/clients/client-ecf-fields";
 
 const initialState: ActionState = { error: null };
 
@@ -17,6 +18,9 @@ export function ClientEditForm({
     email: string | null;
     phone: string | null;
     address: string | null;
+    foreign_id?: string | null;
+    province_code?: string | null;
+    municipality_code?: string | null;
   };
 }) {
   const updateWithId = updateClientAction.bind(null, client.id);
@@ -29,6 +33,7 @@ export function ClientEditForm({
       <Input label="Correo" name="email" type="email" defaultValue={client.email ?? ""} />
       <Input label="Teléfono" name="phone" defaultValue={client.phone ?? ""} />
       <Input label="Dirección" name="address" defaultValue={client.address ?? ""} />
+      <ClientEcfFields defaults={client} />
 
       {state.error && <p className="text-sm text-brand-danger">{state.error}</p>}
 

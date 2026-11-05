@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClientAction, type ActionState } from "@/features/clients/actions";
 import { Input, Select } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
+import { ClientEcfFields } from "@/components/clients/client-ecf-fields";
 
 const initialState: ActionState = { error: null };
 
@@ -30,6 +31,7 @@ export default function NewClientPage() {
         <Input label="Correo" name="email" type="email" />
         <Input label="Teléfono" name="phone" />
         <Input label="Dirección" name="address" />
+        <ClientEcfFields />
         <Select label="Etapa inicial" name="stage" defaultValue="LEAD">
           <option value="LEAD">Cliente potencial (lead)</option>
           <option value="PROSPECT">Prospecto</option>

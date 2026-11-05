@@ -44,6 +44,7 @@ import {
   formatMoney,
 } from "@/features/projects/display";
 import { ClientEditForm } from "./client-edit-form";
+import { placeName, provinceName } from "@/lib/dgii/catalogs";
 import { NewContactForm } from "./new-contact-form";
 import { BillingContactToggle } from "./billing-contact-toggle";
 import { EditContactButton } from "./edit-contact-button";
@@ -465,6 +466,21 @@ export default async function ClientDetailPage({
                     <MapPin size={15} className="text-brand-muted" aria-hidden />
                     <dt className="sr-only">Dirección</dt>
                     <dd className="text-brand-text">{client.address}</dd>
+                  </div>
+                )}
+                {(client.province_code || client.municipality_code) && (
+                  <div className="flex items-center gap-1.5">
+                    <MapPin size={15} className="text-brand-muted" aria-hidden />
+                    <dt className="sr-only">Provincia y municipio</dt>
+                    <dd className="text-brand-text">
+                      {[placeName(client.municipality_code), provinceName(client.province_code)].filter(Boolean).join(", ")}
+                    </dd>
+                  </div>
+                )}
+                {client.foreign_id && (
+                  <div className="flex items-center gap-1.5">
+                    <dt className="text-brand-muted">ID extranjero:</dt>
+                    <dd className="text-brand-text">{client.foreign_id}</dd>
                   </div>
                 )}
                 <div className="flex items-center gap-1.5">

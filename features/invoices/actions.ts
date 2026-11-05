@@ -1,5 +1,7 @@
 "use server";
 
+import { UNITS } from "@/lib/dgii/catalogs";
+
 import { DOC_PREFIX, nextDocNumber } from "@/lib/utils/doc-number";
 import { dbErrorMessage } from "@/lib/utils/db-error";
 import { validationErrorState, type MoneyActionState } from "@/lib/utils/bank-errors";
@@ -17,6 +19,7 @@ import {
   invoiceItemSchema,
   calculateInvoiceItemSubtotal,
   calculateInvoiceTotals,
+  eNcfProblem,
 } from "./schema";
 import { buildBankDetails } from "@/features/banks/bank-details-server";
 import { parseBankDetails } from "@/features/banks/bank-details";
@@ -97,6 +100,8 @@ export async function createInvoiceAction(
     e_ncf: String(formData.get("e_ncf") ?? ""),
     e_ncf_valid_until: String(formData.get("e_ncf_valid_until") ?? ""),
     payment_type_code: String(formData.get("payment_type_code") ?? ""),
+    income_type: String(formData.get("income_type") ?? "01") || "01",
+    ecf_comments: String(formData.get("ecf_comments") ?? ""),
   });
   if (!parsed.success) {
     return validationErrorState(parsed.error.issues);
@@ -208,6 +213,8 @@ export async function createInvoiceAction(
       e_ncf: parsed.data.e_ncf || null,
       e_ncf_valid_until: parsed.data.e_ncf_valid_until || null,
       payment_type_code: parsed.data.payment_type_code || null,
+      income_type: parsed.data.billing_type === "ELECTRONIC" ? parsed.data.income_type : "01",
+      ecf_comments: parsed.data.billing_type === "ELECTRONIC" ? parsed.data.ecf_comments || null : null,
       bank_details: bankDetails,
       status: "DRAFT",
       created_by: user?.id,
@@ -247,6 +254,18 @@ export async function updateInvoiceHeaderAction(
   const eNcf = String(formData.get("e_ncf") ?? "");
   const eNcfValidUntil = String(formData.get("e_ncf_valid_until") ?? "");
   const paymentTypeCode = String(formData.get("payment_type_code") ?? "");
+  const incomeType = String(formData.get("income_type") ?? "01") || "01";
+  const ecfComments = String(formData.get("ecf_comments") ?? "").trim();
+  const securityCode = String(formData.get("security_code") ?? "").trim();
+  const signatureAt = String(formData.get("digital_signature_at") ?? "").trim();
+  const electronic = billingType === "ELECTRONIC";
+  if (electronic) {
+    const problem = eNcfProblem(eNcf, ncfType);
+    if (problem) return { error: problem };
+    if (!["01", "02", "03", "04", "05", "06"].includes(incomeType)) return { error: "Elige el tipo de ingreso." };
+    if (paymentTypeCode && !["1", "2", "3"].includes(paymentTypeCode)) return { error: "Tipo de pago no válido." };
+    if (ecfComments.length > 250) return { error: "Los comentarios no pueden pasar de 250 letras." };
+  }
 
   const supabase = await createSupabaseClient();
 
@@ -278,9 +297,17 @@ export async function updateInvoiceHeaderAction(
       billing_type: billingType,
       ncf: ncf || null,
       ncf_type: ncfType || null,
-      e_ncf: eNcf || null,
+      e_ncf: electronic ? eNcf.trim().toUpperCase() || null : eNcf || null,
       e_ncf_valid_until: eNcfValidUntil || null,
       payment_type_code: paymentTypeCode || null,
+      ...(electronic
+        ? {
+            income_type: incomeType,
+            ecf_comments: ecfComments || null,
+            security_code: securityCode || null,
+            digital_signature_at: signatureAt ? new Date(`${signatureAt}:00-04:00`).toISOString() : null,
+          }
+        : {}),
     })
     .eq("id", invoiceId);
 
@@ -288,6 +315,52 @@ export async function updateInvoiceHeaderAction(
 
   revalidatePath(`/invoices/${invoiceId}`);
   return { error: null };
+}
+
+/**
+ * Datos que devuelve el Facturador Gratuito DGII (e-NCF, código de seguridad, firma). En una factura ya
+ * emitida se anotan UNA vez, si estaban vacíos (la base lo garantiza: migración 099). Lo demás no cambia.
+ */
+export async function recordEcfDataAction(
+  invoiceId: string,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requirePermission("invoices.create");
+  const supabase = await createSupabaseClient();
+  const { data: inv } = await supabase
+    .from("invoices")
+    .select("billing_type, ncf_type, e_ncf, security_code, digital_signature_at, e_ncf_valid_until, status")
+    .eq("id", invoiceId)
+    .maybeSingle();
+  if (!inv) return { error: "La factura no existe." };
+  if (inv.billing_type !== "ELECTRONIC") return { error: "Esta factura no es electrónica." };
+  if (inv.status === "CANCELLED") return { error: "La factura está cancelada." };
+
+  const eNcf = String(formData.get("e_ncf") ?? "").trim().toUpperCase();
+  const securityCode = String(formData.get("security_code") ?? "").trim();
+  const signatureAt = String(formData.get("digital_signature_at") ?? "").trim();
+  const validUntil = String(formData.get("e_ncf_valid_until") ?? "").trim();
+  const problem = eNcfProblem(eNcf, inv.ncf_type);
+  if (problem) return { error: problem };
+
+  // Solo se manda lo que estaba vacío (lo ya anotado no se toca).
+  const patch: Record<string, string> = {};
+  if (!inv.e_ncf && eNcf) patch.e_ncf = eNcf;
+  if (!inv.security_code && securityCode) patch.security_code = securityCode;
+  if (!inv.digital_signature_at && signatureAt) patch.digital_signature_at = new Date(`${signatureAt}:00-04:00`).toISOString();
+  if (!inv.e_ncf_valid_until && validUntil) patch.e_ncf_valid_until = validUntil;
+  if (!Object.keys(patch).length) return { error: "Escribe al menos el e-NCF." };
+
+  const { error } = await supabase.from("invoices").update(patch).eq("id", invoiceId);
+  if (error) {
+    if (error.message.includes("ecf_data_locked")) return { error: "El e-NCF y sus datos ya están anotados y no se pueden cambiar." };
+    return { error: dbErrorMessage(error.message) };
+  }
+  const cid = (await getCurrentUserCompanyIds())[0];
+  if (cid) await logAudit({ companyId: cid, action: "UPDATE", entityType: "invoice", entityId: invoiceId, newValues: { ...patch, nota: "Datos del e-CF anotados" } });
+  revalidatePath(`/invoices/${invoiceId}`);
+  return { error: null, success: "Datos del e-CF anotados.", successId: Date.now() }
 }
 
 /**
@@ -334,6 +407,16 @@ export async function updateInvoiceBankDetailsAction(
 
   revalidatePath(`/invoices/${invoiceId}`);
   return { error: null };
+}
+
+/** Unidad (Tabla IV) y Bien/Servicio de la línea; si no vienen o no son válidos, no se envían. */
+function ecfLineFields(formData: FormData): { unit_code?: string; item_kind?: string } {
+  const out: { unit_code?: string; item_kind?: string } = {};
+  const unit = String(formData.get("unit_code") ?? "");
+  const kind = String(formData.get("item_kind") ?? "");
+  if (UNITS.some((u) => u.value === unit)) out.unit_code = unit;
+  if (kind === "BIEN" || kind === "SERVICIO") out.item_kind = kind;
+  return out;
 }
 
 export async function addInvoiceItemAction(
@@ -401,6 +484,8 @@ export async function addInvoiceItemAction(
     // Settings, esta línea conserva el tratamiento y % que se usaron.
     tax_treatment: taxRate.treatment,
     tax_rate_percent: taxRate.rate,
+    // 5b — factura electrónica: unidad y bien/servicio elegidos (vacío = la base los toma del catálogo).
+    ...ecfLineFields(formData),
   });
 
   if (error) return { error: dbErrorMessage(error.message) };

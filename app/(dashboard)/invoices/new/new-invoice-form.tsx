@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { EcfFields } from "@/components/invoices/ecf-fields";
 import Link from "next/link";
 import { createInvoiceAction, type ActionState } from "@/features/invoices/actions";
 import { Input, Select } from "@/components/ui/field";
@@ -194,26 +195,12 @@ export function NewInvoiceForm({
         <option value="ELECTRONIC">Electrónica (e-CF)</option>
       </Select>
 
-      {billingType === "ELECTRONIC" && (
-        <div className="space-y-4 rounded-[var(--radius-md)] border border-brand-border bg-brand-background p-3">
-          <p className="text-xs text-brand-muted">
-            Estos datos los emite la DGII (o un proveedor certificado) al
-            certificarte para e-CF — mientras tanto se pueden dejar en
-            blanco o llenar a mano si ya los tienes de otra forma.
-          </p>
-          <Input label="e-NCF" name="e_ncf" placeholder="Ej. E310000000371" />
-          <Input label="e-NCF válido hasta" name="e_ncf_valid_until" type="date" />
-          <Select label="Tipo de pago" name="payment_type_code" defaultValue="">
-            <option value="">Sin especificar</option>
-            <option value="1">1 - Contado</option>
-            <option value="2">2 - Crédito</option>
-          </Select>
-        </div>
-      )}
+      {billingType === "ELECTRONIC" && <EcfFields />}
 
       <p className="text-xs text-brand-muted">
-        NCF/ITBIS: campos preparados, no activos en producción todavía (F0,
-        sección R). Se pueden completar después en el detalle.
+        {billingType === "ELECTRONIC"
+          ? "El e-NCF, el código de seguridad y la fecha de firma los da el Facturador DGII: se anotan en el detalle (antes o después de emitir)."
+          : "NCF: se completa en el detalle de la factura."}
       </p>
 
       <p className="text-xs text-brand-muted">

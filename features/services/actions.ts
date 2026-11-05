@@ -1,5 +1,7 @@
 "use server";
 
+import { DEFAULT_UNIT_CODE, UNITS } from "@/lib/dgii/catalogs";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
@@ -45,6 +47,12 @@ export async function createServiceCategoryAction(
   return { error: null };
 }
 
+/** 5b — Unidad e-CF (Tabla IV); si no es válida queda la predeterminada (Unidad). */
+function unitCodeFrom(formData: FormData): string {
+  const code = String(formData.get("unit_code") ?? "");
+  return UNITS.some((u) => u.value === code) ? code : DEFAULT_UNIT_CODE;
+}
+
 export async function createServiceAction(
   _prevState: ActionState,
   formData: FormData,
@@ -77,6 +85,7 @@ export async function createServiceAction(
       type: parsed.data.type,
       description: parsed.data.description || null,
       unit: parsed.data.unit || null,
+      unit_code: unitCodeFrom(formData),
       default_price: parsed.data.default_price,
       default_cost: parsed.data.default_cost,
       default_tax_rate_id: parsed.data.default_tax_rate_id || null,
@@ -123,7 +132,7 @@ export async function updateServiceAction(
   const supabase = await createSupabaseClient();
   const { data: before } = await supabase
     .from("services")
-    .select("name, category_id, type, description, unit, default_price, default_cost, default_tax_rate_id")
+    .select("name, category_id, type, description, unit, unit_code, default_price, default_cost, default_tax_rate_id")
     .eq("id", serviceId)
     .single();
 
@@ -135,6 +144,7 @@ export async function updateServiceAction(
       type: parsed.data.type,
       description: parsed.data.description || null,
       unit: parsed.data.unit || null,
+      unit_code: unitCodeFrom(formData),
       default_price: parsed.data.default_price,
       default_cost: parsed.data.default_cost,
       default_tax_rate_id: parsed.data.default_tax_rate_id || null,

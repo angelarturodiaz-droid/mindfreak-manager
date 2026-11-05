@@ -7,6 +7,7 @@ import { Input, Select } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { InfoHint } from "@/components/ui/info-hint";
 import { formatDate } from "@/lib/utils/dates";
+import { EcfFields } from "@/components/invoices/ecf-fields";
 
 const initialState: ActionState = { error: null };
 
@@ -27,6 +28,10 @@ export function InvoiceHeaderForm({
     e_ncf: string | null;
     e_ncf_valid_until: string | null;
     payment_type_code: string | null;
+    income_type?: string | null;
+    ecf_comments?: string | null;
+    security_code?: string | null;
+    digital_signature_at?: string | null;
   };
   paymentTerms: { id: string; name: string; credit_days: number }[];
   /** Factura de un proyecto: número y fecha del evento (para el aviso del vencimiento). */
@@ -146,20 +151,7 @@ export function InvoiceHeaderForm({
       )}
 
       {billingType === "ELECTRONIC" ? (
-        <div className="flex flex-wrap items-end gap-2 rounded-[var(--radius-md)] border border-brand-border bg-brand-background p-3">
-          <Input label="e-NCF" name="e_ncf" defaultValue={invoice.e_ncf ?? ""} placeholder="Pendiente de certificación DGII" />
-          <Input
-            label="e-NCF válido hasta"
-            name="e_ncf_valid_until"
-            type="date"
-            defaultValue={invoice.e_ncf_valid_until ?? ""}
-          />
-          <Select label="Tipo de pago" name="payment_type_code" defaultValue={invoice.payment_type_code ?? ""}>
-            <option value="">Sin especificar</option>
-            <option value="1">1 - Contado</option>
-            <option value="2">2 - Crédito</option>
-          </Select>
-        </div>
+        <EcfFields withReceipt defaults={invoice} />
       ) : (
         <div className="flex flex-wrap items-end gap-2">
           <Input label="NCF" name="ncf" defaultValue={invoice.ncf ?? ""} />
