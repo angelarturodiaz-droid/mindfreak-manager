@@ -160,7 +160,7 @@ export function FacturadorDialog({ data, invoiceNumber }: { data: FacturadorData
               <li>Genera el e-CF y fírmalo.</li>
               <li>
                 Vuelve aquí y en <strong>Factura electrónica (e-CF)</strong> anota el <strong>e-NCF</strong>, el <strong>código de seguridad</strong> y la
-                <strong> fecha de firma</strong>. Sube el PDF del e-CF en Documentos.
+                <strong> fecha de firma</strong>. Después adjunta ahí mismo el <strong>PDF y el XML</strong> que generó el Facturador: el PDF de la DGII es el que se le envía al cliente.
               </li>
             </ol>
           </section>

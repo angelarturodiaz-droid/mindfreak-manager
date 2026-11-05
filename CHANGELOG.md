@@ -15,6 +15,11 @@
   revisión) y, ya emitida, **Anotar datos del e-CF** (e-NCF, código de seguridad, fecha de firma, válido hasta) **una sola
   vez**.
 - Migración **099** (respaldo A0 → 100, limpieza A1 → 101).
+- **Adjuntar el e-CF de la DGII** (PDF y XML) en la tarjeta «Factura electrónica (e-CF)», después de anotar el e-NCF. El
+  XML se revisa contra el e-NCF de la factura. No se pueden borrar; vale el más reciente. Auditoría: «Adjuntó el e-CF de la
+  DGII». Migración **100** (respaldo A0 → 101, limpieza A1 → 102).
+- **Compartir en factura electrónica**: «Compartir e-CF de la DGII» (enlace al PDF de la DGII) y «Copia interna (PDF del
+  sistema)»; el PDF del sistema sale con la franja «COPIA INTERNA — NO ES UN COMPROBANTE FISCAL».
 
 ## Activos: anular un activo registrado por error (2026-11-04)
 

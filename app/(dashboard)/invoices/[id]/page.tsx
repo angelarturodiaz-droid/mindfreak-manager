@@ -81,6 +81,8 @@ import { WithholdingList, type WithholdingItem } from "@/components/payments/wit
 import { buildFacturadorData } from "@/features/invoices/facturador";
 import { FacturadorDialog } from "@/components/invoices/facturador-dialog";
 import { RecordEcfForm } from "@/components/invoices/record-ecf-form";
+import { EcfFilesPanel, type EcfFile } from "@/components/invoices/ecf-files-panel";
+import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 import { ECF_TYPES, unitName } from "@/lib/dgii/catalogs";
 
 const COLLECTION_ACTION_LABELS: Record<string, string> = {
@@ -289,6 +291,34 @@ export default async function InvoiceDetailPage({
         })),
       })
     : null;
+  // e-CF de la DGII adjunto (PDF y XML), el más reciente primero.
+  let ecfFiles: EcfFile[] = [];
+  let canUploadDocs = false;
+  if (isElectronic && invoice.status !== "DRAFT") {
+    const sb = await createSupabaseServerClient();
+    const [{ data: docs }, canUp] = await Promise.all([
+      sb
+        .from("documents")
+        .select("id, file_name, storage_path, mime_type, created_at")
+        .eq("entity_type", "invoice_ecf")
+        .eq("entity_id", invoice.id)
+        .order("created_at", { ascending: false }),
+      hasPermission("documents.upload"),
+    ]);
+    canUploadDocs = canUp;
+    const rows = docs ?? [];
+    const { data: signed } = rows.length
+      ? await sb.storage.from("documents").createSignedUrls(rows.map((d) => d.storage_path), 60 * 60)
+      : { data: [] as { signedUrl: string }[] };
+    ecfFiles = rows.map((d, i) => ({
+      id: d.id,
+      name: d.file_name,
+      kind: d.mime_type === "application/pdf" ? "pdf" : "xml",
+      url: signed?.[i]?.signedUrl ?? null,
+      createdAt: d.created_at,
+    }));
+  }
+  const ecfPdfAttached = ecfFiles.some((f) => f.kind === "pdf");
   const ecfMissing = isElectronic && invoice.status !== "DRAFT" && invoice.status !== "CANCELLED" && (!invoice.e_ncf || !invoice.security_code || !invoice.digital_signature_at);
   const ecfTypeLabel = ECF_TYPES.find((t) => t.value === invoice.ncf_type)?.label ?? "31 · Crédito fiscal";
   // "Enviada al cliente": marca informativa, no cambia el estado.
@@ -760,7 +790,7 @@ export default async function InvoiceDetailPage({
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <InvoiceShareLinkButton invoiceId={invoice.id} />
+            <InvoiceShareLinkButton invoiceId={invoice.id} electronic={isElectronic} ecfPdfAttached={ecfPdfAttached} />
             {canEdit && (
               <DuplicateInvoiceButton
                 invoiceId={invoice.id}
@@ -1019,7 +1049,7 @@ export default async function InvoiceDetailPage({
             <SideSection
               title="Factura electrónica (e-CF)"
               info="Esta factura se emite en el Facturador Gratuito de la DGII. Aquí tienes los datos en el mismo orden del Facturador y, después de emitir, anotas el e-NCF que te dio. Los cobros y las retenciones funcionan igual que en cualquier factura."
-              summary={invoice.e_ncf ? `${ecfTypeLabel} · ${invoice.e_ncf}` : `${ecfTypeLabel} · sin e-NCF todavía`}
+              summary={invoice.e_ncf ? `${ecfTypeLabel} · ${invoice.e_ncf} · ${ecfPdfAttached ? "PDF de la DGII adjunto" : "falta adjuntar el e-CF"}` : `${ecfTypeLabel} · sin e-NCF todavía`}
               defaultOpen={invoice.status !== "PAID" && invoice.status !== "CANCELLED"}
             >
               <div className="flex flex-col gap-3">
@@ -1051,6 +1081,9 @@ export default async function InvoiceDetailPage({
                     )}
                     {!ecfMissing && invoice.e_ncf && (
                       <p className="text-xs text-brand-muted">Datos del e-CF anotados: ya no se cambian.</p>
+                    )}
+                    {invoice.e_ncf && invoice.status !== "CANCELLED" && (
+                      <EcfFilesPanel invoiceId={invoice.id} files={ecfFiles} canUpload={canEdit && canUploadDocs} />
                     )}
                   </>
                 )}

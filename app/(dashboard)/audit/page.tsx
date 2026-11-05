@@ -44,6 +44,7 @@ const ACTION_LABELS: Record<string, string> = {
   UNRECONCILE: "Desconcilió",
   STATUS_CANCELLED: "Canceló",
   EXPORT: "Exportó",
+  ECF_ATTACH: "Adjuntó el e-CF de la DGII",
   APPLY: "Aplicó a factura",
   VOID_APPLY: "Quitó de factura",
   REFUND: "Devolvió",

@@ -65,7 +65,8 @@ export type InvoiceElectronicPdfData = {
 };
 
 /**
- * Factura de Crédito Fiscal Electrónica — adaptada de un modelo real de
+ * Copia interna de la factura electrónica (5b, 4-nov): el comprobante válido es el e-CF de la DGII
+ * que se adjunta a la factura. Diseño adaptado de un modelo real de
  * referencia, con la identidad visual de Mindfreak en vez de calcar el
  * formato ajeno. IMPORTANTE: e_ncf, security_code y digital_signature_at
  * solo existen si vienen de un proceso real de certificación DGII (o un
@@ -165,6 +166,17 @@ export function InvoiceElectronicPdfDocument({
   return (
     <Document>
       <Page size="LETTER" style={styles.page}>
+        {/* 5b (4-nov): el comprobante válido es el e-CF que genera la DGII; este PDF es solo el registro del sistema. */}
+        <View fixed style={{ backgroundColor: "#fff6e8", borderWidth: 1, borderColor: "#f5c06b", padding: 6, marginBottom: 10 }}>
+          <Text style={{ fontSize: 8, fontWeight: 700, color: "#92400e", textAlign: "center" }}>
+            COPIA INTERNA — NO ES UN COMPROBANTE FISCAL
+          </Text>
+          <Text style={{ fontSize: 7, color: "#92400e", textAlign: "center", marginTop: 2 }}>
+            {invoice.e_ncf
+              ? `El comprobante válido es el e-CF ${invoice.e_ncf} emitido en el Facturador de la DGII.`
+              : "El comprobante válido es el e-CF que se emite en el Facturador de la DGII."}
+          </Text>
+        </View>
         <View style={styles.headerRow}>
           <View>
             {company.logo_url && (
@@ -179,7 +191,7 @@ export function InvoiceElectronicPdfDocument({
             {company.tax_id && <Text style={styles.companyLine}>RNC: {company.tax_id}</Text>}
           </View>
           <View>
-            <Text style={styles.docTitle}>Factura de Crédito Fiscal Electrónica</Text>
+            <Text style={styles.docTitle}>Factura electrónica · copia interna</Text>
             <View style={styles.metaRow}>
               <Text style={styles.metaLabel}>e-NCF:</Text>
               <Text style={styles.metaValue}>{invoice.e_ncf ?? "Pendiente"}</Text>
@@ -286,11 +298,9 @@ export function InvoiceElectronicPdfDocument({
             </>
           ) : (
             <>
-              <Text style={styles.pendingBadge}>PENDIENTE DE CERTIFICACIÓN DGII</Text>
+              <Text style={styles.pendingBadge}>e-CF PENDIENTE EN LA DGII</Text>
               <Text style={styles.certLine}>
-                Este documento todavía no tiene e-NCF, código de seguridad ni
-                QR válidos — se completan automáticamente al certificarse
-                ante la DGII o un proveedor autorizado.
+                Todavía no se ha anotado el e-NCF: se emite en el Facturador Gratuito de la DGII y luego se anota en el sistema.
               </Text>
             </>
           )}

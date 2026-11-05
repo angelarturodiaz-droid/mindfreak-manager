@@ -1330,3 +1330,9 @@ pulsa el botón.
 - Acción `recordEcfDataAction` (solo campos vacíos, auditoría). UI: `EcfFields`, `FacturadorDialog`, `RecordEcfForm`,
   `EcfLineFields`, `UnitCodeSelect`, `ClientEcfFields`.
 - La plantilla de importación de clientes no cambia (los campos nuevos se llenan en la ficha).
+- (Ajuste 4-nov, migración 100) e-CF de la DGII adjunto: `documents.entity_type = 'invoice_ecf'`, ruta
+  `<empresa>/invoice_ecf/<factura>/…`. Sin DELETE (política de `documents` y de `storage.objects`) ni UPDATE en Storage para
+  esa carpeta. Acciones en `features/invoices/ecf-files.ts` (`attachEcfFileAction`: factura electrónica emitida con e-NCF;
+  el XML debe contener el e-NCF; `getEcfShareLinkAction`: PDF más reciente, 7 días). Se usa otro entity_type para no chocar
+  con `uploadInvoicePdfAction`, que busca un solo documento 'invoice' por factura. El PDF del ERP de una factura
+  electrónica es «copia interna».
