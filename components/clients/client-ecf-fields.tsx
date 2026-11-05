@@ -18,7 +18,7 @@ export function ClientEcfFields({
     <fieldset className="space-y-3 rounded-[var(--radius-md)] border border-brand-border p-3">
       <legend className="px-1 text-xs font-medium text-brand-muted">Para la factura electrónica (opcional)</legend>
       <Input label="ID extranjero" name="foreign_id" defaultValue={defaults?.foreign_id ?? ""} placeholder="Solo clientes del exterior sin RNC" info={ECF_FIELD_INFO.foreignId} />
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3">
         <Select
           label="Provincia"
           name="province_code"
