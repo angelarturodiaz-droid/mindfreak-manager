@@ -669,6 +669,8 @@ const SECTIONS: Section[] = [
             "Se pueden organizar por categoría y filtrar por tipo (servicio o producto), categoría o nombre.",
             "Cada uno muestra su margen (precio vs. costo por defecto) en verde, ámbar o rojo.",
             "Un cambio de precio aquí no altera cotizaciones o facturas ya emitidas — esas quedan congeladas al valor con el que se crearon.",
+            <><strong>Agregar uno</strong>: botón <strong>Nuevo producto/servicio</strong> (arriba a la derecha) → se abre una ventana con todos los campos (solo el nombre es obligatorio) → <em>Agregar al catálogo</em>. Cada uno tiene su <em>Unidad (código DGII)</em> para la factura electrónica (normalmente Unidad).</>,
+            <><strong>Quién puede</strong>: solo Administración agrega o cambia el catálogo; los demás lo ven en modo lectura.</>,
           ]}
         />
       </>

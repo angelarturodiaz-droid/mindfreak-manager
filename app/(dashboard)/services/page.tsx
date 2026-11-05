@@ -3,7 +3,7 @@ import { ChevronRight, Layers, Package, Percent, Wrench } from "lucide-react";
 import { listServiceCategories, listServices } from "@/features/services/queries";
 import { listTaxRates } from "@/features/tax-rates/queries";
 import { NewCategoryForm } from "./new-category-form";
-import { NewServiceForm } from "./new-service-form";
+import { NewServiceButton } from "./new-service-form";
 import { hasPermission } from "@/lib/auth/permissions";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -138,11 +138,14 @@ export default async function ServicesPage({
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
-      <div>
-        <h1 className="text-xl font-semibold text-brand-primary">Productos y Servicios</h1>
-        <p className="text-sm text-brand-muted">
-          Catálogo que se usa en cotizaciones, proyectos y facturas, con su costo, precio e impuesto por defecto.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold text-brand-primary">Productos y Servicios</h1>
+          <p className="text-sm text-brand-muted">
+            Catálogo que se usa en cotizaciones, proyectos y facturas, con su costo, precio e impuesto por defecto.
+          </p>
+        </div>
+        {canManage && <NewServiceButton categories={categories} taxRates={taxRates} />}
       </div>
 
       <StatGrid>
@@ -240,12 +243,7 @@ export default async function ServicesPage({
         </section>
 
         <aside className="flex flex-col gap-4">
-          {canManage ? (
-            <Card>
-              <p className="mb-3 text-sm font-semibold text-brand-text">Nuevo producto/servicio</p>
-              <NewServiceForm categories={categories} taxRates={taxRates} />
-            </Card>
-          ) : (
+          {!canManage && (
             <Card>
               <p className="text-xs text-brand-muted">
                 Solo <strong>Administración</strong> puede agregar o cambiar productos, servicios y categorías.

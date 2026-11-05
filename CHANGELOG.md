@@ -1,5 +1,11 @@
 # CHANGELOG — Mindfreak Manager
 
+## Productos y Servicios: «Nuevo producto/servicio» en una ventana (2026-11-04)
+
+- El formulario ya no va apretado en la columna derecha: botón **Nuevo producto/servicio** arriba a la derecha que abre
+  una ventana con los campos ordenados (nombre; categoría y tipo; descripción; unidad y unidad DGII; costo, precio y
+  tratamiento fiscal) y **Cancelar** / **Agregar al catálogo**.
+
 ## Productos y Servicios: solo Administración edita (sin pantalla de error) (2026-11-04)
 
 - Quien no tiene permiso de Configuración (ej. Gerente, Finanzas) ve el producto o servicio en **modo lectura** (unidad,
