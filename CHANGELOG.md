@@ -4,7 +4,7 @@
 
 - En el detalle del gasto, la tabla de **Pagos** ya no se corta a la derecha: Método y Referencia van en una columna,
   el banco propio y el del proveedor en **Bancos** («De:» / «A:», nombre completo al pasar el mouse), y **Comprobante** y
-  **Corregir** uno debajo del otro.
+  **Corregir** uno debajo del otro. La columna «Salió del banco» solo sale si algún pago fue desde otra moneda o con comisión.
 
 ## Factura electrónica lista para el Facturador Gratuito DGII (2026-11-04)
 

@@ -156,7 +156,7 @@ export default async function ExpenseDetailPage({
         ),
     },
     {
-      // Multimoneda V5: pago desde una cuenta en otra moneda (o con comisión).
+      // Multimoneda V5: pago desde una cuenta en otra moneda (o con comisión). Solo se muestra si algún pago lo usa.
       header: "Salió del banco",
       className: "text-right",
       accessor: (p) => {
@@ -208,7 +208,7 @@ export default async function ExpenseDetailPage({
         const a = Array.isArray(account) ? account[0] : account;
         const from = a ? `${a.name}${a.bank_name ? ` (${a.bank_name})` : ""}` : null;
         return (
-          <span className="flex max-w-[13rem] flex-col text-xs text-brand-muted">
+          <span className="flex max-w-[11rem] flex-col text-xs text-brand-muted">
             <span className="truncate" title={from ?? undefined}>
               <span className="text-brand-text">De:</span> {a?.name ?? "—"}
             </span>
@@ -468,7 +468,11 @@ export default async function ExpenseDetailPage({
               }
             />
             <DataTable
-              columns={paymentColumns}
+              columns={
+                payments.some((p) => (p.account_currency && p.account_currency !== expense.currency) || Number(p.bank_fee_amount ?? 0) > 0)
+                  ? paymentColumns
+                  : paymentColumns.filter((c) => c.header !== "Salió del banco")
+              }
               rows={payments}
               keyFor={(p) => p.id}
               maxWidth="max-w-none"
