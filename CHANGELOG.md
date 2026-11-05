@@ -4,8 +4,9 @@
 
 - En «Datos del cliente», al pulsar **Guardar cambios** la provincia y el municipio se quedan mostrando lo guardado (antes
   se guardaban bien pero el formulario se veía vacío) y sale el aviso verde «Datos del cliente guardados.».
-- «Datos del cliente» más corto: RNC y teléfono lado a lado, y «Para la factura electrónica» plegado con el resumen de lo
-  guardado (ej. «Santo Domingo Este, Santo Domingo»); se abre con un clic.
+- «Datos del cliente» más corto: RNC y teléfono lado a lado, y **«Ubicación y datos fiscales»** (ID extranjero, provincia y
+  municipio) plegado con el resumen de lo guardado y el botón **Ver / cambiar**. Es parte fija de la ficha del cliente (no
+  un añadido de la factura electrónica): se usa en el e-CF hoy y en la integración con la DGII de la versión 2.
 
 ## Gasto: tabla de pagos sin cortes (2026-11-04)
 

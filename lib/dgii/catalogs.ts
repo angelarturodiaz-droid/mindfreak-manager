@@ -143,7 +143,7 @@ export const ECF_FIELD_INFO = {
   incomeType: "Casi siempre 01 (operaciones): producción, coordinación y montaje de eventos. Una sola categoría por e-CF.",
   comments: "Una referencia útil para el cliente y para ustedes, ej. «PROY-0026 · Evento corporativo · OC aprobada». No reemplaza las líneas.",
   foreignId: "Solo para clientes del exterior que no tienen RNC dominicano (ej. su número fiscal o pasaporte).",
-  province: "La provincia de la dirección del cliente (opcional en el Facturador). La sede del evento puede ir en la descripción.",
+  province: "La provincia de la dirección del cliente. Se usa en la factura electrónica y en los reportes por zona. La sede del evento puede ir en la descripción de la factura.",
   municipality: "El municipio o distrito municipal de la dirección del cliente. Debe ser de la provincia elegida.",
   unit: "La unidad que coincide con el precio: un evento completo = Unidad; por hora = Hora; por día = Día; un paquete de servicios = Conjunto; comida por persona = Ración.",
   itemKind: "Producción de eventos y servicios = Servicio. Un artículo vendido = Bien. Se toma del catálogo de Productos y Servicios.",

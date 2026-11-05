@@ -5,7 +5,7 @@ import { ChevronDown, FileText } from "lucide-react";
 import { Input, Select } from "@/components/ui/field";
 import { ECF_FIELD_INFO, PROVINCES, placeName, placesOfProvince, provinceName } from "@/lib/dgii/catalogs";
 
-/** 5b — Datos que pide el Facturador DGII (opcionales): ID extranjero, provincia y municipio del cliente. */
+/** Ubicación y datos fiscales del cliente (opcionales): ID extranjero, provincia y municipio (códigos oficiales DGII). */
 export function ClientEcfFields({
   defaults,
   collapsible = false,
@@ -79,7 +79,7 @@ export function ClientEcfFields({
             <FileText size={15} className="mt-0.5 shrink-0 text-brand-accent" aria-hidden />
             <span className="min-w-0">
               <span className="block font-medium text-brand-text">
-                Para la factura electrónica <span className="text-xs font-normal text-brand-muted">(opcional)</span>
+                Ubicación y datos fiscales <span className="text-xs font-normal text-brand-muted">(opcional)</span>
               </span>
               <span className="block text-xs text-brand-muted">{summary}</span>
             </span>
@@ -97,7 +97,7 @@ export function ClientEcfFields({
 
   return (
     <fieldset className="space-y-3 rounded-[var(--radius-md)] border border-brand-border p-3">
-      <legend className="px-1 text-xs font-medium text-brand-muted">Para la factura electrónica (opcional)</legend>
+      <legend className="px-1 text-xs font-medium text-brand-muted">Ubicación y datos fiscales (opcional)</legend>
       {fields}
     </fieldset>
   );
