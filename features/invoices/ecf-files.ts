@@ -119,3 +119,84 @@ export async function getEcfShareLinkAction(invoiceId: string): Promise<{ url: s
   if (error || !data) return { url: null, error: error?.message ?? "No se pudo generar el enlace." };
   return { url: data.signedUrl, error: null };
 }
+
+const CORRECTION_ERRORS: Record<string, string> = {
+  ecf_correct_forbidden: "Solo Administración puede corregir los datos del e-CF.",
+  ecf_correct_reason: "Escribe el motivo de la corrección (mínimo 10 letras).",
+  ecf_correct_not_applicable: "La factura no es electrónica o todavía no tiene e-NCF anotado.",
+  ecf_correct_format: "El e-NCF debe ser una E seguida de 12 números (ej. E310000000371).",
+};
+
+/**
+ * 6-nov: corregir los datos del e-CF anotados por un error de tipeo (el e-CF de la DGII está bien).
+ * Solo Administración (invoices.ecf_correct), con motivo; queda en la Auditoría con el antes y el después.
+ * Si ya hay un XML de la DGII adjunto, el e-NCF nuevo tiene que ser el de ese XML.
+ */
+export async function correctEcfDataAction(invoiceId: string, _prev: EcfFileState, formData: FormData): Promise<EcfFileState> {
+  if (!(await hasPermission("invoices.ecf_correct"))) return { error: CORRECTION_ERRORS.ecf_correct_forbidden };
+
+  const eNcf = String(formData.get("e_ncf") ?? "").trim().toUpperCase();
+  const code = String(formData.get("security_code") ?? "").trim();
+  const signature = String(formData.get("digital_signature_at") ?? "").trim();
+  const validUntil = String(formData.get("e_ncf_valid_until") ?? "").trim();
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (reason.length < 10) return { error: CORRECTION_ERRORS.ecf_correct_reason };
+  if (!/^E\d{12}$/.test(eNcf)) return { error: CORRECTION_ERRORS.ecf_correct_format };
+
+  const supabase = await createSupabaseClient();
+  const { data: before } = await supabase
+    .from("invoices")
+    .select("number, e_ncf, security_code, digital_signature_at, e_ncf_valid_until")
+    .eq("id", invoiceId)
+    .single();
+  if (!before) return { error: "No se encontró la factura." };
+
+  // Con el XML de la DGII ya adjunto, el e-NCF corregido tiene que coincidir con él.
+  const { data: xml } = await supabase
+    .from("documents")
+    .select("storage_path, file_name")
+    .eq("entity_type", "invoice_ecf")
+    .eq("entity_id", invoiceId)
+    .eq("mime_type", "application/xml")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (xml) {
+    const { data: blob } = await supabase.storage.from("documents").download(xml.storage_path);
+    const text = blob ? await blob.text() : "";
+    if (text && !text.includes(eNcf)) {
+      return { error: `El XML de la DGII adjunto («${xml.file_name}») no tiene el e-NCF ${eNcf}. Revisa el número o adjunta el XML correcto.` };
+    }
+  }
+
+  const { error } = await supabase.rpc("correct_invoice_ecf", {
+    p_invoice_id: invoiceId,
+    p_e_ncf: eNcf,
+    p_security_code: code,
+    p_signature_at: signature ? new Date(`${signature}:00-04:00`).toISOString() : null,
+    p_valid_until: validUntil || null,
+    p_reason: reason,
+  });
+  if (error) {
+    const key = Object.keys(CORRECTION_ERRORS).find((k) => error.message.includes(k));
+    if (key) return { error: CORRECTION_ERRORS[key] };
+    const m = error.message.match(/ecf_correct_type: (.*)/);
+    return { error: m ? m[1] : error.message };
+  }
+
+  await logAudit({
+    companyId: await companyId(),
+    action: "ECF_CORRECT",
+    entityType: "invoice",
+    entityId: invoiceId,
+    oldValues: {
+      e_ncf: before.e_ncf,
+      security_code: before.security_code,
+      digital_signature_at: before.digital_signature_at,
+      e_ncf_valid_until: before.e_ncf_valid_until,
+    },
+    newValues: { e_ncf: eNcf, security_code: code || null, digital_signature_at: signature || null, e_ncf_valid_until: validUntil || null, motivo: reason },
+  });
+  revalidatePath(`/invoices/${invoiceId}`);
+  return { error: null, success: `Datos del e-CF corregidos (${eNcf}).`, successId: Date.now() };
+}

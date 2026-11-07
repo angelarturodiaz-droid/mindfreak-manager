@@ -1,5 +1,13 @@
 # CHANGELOG — Mindfreak Manager
 
+## Factura electrónica: corregir los datos del e-CF anotados mal (2026-11-06)
+
+- En la tarjeta «Factura electrónica (e-CF)», **Corregir datos del e-CF** (e-NCF, código, fecha de firma, válido hasta)
+  para un error de tipeo, con **motivo** de 10+ letras. Solo **Administración** (permiso nuevo «Corregir los datos del
+  e-CF»); los demás lo ven en gris y al pulsarlo les sale a quién pedírselo. Si hay un XML de la DGII adjunto, el e-NCF
+  tiene que ser el del XML. Auditoría: «Corrigió los datos del e-CF» con el antes y el después. El resto de la factura
+  emitida sigue bloqueado. Migración **102** (respaldo A0 → 103, limpieza A1 → 104).
+
 ## Factura electrónica: la unidad y bien/servicio se llenan solos con el catálogo (2026-11-05)
 
 - Al elegir un producto o servicio en una línea de factura electrónica, **Unidad de medida** y **Bien o servicio** toman

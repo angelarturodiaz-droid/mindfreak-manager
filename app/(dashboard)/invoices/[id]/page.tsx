@@ -82,6 +82,7 @@ import { buildFacturadorData } from "@/features/invoices/facturador";
 import { FacturadorDialog } from "@/components/invoices/facturador-dialog";
 import { RecordEcfForm } from "@/components/invoices/record-ecf-form";
 import { EcfFilesPanel, type EcfFile } from "@/components/invoices/ecf-files-panel";
+import { CorrectEcfButton } from "@/components/invoices/correct-ecf-button";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 import { ECF_TYPES, unitName } from "@/lib/dgii/catalogs";
 
@@ -319,6 +320,7 @@ export default async function InvoiceDetailPage({
     }));
   }
   const ecfPdfAttached = ecfFiles.some((f) => f.kind === "pdf");
+  const canCorrectEcf = isElectronic && Boolean(invoice.e_ncf) ? await hasPermission("invoices.ecf_correct") : false;
   const ecfMissing = isElectronic && invoice.status !== "DRAFT" && invoice.status !== "CANCELLED" && (!invoice.e_ncf || !invoice.security_code || !invoice.digital_signature_at);
   const ecfTypeLabel = ECF_TYPES.find((t) => t.value === invoice.ncf_type)?.label ?? "31 · Crédito fiscal";
   // "Enviada al cliente": marca informativa, no cambia el estado.
@@ -1080,7 +1082,19 @@ export default async function InvoiceDetailPage({
                       />
                     )}
                     {!ecfMissing && invoice.e_ncf && (
-                      <p className="text-xs text-brand-muted">Datos del e-CF anotados: ya no se cambian.</p>
+                      <p className="text-xs text-brand-muted">Datos del e-CF anotados: ya no se cambian (solo Administración corrige un error de tipeo).</p>
+                    )}
+                    {invoice.e_ncf && invoice.status !== "CANCELLED" && (
+                      <CorrectEcfButton
+                        invoiceId={invoice.id}
+                        canCorrect={canCorrectEcf}
+                        current={{
+                          e_ncf: invoice.e_ncf,
+                          security_code: invoice.security_code,
+                          digital_signature_at: invoice.digital_signature_at,
+                          e_ncf_valid_until: invoice.e_ncf_valid_until,
+                        }}
+                      />
                     )}
                     {invoice.e_ncf && invoice.status !== "CANCELLED" && (
                       <EcfFilesPanel invoiceId={invoice.id} files={ecfFiles} canUpload={canEdit && canUploadDocs} />

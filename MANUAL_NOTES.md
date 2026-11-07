@@ -1344,3 +1344,10 @@ pulsa el botón.
   solo la descripción o el mismo nombre con otro acento no se bloquea. DELETE rechaza (`category_in_use`) si algún
   servicio (activo o no) la usa. Acciones `updateServiceCategoryAction` y `deleteServiceCategoryAction` (settings.manage).
 - La limpieza A1 que borre categorías de prueba con servicios debe borrar antes los servicios o quitarles la categoría.
+
+## Corregir datos del e-CF (migración 102, 6-nov-2026)
+
+- Permiso `invoices.ecf_correct` (solo ADMIN). RPC `correct_invoice_ecf(p_invoice_id, p_e_ncf, p_security_code,
+  p_signature_at, p_valid_until, p_reason)` (security invoker): valida permiso, motivo ≥ 10, formato `^E\d{12}$` y que el tipo
+  coincida con `ncf_type`; activa `mf.ecf_correction` (local) para que `guard_invoice_locked` deje cambiar solo los cuatro
+  campos del e-CF. Acción `correctEcfDataAction` (revisa el XML adjunto y registra `ECF_CORRECT` con old/new y motivo).
