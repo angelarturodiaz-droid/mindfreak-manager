@@ -4,6 +4,9 @@
 	"name": "mindfreak-manager",
 	"compatibility_date": "2026-09-21",
 	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	// Conserva las variables del panel de Cloudflare (Settings → Variables and Secrets) en cada despliegue.
+	// Sin esto, `wrangler deploy` borra las de tipo Text. Los valores NUNCA van en este archivo (va a GitHub).
+	"keep_vars": true,
 	"assets": {
 		"directory": ".open-next/assets",
 		"binding": "ASSETS"
