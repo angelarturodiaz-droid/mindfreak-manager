@@ -9,7 +9,7 @@ export type Manifest = {
   kind: "FULL" | "DB_ONLY";
   app: { name: string; version: string; lastMigration: string; environment: string };
   database: { postgres: string; tables: { name: string; rows: number }[]; totalRows: number; excludedTables: string[] };
-  storage: { buckets: string[]; files: number; bytes: number } | null;
+  storage: { buckets: string[]; files: number; bytes: number; skipped: { path: string; reason: string }[] } | null;
   controlTotals: Record<string, unknown>;
   startedAt: string;
   finishedAt: string;

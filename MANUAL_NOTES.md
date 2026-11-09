@@ -1367,5 +1367,8 @@ pulsa el botón.
   `json_populate_recordset` por tabla con `session_replication_role = replica` (probado ida y vuelta con numeric, jsonb,
   arrays, time, columnas generadas y textos con `$`). `LAST_MIGRATION` en `features/backups/version.ts` (una prueba lo
   compara con la última migración del código).
+- 8-nov (prueba CE): `backup_list_files` omite objetos con `metadata` nula (filas de prueba sin archivo real, ej.
+  `debug-recheck.txt`, `test/test.txt`); un documento que no se pueda bajar ya no detiene la copia: queda en
+  `manifest.storage.skipped` y se avisa al final. Los 5 minutos solo cuentan desde la última copia COMPLETADA.
 - Límites: una copia a la vez, mínimo 5 minutos entre copias; las que quedan EN_PROCESO más de 30 min pasan a INCOMPLETO.
 - Pendiente (pedido del usuario, al final): `scripts/backup/backup-local.sh` con `pg_dump` desde la Mac.

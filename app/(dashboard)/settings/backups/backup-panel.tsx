@@ -245,6 +245,20 @@ export function BackupPanel({ runs, appVersion, environment }: { runs: BackupRun
             <p>
               {result.tableCount} tablas · {result.rowCount} filas{result.fileCount ? ` · ${result.fileCount} documentos` : ""}.
             </p>
+            {result.skipped.length > 0 && (
+              <div className="mt-1 rounded-[var(--radius-md)] bg-brand-warning-bg px-3 py-2 text-xs text-brand-text">
+                <p className="font-medium">
+                  {result.skipped.length} documento(s) no se pudieron bajar (quedan anotados en la copia):
+                </p>
+                <ul className="mt-1 list-disc pl-4">
+                  {result.skipped.slice(0, 5).map((s) => (
+                    <li key={s.path}>
+                      {s.path.split("/").pop()} — {s.reason}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <p className="text-xs text-brand-muted">Muévela a un disco cifrado y guarda una segunda copia en otro lugar.</p>
           </div>
         )}

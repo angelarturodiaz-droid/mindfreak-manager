@@ -93,7 +93,8 @@ begin
   if exists (select 1 from public.backup_runs where company_id = v_company and status = 'EN_PROCESO') then
     raise exception 'backup_running: ya hay una copia en proceso. Espera a que termine.' using errcode = 'P0001';
   end if;
-  select max(started_at) into v_last from public.backup_runs where company_id = v_company;
+  -- Solo cuentan las que salieron bien (si una falló, se puede reintentar enseguida).
+  select max(started_at) into v_last from public.backup_runs where company_id = v_company and status = 'COMPLETADO';
   if v_last is not null and v_last > now() - interval '5 minutes' then
     raise exception 'backup_too_soon: espera unos minutos entre una copia y otra (mínimo 5).' using errcode = 'P0001';
   end if;
@@ -259,6 +260,8 @@ begin
       from storage.objects o
      where o.bucket_id = 'documents'
        and (storage.foldername(o.name))[1] in (select public.user_company_ids()::text)
+       -- Sin metadata = fila de prueba sin archivo real (ej. debug-recheck.txt): no se puede bajar.
+       and o.metadata is not null
      order by o.name;
 end;
 $$;

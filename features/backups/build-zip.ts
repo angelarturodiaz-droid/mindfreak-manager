@@ -24,7 +24,16 @@ export type BackupPlan = {
   environment: string;
 };
 
-export type BackupResult = { fileName: string; sizeBytes: number; manifestSha256: string; tableCount: number; rowCount: number; fileCount: number };
+export type BackupResult = {
+  fileName: string;
+  sizeBytes: number;
+  manifestSha256: string;
+  tableCount: number;
+  rowCount: number;
+  fileCount: number;
+  /** Documentos que no se pudieron bajar (la copia sigue; quedan anotados en el manifest). */
+  skipped: { path: string; reason: string }[];
+};
 
 const enc = new TextEncoder();
 const PAGE = 1000;
@@ -133,6 +142,7 @@ export async function buildBackupZip(plan: BackupPlan, onProgress: (p: BackupPro
 
   // 2. Documentos (direcciones firmadas de 5 minutos, de 20 en 20).
   let fileBytes = 0;
+  const skipped: { path: string; reason: string }[] = [];
   for (let i = 0; i < plan.files.length; i += 20) {
     const batch = plan.files.slice(i, i + 20);
     const signed = await signFilesAction(batch.map((f) => f.path));
@@ -140,10 +150,17 @@ export async function buildBackupZip(plan: BackupPlan, onProgress: (p: BackupPro
     for (let j = 0; j < batch.length; j++) {
       const f = batch[j];
       onProgress({ stage: "files", done: i + j, total: plan.files.length, label: `Documentos: ${f.path.split("/").pop()}` });
+      // Un documento que no se puede bajar no detiene la copia: queda anotado (manifest y ventana final).
       const url = signed.urls[f.path];
-      if (!url) throw new Error(`No se pudo preparar «${f.path}».`);
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`No se pudo bajar «${f.path}» (${res.status}).`);
+      if (!url) {
+        skipped.push({ path: f.path, reason: "no se pudo preparar el enlace" });
+        continue;
+      }
+      const res = await fetch(url).catch(() => null);
+      if (!res || !res.ok) {
+        skipped.push({ path: f.path, reason: `no se pudo bajar (${res?.status ?? "sin conexión"})` });
+        continue;
+      }
       const data = new Uint8Array(await res.arrayBuffer());
       fileBytes += data.length;
       // Los PDF e imágenes ya vienen comprimidos: se guardan tal cual.
@@ -164,7 +181,7 @@ export async function buildBackupZip(plan: BackupPlan, onProgress: (p: BackupPro
       totalRows: rowCount,
       excludedTables: EXCLUDED_TABLES,
     },
-    storage: plan.kind === "FULL" ? { buckets: ["documents"], files: plan.files.length, bytes: fileBytes } : null,
+    storage: plan.kind === "FULL" ? { buckets: ["documents"], files: plan.files.length - skipped.length, bytes: fileBytes, skipped } : null,
     controlTotals: plan.controlTotals,
     startedAt: plan.startedAt,
     finishedAt: new Date().toISOString(),
@@ -188,6 +205,7 @@ export async function buildBackupZip(plan: BackupPlan, onProgress: (p: BackupPro
     manifestSha256,
     tableCount: tablesData.length,
     rowCount,
-    fileCount: plan.files.length,
+    fileCount: plan.files.length - skipped.length,
+    skipped,
   };
 }
