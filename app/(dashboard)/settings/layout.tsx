@@ -10,6 +10,7 @@ export default async function SettingsLayout({
   if (!(await hasPermission("settings.manage"))) {
     redirect("/dashboard");
   }
+  const canBackup = await hasPermission("backups.create");
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
@@ -20,7 +21,7 @@ export default async function SettingsLayout({
         </p>
       </div>
 
-      <SettingsTabs />
+      <SettingsTabs canBackup={canBackup} />
 
       <div>{children}</div>
     </main>

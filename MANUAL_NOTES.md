@@ -1351,3 +1351,21 @@ pulsa el botón.
   p_signature_at, p_valid_until, p_reason)` (security invoker): valida permiso, motivo ≥ 10, formato `^E\d{12}$` y que el tipo
   coincida con `ncf_type`; activa `mf.ecf_correction` (local) para que `guard_invoice_locked` deje cambiar solo los cuatro
   campos del e-CF. Acción `correctEcfDataAction` (revisa el XML adjunto y registra `ECF_CORRECT` con old/new y motivo).
+
+## A0 Copias de seguridad (migración 103, 8-nov-2026)
+
+- Permiso `backups.create` (ADMIN). Tabla `backup_runs` (solo registro; RLS select con el permiso; escritura solo por
+  `backup_start` / `backup_finish`, security definer). `backup_assert_allowed()` exige el permiso **y** `aal2` en el JWT:
+  la acción `startBackupAction` hace `reverifyAdminMfa` (challenge + verify con el código) antes de `backup_start`.
+- Exportación: `backup_list_tables()` (63 tablas, orden por profundidad de FK, columnas sin las calculadas),
+  `backup_export_table(t, offset, limit)` (JSON ordenado por la PK, sin columnas generadas; lista negra
+  `backup_excluded_tables()`), `backup_export_auth_users()` (id, email, phone, full_name, created_at, email_confirmed,
+  banned), `backup_list_files()` (bucket `documents`, carpeta de la empresa; `branding` no va por decisión del usuario),
+  `backup_control_totals()`, `backup_schema_snapshot()`.
+- El ZIP se arma en el navegador (`features/backups/build-zip.ts`, fflate en streaming; File System Access API en
+  Chrome/Edge). Documentos con URLs firmadas de 5 min con la sesión del usuario (sin llave de servicio). `data.sql` =
+  `json_populate_recordset` por tabla con `session_replication_role = replica` (probado ida y vuelta con numeric, jsonb,
+  arrays, time, columnas generadas y textos con `$`). `LAST_MIGRATION` en `features/backups/version.ts` (una prueba lo
+  compara con la última migración del código).
+- Límites: una copia a la vez, mínimo 5 minutos entre copias; las que quedan EN_PROCESO más de 30 min pasan a INCOMPLETO.
+- Pendiente (pedido del usuario, al final): `scripts/backup/backup-local.sh` con `pg_dump` desde la Mac.

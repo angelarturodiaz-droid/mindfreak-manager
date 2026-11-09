@@ -1,5 +1,17 @@
 # CHANGELOG — Mindfreak Manager
 
+## A0 · Copias de seguridad (2026-11-08)
+
+- **Configuración → Copias de seguridad** (solo Administración, permiso nuevo «Crear y descargar copias de seguridad»):
+  **Crear respaldo completo** (base de datos + documentos) y **Solo la base de datos**. Pide el código de 6 dígitos de la
+  verificación en dos pasos; el ZIP `mindfreak-respaldo-AAAA-MM-DD-HHMM.zip` se arma en el navegador y se guarda en la
+  computadora (en Chrome se elige dónde). Barra de progreso, últimas 10 copias y Auditoría («Creó copia de seguridad»).
+- El ZIP trae `manifest.json` (conteos, totales de control, huella SHA-256 de cada archivo), `database/data.sql`,
+  `database/tables/*.json`, `database/auth-users.json` (sin contraseñas ni MFA), `database/estructura-tablas.sql`,
+  `storage/documents/…` y `LEEME-RESTAURAR.txt`. No van los códigos de recuperación, equipos de confianza ni intentos de login.
+- Scripts para restaurar en `scripts/backup/` (verificar, restauración de prueba local, documentos, usuarios). Migración
+  **103** (respaldo; la limpieza A1 pasa a la **104**).
+
 ## Factura electrónica: corregir los datos del e-CF anotados mal (2026-11-06)
 
 - En la tarjeta «Factura electrónica (e-CF)», **Corregir datos del e-CF** (e-NCF, código, fecha de firma, válido hasta)

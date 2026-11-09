@@ -23,12 +23,16 @@ const TABS = [
   { href: "/settings/roles", label: "Roles y permisos" },
 ];
 
-export function SettingsTabs() {
+// A0: solo quien puede crear copias de seguridad ve la pestaña.
+const BACKUP_TAB = { href: "/settings/backups", label: "Copias de seguridad" };
+
+export function SettingsTabs({ canBackup = false }: { canBackup?: boolean }) {
   const pathname = usePathname();
+  const tabs = canBackup ? [...TABS, BACKUP_TAB] : TABS;
 
   return (
     <nav className="flex flex-wrap gap-1 border-b border-brand-border pb-px">
-      {TABS.map((tab) => {
+      {tabs.map((tab) => {
         const active = pathname.startsWith(tab.href);
         return (
           <Link

@@ -40,6 +40,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  DatabaseBackup,
 } from "lucide-react";
 import { IconBadge, type IconBadgeTone } from "@/components/ui/icon-badge";
 import { Card } from "@/components/ui/card";
@@ -770,6 +771,33 @@ const SECTIONS: Section[] = [
             ]}
           />
         </div>
+      </>
+    ),
+  },
+  {
+    id: "copias-seguridad",
+    label: "Copias de seguridad",
+    icon: DatabaseBackup,
+    tone: "blue",
+    summary: "Descargar todo el sistema (datos, documentos y usuarios) en un ZIP para poder restaurarlo si un día hay un problema.",
+    content: (
+      <>
+        <p className="text-sm text-brand-text">
+          En <strong>Configuración → Copias de seguridad</strong> (solo Administración) se descarga a tu computadora <strong>todo el
+          sistema en un ZIP</strong>: los datos, los documentos (PDF, fotos, e-CF de la DGII) y los usuarios. Con él se puede restaurar
+          el sistema si un día hay un problema.
+        </p>
+        <Bullets
+          items={[
+            <><strong>Cómo</strong>: <em>Crear respaldo completo</em> → escribe el código de 6 dígitos de tu aplicación de verificación → elige dónde guardar (Chrome lo pregunta) → espera la barra hasta «Copia creada». No cierres la ventana mientras tanto.</>,
+            <><strong>Cada cuánto</strong>: cada semana y antes de cualquier cambio grande (ej. la limpieza antes de salir a producción). Se recupera hasta la fecha de la última copia.</>,
+            <><strong>Dónde guardarla</strong>: en un disco cifrado y en dos lugares. Tiene toda la información de la empresa: no la envíes por correo ni WhatsApp ni la subas a nubes personales.</>,
+            <><strong>Qué no trae</strong>: contraseñas ni la verificación en dos pasos de nadie. Al restaurar, cada persona pone una contraseña nueva y vuelve a activar la verificación.</>,
+            <><strong>Solo la base de datos</strong>: más rápida, sin documentos. Úsala solo si te piden algo puntual; la recomendada es la completa.</>,
+            <><strong>Restaurar</strong>: no hay botón; se hace con las instrucciones que van dentro del ZIP (<em>LEEME-RESTAURAR.txt</em>), idealmente con ayuda técnica y primero en un proyecto aparte.</>,
+            <><strong>Registro</strong>: la pantalla muestra las últimas 10 copias (quién, cuándo, tamaño, si salió bien) y cada una queda en la Auditoría. El archivo no se guarda en el sistema.</>,
+          ]}
+        />
       </>
     ),
   },
