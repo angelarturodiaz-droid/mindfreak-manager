@@ -1,5 +1,22 @@
 # CHANGELOG — Mindfreak Manager
 
+## A1 · Preparar Go-Live: limpieza de los datos de prueba (2026-11-08)
+
+- **Configuración → Preparar Go-Live** (solo Administración, permiso nuevo «Preparar el Go-Live»; la pestaña desaparece al
+  declarar el Go-Live). Cuatro pasos: **vista previa** (con el código de 6 dígitos; no borra nada; vale 30 min) →
+  **borrar los datos de prueba** (escribiendo el nombre de la empresa) → **comprobar** → **declarar Go-Live**.
+- Exige un **respaldo completo de las últimas 24 horas** (A0). Es la red de seguridad: no hay copia interna ni «Deshacer»
+  (decisión 8-nov).
+- Borra en una sola transacción (todo o nada): movimientos de banco, cobros (con retenciones), anticipos, pagos,
+  correcciones, facturas, acuses, encuestas enviadas, tareas, proyectos, cotizaciones, gastos (con cartas CR), avisos,
+  recordatorios enviados, tasas de cambio, clientes, proveedores (los del Directorio que no son «Proveedor» se conservan),
+  cuentas de banco, activos anulados o ligados a gastos, sus documentos y la auditoría de pruebas (queda en el respaldo).
+  Al final comprueba todas las llaves foráneas: si quedara una referencia rota, se deshace todo. Después borra los archivos
+  de Storage con la sesión del administrador (sin llave de servicio) y se puede reintentar.
+- Conserva la configuración, los catálogos, productos y servicios, el Directorio no proveedor y los Activos ACT-0001 a
+  ACT-0015. La numeración vuelve a 0001. Auditoría nueva: «Limpió los datos de prueba» y «Declaró el Go-Live».
+- Migración **104** (solo crea tablas, funciones y políticas; no borra nada al aplicarse).
+
 ## A0 · Copias de seguridad (2026-11-08)
 
 - **Configuración → Copias de seguridad** (solo Administración, permiso nuevo «Crear y descargar copias de seguridad»):

@@ -1372,3 +1372,25 @@ pulsa el botón.
   `manifest.storage.skipped` y se avisa al final. Los 5 minutos solo cuentan desde la última copia COMPLETADA.
 - Límites: una copia a la vez, mínimo 5 minutos entre copias; las que quedan EN_PROCESO más de 30 min pasan a INCOMPLETO.
 - Pendiente (pedido del usuario, al final): `scripts/backup/backup-local.sh` con `pg_dump` desde la Mac.
+
+
+---
+
+## Módulo: Configuración → Preparar Go-Live (A1, 8-nov-2026)
+
+- **Para qué**: arrancar el sistema limpio. Todo lo que se creó durante las pruebas (facturas, cotizaciones, proyectos,
+  gastos, cobros, pagos, bancos, clientes, proveedores y sus documentos) se borra una sola vez, antes del 1-ene-2027.
+- **Quién**: solo Administración, con el código de 6 dígitos. La pestaña desaparece al declarar el Go-Live.
+- **Orden**: respaldo completo del día (guardado en dos lugares) → vista previa → borrar (escribir el nombre de la empresa)
+  → comprobar → cargar los datos reales (cuentas con saldo inicial al 31-dic, clientes, proveedores) → declarar Go-Live.
+- **Ejemplo de vista previa**: «Facturas 38 · Cotizaciones 24 · Gastos 42 · Clientes 5 · Proveedores 9 · Cuentas 6 ·
+  Archivos 76». Debajo, los nombres de clientes, proveedores, cuentas y activos que se borran, y lo que se conserva
+  (usuarios, impuestos, reglas fiscales, productos y servicios, Activos…).
+- **Qué se conserva siempre**: la configuración y los catálogos; el Directorio que no es «Proveedor»; los Activos que no
+  están anulados ni ligados a un gasto.
+- **Volver atrás**: solo con el respaldo completo (no hay botón «Deshacer»). Por eso el sistema no deja borrar sin un
+  respaldo de las últimas 24 horas.
+- **Después del Go-Live**: nunca se borran datos financieros; los errores se corrigen con Anular o Corregir y quedan en la
+  Auditoría.
+- **Usuarios de prueba**: se desactivan a mano en Configuración → Usuarios el día del Go-Live (no se borran: quedan en el
+  historial).

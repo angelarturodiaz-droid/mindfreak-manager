@@ -41,6 +41,7 @@ import {
   ChevronLeft,
   ChevronRight,
   DatabaseBackup,
+  Eraser,
 } from "lucide-react";
 import { IconBadge, type IconBadgeTone } from "@/components/ui/icon-badge";
 import { Card } from "@/components/ui/card";
@@ -796,6 +797,34 @@ const SECTIONS: Section[] = [
             <><strong>Solo la base de datos</strong>: más rápida, sin documentos. Úsala solo si te piden algo puntual; la recomendada es la completa.</>,
             <><strong>Restaurar</strong>: no hay botón; se hace con las instrucciones que van dentro del ZIP (<em>LEEME-RESTAURAR.txt</em>), idealmente con ayuda técnica y primero en un proyecto aparte.</>,
             <><strong>Registro</strong>: la pantalla muestra las últimas 10 copias (quién, cuándo, tamaño, si salió bien) y cada una queda en la Auditoría. El archivo no se guarda en el sistema.</>,
+          ]}
+        />
+      </>
+    ),
+  },
+  {
+    id: "preparar-go-live",
+    label: "Preparar Go-Live (limpieza)",
+    icon: Eraser,
+    tone: "amber",
+    summary: "Borrar los datos de prueba antes de empezar a usar el sistema con los datos reales, y declarar el Go-Live.",
+    content: (
+      <>
+        <p className="text-sm text-brand-text">
+          En <strong>Configuración → Preparar Go-Live</strong> (solo Administración, y solo hasta declarar el Go-Live) se borra
+          <strong> todo lo que se creó en las pruebas</strong> para arrancar limpio. Se hace en la Fase 5 del plan: después de publicar
+          el sistema y de que el contador confirme las reglas fiscales.
+        </p>
+        <Bullets
+          items={[
+            <><strong>Qué se borra</strong>: facturas, cotizaciones, proyectos, gastos (con sus retenciones y cartas CR), cobros, pagos, anticipos, movimientos de banco y transferencias, solicitudes de corrección, acuses, encuestas enviadas, tareas, avisos, tasas de cambio, <strong>clientes</strong>, <strong>proveedores</strong>, las <strong>cuentas de banco de prueba</strong>, los documentos y archivos de todo eso, y la auditoría de las pruebas (queda guardada en el respaldo).</>,
+            <><strong>Qué se conserva</strong>: la empresa y su logo, usuarios, roles y permisos, impuestos, reglas fiscales, condiciones de pago, monedas, categorías, tipos de servicio, productos y servicios, catálogo de bancos, el Directorio que no es «Proveedor» (con sus zonas y etiquetas), los <strong>Activos</strong> (menos los anulados), la encuesta, los mensajes, los recordatorios y la carta de retención.</>,
+            <><strong>Antes</strong>: un <strong>respaldo completo</strong> de las últimas 24 horas (Configuración → Copias de seguridad), guardado en dos lugares. Es la única forma de volver atrás.</>,
+            <><strong>Paso 1 · Vista previa</strong>: con tu código de 6 dígitos. No borra nada: muestra cuánto se borra (con los nombres de clientes, proveedores, cuentas y activos) y cuánto se conserva. Vale 30 minutos.</>,
+            <><strong>Paso 2 · Borrar</strong>: escribe el nombre de la empresa. Se borra todo de una vez (si algo falla, no se borra nada) y después los archivos. La numeración vuelve a empezar en 0001 (FAC, COT, PROY, ACU, ANT, CR). Si los datos cambiaron desde la vista previa, pide hacerla otra vez.</>,
+            <><strong>Paso 3 · Comprobar</strong>: revisa solo que todo quedó en cero, que no quedó nada suelto, que la configuración no cambió, que se borraron los archivos y que la auditoría empieza con el registro de la limpieza. Si quedaron archivos, <em>Reintentar archivos</em>.</>,
+            <><strong>Paso 4 · Declarar Go-Live</strong>: el día del arranque, cuando ya cargaste las cuentas con su saldo inicial real, los clientes y los proveedores. Pide el código y el nombre de la empresa. <strong>Bloquea la limpieza para siempre</strong> y la pestaña desaparece: desde entonces los errores se corrigen con <em>Anular</em> o <em>Corregir</em>, nunca borrando.</>,
+            <><strong>¿Se puede repetir?</strong> Sí, mientras no declares el Go-Live (por ejemplo, si una carga de datos salió mal), siempre con un respaldo nuevo.</>,
           ]}
         />
       </>

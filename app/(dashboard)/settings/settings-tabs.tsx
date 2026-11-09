@@ -25,10 +25,12 @@ const TABS = [
 
 // A0: solo quien puede crear copias de seguridad ve la pestaña.
 const BACKUP_TAB = { href: "/settings/backups", label: "Copias de seguridad" };
+// A1: solo Administración y solo hasta declarar el Go-Live.
+const GOLIVE_TAB = { href: "/settings/golive", label: "Preparar Go-Live" };
 
-export function SettingsTabs({ canBackup = false }: { canBackup?: boolean }) {
+export function SettingsTabs({ canBackup = false, canGoLive = false }: { canBackup?: boolean; canGoLive?: boolean }) {
   const pathname = usePathname();
-  const tabs = canBackup ? [...TABS, BACKUP_TAB] : TABS;
+  const tabs = [...TABS, ...(canBackup ? [BACKUP_TAB] : []), ...(canGoLive ? [GOLIVE_TAB] : [])];
 
   return (
     <nav className="flex flex-wrap gap-1 border-b border-brand-border pb-px">
