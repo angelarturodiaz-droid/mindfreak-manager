@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { listImportBatches } from "@/features/clients/queries";
-import { ImportForm } from "./import-form";
+import { ClientImportPanel } from "./import-panel";
+import { requirePageAccess } from "@/lib/auth/permissions";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
 
@@ -15,6 +16,7 @@ const BATCH_STATUS_LABELS: Record<string, string> = {
 };
 
 export default async function ImportClientsPage() {
+  await requirePageAccess("clients.import", "Importar clientes");
   const batches = await listImportBatches();
 
   const columns: Column<Batch>[] = [
@@ -34,16 +36,14 @@ export default async function ImportClientsPage() {
         >
           <ArrowLeft size={14} /> Clientes
         </Link>
-        <h1 className="mt-2 text-xl font-semibold text-brand-primary">
-          Importar clientes (CSV)
-        </h1>
-        <p className="text-sm text-brand-muted">
-          Columnas esperadas: <code>name, tax_id, email, phone, address, stage</code>{" "}
-          (stage: <code>LEAD</code>, <code>PROSPECT</code> o <code>CLIENT</code>, opcional — por defecto LEAD).
+        <h1 className="mt-2 text-xl font-semibold text-brand-primary">Importar clientes desde Excel</h1>
+        <p className="max-w-3xl text-sm text-brand-muted">
+          Carga muchos clientes y leads de una vez, con su contacto principal y su contacto de cobros. Nada se guarda hasta que
+          revises el archivo y pulses <strong>Importar</strong>. Los RNC o cédulas que ya existen se saltan.
         </p>
       </div>
 
-      <ImportForm />
+      <ClientImportPanel />
 
       <section>
         <h2 className="mb-3 text-sm font-medium text-brand-text">

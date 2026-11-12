@@ -237,11 +237,13 @@ export default async function ClientsPage({
           </p>
         </div>
         <div className="flex gap-2">
-          <Link href="/clients/import">
-            <Button variant="outline" size="sm" icon={<Upload size={14} />}>
-              Importar CSV
-            </Button>
-          </Link>
+          <IfCan permission="clients.import">
+            <Link href="/clients/import">
+              <Button variant="outline" size="sm" icon={<Upload size={14} />} hint="Carga muchos clientes de una vez con la plantilla de Excel.">
+                Importar desde Excel
+              </Button>
+            </Link>
+          </IfCan>
           <IfCan permission="clients.create">
             <Link href="/clients/new">
               <Button size="sm" icon={<UserPlus size={14} />}>

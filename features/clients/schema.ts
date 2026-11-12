@@ -39,12 +39,3 @@ export const clientContactSchema = z.object({
 });
 
 export type ClientContactInput = z.infer<typeof clientContactSchema>;
-
-export const CLIENT_CSV_COLUMNS = [
-  "name",
-  "tax_id",
-  "email",
-  "phone",
-  "address",
-  "stage",
-] as const;

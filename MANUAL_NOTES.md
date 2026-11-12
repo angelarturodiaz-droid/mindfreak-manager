@@ -1438,3 +1438,17 @@ pulsa el botón.
   Administración. Se aplica a cada usuario en su siguiente página.
 - **Ejemplo:** dejas una cotización a medio llenar y te vas a una reunión de 40 minutos → al volver estás en el inicio
   de sesión con el aviso «Se cerró tu sesión por inactividad»; lo que no guardaste se perdió.
+
+
+---
+
+## Clientes → Importar desde Excel (A4, 11-nov-2026)
+
+- **Para qué:** cargar los clientes y leads reales de una vez (Fase 6, después de la limpieza), con hasta dos contactos.
+- **Pasos:** Descargar plantilla → llenar la hoja «Clientes» → Elegir archivo y revisar → Importar → si hubo errores,
+  Descargar filas con error, corregir y volver a subir.
+- **Contactos:** el *principal* (con «¿Recibe recordatorios de cobro?»: vacío = Sí si tiene correo) y el *de cobros*
+  (cuentas por pagar del cliente; siempre recibe los recordatorios). Para más contactos, agregarlos en la ficha.
+- **Ejemplo de revisión:** «Fila 4 · Banco Ejemplo, S.A. · Con aviso · Nadie recibirá los recordatorios de cobro por
+  correo»; «Fila 6 · Luisa F. · Error · El municipio «Santo Domingo Este» no es de la provincia elegida».
+- La etapa vacía queda como **Cliente**; para leads escribir «Lead».

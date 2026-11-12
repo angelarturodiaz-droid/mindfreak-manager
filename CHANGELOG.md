@@ -1,5 +1,18 @@
 # CHANGELOG — Mindfreak Manager
 
+## A4 · Importar clientes desde Excel (2026-11-11)
+
+- Clientes → **Importar desde Excel** reemplaza la importación por CSV, con el mismo flujo que proveedores (plantilla,
+  revisar sin guardar, importar las filas sin error, descargar filas con error). La pantalla de importación es ahora
+  común a ambos (`components/import/excel-import-panel.tsx`).
+- Plantilla: hoja *Clientes* con 18 columnas (nombre, RNC o cédula, ID extranjero, etapa —vacía = Cliente—, correo,
+  teléfono, dirección, provincia, municipio, **contacto principal** con «¿Recibe recordatorios de cobro?» y **contacto
+  de cobros**, que siempre los recibe), *Instrucciones* con 3 ejemplos y *Listas* con etapas y las provincias y
+  municipios oficiales de la DGII.
+- Revisión: RNC 9 / cédula 11 dígitos (cero inicial completado); RNC existente → se salta; repetido → error; provincia
+  y municipio deben existir y corresponder; avisos: cliente sin RNC (no podrá recibir crédito fiscal) y cliente sin
+  ningún correo de cobros. Sin cambios en la base de datos.
+
 ## Cierre de sesión por inactividad (2026-11-11)
 
 - Tras **30 minutos** sin usar el sistema en un navegador sale «¿Sigues ahí?» con cuenta regresiva de 60 segundos
