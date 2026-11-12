@@ -7,12 +7,13 @@ export type FiscalRuleRow = FiscalRule & {
   report_tags: string[];
   notes: string | null;
   last_reviewed_at: string | null;
+  reviewed_by: string | null;
   created_at: string;
   updated_at: string;
 };
 
 const COLUMNS =
-  "id, rule_key, version, name, description, priority, is_active, valid_from, valid_to, supplier_kinds, fiscal_conditions, tax_residence, country_code, operation_type, fiscal_classification_id, document_types, e_issuer, action, isr_rate, isr_base_pct, itbis_retention_pct, tax_rate_id, required_document_type, report_tags, user_message, legal_source, legal_article, reference_url, notes, needs_review, last_reviewed_at, created_at, updated_at";
+  "id, rule_key, version, name, description, priority, is_active, valid_from, valid_to, supplier_kinds, fiscal_conditions, tax_residence, country_code, operation_type, fiscal_classification_id, document_types, e_issuer, action, isr_rate, isr_base_pct, itbis_retention_pct, tax_rate_id, required_document_type, report_tags, user_message, legal_source, legal_article, reference_url, notes, needs_review, last_reviewed_at, reviewed_by, created_at, updated_at";
 
 function normalize(r: Record<string, unknown>): FiscalRuleRow {
   return {
@@ -56,4 +57,11 @@ export async function countRuleUsage(ruleId: string): Promise<number> {
     .eq("fiscal_rule_id", ruleId);
   if (error) return 0;
   return count ?? 0;
+}
+
+/** Nombre de quien revisó una regla (para «Revisada por …»). */
+export async function getProfileName(userId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("profiles").select("full_name, email").eq("id", userId).maybeSingle();
+  return (data?.full_name as string | null) || (data?.email as string | null) || null;
 }

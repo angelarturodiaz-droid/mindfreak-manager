@@ -1,5 +1,17 @@
 # CHANGELOG — Mindfreak Manager
 
+## Rol «Contador (revisión fiscal)» (2026-11-11)
+
+- Permiso nuevo **«Revisar reglas fiscales»** (`fiscal_rules.review`) y rol de sistema **Contador (revisión fiscal)**:
+  ve gastos, pagos, proveedores, reportes y documentos (solo lectura) y marca las reglas fiscales como revisadas.
+  No crea, edita, activa, desactiva ni borra reglas; no entra a Configuración.
+- Pantalla nueva **Análisis → Revisión fiscal** (solo para quien tiene el permiso y no es Administración): la lista de
+  reglas, «Probar reglas» y la ficha de cada regla con **Marcar como revisada** (sin Editar / Activar / Borrar).
+  Configuración → Reglas fiscales usa la misma lista y ficha, con todos los botones.
+- Cada regla muestra **«Revisada por *nombre* · fecha»**. La base (función `mark_fiscal_rule_reviewed`) vuelve a
+  comprobar el permiso, guarda quién y cuándo, y deja el registro «Marcó como revisada» en la Auditoría.
+- No cambia el motor fiscal ni las reglas. Migración **105**.
+
 ## A1 · Preparar Go-Live: limpieza de los datos de prueba (2026-11-08)
 
 - **Configuración → Preparar Go-Live** (solo Administración, permiso nuevo «Preparar el Go-Live»; la pestaña desaparece al

@@ -19,6 +19,7 @@ import {
   Landmark,
   BarChart3,
   GitCompareArrows,
+  Scale,
   History,
   ChevronsLeft,
   ChevronsRight,
@@ -88,6 +89,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/reports", label: "Reportes", icon: BarChart3 },
       { href: "/comparisons", label: "Comparaciones", icon: GitCompareArrows },
+      { href: "/fiscal-review", label: "Revisión fiscal", icon: Scale },
       { href: "/audit", label: "Auditoría", icon: History },
     ],
   },
@@ -154,6 +156,9 @@ export function Sidebar({
             // Reportes y Comparaciones: solo si hay alguno de su rol.
             if (item.href === "/reports") return allowedReports(permissions).length > 0;
             if (item.href === "/comparisons") return canSeeComparisons(permissions);
+            // Solo para el contador: Administración revisa desde Configuración → Reglas fiscales.
+            if (item.href === "/fiscal-review")
+              return permissions.includes("fiscal_rules.review") && !permissions.includes("settings.manage");
             const need = NAV_PERMISSION[item.href];
             return !need || permissions.includes(need);
           }),

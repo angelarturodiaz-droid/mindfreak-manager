@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
+import { requirePermission, getCurrentUserCompanyIds, hasPermission } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
 import { todayISO } from "@/lib/utils/dates";
 import { fiscalRuleSchema, type FiscalRuleInput } from "./rule-schema";
@@ -26,7 +26,11 @@ async function companyId(): Promise<string> {
 
 function revalidate(id?: string) {
   revalidatePath("/settings/fiscal-rules");
-  if (id) revalidatePath(`/settings/fiscal-rules/${id}`);
+  revalidatePath("/fiscal-review");
+  if (id) {
+    revalidatePath(`/settings/fiscal-rules/${id}`);
+    revalidatePath(`/fiscal-review/${id}`);
+  }
 }
 
 function parse(formData: FormData) {
@@ -254,19 +258,18 @@ export async function toggleFiscalRuleAction(ruleId: string): Promise<void> {
   revalidate(ruleId);
 }
 
-/** Marca la regla como revisada (ej. por el contador). */
+/**
+ * Marca la regla como revisada. Lo puede hacer Administración (settings.manage) o el contador (fiscal_rules.review).
+ * La base (mark_fiscal_rule_reviewed, migración 105) vuelve a comprobar el permiso, guarda quién y cuándo, y deja el
+ * registro en la Auditoría.
+ */
 export async function markFiscalRuleReviewedAction(ruleId: string): Promise<void> {
-  await requirePermission("settings.manage");
+  if (!(await hasPermission("fiscal_rules.review")) && !(await hasPermission("settings.manage"))) {
+    throw new Error("No tienes permiso para revisar reglas fiscales.");
+  }
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { error } = await supabase
-    .from("fiscal_rules")
-    .update({ needs_review: false, last_reviewed_at: new Date().toISOString(), reviewed_by: user?.id ?? null })
-    .eq("id", ruleId);
-  if (error) throw new Error(error.message);
-  await logAudit({ companyId: await companyId(), action: "REVIEWED", entityType: "fiscal_rule", entityId: ruleId });
+  const { error } = await supabase.rpc("mark_fiscal_rule_reviewed", { p_rule_id: ruleId });
+  if (error) throw new Error(error.message.replace(/^[a-z_]+: /, ""));
   revalidate(ruleId);
 }
 
@@ -298,7 +301,7 @@ export type RuleTestInput = {
 
 /** "Probar regla": simula una operación y devuelve qué regla gana y por qué. */
 export async function testFiscalRulesAction(input: RuleTestInput): Promise<FiscalResult & { candidateNames: string[] }> {
-  await requirePermission("settings.manage");
+  if (!(await hasPermission("fiscal_rules.review"))) await requirePermission("settings.manage");
   const rules = await listFiscalRules();
   const subtotal = Math.max(0, Number(input.subtotal) || 0);
   const itbis = Math.round(subtotal * (Math.max(0, Number(input.itbis_percent) || 0) / 100) * 100) / 100;

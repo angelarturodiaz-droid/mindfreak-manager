@@ -1394,3 +1394,19 @@ pulsa el botón.
   Auditoría.
 - **Usuarios de prueba**: se desactivan a mano en Configuración → Usuarios el día del Go-Live (no se borran: quedan en el
   historial).
+
+
+---
+
+## Revisión de las reglas fiscales por el contador (11-nov-2026)
+
+- **Crear su usuario:** Configuración → Usuarios → Invitar → rol **Contador (revisión fiscal)**. Le llega el correo
+  «Te invitaron a Mindfreak Manager»; al entrar activa la verificación en dos pasos con una aplicación del celular.
+- **Qué ve:** en el menú, **Análisis → Revisión fiscal** (lista de reglas, «Probar reglas»), además de Gastos, Cobros y
+  pagos, Proveedores y Reportes, todo de solo lectura.
+- **Cómo confirma:** abre cada regla → revisa a quién aplica, cuánto retiene, el ejemplo en pesos y la norma →
+  **Marcar como revisada**. La regla queda «Revisada por *nombre* · fecha».
+- **Si algo está mal:** él no puede cambiarla. Anota la corrección y se la pasa a Administración, que la edita
+  (Configuración → Reglas fiscales). La versión nueva vuelve a quedar «por revisar» para que la confirme.
+- **Al terminar:** Configuración → Usuarios → **Desactivar** su usuario. No borrarlo: se perdería el nombre de quien
+  revisó cada regla.

@@ -15,6 +15,7 @@ export const ROLE_LABELS: Record<string, string> = {
   SALES: "Ventas",
   FINANCE: "Finanzas",
   OPERATIONS: "Operaciones",
+  CONTADOR: "Contador (revisión fiscal)",
 };
 
 type Role = { id: string; name: string };
