@@ -1410,3 +1410,19 @@ pulsa el botón.
   (Configuración → Reglas fiscales). La versión nueva vuelve a quedar «por revisar» para que la confirme.
 - **Al terminar:** Configuración → Usuarios → **Desactivar** su usuario. No borrarlo: se perdería el nombre de quien
   revisó cada regla.
+
+
+---
+
+## Proveedores → Importar desde Excel (A3, 11-nov-2026)
+
+- **Para qué:** cargar todos los proveedores reales de una vez (Fase 6, después de la limpieza), con sus datos fiscales
+  y un contacto.
+- **Pasos:** Descargar plantilla → llenar la hoja «Proveedores» (una fila por proveedor; usar las listas desplegables)
+  → Elegir archivo y revisar → Importar → si hubo errores, Descargar filas con error, corregir y volver a subir ese
+  archivo.
+- **Ejemplo de revisión:** «Fila 7 · Sonido Pro SRL · Error · El RNC debe tener 9 dígitos (tiene 8)»; «Fila 9 ·
+  Juan Martínez · Con aviso · Faltan el tipo de proveedor o la condición fiscal: sus gastos quedarán por revisar».
+- **Importante:** los proveedores cuyo RNC ya existe se saltan (no se actualizan). Las categorías y tipos de servicio
+  deben existir antes (Configuración); la plantilla los trae en la hoja «Listas». Descargar la plantilla de nuevo si se
+  cambian los catálogos.

@@ -164,7 +164,7 @@ export async function listImportBatches() {
     .select("*")
     .eq("entity_type", "suppliers")
     .order("created_at", { ascending: false })
-    .limit(20);
+    .limit(10);
   if (error) throw new Error(error.message);
   return data;
 }

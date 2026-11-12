@@ -1,5 +1,22 @@
 # CHANGELOG — Mindfreak Manager
 
+## A3 · Importar proveedores desde Excel (2026-11-11)
+
+- Proveedores → **Importar desde Excel** reemplaza la importación por CSV. Plantilla descargable (.xlsx) con tres
+  hojas: *Proveedores* (20 columnas en español: nombre, documento, datos fiscales, categoría, tipo de servicio,
+  contacto del negocio, banco y un contacto), *Instrucciones* (qué va en cada columna y 3 ejemplos) y *Listas* (tus
+  categorías, tipos de servicio y bancos, más las opciones fijas), con listas desplegables y columnas de texto para
+  que Excel no quite ceros.
+- **Revisar archivo** (no guarda nada): cada fila sale Lista / Con aviso / Error, con el motivo. El servidor vuelve a
+  revisar todo antes de guardar. Se importan solo las filas sin error, como «Proveedor», con su contacto principal.
+  **Descargar filas con error** genera un Excel con esas filas y el motivo para corregir y volver a subir.
+- Reglas: RNC de 9 dígitos o cédula de 11 (se quitan guiones; se completa el cero inicial de la cédula); RNC ya
+  existente → se salta; repetido en el archivo → error; **no se crean categorías ni tipos de servicio**; si falta la
+  categoría se toma la del tipo de servicio; sugerencia por el nombre cuando no hay clasificación; aviso si faltan
+  tipo de proveedor o condición fiscal. Máximo 2,000 filas por archivo. Auditoría «Importó desde Excel».
+- Lector y escritor de Excel propios (`lib/xlsx/workbook.ts`, con fflate), probados con archivos guardados por
+  LibreOffice. Sin cambios en la base de datos.
+
 ## Rol «Contador» (2026-11-11)
 
 - Permiso nuevo **«Revisar reglas fiscales»** (`fiscal_rules.review`) y rol de sistema **Contador** (el rol de siempre para el contador de la empresa; se le pueden agregar permisos en Roles y permisos):

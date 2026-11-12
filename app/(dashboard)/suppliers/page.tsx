@@ -151,11 +151,13 @@ export default async function SuppliersPage({
           </p>
         </div>
         <div className="flex gap-2">
-          <Link href="/suppliers/import">
-            <Button variant="outline" size="sm" icon={<Upload size={14} />}>
-              Importar CSV
-            </Button>
-          </Link>
+          <IfCan permission="suppliers.create">
+            <Link href="/suppliers/import">
+              <Button variant="outline" size="sm" icon={<Upload size={14} />} hint="Carga muchos proveedores de una vez con la plantilla de Excel.">
+                Importar desde Excel
+              </Button>
+            </Link>
+          </IfCan>
           <IfCan permission="suppliers.create">
             <Link href="/suppliers/new">
               <Button size="sm" icon={<Plus size={14} />}>

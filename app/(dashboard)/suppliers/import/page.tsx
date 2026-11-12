@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { listImportBatches } from "@/features/suppliers/queries";
-import { ImportForm } from "./import-form";
+import { SupplierImportPanel } from "./import-panel";
+import { requirePageAccess } from "@/lib/auth/permissions";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, type Column } from "@/components/ui/data-table";
 
@@ -15,6 +16,7 @@ const BATCH_STATUS_LABELS: Record<string, string> = {
 };
 
 export default async function ImportSuppliersPage() {
+  await requirePageAccess("suppliers.create", "Importar proveedores");
   const batches = await listImportBatches();
 
   const columns: Column<Batch>[] = [
@@ -34,25 +36,14 @@ export default async function ImportSuppliersPage() {
         >
           <ArrowLeft size={14} /> Proveedores
         </Link>
-        <h1 className="mt-2 text-xl font-semibold text-brand-primary">
-          Importar proveedores (CSV)
-        </h1>
-        <p className="text-sm text-brand-muted">
-          Columnas esperadas:{" "}
-          <code>
-            name, tax_id, category, email, phone, address, bank_name,
-            bank_account_number, service_type
-          </code>{" "}
-          (solo <code>name</code> es obligatorio).
-        </p>
-        <p className="text-sm text-brand-muted">
-          <code>category</code> y <code>service_type</code> se enlazan con Configuración →
-          Categorías y Tipos de servicio (sin importar mayúsculas ni acentos); si no existen, se
-          crean.
+        <h1 className="mt-2 text-xl font-semibold text-brand-primary">Importar proveedores desde Excel</h1>
+        <p className="max-w-3xl text-sm text-brand-muted">
+          Carga muchos proveedores de una vez, con sus datos fiscales y su contacto. Nada se guarda hasta que revises el archivo y
+          pulses <strong>Importar</strong>. Los RNC que ya existen se saltan, y no se crean categorías ni tipos de servicio nuevos.
         </p>
       </div>
 
-      <ImportForm />
+      <SupplierImportPanel />
 
       <section>
         <h2 className="mb-3 text-sm font-medium text-brand-text">
