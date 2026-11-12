@@ -16,7 +16,7 @@ const ROLE_LABELS: Record<string, string> = {
   SALES: "Ventas",
   FINANCE: "Finanzas",
   OPERATIONS: "Operaciones",
-  CONTADOR: "Contador (revisión fiscal)",
+  CONTADOR: "Contador",
 };
 
 export function NewUserForm({ roles }: { roles: Role[] }) {

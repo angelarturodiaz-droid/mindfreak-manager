@@ -1,8 +1,8 @@
 # CHANGELOG — Mindfreak Manager
 
-## Rol «Contador (revisión fiscal)» (2026-11-11)
+## Rol «Contador» (2026-11-11)
 
-- Permiso nuevo **«Revisar reglas fiscales»** (`fiscal_rules.review`) y rol de sistema **Contador (revisión fiscal)**:
+- Permiso nuevo **«Revisar reglas fiscales»** (`fiscal_rules.review`) y rol de sistema **Contador** (el rol de siempre para el contador de la empresa; se le pueden agregar permisos en Roles y permisos):
   ve gastos, pagos, proveedores, reportes y documentos (solo lectura) y marca las reglas fiscales como revisadas.
   No crea, edita, activa, desactiva ni borra reglas; no entra a Configuración.
 - Pantalla nueva **Análisis → Revisión fiscal** (solo para quien tiene el permiso y no es Administración): la lista de

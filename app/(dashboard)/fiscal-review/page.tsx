@@ -2,7 +2,7 @@ import { requirePageAccess } from "@/lib/auth/permissions";
 import { FiscalRulesList, type FiscalRulesSearch } from "@/components/fiscal/rules-list";
 
 /**
- * Revisión fiscal: la pantalla del contador (rol «Contador (revisión fiscal)», permiso fiscal_rules.review).
+ * Revisión fiscal: la pantalla del contador (rol «Contador», permiso fiscal_rules.review).
  * Ve las reglas, prueba casos y las marca como revisadas. No puede crear, editar, activar ni borrar.
  */
 export default async function FiscalReviewPage({ searchParams }: { searchParams: Promise<FiscalRulesSearch> }) {

@@ -1,4 +1,4 @@
--- Rol «Contador (revisión fiscal)» (11-nov-2026).
+-- Rol «Contador» (11-nov-2026; nombre y descripción generales el mismo día: es el rol del contador, no solo para revisar).
 -- El contador externo entra con su propio usuario, consulta gastos, pagos, proveedores y reportes (solo lectura) y
 -- marca cada regla fiscal como revisada. No puede crear, editar, activar, desactivar ni borrar reglas, ni registrar
 -- nada. Queda guardado quién revisó cada regla y cuándo (también en la Auditoría).
@@ -10,7 +10,7 @@ insert into public.permissions (code, module, description) values
 on conflict (code) do nothing;
 
 insert into public.roles (company_id, name, description, is_system)
-select null, 'CONTADOR', 'Contador externo: revisa las reglas fiscales y consulta gastos, pagos, proveedores y reportes (solo lectura)', true
+select null, 'CONTADOR', 'Contador de la empresa: consulta gastos, pagos, proveedores y reportes (solo lectura) y confirma las reglas fiscales', true
 where not exists (select 1 from public.roles where company_id is null and name = 'CONTADOR');
 
 insert into public.role_permissions (role_id, permission_id)
@@ -54,3 +54,8 @@ $$;
 
 revoke execute on function public.mark_fiscal_rule_reviewed(uuid) from public, anon;
 grant execute on function public.mark_fiscal_rule_reviewed(uuid) to authenticated;
+
+-- Ajuste del mismo día: descripción general del rol (ya existía con la anterior).
+update public.roles
+   set description = 'Contador de la empresa: consulta gastos, pagos, proveedores y reportes (solo lectura) y confirma las reglas fiscales'
+ where company_id is null and name = 'CONTADOR';

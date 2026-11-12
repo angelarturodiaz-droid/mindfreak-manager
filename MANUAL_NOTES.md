@@ -1400,7 +1400,7 @@ pulsa el botón.
 
 ## Revisión de las reglas fiscales por el contador (11-nov-2026)
 
-- **Crear su usuario:** Configuración → Usuarios → Invitar → rol **Contador (revisión fiscal)**. Le llega el correo
+- **Crear su usuario:** Configuración → Usuarios → Invitar → rol **Contador**. Le llega el correo
   «Te invitaron a Mindfreak Manager»; al entrar activa la verificación en dos pasos con una aplicación del celular.
 - **Qué ve:** en el menú, **Análisis → Revisión fiscal** (lista de reglas, «Probar reglas»), además de Gastos, Cobros y
   pagos, Proveedores y Reportes, todo de solo lectura.

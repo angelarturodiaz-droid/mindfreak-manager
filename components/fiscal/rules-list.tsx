@@ -119,7 +119,7 @@ export async function FiscalRulesList({
             <InfoHint
               text={
                 canManage
-                  ? "Las reglas iniciales se cargaron como propuesta basada en fuentes públicas de la DGII. Ábrelas, compáralas con tu contador y pulsa 'Marcar como revisada' (o dale al contador un usuario con el rol «Contador (revisión fiscal)» para que lo haga él). Las dudosas están inactivas."
+                  ? "Las reglas iniciales se cargaron como propuesta basada en fuentes públicas de la DGII. Ábrelas, compáralas con tu contador y pulsa 'Marcar como revisada' (o dale al contador un usuario con el rol «Contador» para que lo haga él). Las dudosas están inactivas."
                   : "Abre cada regla, compárala con la norma y pulsa 'Marcar como revisada' si está correcta. Si algo está mal, anótalo y avísale a la empresa: tú no puedes cambiar las reglas."
               }
             />

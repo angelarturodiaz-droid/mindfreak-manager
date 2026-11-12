@@ -8,7 +8,7 @@ const ROLE_LABELS: Record<string, string> = {
   SALES: "Ventas",
   FINANCE: "Finanzas",
   OPERATIONS: "Operaciones",
-  CONTADOR: "Contador (revisión fiscal)",
+  CONTADOR: "Contador",
 };
 
 const ROLE_HINTS: Record<string, string> = {
@@ -17,7 +17,7 @@ const ROLE_HINTS: Record<string, string> = {
   SALES: "Clientes, cotizaciones y facturas.",
   FINANCE: "Cobros, pagos, bancos, gastos y reportes.",
   OPERATIONS: "Proyectos, entregas y proveedores.",
-  CONTADOR: "Contador externo: ve gastos, pagos, proveedores y reportes, y confirma las reglas fiscales. No registra ni cambia nada.",
+  CONTADOR: "Contador de la empresa: consulta gastos, pagos, proveedores y reportes, y confirma las reglas fiscales. No registra ni cambia nada. Se le pueden agregar más permisos.",
 };
 
 /** Nombre del módulo en español y orden en que se muestran (de lo comercial a lo administrativo). */
