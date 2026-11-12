@@ -1426,3 +1426,15 @@ pulsa el botón.
 - **Importante:** los proveedores cuyo RNC ya existe se saltan (no se actualizan). Las categorías y tipos de servicio
   deben existir antes (Configuración); la plantilla los trae en la hoja «Listas». Descargar la plantilla de nuevo si se
   cambian los catálogos.
+
+
+---
+
+## Cierre de sesión por inactividad (11-nov-2026)
+
+- **Qué hace:** si nadie usa el sistema en un navegador durante el tiempo configurado (30 min por defecto), sale
+  «¿Sigues ahí?» con 60 segundos para pulsar **Seguir conectado**; si no, se cierra la sesión.
+- **Dónde se cambia:** Configuración → Seguridad → «Cerrar sesión por inactividad» (15 a 120 minutos). Solo
+  Administración. Se aplica a cada usuario en su siguiente página.
+- **Ejemplo:** dejas una cotización a medio llenar y te vas a una reunión de 40 minutos → al volver estás en el inicio
+  de sesión con el aviso «Se cerró tu sesión por inactividad»; lo que no guardaste se perdió.

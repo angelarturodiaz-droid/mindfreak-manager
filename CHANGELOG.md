@@ -1,5 +1,15 @@
 # CHANGELOG — Mindfreak Manager
 
+## Cierre de sesión por inactividad (2026-11-11)
+
+- Tras **30 minutos** sin usar el sistema en un navegador sale «¿Sigues ahí?» con cuenta regresiva de 60 segundos
+  (Seguir conectado / Cerrar sesión); si nadie responde se cierra la sesión y el login avisa «Se cerró tu sesión por
+  inactividad». La actividad se comparte entre pestañas; al vencer se cierran todas; si la computadora estuvo
+  suspendida, se cierra al volver. Mientras está el aviso, mover el mouse no cuenta: hay que pulsar el botón.
+- **Configuración → Seguridad** (antes solo texto): Administración elige 15, 30, 45, 60, 90 o 120 minutos (Auditoría).
+- Migración **106**: `companies.idle_timeout_minutes` (5–240, por defecto 30). Supabase lo ofrece solo en el plan Pro;
+  aquí lo hace la app.
+
 ## A3 · Importar proveedores desde Excel (2026-11-11)
 
 - Proveedores → **Importar desde Excel** reemplaza la importación por CSV. Plantilla descargable (.xlsx) con tres

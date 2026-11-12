@@ -354,6 +354,12 @@ export async function verifyRecoveryCodeAction(
   redirect("/profile?mfa_reset=1");
 }
 
+/** Cierre por inactividad (components/layout/idle-logout.tsx): cierra la sesión sin redirigir; la pantalla va al login. */
+export async function signOutForInactivityAction(): Promise<void> {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+}
+
 export async function signOut(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();

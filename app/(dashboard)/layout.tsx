@@ -12,6 +12,8 @@ import { NotificationBell } from "@/components/layout/notification-bell";
 import { SidebarProvider } from "@/components/layout/sidebar-context";
 import { MobileMenuButton } from "@/components/layout/mobile-menu-button";
 import { LegalFooter } from "@/components/legal/legal-footer";
+import { IdleLogout } from "@/components/layout/idle-logout";
+import { sanitizeIdleMinutes } from "@/lib/session/idle";
 
 export default async function DashboardLayout({
   children,
@@ -21,8 +23,10 @@ export default async function DashboardLayout({
   let platformName = "Mindfreak Manager";
   let logoUrl: string | null = null;
   let brandAccent = "#17a6b8";
+  let idleMinutes = 30;
   try {
     const company = await getCompany();
+    idleMinutes = sanitizeIdleMinutes((company as { idle_timeout_minutes?: number }).idle_timeout_minutes);
     platformName = company.platform_name || platformName;
     logoUrl = company.logo_url;
     brandAccent = company.brand_accent || brandAccent;
@@ -89,6 +93,7 @@ export default async function DashboardLayout({
         </header>
         <div className="flex flex-1 flex-col overflow-x-hidden bg-brand-background">{children}</div>
         <LegalFooter className="border-t border-brand-border bg-brand-background" />
+        <IdleLogout minutes={idleMinutes} />
       </div>
     );
   }
@@ -126,6 +131,7 @@ export default async function DashboardLayout({
           <LegalFooter className="border-t border-brand-border bg-brand-background" />
         </div>
       </div>
+      {user && <IdleLogout minutes={idleMinutes} />}
     </SidebarProvider>
   );
 }
