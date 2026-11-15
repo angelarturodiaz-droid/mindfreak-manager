@@ -15,6 +15,10 @@ export const clientSchema = z.object({
   foreign_id: z.string().trim().max(40, "El ID extranjero es muy largo").optional().or(z.literal("")),
   province_code: z.string().regex(/^\d{6}$/).optional().or(z.literal("")),
   municipality_code: z.string().regex(/^\d{6}$/).optional().or(z.literal("")),
+  // Migración 107 — país (vacío = RD) y, fuera de RD, estado/provincia y ciudad en texto.
+  country_code: z.string().trim().toUpperCase().regex(/^[A-Z]{2}$/, "País inválido.").optional().or(z.literal("")),
+  region: z.string().trim().max(80, "El estado o provincia es muy largo (máximo 80).").optional().or(z.literal("")),
+  city: z.string().trim().max(80, "La ciudad es muy larga (máximo 80).").optional().or(z.literal("")),
   // Etapa del pipeline comercial (Lead -> Prospecto -> Cliente). Independiente
   // del Estado (is_active): un Lead puede estar activo o inactivo sin dejar
   // de ser Lead — nunca se mezclan estos dos campos.

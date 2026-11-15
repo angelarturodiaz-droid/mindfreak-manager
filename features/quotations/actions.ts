@@ -19,6 +19,16 @@ import {
 import { buildBankDetails } from "@/features/banks/bank-details-server";
 import { parseBankDetails } from "@/features/banks/bank-details";
 import type { QuotationPdfData } from "@/lib/pdf/quotation-document";
+import { formatClientLocation, type ClientPlace } from "@/lib/geo/countries";
+
+type PdfClientRow = ClientPlace & {
+  name: string;
+  tax_id: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  foreign_id: string | null;
+};
 
 export type ActionState = MoneyActionState;
 
@@ -613,7 +623,7 @@ export async function getQuotationPdfDataAction(
     await Promise.all([
       supabase
         .from("quotations")
-        .select("*, clients(name, tax_id, email, phone), payment_terms(name)")
+        .select("*, clients(name, tax_id, email, phone, address, foreign_id, country_code, region, city, province_code, municipality_code), payment_terms(name)")
         .eq("id", quotationId)
         .single(),
       supabase
@@ -632,8 +642,8 @@ export async function getQuotationPdfDataAction(
   if (iError) return { data: null, error: iError.message };
 
   const clientData = quotation.clients as
-    | { name: string; tax_id: string | null; email: string | null; phone: string | null }
-    | { name: string; tax_id: string | null; email: string | null; phone: string | null }[]
+    | PdfClientRow
+    | PdfClientRow[]
     | null;
   const clientRecord = Array.isArray(clientData) ? clientData[0] : clientData;
 
@@ -656,6 +666,9 @@ export async function getQuotationPdfDataAction(
         tax_id: clientRecord?.tax_id ?? null,
         email: clientRecord?.email ?? null,
         phone: clientRecord?.phone ?? null,
+    address: clientRecord?.address ?? null,
+    location: clientRecord ? formatClientLocation(clientRecord) || null : null,
+    foreign_id: clientRecord?.foreign_id ?? null,
       },
       items: items ?? [],
     },

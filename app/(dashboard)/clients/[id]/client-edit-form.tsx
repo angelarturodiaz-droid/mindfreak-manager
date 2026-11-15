@@ -22,6 +22,9 @@ export function ClientEditForm({
     foreign_id?: string | null;
     province_code?: string | null;
     municipality_code?: string | null;
+    country_code?: string | null;
+    region?: string | null;
+    city?: string | null;
   };
 }) {
   const updateWithId = updateClientAction.bind(null, client.id);

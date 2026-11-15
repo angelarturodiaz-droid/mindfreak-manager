@@ -1,5 +1,17 @@
 # CHANGELOG — Mindfreak Manager
 
+## Clientes: país, estado y ciudad (2026-11-15)
+
+- Ficha y alta del cliente → *Ubicación y datos fiscales*: **País** (por defecto RD, todos los países en español con
+  buscador; favoritos RD, EE. UU., Puerto Rico y Panamá). RD sigue con Provincia y Municipio de la DGII; otro país usa
+  **Estado / provincia** (lista para US, PR, PA, MX, CO, ES y CA; texto en los demás) y **Ciudad**.
+- Ubicación visible en la ficha, la lista de clientes, el PDF de cotización y factura (con la dirección) y el
+  Facturador DGII (agregada a la Dirección). Aviso ⚠ para cliente del extranjero sin RNC ni ID extranjero.
+- Importar clientes desde Excel: columnas *País*, *Estado / provincia (extranjero)* y *Ciudad (extranjero)*, con lista
+  de países en la hoja *Listas*.
+- Migración **107**: `clients.country_code` (`DO` por defecto), `region`, `city` y la regla «provincia/municipio de la
+  DGII solo en RD». Sin cambios en reglas fiscales ni cálculos. Catálogo en `lib/geo/countries.ts`.
+
 ## A4 · Importar clientes desde Excel (2026-11-11)
 
 - Clientes → **Importar desde Excel** reemplaza la importación por CSV, con el mismo flujo que proveedores (plantilla,

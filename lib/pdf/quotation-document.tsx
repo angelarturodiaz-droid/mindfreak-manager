@@ -57,7 +57,16 @@ export type QuotationPdfData = {
     /** Copia congelada de las cuentas para el pago (migración 082). */
     bank_details?: unknown;
   };
-  client: { name: string; tax_id: string | null; email: string | null; phone: string | null };
+  client: {
+    name: string;
+    tax_id: string | null;
+    email: string | null;
+    phone: string | null;
+    /** Dirección y ubicación («Miramar, Florida, Estados Unidos»), migración 107. Opcionales. */
+    address?: string | null;
+    location?: string | null;
+    foreign_id?: string | null;
+  };
   items: {
     description: string;
     quantity: number;
@@ -183,6 +192,9 @@ export function QuotationPdfDocument({
             <Text style={styles.boxTitle}>Datos del cliente</Text>
             <Text style={styles.boxLine}>{client.name}</Text>
             {client.tax_id && <Text style={styles.boxLine}>RNC: {client.tax_id}</Text>}
+            {!client.tax_id && client.foreign_id && <Text style={styles.boxLine}>ID extranjero: {client.foreign_id}</Text>}
+            {client.address && <Text style={styles.boxLine}>{client.address}</Text>}
+            {client.location && <Text style={styles.boxLine}>{client.location}</Text>}
             {client.phone && <Text style={styles.boxLine}>Tel: {client.phone}</Text>}
             {client.email && <Text style={styles.boxLine}>{client.email}</Text>}
           </View>

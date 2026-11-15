@@ -43,6 +43,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Pagination } from "@/components/ui/pagination";
 import { AutoSubmitSelect } from "@/components/ui/auto-submit-select";
 import { parsePage } from "@/lib/utils/pagination";
+import { countryName, isForeignCountry } from "@/lib/geo/countries";
 
 type ClientRow = Awaited<ReturnType<typeof listClients>>["rows"][number];
 
@@ -129,7 +130,8 @@ export default async function ClientsPage({
               {c.name}
             </span>
             <span className="block text-xs text-brand-muted">
-              {c.tax_id ? `RNC/Céd. ${c.tax_id}` : "Sin RNC/Cédula"}
+              {c.tax_id ? `RNC/Céd. ${c.tax_id}` : c.foreign_id ? `ID ext. ${c.foreign_id}` : "Sin RNC/Cédula"}
+              {isForeignCountry(c.country_code) && ` · ${countryName(c.country_code) ?? c.country_code}`}
             </span>
           </span>
         </Link>

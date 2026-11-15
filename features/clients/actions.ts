@@ -6,6 +6,7 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 import { requirePermission, getCurrentUserCompanyIds } from "@/lib/auth/permissions";
 import { logAudit } from "@/lib/audit/log";
 import { clientSchema, clientContactSchema } from "./schema";
+import { HOME_COUNTRY, countryName, isForeignCountry } from "@/lib/geo/countries";
 
 export type ActionState = { error: string | null; success?: string; successId?: number };
 
@@ -27,23 +28,40 @@ function parseFormFields(formData: FormData) {
     foreign_id: String(formData.get("foreign_id") ?? ""),
     province_code: String(formData.get("province_code") ?? ""),
     municipality_code: String(formData.get("municipality_code") ?? ""),
+    country_code: String(formData.get("country_code") ?? ""),
+    region: String(formData.get("region") ?? ""),
+    city: String(formData.get("city") ?? ""),
     stage: String(formData.get("stage") ?? "LEAD"),
   };
 }
 
 /** El municipio tiene que ser de la provincia elegida (sus 2 primeros dígitos). */
-function ecfPlaceProblem(d: { province_code?: string; municipality_code?: string }): string | null {
+function ecfPlaceProblem(d: { province_code?: string; municipality_code?: string; country_code?: string }): string | null {
+  if (d.country_code && !countryName(d.country_code)) return "El país no es válido: vuelve a elegirlo.";
+  if (isForeignCountry(d.country_code)) return null; // fuera de RD no se usan provincia ni municipio de la DGII
   if (d.municipality_code && !d.province_code) return "Elige la provincia del municipio.";
   if (d.municipality_code && d.province_code && d.municipality_code.slice(0, 2) !== d.province_code.slice(0, 2))
     return "El municipio no es de la provincia elegida: vuelve a elegirlo.";
   return null;
 }
 
-function ecfColumns(d: { foreign_id?: string; province_code?: string; municipality_code?: string }) {
+function ecfColumns(d: {
+  foreign_id?: string;
+  province_code?: string;
+  municipality_code?: string;
+  country_code?: string;
+  region?: string;
+  city?: string;
+}) {
+  const foreign = isForeignCountry(d.country_code);
   return {
     foreign_id: d.foreign_id || null,
-    province_code: d.province_code || null,
-    municipality_code: d.municipality_code || null,
+    country_code: d.country_code || HOME_COUNTRY,
+    // RD: provincia y municipio de la DGII. Otro país: estado/provincia y ciudad en texto.
+    province_code: foreign ? null : d.province_code || null,
+    municipality_code: foreign ? null : d.municipality_code || null,
+    region: foreign ? d.region || null : null,
+    city: foreign ? d.city || null : null,
   };
 }
 
@@ -113,7 +131,7 @@ export async function updateClientAction(
   const supabase = await createSupabaseClient();
   const { data: before } = await supabase
     .from("clients")
-    .select("name, tax_id, email, phone, address, foreign_id, province_code, municipality_code")
+    .select("name, tax_id, email, phone, address, foreign_id, province_code, municipality_code, country_code, region, city")
     .eq("id", clientId)
     .single();
 

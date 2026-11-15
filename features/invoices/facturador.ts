@@ -2,6 +2,7 @@
  * 5b — «Datos para el Facturador DGII»: arma, en el mismo orden y numeración del Facturador Gratuito,
  * lo que ya está en la factura. Solo LEE y ordena: los impuestos de cada línea son los que ya calculó el ERP.
  */
+import { formatClientLocation, isForeignCountry } from "@/lib/geo/countries";
 import { ECF_TYPES, INCOME_TYPES, PAYMENT_TYPES, placeName, provinceName, unitName } from "@/lib/dgii/catalogs";
 
 export type FacturadorRow = { n: string; label: string; value: string; copy?: string; note?: string; muted?: boolean };
@@ -54,6 +55,10 @@ export type FacturadorInput = {
     address: string | null;
     province_code: string | null;
     municipality_code: string | null;
+    /** Migración 107: fuera de RD la ubicación se agrega a la dirección (provincia y municipio quedan en blanco). */
+    country_code?: string | null;
+    region?: string | null;
+    city?: string | null;
   };
   items: {
     description: string;
@@ -91,6 +96,9 @@ export function buildFacturadorData(input: FacturadorInput): FacturadorData {
   const { invoice: inv, client, items } = input;
   const ecfType = inv.ncf_type && /^\d{2}$/.test(inv.ncf_type) ? inv.ncf_type : "31";
   const paymentCode = inv.payment_type_code || ((inv.credit_days ?? 0) > 0 ? "2" : "1");
+  const foreignClient = isForeignCountry(client.country_code);
+  const foreignPlace = foreignClient ? formatClientLocation(client) : "";
+  const fullAddress = [client.address, foreignPlace].filter(Boolean).join(", ");
   const term = inv.credit_days ? `${inv.credit_days} días` : inv.payment_terms_name ?? "—";
   const taxId = (client.tax_id ?? "").replace(/\D/g, "");
 
@@ -106,9 +114,9 @@ export function buildFacturadorData(input: FacturadorInput): FacturadorData {
     { n: "9", label: "Teléfono", value: client.phone || "—", copy: client.phone || undefined, muted: !client.phone },
     { n: "10", label: "Comentarios", value: inv.ecf_comments || `— (sugerido: ${inv.number})`, copy: inv.ecf_comments || inv.number, muted: !inv.ecf_comments },
     { n: "11", label: "Correo", value: client.email || "—", copy: client.email || undefined, muted: !client.email },
-    { n: "12", label: "Dirección", value: client.address || "—", copy: client.address || undefined, muted: !client.address },
-    { n: "13", label: "Provincia", value: provinceName(client.province_code) ?? "— (opcional)", copy: provinceName(client.province_code) ?? undefined, muted: !client.province_code },
-    { n: "14", label: "Municipio", value: placeName(client.municipality_code) ?? "— (opcional)", copy: placeName(client.municipality_code) ?? undefined, muted: !client.municipality_code },
+    { n: "12", label: "Dirección", value: fullAddress || "—", copy: fullAddress || undefined, muted: !fullAddress },
+    { n: "13", label: "Provincia", value: provinceName(client.province_code) ?? (foreignClient ? "— (solo clientes de RD)" : "— (opcional)"), copy: provinceName(client.province_code) ?? undefined, muted: !client.province_code },
+    { n: "14", label: "Municipio", value: placeName(client.municipality_code) ?? (foreignClient ? "— (solo clientes de RD)" : "— (opcional)"), copy: placeName(client.municipality_code) ?? undefined, muted: !client.municipality_code },
   ];
 
   const sums = { "18": { base: 0, tax: 0 }, "16": { base: 0, tax: 0 }, "0": { base: 0, tax: 0 }, EX: { base: 0, tax: 0 } };

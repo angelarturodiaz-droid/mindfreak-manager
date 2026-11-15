@@ -5,6 +5,17 @@
  */
 import { normalizeCatalogName } from "@/features/supplier-service-types/classification";
 import { PROVINCES, placesOfProvince } from "@/lib/dgii/catalogs";
+import {
+  COUNTRIES,
+  FAVORITE_COUNTRIES,
+  HOME_COUNTRY,
+  countryName,
+  isForeignCountry,
+  matchCountry,
+  matchRegion,
+  regionLabel,
+  regionsOf,
+} from "@/lib/geo/countries";
 import { CLIENT_STAGE_LABELS } from "./display";
 
 export type ClientImportKey =
@@ -15,8 +26,11 @@ export type ClientImportKey =
   | "email"
   | "phone"
   | "address"
+  | "country"
   | "province"
   | "municipality"
+  | "region"
+  | "city"
   | "c1_name"
   | "c1_position"
   | "c1_email"
@@ -37,8 +51,11 @@ export const CLIENT_IMPORT_COLUMNS: ClientImportColumn[] = [
   { key: "email", header: "Correo", help: "Correo del negocio.", width: 28 },
   { key: "phone", header: "Teléfono", help: "Teléfono del negocio.", width: 16, text: true },
   { key: "address", header: "Dirección", help: "Dirección del negocio.", width: 34 },
-  { key: "province", header: "Provincia", help: "Provincia (lista oficial de la DGII). Se usa en la factura electrónica.", width: 24 },
-  { key: "municipality", header: "Municipio", help: "Municipio o distrito municipal de esa provincia (hoja Listas).", width: 26 },
+  { key: "country", header: "País", help: "País del cliente (lista). Vacío = República Dominicana.", width: 22 },
+  { key: "province", header: "Provincia", help: "Solo clientes de RD: provincia (lista oficial de la DGII). Se usa en la factura electrónica.", width: 24 },
+  { key: "municipality", header: "Municipio", help: "Solo clientes de RD: municipio o distrito municipal de esa provincia (hoja Listas).", width: 26 },
+  { key: "region", header: "Estado / provincia (extranjero)", help: "Solo clientes de otro país: estado, provincia o región (ej. Florida, Panamá). En EE. UU. sirve la abreviatura (FL).", width: 24 },
+  { key: "city", header: "Ciudad (extranjero)", help: "Solo clientes de otro país: la ciudad (ej. Miami).", width: 20 },
   { key: "c1_name", header: "Contacto principal: nombre", help: "Persona con quien se trata (opcional).", width: 26 },
   { key: "c1_position", header: "Contacto principal: cargo", help: "Cargo del contacto principal.", width: 22 },
   { key: "c1_email", header: "Contacto principal: correo", help: "Correo del contacto principal.", width: 28 },
@@ -71,6 +88,9 @@ export type ClientImportRecord = {
   address: string | null;
   province_code: string | null;
   municipality_code: string | null;
+  country_code: string;
+  region: string | null;
+  city: string | null;
   contacts: Contact[];
 };
 
@@ -172,8 +192,22 @@ export function validateClientRows(rows: string[][], catalogs: ClientImportCatal
     }
     const foreignId = get("foreign_id").replace(/\s+/g, "").toUpperCase() || null;
     if (foreignId && foreignId.length > 40) err("El ID extranjero es muy largo (máximo 40).");
+    // País (vacío = RD).
+    const countryRaw = get("country");
+    let countryCode = HOME_COUNTRY;
+    if (countryRaw) {
+      const c = matchCountry(countryRaw);
+      if (c) countryCode = c;
+      else err(`El país «${countryRaw}» no se reconoce. Elígelo de la lista.`);
+    }
+    const foreign = isForeignCountry(countryCode);
+
     if (!taxId && !foreignId && name && stage === "CLIENT" && !msgs.some((m) => m.level === "error" && /RNC/.test(m.text))) {
-      warn("Sin RNC ni cédula: no se le podrá emitir factura con crédito fiscal hasta completarlo en su ficha.");
+      warn(
+        foreign
+          ? "Cliente del extranjero sin RNC ni ID extranjero: completa su ID extranjero para facturarle."
+          : "Sin RNC ni cédula: no se le podrá emitir factura con crédito fiscal hasta completarlo en su ficha.",
+      );
     }
 
     // Ubicación.
@@ -181,11 +215,34 @@ export function validateClientRows(rows: string[][], catalogs: ClientImportCatal
     let municipalityCode: string | null = null;
     const provRaw = get("province");
     const munRaw = get("municipality");
-    if (provRaw) {
+    let region: string | null = null;
+    let city: string | null = null;
+    const regionRaw = get("region").replace(/\s+/g, " ");
+    const cityRaw = get("city").replace(/\s+/g, " ");
+    if (foreign) {
+      if (provRaw || munRaw) err("«Provincia» y «Municipio» son solo para clientes de RD. Para otro país usa «Estado / provincia (extranjero)» y «Ciudad (extranjero)».");
+      if (regionRaw) {
+        if (regionRaw.length > 80) err("El estado o provincia es muy largo (máximo 80).");
+        else if (regionsOf(countryCode)) {
+          region = matchRegion(countryCode, regionRaw);
+          if (!region) {
+            region = regionRaw;
+            warn(`«${regionRaw}» no está en la lista de ${regionLabel(countryCode).toLowerCase()} de ${countryName(countryCode)}: se guarda tal cual.`);
+          }
+        } else region = regionRaw;
+      }
+      if (cityRaw) {
+        if (cityRaw.length > 80) err("La ciudad es muy larga (máximo 80).");
+        else city = cityRaw;
+      }
+    } else if (regionRaw || cityRaw) {
+      warn("«Estado / provincia (extranjero)» y «Ciudad (extranjero)» son solo para clientes de otro país: se ignoran (en RD usa Provincia y Municipio).");
+    }
+    if (!foreign && provRaw) {
       provinceCode = provinceByName.get(norm(provRaw)) ?? provinceByName.get(norm(provRaw.replace(/^provincia\s+/i, ""))) ?? null;
       if (!provinceCode) err(`La provincia «${provRaw}» no existe. Elígela de la lista.`);
     }
-    if (munRaw) {
+    if (!foreign && munRaw) {
       if (!provinceCode) {
         if (provRaw) {
           /* el error de provincia ya se dijo */
@@ -274,6 +331,9 @@ export function validateClientRows(rows: string[][], catalogs: ClientImportCatal
             address: get("address") || null,
             province_code: provinceCode,
             municipality_code: municipalityCode,
+            country_code: countryCode,
+            region,
+            city,
             contacts,
           },
     });
@@ -295,8 +355,20 @@ export function clientTemplateSheets() {
       for (const d of g.distritos) places.push([p.label, `${d.name}`]);
     }
   }
-  const cols = [["Cliente", "Prospecto", "Lead"], ["Sí", "No"], provinces.map((p) => p.label), places.map((x) => x[0]), places.map((x) => x[1])];
-  const lists: string[][] = [["Etapa", "Recibe recordatorios", "Provincia", "(provincia)", "Municipio o distrito"]];
+  const favorites = new Set<string>(FAVORITE_COUNTRIES);
+  const countryNames = [
+    ...FAVORITE_COUNTRIES.map((c) => countryName(c)!),
+    ...COUNTRIES.filter((c) => !favorites.has(c.code)).map((c) => c.name),
+  ];
+  const cols = [
+    ["Cliente", "Prospecto", "Lead"],
+    ["Sí", "No"],
+    provinces.map((p) => p.label),
+    places.map((x) => x[0]),
+    places.map((x) => x[1]),
+    countryNames,
+  ];
+  const lists: string[][] = [["Etapa", "Recibe recordatorios", "Provincia", "(provincia)", "Municipio o distrito", "País"]];
   const height = Math.max(...cols.map((c) => c.length));
   for (let r = 0; r < height; r++) lists.push(cols.map((c) => c[r] ?? ""));
   const range = (col: number) => {
@@ -304,10 +376,11 @@ export function clientTemplateSheets() {
     return `Listas!$${letter}$2:$${letter}$${Math.max(2, cols[col].length + 1)}`;
   };
   const header = CLIENT_IMPORT_COLUMNS.map((c) => c.header);
+  const ex = (v: Partial<Record<ClientImportKey, string>>) => CLIENT_IMPORT_COLUMNS.map((c) => v[c.key] ?? "");
   const examples = [
-    ["Banco Ejemplo, S.A.", "101-00000-1", "", "Cliente", "eventos@bancoejemplo.com", "809-555-0300", "Av. Ejemplo 100", "Santo Domingo", "Santo Domingo Este", "María Gómez", "Gerente de Mercadeo", "maria@bancoejemplo.com", "809-555-0301", "No", "Pedro Ruiz", "Cuentas por pagar", "cxp@bancoejemplo.com", "809-555-0302"],
-    ["Luisa Fernández", "001-0000000-1", "", "Lead", "", "829-555-0400", "", "", "", "", "", "", "", "", "", "", "", ""],
-    ["Global Events LLC", "", "US-98-7654321", "Cliente", "billing@globalevents.com", "+1 305 555 0500", "Miami, FL", "", "", "John Smith", "Director", "john@globalevents.com", "", "Sí", "", "", "", ""],
+    ex({ name: "Banco Ejemplo, S.A.", tax_id: "101-00000-1", stage: "Cliente", email: "eventos@bancoejemplo.com", phone: "809-555-0300", address: "Av. Ejemplo 100", province: "Santo Domingo", municipality: "Santo Domingo Este", c1_name: "María Gómez", c1_position: "Gerente de Mercadeo", c1_email: "maria@bancoejemplo.com", c1_phone: "809-555-0301", c1_billing: "No", c2_name: "Pedro Ruiz", c2_position: "Cuentas por pagar", c2_email: "cxp@bancoejemplo.com", c2_phone: "809-555-0302" }),
+    ex({ name: "Luisa Fernández", tax_id: "001-0000000-1", stage: "Lead", phone: "829-555-0400" }),
+    ex({ name: "Global Events LLC", foreign_id: "US-98-7654321", stage: "Cliente", email: "billing@globalevents.com", phone: "+1 305 555 0500", address: "100 Biscayne Blvd., Suite 200", country: "Estados Unidos", region: "Florida", city: "Miami", c1_name: "John Smith", c1_position: "Director", c1_email: "john@globalevents.com", c1_billing: "Sí" }),
   ];
   const instructions: string[][] = [
     ["Columna", "Qué poner"],
@@ -334,10 +407,11 @@ export function clientTemplateSheets() {
         { column: colOf("stage"), source: range(0) },
         { column: colOf("c1_billing"), source: range(1) },
         { column: colOf("province"), source: range(2) },
+        { column: colOf("country"), source: range(5) },
       ],
     },
     { name: "Instrucciones", rows: instructions, widths: [30, 110, ...Array(16).fill(18)], header: true },
-    { name: "Listas", rows: lists, widths: [12, 20, 26, 26, 34], header: true, freezeHeader: true },
+    { name: "Listas", rows: lists, widths: [12, 20, 26, 26, 34, 30], header: true, freezeHeader: true },
   ];
 }
 

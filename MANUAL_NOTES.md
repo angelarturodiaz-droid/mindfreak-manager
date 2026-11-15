@@ -1452,3 +1452,23 @@ pulsa el botón.
 - **Ejemplo de revisión:** «Fila 4 · Banco Ejemplo, S.A. · Con aviso · Nadie recibirá los recordatorios de cobro por
   correo»; «Fila 6 · Luisa F. · Error · El municipio «Santo Domingo Este» no es de la provincia elegida».
 - La etapa vacía queda como **Cliente**; para leads escribir «Lead».
+
+## Clientes: país, estado y ciudad (migración 107, 15-nov-2026)
+
+- **Para qué:** registrar clientes de otros países (ej. Gamma en Puerto Rico, TD Synnex en Miramar, Florida, Doble
+  Group en Panamá) sin poner el país dentro de la dirección.
+- **Dónde:** ficha del cliente (o Nuevo cliente) → *Ubicación y datos fiscales* → **País** (por defecto República
+  Dominicana; lista de todos los países con buscador, arriba RD, Estados Unidos, Puerto Rico y Panamá).
+- **RD:** Provincia y Municipio de la DGII, como antes. **Otro país:** *Estado / provincia* (lista para EE. UU.,
+  Puerto Rico —sus 78 municipios—, Panamá, México, Colombia, España y Canadá; texto libre en los demás) y *Ciudad*.
+  Al cambiar de país se limpian los campos que no aplican.
+- **Se ve en:** la ficha («Miramar, Florida, Estados Unidos»), la lista de clientes (el país junto al RNC), el PDF de
+  cotizaciones y facturas (dirección y ubicación debajo del RNC) y el Facturador DGII (la ubicación se agrega a la
+  Dirección; Provincia y Municipio quedan en blanco porque son códigos solo de RD).
+- **Aviso:** cliente del extranjero sin RNC ni ID extranjero → ⚠ en la ficha y en la importación.
+- **Importar desde Excel:** columnas nuevas *País* (lista; vacío = RD; acepta «RD», «EEUU», «USA»…), *Estado /
+  provincia (extranjero)* (en EE. UU. sirve la abreviatura, ej. FL) y *Ciudad (extranjero)*. Provincia o Municipio en
+  un cliente de otro país = error.
+- **No cambia:** reglas fiscales, cálculos, retenciones ni proveedores (que ya tienen su país en los datos fiscales).
+- Migración **107**: `clients.country_code` (por defecto `DO`), `region`, `city`; regla: provincia y municipio de la
+  DGII solo si el país es RD.

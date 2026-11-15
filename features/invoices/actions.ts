@@ -25,6 +25,16 @@ import { buildBankDetails } from "@/features/banks/bank-details-server";
 import { parseBankDetails } from "@/features/banks/bank-details";
 import type { InvoicePdfData } from "@/lib/pdf/invoice-document";
 import type { InvoiceElectronicPdfData } from "@/lib/pdf/invoice-electronic-document";
+import { formatClientLocation, type ClientPlace } from "@/lib/geo/countries";
+
+type PdfClientRow = ClientPlace & {
+  name: string;
+  tax_id: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  foreign_id: string | null;
+};
 
 export type ActionState = MoneyActionState;
 
@@ -658,7 +668,7 @@ export async function getInvoicePdfDataAction(
     await Promise.all([
       supabase
         .from("invoices")
-        .select("*, clients(name, tax_id, email, phone), payment_terms(name), projects(number, name)")
+        .select("*, clients(name, tax_id, email, phone, address, foreign_id, country_code, region, city, province_code, municipality_code), payment_terms(name), projects(number, name)")
         .eq("id", invoiceId)
         .single(),
       supabase
@@ -677,8 +687,8 @@ export async function getInvoicePdfDataAction(
   if (itError) return { payload: null, error: itError.message };
 
   const clientData = invoice.clients as
-    | { name: string; tax_id: string | null; email: string | null; phone: string | null }
-    | { name: string; tax_id: string | null; email: string | null; phone: string | null }[]
+    | PdfClientRow
+    | PdfClientRow[]
     | null;
   const clientRecord = Array.isArray(clientData) ? clientData[0] : clientData;
 
@@ -706,6 +716,9 @@ export async function getInvoicePdfDataAction(
     tax_id: clientRecord?.tax_id ?? null,
     email: clientRecord?.email ?? null,
     phone: clientRecord?.phone ?? null,
+    address: clientRecord?.address ?? null,
+    location: clientRecord ? formatClientLocation(clientRecord) || null : null,
+    foreign_id: clientRecord?.foreign_id ?? null,
   };
 
   if (invoice.billing_type === "ELECTRONIC") {

@@ -88,3 +88,50 @@ describe("A4 · revisión de filas de clientes", () => {
     expect(again.results[0].name).toBe("X");
   });
 });
+
+describe("Migración 107 · país, estado y ciudad del cliente", () => {
+  it("vacío = RD; extranjero con estado de la lista (abreviatura) y ciudad", () => {
+    const { results } = validateClientRows(
+      [
+        H,
+        row({ name: "Local SRL", tax_id: "131000003", province: "Santiago" }),
+        row({ name: "Synnex Inc", country: "EEUU", region: "fl", city: "Miramar", foreign_id: "12-345" }),
+        row({ name: "Doble Group", country: "Panamá", region: "panama", city: "Ciudad de Panamá" }),
+        row({ name: "Gamma Bank", country: "Puerto Rico" }),
+      ],
+      cat,
+    );
+    expect(results[0].record!.country_code).toBe("DO");
+    expect(results[0].record!.province_code).not.toBeNull();
+    expect(results[1].record).toMatchObject({ country_code: "US", region: "Florida", city: "Miramar", province_code: null });
+    expect(results[2].record).toMatchObject({ country_code: "PA", region: "Panamá" });
+    expect(results[3].record!.country_code).toBe("PR");
+    expect(results[3].messages.map((m) => m.text).join(" ")).toMatch(/ID extranjero/);
+  });
+
+  it("errores y avisos: país desconocido, provincia DGII en otro país, estado fuera de lista, estado en RD", () => {
+    const { results } = validateClientRows(
+      [
+        H,
+        row({ name: "A", country: "Narnia" }),
+        row({ name: "B", country: "Estados Unidos", province: "Santiago" }),
+        row({ name: "C", country: "México", region: "Gotham" }),
+        row({ name: "D", region: "Florida" }),
+      ],
+      cat,
+    );
+    expect(results[0].status).toBe("error");
+    expect(results[1].messages[0].text).toMatch(/solo para clientes de RD/);
+    expect(results[2].record!.region).toBe("Gotham");
+    expect(results[2].messages.some((m) => /no está en la lista/.test(m.text))).toBe(true);
+    expect(results[3].record!.region).toBeNull();
+    expect(results[3].messages.some((m) => /se ignoran/.test(m.text))).toBe(true);
+  });
+
+  it("la plantilla trae la columna País con su lista", () => {
+    const bytes = buildWorkbook(clientTemplateSheets());
+    const lists = readSheet(bytes, "Listas").rows;
+    expect(lists[0][5]).toBe("País");
+    expect(lists.slice(1, 5).map((r) => r[5])).toEqual(["República Dominicana", "Estados Unidos", "Puerto Rico", "Panamá"]);
+  });
+});

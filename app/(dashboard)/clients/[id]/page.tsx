@@ -44,7 +44,7 @@ import {
   formatMoney,
 } from "@/features/projects/display";
 import { ClientEditForm } from "./client-edit-form";
-import { placeName, provinceName } from "@/lib/dgii/catalogs";
+import { formatClientLocation, isForeignCountry } from "@/lib/geo/countries";
 import { NewContactForm } from "./new-contact-form";
 import { BillingContactToggle } from "./billing-contact-toggle";
 import { EditContactButton } from "./edit-contact-button";
@@ -187,6 +187,8 @@ export default async function ClientDetailPage({
     notFound();
   }
   if (!client) notFound();
+  const clientLocation = formatClientLocation(client);
+  const foreignNoId = isForeignCountry(client.country_code) && !client.tax_id && !client.foreign_id;
 
   const [contacts, activity, documents, canManageDocs, canViewDeliveries, canCreateDeliveries] = await Promise.all([
     listClientContacts(id),
@@ -468,12 +470,18 @@ export default async function ClientDetailPage({
                     <dd className="text-brand-text">{client.address}</dd>
                   </div>
                 )}
-                {(client.province_code || client.municipality_code) && (
+                {clientLocation && (
                   <div className="flex items-center gap-1.5">
                     <MapPin size={15} className="text-brand-muted" aria-hidden />
-                    <dt className="sr-only">Provincia y municipio</dt>
-                    <dd className="text-brand-text">
-                      {[placeName(client.municipality_code), provinceName(client.province_code)].filter(Boolean).join(", ")}
+                    <dt className="sr-only">Ubicación</dt>
+                    <dd className="text-brand-text">{clientLocation}</dd>
+                  </div>
+                )}
+                {foreignNoId && (
+                  <div className="flex items-center gap-1.5">
+                    <dt className="sr-only">Aviso</dt>
+                    <dd className="rounded-[var(--radius-sm)] bg-brand-warning/10 px-1.5 py-0.5 text-xs text-brand-warning">
+                      ⚠ Cliente del extranjero sin RNC ni ID extranjero: completa su ID extranjero para facturarle.
                     </dd>
                   </div>
                 )}
