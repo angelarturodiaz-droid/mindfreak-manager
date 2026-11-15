@@ -1,4 +1,5 @@
 import { listActiveClients } from "@/features/quotations/queries";
+import { defaultPaymentTermId } from "@/features/payment-terms/default";
 import { getCompany } from "@/features/settings/queries";
 import { getFxContext, listCurrencyOptions } from "@/features/currencies/queries";
 import { listPaymentTerms } from "@/features/payment-terms/queries";
@@ -44,7 +45,7 @@ export default async function NewQuotationPage({
         projectId={project?.id}
         lockClient={Boolean(project)}
         clients={clients}
-        defaultClientId={project ? project.client_id : clients.some((c) => c.id === client) ? client : undefined} baseCurrency={company.base_currency} currencies={currencyOptions.map((c) => c.code)} rates={fxContext.rates} paymentTerms={paymentTerms} taxRates={taxRates} />
+        defaultClientId={project ? project.client_id : clients.some((c) => c.id === client) ? client : undefined} baseCurrency={company.base_currency} currencies={currencyOptions.map((c) => c.code)} rates={fxContext.rates} paymentTerms={paymentTerms} defaultPaymentTermsId={defaultPaymentTermId(paymentTerms)} taxRates={taxRates} />
     </main>
   );
 }

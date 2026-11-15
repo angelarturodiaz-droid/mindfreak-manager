@@ -1,5 +1,11 @@
 # CHANGELOG — Mindfreak Manager
 
+## Condición de pago 50/50 por defecto (2026-11-15)
+
+- Cotización nueva y factura nueva de cliente directo traen elegida «50% anticipo / 50% al finalizar» (la condición
+  activa 50/50 sin días de crédito, `features/payment-terms/default.ts`). La factura desde un proyecto sigue vacía para
+  heredar la de la cotización. Sin cambios en la base de datos.
+
 ## Importar al Directorio (2026-11-15)
 
 - Importar proveedores desde Excel: columnas nuevas **Estado en el Directorio** (Prospecto, Evaluado, Aprobado o

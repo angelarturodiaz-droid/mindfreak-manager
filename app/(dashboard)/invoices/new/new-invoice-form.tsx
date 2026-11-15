@@ -30,6 +30,7 @@ export function NewInvoiceForm({
   currencies,
   rates,
   paymentTerms,
+  defaultPaymentTermsId = "",
   taxRates,
   defaultClientId,
   defaultProjectId,
@@ -48,6 +49,8 @@ export function NewInvoiceForm({
   /** Tasas de referencia (Configuración → Monedas y tasas). */
   rates?: RateHistory;
   paymentTerms: { id: string; name: string; credit_days: number }[];
+  /** Sale elegida en «Cliente directo» (la 50/50 si existe); desde un proyecto queda vacía para heredar la de la cotización. */
+  defaultPaymentTermsId?: string;
   taxRates: TaxRate[];
 }) {
   const [state, formAction, pending] = useActionState(
@@ -55,7 +58,7 @@ export function NewInvoiceForm({
     initialState,
   );
   const [useProject, setUseProject] = useState(Boolean(defaultProjectId));
-  const [paymentTermsId, setPaymentTermsId] = useState("");
+  const [paymentTermsId, setPaymentTermsId] = useState(defaultProjectId ? "" : defaultPaymentTermsId);
   const [issueDate, setIssueDate] = useState(todayISO);
   const [manualDueDate, setManualDueDate] = useState("");
   const [billingType, setBillingType] = useState("REGULAR");
@@ -77,7 +80,10 @@ export function NewInvoiceForm({
           <input
             type="radio"
             checked={!useProject}
-            onChange={() => setUseProject(false)}
+            onChange={() => {
+              setUseProject(false);
+              setPaymentTermsId(defaultPaymentTermsId);
+            }}
           />
           Cliente directo
         </label>
@@ -85,7 +91,10 @@ export function NewInvoiceForm({
           <input
             type="radio"
             checked={useProject}
-            onChange={() => setUseProject(true)}
+            onChange={() => {
+              setUseProject(true);
+              setPaymentTermsId("");
+            }}
           />
           Desde un proyecto
         </label>
@@ -130,7 +139,7 @@ export function NewInvoiceForm({
       <Select
         label="Condición de pago"
         name="payment_terms_id"
-        defaultValue=""
+        value={paymentTermsId}
         onChange={(e) => setPaymentTermsId(e.target.value)}
         hint={
           useProject

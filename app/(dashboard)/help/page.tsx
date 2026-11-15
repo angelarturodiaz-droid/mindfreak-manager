@@ -539,6 +539,7 @@ const SECTIONS: Section[] = [
               a capturar los datos del cliente ni los ítems.
             </>,
             "El listado resume lo que está en seguimiento (enviadas, vistas o negociando), lo aprobado, los borradores y la tasa de aprobación, y avisa cuántos días de validez le quedan a cada cotización abierta.",
+            <><strong>Condición de pago</strong>: en una cotización nueva viene elegida la más común, <em>50% anticipo / 50% al finalizar</em>; cámbiala si ese cliente paga distinto (Contado, Crédito 30 días…). En una factura nueva pasa lo mismo con <em>Cliente directo</em>; <em>Desde un proyecto</em> queda vacía para heredar la de la cotización aprobada. Si esa condición se desactiva en Configuración, vuelve a salir «Sin especificar».</>,
             <>En el detalle, los pasos <em>Borrador → Enviada → Aprobada → Proyecto</em> muestran en qué punto está. Los botones principales (enviar, aprobar, rechazar, convertir) están a la izquierda y los secundarios (compartir, duplicar, cancelar) a la derecha. El resumen de totales, la condición de pago y las condiciones quedan en la columna derecha.</>,
           ]}
         />

@@ -20,6 +20,7 @@ export function NewQuotationForm({
   currencies,
   rates,
   paymentTerms,
+  defaultPaymentTermsId = "",
   taxRates,
   defaultClientId,
   projectId,
@@ -37,6 +38,8 @@ export function NewQuotationForm({
   /** Tasas de referencia (Configuración → Monedas y tasas). */
   rates?: RateHistory;
   paymentTerms: { id: string; name: string; credit_days: number }[];
+  /** Sale elegida al abrir (la 50/50 si existe). */
+  defaultPaymentTermsId?: string;
   taxRates: TaxRate[];
 }) {
   const [state, formAction, pending] = useActionState(
@@ -72,8 +75,8 @@ export function NewQuotationForm({
       <Select
         label="Condición de pago"
         name="payment_terms_id"
-        defaultValue=""
-        hint="Al aceptarse, pasa automáticamente a la factura."
+        defaultValue={defaultPaymentTermsId}
+        hint="Viene elegida la más común (50% anticipo / 50% al finalizar); cámbiala si este cliente paga distinto. Al aceptarse, pasa automáticamente a la factura."
       >
         <option value="">Sin especificar</option>
         {paymentTerms.map((t) => (

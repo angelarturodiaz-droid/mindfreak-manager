@@ -1484,3 +1484,10 @@ pulsa el botón.
   registrarle el primer gasto se convierte solo en Proveedor (como en el Directorio). La limpieza Go-Live conserva los
   registros del Directorio que no son Proveedor.
 - Ejemplo: «Viajes Bohío · Transporte y combustible · Transporte de invitados · Prospecto · Suple: Transporte general».
+
+## Condición de pago por defecto: 50/50 (15-nov-2026)
+
+- Cotización nueva y factura nueva de *Cliente directo*: viene elegida **«50% anticipo / 50% al finalizar»** (la
+  condición activa con 50 % de anticipo, 50 % al final y 0 días). Se puede cambiar en el mismo formulario.
+- Factura *Desde un proyecto*: queda vacía para **heredar** la de la cotización aprobada (como antes).
+- Si esa condición se desactiva o no existe, sale «Sin especificar». Sin cambios en la base de datos.

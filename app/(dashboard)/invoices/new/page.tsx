@@ -1,4 +1,5 @@
 import { listActiveClients, listProjectsForSelect } from "@/features/invoices/queries";
+import { defaultPaymentTermId } from "@/features/payment-terms/default";
 import { getCompany } from "@/features/settings/queries";
 import { getFxContext, listCurrencyOptions } from "@/features/currencies/queries";
 import { listPaymentTerms } from "@/features/payment-terms/queries";
@@ -52,6 +53,7 @@ export default async function NewInvoicePage({
         currencies={currencyOptions.map((c) => c.code)}
         rates={fxContext.rates}
         paymentTerms={paymentTerms}
+        defaultPaymentTermsId={defaultPaymentTermId(paymentTerms)}
         taxRates={taxRates}
       />
     </main>
