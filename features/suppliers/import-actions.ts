@@ -105,7 +105,6 @@ export async function commitSupplierImportAction(rows: string[][], fileName: str
       .insert({
         company_id: companyId,
         ...rec,
-        directory_status: "PROVEEDOR",
         fiscal_reviewed_at: rec.supplier_kind && rec.fiscal_condition ? now : null,
         created_by: user?.id,
       })

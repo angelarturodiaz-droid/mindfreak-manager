@@ -1,5 +1,11 @@
 # CHANGELOG — Mindfreak Manager
 
+## Importar al Directorio (2026-11-15)
+
+- Importar proveedores desde Excel: columnas nuevas **Estado en el Directorio** (Prospecto, Evaluado, Aprobado o
+  Proveedor; vacío = Proveedor, como antes) y **Notas del Directorio** (`directory_notes`). Lista desplegable en la
+  plantilla. Fuera de «Proveedor» no se avisa por datos fiscales faltantes. Sin cambios en la base de datos.
+
 ## Clientes: país, estado y ciudad (2026-11-15)
 
 - Ficha y alta del cliente → *Ubicación y datos fiscales*: **País** (por defecto RD, todos los países en español con

@@ -5,6 +5,7 @@
  */
 import { normalizeCatalogName } from "@/features/supplier-service-types/classification";
 import { suggestClassification } from "./suggest-classification";
+import { DIRECTORY_STATUS_LABELS } from "@/features/directory/schema";
 import {
   COUNTRIES,
   E_ISSUER_LABELS,
@@ -42,7 +43,9 @@ export type SupplierImportKey =
   | "contact_name"
   | "contact_position"
   | "contact_email"
-  | "contact_phone";
+  | "contact_phone"
+  | "directory_status"
+  | "directory_notes";
 
 export const SUPPLIER_IMPORT_COLUMNS: SupplierImportColumn[] = [
   { key: "name", header: "Nombre", help: "Obligatorio. Nombre del negocio o de la persona.", width: 34, required: true },
@@ -65,6 +68,8 @@ export const SUPPLIER_IMPORT_COLUMNS: SupplierImportColumn[] = [
   { key: "contact_position", header: "Contacto: cargo", help: "Cargo del contacto.", width: 20 },
   { key: "contact_email", header: "Contacto: correo", help: "Correo del contacto.", width: 28 },
   { key: "contact_phone", header: "Contacto: teléfono", help: "Teléfono del contacto.", width: 18, text: true },
+  { key: "directory_status", header: "Estado en el Directorio", help: "Prospecto, Evaluado, Aprobado o Proveedor. Vacío = Proveedor. Usa Prospecto para quienes todavía no has contratado: quedan en el Directorio y se convierten solos en Proveedor al registrarles el primer gasto.", width: 20 },
+  { key: "directory_notes", header: "Notas del Directorio", help: "Opcional: lo que suple, precios, observaciones. Se guarda en las notas de su ficha del Directorio.", width: 40 },
 ];
 
 export const SUPPLIER_IMPORT_SHEET = "Proveedores";
@@ -100,6 +105,9 @@ export type SupplierImportRecord = {
   bank_name: string | null;
   bank_account_number: string | null;
   contact: { full_name: string; position: string | null; email: string | null; phone: string | null } | null;
+  /** Estado en el Directorio (migración 095). Vacío = PROVEEDOR. */
+  directory_status: "PROSPECTO" | "EVALUADO" | "APROBADO" | "PROVEEDOR";
+  directory_notes: string | null;
 };
 
 export type RowMessage = { level: "error" | "warn"; text: string };
@@ -115,6 +123,7 @@ export type SupplierImportRow = {
 };
 
 const norm = (s: string) => normalizeCatalogName(s ?? "");
+const IMPORT_DIRECTORY_STATUSES = ["PROSPECTO", "EVALUADO", "APROBADO", "PROVEEDOR"] as const;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 function fromLabels(value: string, labels: Record<string, string>, extra: Record<string, string> = {}): string | undefined {
@@ -181,6 +190,17 @@ export function validateSupplierRows(rows: string[][], catalogs: ImportCatalogs)
     const err = (t: string) => msgs.push({ level: "error", text: t });
     const warn = (t: string) => msgs.push({ level: "warn", text: t });
 
+    // Estado en el Directorio (vacío = Proveedor).
+    const dirRaw = get("directory_status");
+    let dirStatus: SupplierImportRecord["directory_status"] = "PROVEEDOR";
+    if (dirRaw) {
+      const found = IMPORT_DIRECTORY_STATUSES.find((st) => norm(DIRECTORY_STATUS_LABELS[st]) === norm(dirRaw) || norm(st) === norm(dirRaw));
+      if (found) dirStatus = found;
+      else err(`«Estado en el Directorio» no es válido: «${dirRaw}». Usa Prospecto, Evaluado, Aprobado o Proveedor.`);
+    }
+    const dirNotes = get("directory_notes");
+    if (dirNotes.length > 2000) err("Las notas del Directorio son muy largas (máximo 2000 caracteres).");
+
     const name = get("name").replace(/\s+/g, " ");
     if (!name) err("Falta el nombre.");
     else if (name.length > 200) err("El nombre es muy largo (máximo 200 caracteres).");
@@ -230,7 +250,8 @@ export function validateSupplierRows(rows: string[][], catalogs: ImportCatalogs)
     const condRaw = get("fiscal_condition");
     const cond = fromLabels(condRaw, FISCAL_CONDITION_LABELS, { Registrado: "REGISTRADO", Informal: "INFORMAL", "No registrado": "INFORMAL" }) ?? null;
     if (condRaw && !cond) err(`«Condición fiscal» no es válida: «${condRaw}».`);
-    if ((!kindRaw || !condRaw) && name) {
+    // En el Directorio (Prospecto, Evaluado, Aprobado) los datos fiscales se piden al convertirlo en Proveedor.
+    if ((!kindRaw || !condRaw) && name && dirStatus === "PROVEEDOR") {
       warn("Faltan el tipo de proveedor o la condición fiscal: sus gastos quedarán «por revisar» hasta completarlos en su ficha.");
     }
     const eRaw = get("e_issuer");
@@ -341,6 +362,8 @@ export function validateSupplierRows(rows: string[][], catalogs: ImportCatalogs)
             contact: cName
               ? { full_name: cName.slice(0, 200), position: get("contact_position") || null, email: cEmail || null, phone: get("contact_phone") || null }
               : null,
+            directory_status: dirStatus,
+            directory_notes: dirNotes || null,
           },
     });
   });
@@ -352,7 +375,7 @@ export function validateSupplierRows(rows: string[][], catalogs: ImportCatalogs)
 export function supplierTemplateSheets(catalogs: Pick<ImportCatalogs, "categories" | "serviceTypes" | "banks">) {
   const catName = new Map(catalogs.categories.map((c) => [c.id, c.name]));
   const lists: string[][] = [
-    ["Tipo de documento", "Tipo de proveedor", "Condición fiscal", "Emite e-CF", "Reside en", "País", "Categoría", "Tipo de servicio", "(categoría del tipo)", "Banco"],
+    ["Tipo de documento", "Tipo de proveedor", "Condición fiscal", "Emite e-CF", "Reside en", "País", "Categoría", "Tipo de servicio", "(categoría del tipo)", "Banco", "Estado en el Directorio"],
   ];
   const cols = [
     Object.values(ID_TYPE_LABELS),
@@ -365,6 +388,7 @@ export function supplierTemplateSheets(catalogs: Pick<ImportCatalogs, "categorie
     [...catalogs.serviceTypes].sort((a, b) => a.name.localeCompare(b.name, "es")).map((t) => t.name),
     [...catalogs.serviceTypes].sort((a, b) => a.name.localeCompare(b.name, "es")).map((t) => catName.get(t.category_id) ?? ""),
     [...catalogs.banks].sort((a, b) => a.localeCompare(b, "es")),
+    IMPORT_DIRECTORY_STATUSES.map((st) => DIRECTORY_STATUS_LABELS[st]),
   ];
   const height = Math.max(...cols.map((c) => c.length));
   for (let r = 0; r < height; r++) lists.push(cols.map((c) => c[r] ?? ""));
@@ -376,8 +400,8 @@ export function supplierTemplateSheets(catalogs: Pick<ImportCatalogs, "categorie
 
   const header = SUPPLIER_IMPORT_COLUMNS.map((c) => c.header);
   const examples: string[][] = [
-    ["Sonido Profesional SRL", "RNC", "131234567", "Persona Jurídica", "Registrado DGII", "Sí", "República Dominicana", "", "", "", "", "ventas@sonidopro.com", "809-555-0101", "Av. Ejemplo 10, Santo Domingo", "", "", "Ana Pérez", "Ventas", "ana@sonidopro.com", "809-555-0102"],
-    ["Juan Martínez (fotógrafo)", "Cédula", "00112345678", "Persona Física", "Informal / no registrado", "No", "República Dominicana", "", "", "", "", "", "829-555-0200", "", "", "", "", "", "", ""],
+    ["Sonido Profesional SRL", "RNC", "131234567", "Persona Jurídica", "Registrado DGII", "Sí", "República Dominicana", "", "", "", "", "ventas@sonidopro.com", "809-555-0101", "Av. Ejemplo 10, Santo Domingo", "", "", "Ana Pérez", "Ventas", "ana@sonidopro.com", "809-555-0102", "Proveedor", ""],
+    ["Juan Martínez (fotógrafo)", "Cédula", "00112345678", "Persona Física", "Informal / no registrado", "No", "República Dominicana", "", "", "", "", "", "829-555-0200", "", "", "", "", "", "", "", "Prospecto", "Fotografía de bodas; nos lo recomendó un cliente."],
     ["Event Supplies Inc.", "Identificación extranjera", "", "Persona Jurídica", "Otro", "No", "Extranjero", "Estados Unidos", "12-3456789", "", "", "info@eventsupplies.com", "+1 305 555 0100", "Miami, FL", "", "", "", "", "", ""],
   ];
   const instructions: string[][] = [
@@ -387,6 +411,7 @@ export function supplierTemplateSheets(catalogs: Pick<ImportCatalogs, "categorie
     ["Cómo usarla", "Llena la hoja «Proveedores» desde la fila 2 (una fila por proveedor). Las columnas con lista desplegable solo aceptan valores de la hoja «Listas». No cambies los títulos de la fila 1."],
     ["", "Después, en el sistema: Proveedores → Importar → sube este archivo → «Revisar archivo» → «Importar». Nada se guarda hasta que pulses Importar."],
     ["", "Si un RNC o cédula ya existe en el sistema, esa fila se salta. Las categorías y tipos de servicio deben existir (no se crean nuevos)."],
+    ["", "«Estado en el Directorio»: vacío = Proveedor. Con Prospecto, Evaluado o Aprobado quedan solo en el Directorio (sin pedir datos fiscales) hasta que los contrates."],
     ["", ""],
     ["Ejemplos", "Estas filas son solo de ejemplo: NO las copies a la hoja «Proveedores»."],
     header,
@@ -411,10 +436,11 @@ export function supplierTemplateSheets(catalogs: Pick<ImportCatalogs, "categorie
         { column: colOf("category"), source: range(6) },
         { column: colOf("service_type"), source: range(7) },
         { column: colOf("bank_name"), source: range(9) },
+        { column: colOf("directory_status"), source: range(10) },
       ],
     },
     { name: "Instrucciones", rows: instructions, widths: [26, 110, ...Array(18).fill(18)], header: true },
-    { name: "Listas", rows: lists, widths: [24, 24, 26, 14, 22, 18, 32, 34, 30, 24], header: true, freezeHeader: true },
+    { name: "Listas", rows: lists, widths: [24, 24, 26, 14, 22, 18, 32, 34, 30, 24, 22], header: true, freezeHeader: true },
   ];
 }
 

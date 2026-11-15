@@ -1472,3 +1472,15 @@ pulsa el botón.
 - **No cambia:** reglas fiscales, cálculos, retenciones ni proveedores (que ya tienen su país en los datos fiscales).
 - Migración **107**: `clients.country_code` (por defecto `DO`), `region`, `city`; regla: provincia y municipio de la
   DGII solo si el país es RD.
+
+## Importar al Directorio (15-nov-2026)
+
+- **Para qué:** cargar de una vez recursos que todavía no son proveedores (ej. la lista de suplidores de la empresa)
+  como **Prospecto** en el Directorio, sin pedir RNC ni datos fiscales.
+- **Cómo:** Proveedores → Importar desde Excel → plantilla con dos columnas nuevas: **Estado en el Directorio**
+  (lista: Prospecto, Evaluado, Aprobado, Proveedor; vacío = Proveedor) y **Notas del Directorio** (se guardan en las
+  notas de su ficha).
+- Con estado distinto de Proveedor no sale el aviso «faltan el tipo de proveedor o la condición fiscal». Al
+  registrarle el primer gasto se convierte solo en Proveedor (como en el Directorio). La limpieza Go-Live conserva los
+  registros del Directorio que no son Proveedor.
+- Ejemplo: «Viajes Bohío · Transporte y combustible · Transporte de invitados · Prospecto · Suple: Transporte general».

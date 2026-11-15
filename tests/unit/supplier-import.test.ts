@@ -150,3 +150,28 @@ describe("A3 · revisión de filas de proveedores", () => {
     expect(again.results[0].name).toBe("X");
   });
 });
+
+describe("Importar al Directorio (Estado en el Directorio y notas)", () => {
+  it("vacío = Proveedor; Prospecto sin pedir datos fiscales; estado inválido = error", () => {
+    const { results } = validateSupplierRows(
+      [
+        H,
+        row({ name: "Sin estado", category: "Audiovisuales", service_type: "Sonido" }),
+        row({ name: "Prospecto DJ", category: "Audiovisuales", service_type: "Disc jockey", directory_status: "prospecto", directory_notes: "Suple: DJ" }),
+        row({ name: "Malo", directory_status: "Cliente" }),
+      ],
+      catalogs,
+    );
+    expect(results[0].record!.directory_status).toBe("PROVEEDOR");
+    expect(results[0].messages.some((m) => /por revisar/.test(m.text))).toBe(true);
+    expect(results[1].record).toMatchObject({ directory_status: "PROSPECTO", directory_notes: "Suple: DJ" });
+    expect(results[1].messages.some((m) => /por revisar/.test(m.text))).toBe(false);
+    expect(results[2].status).toBe("error");
+  });
+
+  it("la plantilla trae la lista de estados del Directorio", () => {
+    const lists = readSheet(buildWorkbook(supplierTemplateSheets(catalogs)), "Listas").rows;
+    expect(lists[0][10]).toBe("Estado en el Directorio");
+    expect(lists.slice(1, 5).map((r) => r[10])).toEqual(["Prospecto", "Evaluado", "Aprobado", "Proveedor"]);
+  });
+});
